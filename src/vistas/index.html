@@ -10,14 +10,11 @@
     <div class="container">
       <h1>To-Do List</h1>
       <button id="agregar_tarea">Agregar Tarea</button>
-
       <div id="lista_tareas"></div>
     </div>
 
     <div id="miModal" class="modal">
       <div class="modal-content">
-        <span id="cerrarModal" class="close">&times;</span>
-
         <div class="container_tarea">
           <div class="inputs_tarea">
             <input type="text" class="titulo_tarea" placeholder="Título" />
@@ -26,12 +23,51 @@
               placeholder="Descripción"
             ></textarea>
           </div>
+          <div class="campo_etiquetas">
+            <label for="etiquetas">Etiquetas:</label>
+            <input type="text" id="etiquetas" class="etiquetas_tarea" placeholder="Buscar o agregar etiqueta" list="lista_etiquetas" />
+            <datalist id="lista_etiquetas">
+              <option value="Trabajo">
+              <option value="Personal">
+              <option value="Estudio">
+              <option value="Urgente">
+            </datalist>
+          </div>
+    
+          
+          <div class="campo_prioridad">
+            <label>Nivel de Prioridad:</label>
+            <div class="prioridad_selector">
+                <label class="prioridad_option">
+                    <input type="radio" name="prioridad" value="1" />
+                    <span class="prioridad_label">1</span>
+                </label>
+                <label class="prioridad_option">
+                    <input type="radio" name="prioridad" value="2" />
+                    <span class="prioridad_label">2</span>
+                </label>
+                <label class="prioridad_option">
+                    <input type="radio" name="prioridad" value="3" />
+                    <span class="prioridad_label">3</span>
+                </label>
+                <label class="prioridad_option">
+                    <input type="radio" name="prioridad" value="4" />
+                    <span class="prioridad_label">4</span>
+                </label>
+                <label class="prioridad_option">
+                    <input type="radio" name="prioridad" value="5" />
+                    <span class="prioridad_label">5</span>
+                </label>
+            </div>
         </div>
+        
+       
 
         <div class="botonesModal">
           <button class="agregarModal">Agrear</button>
           <button class="cancelarModal">cancelar</button>
         </div>
+      </div>
       </div>
     </div>
 
