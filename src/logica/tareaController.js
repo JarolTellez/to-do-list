@@ -2,6 +2,10 @@ const botonAgregarTarea = document.querySelector("#agregar_tarea");
 const modal = document.querySelector('#miModal');
 const btnCancelarModal=document.querySelector(".cancelarModal");
 
+
+
+
+
 const generarElementoTarea = () => {
  /* const contenedorTareas = document.getElementById("lista_tareas");
   const ultimoAgregado = contenedorTareas.lastElementChild;
