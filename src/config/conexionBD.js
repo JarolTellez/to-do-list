@@ -1,19 +1,36 @@
-require('dotenv').config(); 
-const mysql = require('mysql2');
+require('dotenv').config();
+const mysql = require('mysql2/promise');
 
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST, 
-  user: process.env.DB_USER,    
-  password: process.env.DB_PASSWORD, 
-  database: process.env.DB_NAME
-});
+class ConexionBD {
 
-connection.connect((err) => {
-  if (err) {
-    console.error('Error conectando a la base de datos:', err.stack);
-    return;
+  constructor() {
+
+    this.pool = mysql.createPool({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      waitForConnections: true,
+      connectionLimit: 10,  // Máximo número de conexiones concurrentes
+      queueLimit: 0  
+    });
   }
-  console.log('Conectado a la base de datos.');
-});
 
-module.exports = connection;
+  // Obtener una conexión del pool
+  async conectar() {
+    return this.pool.getConnection();
+  }
+
+  // Para finalizar el pool
+  async cerrarPool() {
+    try {
+      await this.pool.end();
+      console.log('Pool de conexiones cerrado');
+    } catch (error) {
+      console.error('Error al cerrar el pool', error);
+      throw error;
+    }
+  }
+}
+
+module.exports = new ConexionBD();
