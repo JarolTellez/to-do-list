@@ -1,45 +1,36 @@
-require('dotenv').config(); 
+require('dotenv').config();
 const mysql = require('mysql2/promise');
 
+class ConexionBD {
 
-class ConexionBD{
+  constructor() {
 
-  constructor(){
-    this.connection=null;
+    this.pool = mysql.createPool({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      waitForConnections: true,
+      connectionLimit: 10,  // Máximo número de conexiones concurrentes
+      queueLimit: 0  
+    });
   }
 
-async conectar(){
-  if (!this.connection) {
-    try {
-        this.connection = await mysql.createConnection({
-          host: process.env.DB_HOST, 
-          user: process.env.DB_USER,    
-          password: process.env.DB_PASSWORD, 
-          database: process.env.DB_NAME
-        });
-        console.log('Conexión establecida');
-    } catch (error) {
-        console.error('Error conectando a la base de datos:', error);
-        throw error;
-    }
-}
-return this.connection;
-}
+  // Obtener una conexión del pool
+  async conectar() {
+    return this.pool.getConnection();
+  }
 
-async desconectar(){
-  if (this.connection) {
+  // Para finalizar el pool
+  async cerrarPool() {
     try {
-        await this.connection.end();
-        console.log('Conexión cerrada');
+      await this.pool.end();
+      console.log('Pool de conexiones cerrado');
     } catch (error) {
-        console.error('Error cerrando la conexión:', error);
-        throw error;
-    } finally {
-        this.connection = null;
+      console.error('Error al cerrar el pool', error);
+      throw error;
     }
-}
-}
-
+  }
 }
 
 module.exports = new ConexionBD();

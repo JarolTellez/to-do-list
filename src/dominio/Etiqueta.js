@@ -1,7 +1,9 @@
 class Etiqueta{
-    constructor(id=null,nombre,descripcion){
-        this.id=id;
+    constructor(idEtiqueta=null,nombre,descripcion){
+        this.idEtiqueta=idEtiqueta;
         this.nombre=nombre;
         this.descripcion=descripcion;
     }
 }
+
+module.exports=Etiqueta;

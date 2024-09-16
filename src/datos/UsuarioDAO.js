@@ -1,86 +1,102 @@
-const ConexionBD = require('../config/conexionBD');
+const ConexionBD = require("../config/conexionBD");
 
 class UsuarioDAO {
-
-  static async agregar(usuario) {
+  static async agregarUsuario(usuario) {
     const connection = await ConexionBD.conectar();
     try {
       const [result] = await connection.query(
-        'INSERT INTO usuario (nombreUsuario, correo, contrasena) VALUES (?, ?, ?)',
+        "INSERT INTO usuario (nombreUsuario, correo, contrasena) VALUES (?, ?, ?)",
         [usuario.nombreUsuario, usuario.correo, usuario.contrasena]
       );
       usuario.idUsuario = result.insertId;
       return usuario;
     } catch (error) {
-      console.error('Error al agregar', error);
+      console.error("Error al agregar usuario", error);
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
-  static async actualizar(usuario) {
+  static async actualizarUsuario(usuario) {
     const connection = await ConexionBD.conectar();
     try {
       await connection.query(
-        'UPDATE usuario SET nombreUsuario = ?, correo = ?, contrasena = ? WHERE idUsuario = ?',
-        [usuario.nombreUsuario, usuario.correo, usuario.contrasena, usuario.idUsuario]
+        "UPDATE usuario SET nombreUsuario = ?, correo = ?, contrasena = ? WHERE idUsuario = ?",
+        [
+          usuario.nombreUsuario,
+          usuario.correo,
+          usuario.contrasena,
+          usuario.idUsuario,
+        ]
       );
       return usuario;
     } catch (error) {
-      console.error('Error al actualizar', error);
+      console.error("Error al actualizar usuario", error);
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
-  static async eliminar(idUsuario) {
+  static async eliminarUsuario(idUsuario) {
     const connection = await ConexionBD.conectar();
     try {
-      await connection.query('DELETE FROM usuario WHERE idUsuario = ?', [idUsuario]);
+      await connection.query("DELETE FROM usuario WHERE idUsuario = ?", [
+        idUsuario,
+      ]);
     } catch (error) {
-      console.error('Error al eliminar', error);
+      console.error("Error al eliminar usuario", error);
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
-  static async consultarTodos() {
+  static async consultarTodosUsuario() {
     const connection = await ConexionBD.conectar();
     try {
-      const [rows] = await connection.query('SELECT * FROM usuario');
+      const [rows] = await connection.query("SELECT * FROM usuario");
       return rows;
     } catch (error) {
-      console.error('Error al consultar todos los usuarios', error);
+      console.error("Error al consultar todos los usuarios", error);
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
-  static async consultarPorId(idUsuario) {
+  static async consultarUsuarioPorId(idUsuario) {
     const connection = await ConexionBD.conectar();
     try {
       const [rows] = await connection.query(
-        'SELECT * FROM usuario WHERE idUsuario = ?',
+        "SELECT * FROM usuario WHERE idUsuario = ?",
         [idUsuario]
       );
       return rows[0];
     } catch (error) {
-      console.error('Error al consultar por id', error);
+      console.error("Error al consultar usuario por id", error);
       throw error;
+    } finally {
+      connection.release();
     }
   }
 
-  static async consultarPorNombre(nombreUsuario) {
+  static async consultarUsuarioPorNombre(nombreUsuario) {
     const connection = await ConexionBD.conectar();
     try {
       const [rows] = await connection.query(
-        'SELECT * FROM usuario WHERE nombreUsuario = ?',
+        "SELECT * FROM usuario WHERE nombreUsuario = ?",
         [nombreUsuario]
       );
       return rows[0];
     } catch (error) {
-      console.error('Error al consultar por nombre', error);
+      console.error("Error al consultar usuario por nombre", error);
       throw error;
+    } finally {
+      connection.release();
     }
   }
-
-
 }
 
 module.exports = UsuarioDAO;
