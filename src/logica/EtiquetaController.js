@@ -24,8 +24,16 @@ async function consultarEtiquetaNombre() {
     const etiqueta = await etiquetaDAO.consultarEtiquetaPorNombre(nombre);
     console.log(etiqueta);
   } catch (error) {
-    console.log("Error al consultar etiquetas: ", error);
+    console.log("Error al consultar etiqueta por nombre: ", error);
   }
 }
 
+async function consultarEtiquetaId() {
+    try {
+      const etiqueta = await etiquetaDAO.consultarEtiquetaPorId(id);
+      console.log(etiqueta);
+    } catch (error) {
+      console.log("Error al consultar etiqueta por id: ", error);
+    }
+  }
 consultarEtiquetaNombre();
