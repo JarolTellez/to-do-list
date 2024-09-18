@@ -19,7 +19,7 @@ class EtiquetaDAO {
     }
   }
 
-  static async editarEtiqueta(etiqueta) {
+  static async actualizarEtiqueta(etiqueta) {
     const connection = await conexionBD.conectar();
     try {
       await connection.query(
