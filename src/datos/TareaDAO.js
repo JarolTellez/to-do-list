@@ -5,7 +5,7 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      const tareaAgregada = await connecion.query(
+      const tareaAgregada = await connection.query(
         "INSERT INTO tarea (nombre,descripcion,fechaCreacion,ultimaActualizacion,completada,idUsuario,prioridad) VALUES(?,?,?,?,?,?,?)"
       );
       tarea.id = tareaAgregada.insertertId;
@@ -22,7 +22,7 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      await connecion.query(
+      await connection.query(
         "UPDATE tarea SET nombre = ?, descripcion = ?, fechaCreacion = ?, ultimaActualizacion = ?, completada = ?, idUsuario = ?, prioridad = ?",
         [
           tarea.nombre,
@@ -48,7 +48,7 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      await connecion.query("DELETE FROM tarea WHERE idTarea = ?", [idTarea]);
+      await connection.query("DELETE FROM tarea WHERE idTarea = ?", [idTarea]);
     } catch (error) {
       console.log("Error al eliminar una tarea: ", error);
       throw error;
@@ -61,7 +61,7 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      const [tareas] = await connecion.query("SELECT * FROM tarea");
+      const [tareas] = await connection.query("SELECT * FROM tarea");
       return tareas;
     } catch (error) {
       console.log("Error al consultar todas las tareas: ", error);
@@ -75,7 +75,7 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      const [tarea] = await connecion.query("SELECT * FROM tarea WHERE nombre = ?",[nombreTarea]);
+      const [tarea] = await connection.query("SELECT * FROM tarea WHERE nombre = ?",[nombreTarea]);
       return tarea[0];
     } catch (error) {
       console.log("Error al consultar una tarea por nombre: ", error);
@@ -89,7 +89,7 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      const [tarea] = await connecion.query("SELECT * FROM tarea WHERE idTarea = ?",[idTarea]);
+      const [tarea] = await connection.query("SELECT * FROM tarea WHERE idTarea = ?",[idTarea]);
       return tarea[0];
     } catch (error) {
       console.log("Error al consultar una tarea por id: ", error);
@@ -100,3 +100,5 @@ class TareaDAO {
   }
 
 }
+
+module.exports=TareaDAO;
