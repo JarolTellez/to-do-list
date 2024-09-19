@@ -1,14 +1,18 @@
-const UsuarioDAO = require('../datos/UsuarioDAO');
-const Usuario=require('../dominio/Usuario');
+const  usuarioDAO = require("../datos/UsuarioDAO");
 
 
-async function agregarUsuario(usuario) {
+
+exports.agregarUsuario = async (req, res) => {
   try {
-    const usuarioAgregado = await UsuarioDAO.agregarUsuario(usuario);
-    console.log('Usuario agregado:', usuarioAgregado);
+      const usuario = req.body; 
+      const usuarioAgregado = await usuarioDAO.agregarUsuario(usuario);
+      console.log("Usuario agregado:", usuarioAgregado);
+      res.status(201).json(usuarioAgregado);
   } catch (error) {
-    console.error('Error al agregar usuario:', error);
+      console.error("Error al agregar usuario:", error);
+      res.status(500).json({ mensaje: "Error al agregar el usuario" });
   }
 }
+
 
 

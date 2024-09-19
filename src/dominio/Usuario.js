@@ -6,7 +6,7 @@ class Usuario{
         this.contrasena = contrasena;
       }
 
-   
 }
 
 module.exports=Usuario;
+

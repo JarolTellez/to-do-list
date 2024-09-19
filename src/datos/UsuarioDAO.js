@@ -1,8 +1,9 @@
-const ConexionBD = require("../config/conexionBD");
+const ConexionBD = require("../utils/conexionBD");
 
 class UsuarioDAO {
   static async agregarUsuario(usuario) {
-    const connection = await ConexionBD.conectar();
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
     try {
       const [result] = await connection.query(
         "INSERT INTO usuario (nombreUsuario, correo, contrasena) VALUES (?, ?, ?)",
@@ -99,4 +100,4 @@ class UsuarioDAO {
   }
 }
 
-module.exports = UsuarioDAO;
+module.exports=UsuarioDAO;
