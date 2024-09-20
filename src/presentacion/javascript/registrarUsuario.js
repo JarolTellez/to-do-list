@@ -2,9 +2,9 @@ const UsuarioController = require("../../logica/UsuarioController.js");
 const Usuario = require("../../dominio/Usuario.js");
 
 document.addEventListener("DOMContentLoaded", function () {
-  const inputNombreUsuario = document.querySelector("#nombreUsuario");
-  const inputCorreoUsuario = document.querySelector("#correoUsuario");
-  const inputContrasenaUsuario = document.querySelector("#contrasenaUsuario");
+  const inputNombreUsuario = document.querySelector("#nombreUsuarioRegistro");
+  const inputCorreoUsuario = document.querySelector("#correoUsuarioRegistro");
+  const inputContrasenaUsuario = document.querySelector("#contrasenaUsuarioRegistro");
   const botonRegistrar = document.querySelector("#btnRegistrar");
 
   botonRegistrar.addEventListener("click", function () {
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         alert("Se ha creado correctamente el usuario");
 
-        window.location.href = "principal.html";
+        window.location.href = "index.html";
       })
       .catch((error) => {
         alert(`Error al crear el usuario presentacion: ${error.message}`);

@@ -10,6 +10,10 @@ router
     .post(UsuarioController.agregarUsuario)
     //.get(UsuarioController.); para obtener los usuarios pero aun no tengo el metodo
 
+    router
+  .route('/login')
+    .post(UsuarioController.loginUsuario);
+    
 // router.use(handleErrors);
 
 module.exports = router;

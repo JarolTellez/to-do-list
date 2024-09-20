@@ -20,7 +20,8 @@ class UsuarioDAO {
   }
 
   static async actualizarUsuario(usuario) {
-    const connection = await ConexionBD.conectar();
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
     try {
       await connection.query(
         "UPDATE usuario SET nombreUsuario = ?, correo = ?, contrasena = ? WHERE idUsuario = ?",
@@ -41,7 +42,8 @@ class UsuarioDAO {
   }
 
   static async eliminarUsuario(idUsuario) {
-    const connection = await ConexionBD.conectar();
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
     try {
       await connection.query("DELETE FROM usuario WHERE idUsuario = ?", [
         idUsuario,
@@ -55,7 +57,8 @@ class UsuarioDAO {
   }
 
   static async consultarTodosUsuario() {
-    const connection = await ConexionBD.conectar();
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
     try {
       const [rows] = await connection.query("SELECT * FROM usuario");
       return rows;
@@ -68,7 +71,8 @@ class UsuarioDAO {
   }
 
   static async consultarUsuarioPorId(idUsuario) {
-    const connection = await ConexionBD.conectar();
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
     try {
       const [rows] = await connection.query(
         "SELECT * FROM usuario WHERE idUsuario = ?",
@@ -84,7 +88,8 @@ class UsuarioDAO {
   }
 
   static async consultarUsuarioPorNombre(nombreUsuario) {
-    const connection = await ConexionBD.conectar();
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
     try {
       const [rows] = await connection.query(
         "SELECT * FROM usuario WHERE nombreUsuario = ?",
@@ -98,6 +103,24 @@ class UsuarioDAO {
       connection.release();
     }
   }
+
+
+static async consultarUsuarioPorNombreContrasena(nombreUsuario,contrasena) {
+  const conexionBD = new ConexionBD();
+  const connection = await conexionBD.conectar();
+  try {
+    const [rows] = await connection.query(
+      "SELECT * FROM usuario WHERE nombreUsuario = ? AND contrasena = ?",
+      [nombreUsuario,contrasena]
+    );
+    return rows[0];
+  } catch (error) {
+    console.error("Error al consultar usuario por nombre y contrasena", error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
 }
 
 module.exports=UsuarioDAO;
