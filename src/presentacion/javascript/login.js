@@ -1,7 +1,3 @@
-const UsuarioController = require("../../logica/UsuarioController.js");
-const Usuario = require("../../dominio/Usuario.js");
-const { response } = require("express");
-
 document.addEventListener("DOMContentLoaded", function(){
     const inputNombreUsuario = document.querySelector("#nombreUsuario");
     const inputContrasenaUsuario = document.querySelector("#contrasenaUsuario");
@@ -12,8 +8,10 @@ document.addEventListener("DOMContentLoaded", function(){
    });
 
    async function login(){
-        const usuarioLogin=new Usuario(null,inputNombreUsuario.ariaValueMax,null,inputContrasenaUsuario);
-
+        const usuarioLogin = {
+            nombreUsuario: inputNombreUsuario.value,
+            contrasena: inputContrasenaUsuario.value
+        };
         const urlUsuarioLogin="http://localhost:3000/usuario/login";
 
         try {
