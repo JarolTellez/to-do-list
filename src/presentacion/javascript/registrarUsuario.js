@@ -1,35 +1,36 @@
-const UsuarioController = require("../../logica/UsuarioController.js");
-const Usuario = require("../../dominio/Usuario.js");
-
 document.addEventListener("DOMContentLoaded", function () {
   const inputNombreUsuario = document.querySelector("#nombreUsuarioRegistro");
   const inputCorreoUsuario = document.querySelector("#correoUsuarioRegistro");
-  const inputContrasenaUsuario = document.querySelector("#contrasenaUsuarioRegistro");
+  const inputContrasenaUsuario = document.querySelector(
+    "#contrasenaUsuarioRegistro"
+  );
   const botonRegistrar = document.querySelector("#btnRegistrar");
 
   botonRegistrar.addEventListener("click", function () {
     registrarUsuario();
   });
 
-  function registrarUsuario() {
-    const usuarioNuevo = new Usuario(
-      null,
-      inputNombreUsuario.value,
-      inputCorreoUsuario.value,
-      inputContrasenaUsuario.value
-    );
+  async function registrarUsuario() {
+    const usuarioNuevo = {
+      nombreUsuario: inputNombreUsuario.value,
+      correo: inputCorreoUsuario.value,
+      contrasena: inputContrasenaUsuario.value,
+    };
 
     const urlUsuario = "http://localhost:3000/usuario/";
 
-    fetch(urlUsuario, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(usuarioNuevo),
-    })
-      .then((response) => response.json())
-      .then((data) => {
+    try {
+      const response = await fetch(urlUsuario, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(usuarioNuevo),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
         inputNombreUsuario.value = "";
         inputCorreoUsuario.value = "";
         inputContrasenaUsuario.value = "";
@@ -37,9 +38,12 @@ document.addEventListener("DOMContentLoaded", function () {
         alert("Se ha creado correctamente el usuario");
 
         window.location.href = "index.html";
-      })
-      .catch((error) => {
-        alert(`Error al crear el usuario presentacion: ${error.message}`);
-      });
+      } else {
+        console.log("Error al Registrar el usuario:", data.mensaje);
+        alert(data.mensaje);
+      }
+    } catch (error) {
+      alert(`Error al crear el usuario: ${error.message}`);
+    }
   }
 });
