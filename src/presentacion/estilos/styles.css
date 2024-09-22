@@ -5,18 +5,67 @@ body {
   padding: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+
   height: 100vh;
+}
+
+.estadisticas {
+  display: flex;
+  margin-top: 20px;
+  flex-direction: column;
+  gap: 10px; 
+}
+
+.estadistica-item {
+  background-color: #f8f9fa;
+  padding: 15px; 
+  border-radius: 8px; 
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center; 
+  height: 80px;
+}
+
+.estadistica-item p {
+  margin: 0;
+  padding-top: 10px;
+}
+
+.estadistica-item p:last-child {
+  font-weight: bold;
+  font-size: 1.5em; 
+}
+
+.estadisticasCompletadas{
+  box-shadow: 0 2px 5px rgba(3, 175, 40, 0.801);
+}
+
+.estadisticasPendientes{
+  box-shadow: 0 2px 5px rgba(231, 125, 4, 0.952);
 }
 
 .container {
   background-color: #fff;
   padding: 20px;
-  width: 400px;
+  width: 500px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  margin-bottom: 20px;
+  margin-right: 10px;
 }
 
+.infoUsuario {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+}
+
+.infoUsuario a {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 13px;
+  cursor: pointer;
+}
 
 .modal {
   display: none;
