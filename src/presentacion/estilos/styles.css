@@ -8,20 +8,39 @@ body {
 
   height: 100vh;
 }
+
 .estadisticas {
-  height: 300px;
+  display: flex;
   margin-top: 20px;
-  background-color: #f8f9fa;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  text-align: center;
+  flex-direction: column;
+  gap: 10px; 
 }
 
-#total-tareas,
-#completadas,
-#pendientes {
+.estadistica-item {
+  background-color: #f8f9fa;
+  padding: 15px; 
+  border-radius: 8px; 
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center; 
+  height: 80px;
+}
+
+.estadistica-item p {
+  margin: 0;
+  padding-top: 10px;
+}
+
+.estadistica-item p:last-child {
   font-weight: bold;
+  font-size: 1.5em; 
+}
+
+.estadisticasCompletadas{
+  box-shadow: 0 2px 5px rgba(3, 175, 40, 0.801);
+}
+
+.estadisticasPendientes{
+  box-shadow: 0 2px 5px rgba(231, 125, 4, 0.952);
 }
 
 .container {
