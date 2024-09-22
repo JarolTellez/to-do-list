@@ -6,26 +6,43 @@
     <title>Document</title>
     <link rel="stylesheet" href="../estilos/styles.css" />
   </head>
- 
+  <body>
+    
     <div class="container">
+      <div class="infoUsuario">
+        <a>Cerrar sesion</a>
+      </div>
       <h1>To-Do List</h1>
       <button id="agregar_tarea">Agregar Tarea</button>
       <div id="lista_tareas"></div>
     </div>
+
+    <div class="estadisticas">
+      <p>Total de Tareas</p>
+      <p id="total-tareas">10</p>
+      <p>Tareas Completadas</p>
+      <p id="completadas">5</p>
+      <p>Tareas Pendientes</p>
+      <p id="pendientes">5</p>
+    </div>
+
 
     <div id="miModal" class="modal">
       <div class="modal-content">
         <div class="container_tarea">
           <div class="inputs_tarea">
             <input type="text" class="titulo_tarea" placeholder="Título" />
-            <textarea
-              class="descripcion_tarea"
-              placeholder="Descripción"
-            ></textarea>
+            <textarea class="descripcion_tarea" placeholder="Descripción"></textarea>
           </div>
           <div class="campo_etiquetas">
             <label for="etiquetas">Etiquetas:</label>
-            <input type="text" id="etiquetas" class="etiquetas_tarea" placeholder="Buscar o agregar etiqueta" list="lista_etiquetas" />
+            <input
+              type="text"
+              id="etiquetas"
+              class="etiquetas_tarea"
+              placeholder="Buscar o agregar etiqueta"
+              list="lista_etiquetas"
+            />
             <datalist id="lista_etiquetas">
               <option value="Trabajo">
               <option value="Personal">
@@ -33,56 +50,40 @@
               <option value="Urgente">
             </datalist>
           </div>
-    
-          
+
           <div class="campo_prioridad">
             <label>Nivel de Prioridad:</label>
             <div class="prioridad_selector">
-                <label class="prioridad_option">
-                    <input type="radio" name="prioridad" value="1" />
-                    <span class="prioridad_label">1</span>
-                </label>
-                <label class="prioridad_option">
-                    <input type="radio" name="prioridad" value="2" />
-                    <span class="prioridad_label">2</span>
-                </label>
-                <label class="prioridad_option">
-                    <input type="radio" name="prioridad" value="3" />
-                    <span class="prioridad_label">3</span>
-                </label>
-                <label class="prioridad_option">
-                    <input type="radio" name="prioridad" value="4" />
-                    <span class="prioridad_label">4</span>
-                </label>
-                <label class="prioridad_option">
-                    <input type="radio" name="prioridad" value="5" />
-                    <span class="prioridad_label">5</span>
-                </label>
+              <label class="prioridad_option">
+                <input type="radio" name="prioridad" value="1" />
+                <span class="prioridad_label">1</span>
+              </label>
+              <label class="prioridad_option">
+                <input type="radio" name="prioridad" value="2" />
+                <span class="prioridad_label">2</span>
+              </label>
+              <label class="prioridad_option">
+                <input type="radio" name="prioridad" value="3" />
+                <span class="prioridad_label">3</span>
+              </label>
+              <label class="prioridad_option">
+                <input type="radio" name="prioridad" value="4" />
+                <span class="prioridad_label">4</span>
+              </label>
+              <label class="prioridad_option">
+                <input type="radio" name="prioridad" value="5" />
+                <span class="prioridad_label">5</span>
+              </label>
             </div>
-        </div>
-        
-       
+          </div>
 
-        <div class="botonesModal">
-          <button class="agregarModal">Agrear</button>
-          <button class="cancelarModal">cancelar</button>
+          <div class="botonesModal">
+            <button class="agregarModal">Agregar</button>
+            <button class="cancelarModal">Cancelar</button>
+          </div>
         </div>
-      </div>
       </div>
     </div>
-
-    <template id="template_tarea">
-      <div class="container_tarea">
-        <input type="checkbox" class="checkbox_tarea" />
-        <div class="inputs_tarea">
-          <input type="text" class="titulo_tarea" placeholder="Título" />
-          <textarea
-            class="descripcion_tarea"
-            placeholder="Descripción"
-          ></textarea>
-        </div>
-      </div>
-    </template>
 
     <script src="../../logica/tareaController.js"></script>
   </body>
