@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="../estilos/styles.css" />
   </head>
   <body>
-    
     <div class="container">
       <div class="infoUsuario">
         <a>Cerrar sesion</a>
@@ -18,21 +17,31 @@
     </div>
 
     <div class="estadisticas">
-      <p>Total de Tareas</p>
-      <p id="total-tareas">10</p>
-      <p>Tareas Completadas</p>
-      <p id="completadas">5</p>
-      <p>Tareas Pendientes</p>
-      <p id="pendientes">5</p>
+      <div class="estadistica-item">
+        <p>Total de Tareas</p>
+        <p id="total-tareas">10</p>
+      </div>
+      <div class="estadistica-item estadisticasCompletadas">
+        <p>Completadas</p>
+        <p id="completadas">5</p>
+      </div>
+      <div class="estadistica-item estadisticasPendientes">
+        <p>Pendientes</p>
+        <p id="pendientes">5</p>
+      </div>
     </div>
-
+    
+    
 
     <div id="miModal" class="modal">
       <div class="modal-content">
         <div class="container_tarea">
           <div class="inputs_tarea">
             <input type="text" class="titulo_tarea" placeholder="Título" />
-            <textarea class="descripcion_tarea" placeholder="Descripción"></textarea>
+            <textarea
+              class="descripcion_tarea"
+              placeholder="Descripción"
+            ></textarea>
           </div>
           <div class="campo_etiquetas">
             <label for="etiquetas">Etiquetas:</label>
@@ -44,10 +53,10 @@
               list="lista_etiquetas"
             />
             <datalist id="lista_etiquetas">
-              <option value="Trabajo">
-              <option value="Personal">
-              <option value="Estudio">
-              <option value="Urgente">
+              <option value="Trabajo"></option>
+              <option value="Personal"></option>
+              <option value="Estudio"></option>
+              <option value="Urgente"></option>
             </datalist>
           </div>
 
