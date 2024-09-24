@@ -2,21 +2,22 @@ const ConexionBD = require("../utils/conexionBD");
 
 class TareaDAO {
   static async agregarTarea(tarea) {
-    const conexionBD= new ConexionBD();
+    const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
       const tareaAgregada = await connection.query(
-        "INSERT INTO tarea (nombre,descripcion,fechaCreacion,ultimaActualizacion,completada,idUsuario,prioridad) VALUES(?,?,?,?,?,?,?)"
-      ,[
-        tarea.nombre,
-        tarea.descripcion,
-        tarea.fechaCreacion,
-        tarea.fechaUltimaActualizacion,
-        tarea.completada,
-        tarea.idUsuario,
-        tarea.prioridad,
-      ]);
+        "INSERT INTO tarea (nombre,descripcion,fechaCreacion,ultimaActualizacion,completada,idUsuario,prioridad) VALUES(?,?,?,?,?,?,?)",
+        [
+          tarea.nombre,
+          tarea.descripcion,
+          tarea.fechaCreacion,
+          tarea.fechaUltimaActualizacion,
+          tarea.completada,
+          tarea.idUsuario,
+          tarea.prioridad,
+        ]
+      );
       tarea.id = tareaAgregada.insertertId;
       return tarea;
     } catch (error) {
@@ -28,11 +29,11 @@ class TareaDAO {
   }
 
   static async actualizarTarea(tarea) {
-    const conexionBD= new ConexionBD();
+    const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
-      await connection.query(
+     const [resultado]= await connection.query(
         "UPDATE tarea SET nombre = ?, descripcion = ?, fechaCreacion = ?, ultimaActualizacion = ?, completada = ?, idUsuario = ?, prioridad = ?",
         [
           tarea.nombre,
@@ -44,7 +45,7 @@ class TareaDAO {
           fecha.prioridad,
         ]
       );
-
+      tarea.idTarea=resultado.insertId;
       return tarea;
     } catch (error) {
       console.log("Error al actualizar una tarea: ", error);
@@ -55,11 +56,15 @@ class TareaDAO {
   }
 
   static async eliminarTarea(idTarea) {
-    const conexionBD= new ConexionBD();
+    const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
-      await connection.query("DELETE FROM tarea WHERE idTarea = ?", [idTarea]);
+      const resultado = await connection.query(
+        "DELETE FROM tarea WHERE idTarea = ?",
+        [idTarea]
+      );
+      return resultado.affectedRows;
     } catch (error) {
       console.log("Error al eliminar una tarea: ", error);
       throw error;
@@ -69,7 +74,7 @@ class TareaDAO {
   }
 
   static async consultarTodasTareas() {
-    const conexionBD= new ConexionBD();
+    const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
@@ -84,11 +89,14 @@ class TareaDAO {
   }
 
   static async consultarTareaPorNombre(nombreTarea) {
-    const conexionBD= new ConexionBD();
+    const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
-      const [tarea] = await connection.query("SELECT * FROM tarea WHERE nombre = ?",[nombreTarea]);
+      const [tarea] = await connection.query(
+        "SELECT * FROM tarea WHERE nombre = ?",
+        [nombreTarea]
+      );
       return tarea[0];
     } catch (error) {
       console.log("Error al consultar una tarea por nombre: ", error);
@@ -99,11 +107,14 @@ class TareaDAO {
   }
 
   static async consultarTareaPorId(idTarea) {
-    const conexionBD= new ConexionBD();
+    const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
-      const [tarea] = await connection.query("SELECT * FROM tarea WHERE idTarea = ?",[idTarea]);
+      const [tarea] = await connection.query(
+        "SELECT * FROM tarea WHERE idTarea = ?",
+        [idTarea]
+      );
       return tarea[0];
     } catch (error) {
       console.log("Error al consultar una tarea por id: ", error);
@@ -112,7 +123,6 @@ class TareaDAO {
       connection.release();
     }
   }
-
 }
 
-module.exports=TareaDAO;
+module.exports = TareaDAO;
