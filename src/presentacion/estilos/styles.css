@@ -79,7 +79,7 @@ body {
   align-items: center;
 }
 
-.modal-content {
+.modalContent {
   background-color: #fff;
   padding: 20px;
   border: 1px solid #ddd;
@@ -114,7 +114,7 @@ button:hover {
   background-color: #0056b3;
 }
 
-.container_tarea {
+.containerTarea {
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
@@ -124,13 +124,13 @@ button:hover {
   gap: 15px;
 }
 
-.inputs_tarea {
+.inputsTarea {
   flex-grow: 1;
 }
 
-.titulo_tarea,
-.descripcion_tarea,
-.etiquetas_tarea,
+.tituloTarea,
+.descripcionTarea,
+.etiquetasTarea,
 input {
   width: 95%;
   padding: 10px;
@@ -139,12 +139,12 @@ input {
   margin-bottom: 10px;
 }
 
-.descripcion_tarea {
+.descripcionTarea {
   resize: vertical;
 }
 
-.campo_etiquetas,
-.campo_prioridad {
+.campoEtiquetas,
+.campoPrioridad {
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -174,29 +174,29 @@ input {
   background-color: #0056b3;
 }
 
-.campo_prioridad {
+.campoPrioridad {
   margin-top: 20px;
   text-align: center;
 }
 
-.prioridad_selector {
+.prioridadSelector {
   display: flex;
   justify-content: space-between;
   margin-top: 10px;
 }
 
-.prioridad_option {
+.prioridadOption {
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
 }
 
-.prioridad_option input[type="radio"] {
+.prioridadOption input[type="radio"] {
   display: none;
 }
 
-.prioridad_label {
+.prioridadLabel {
   display: inline-block;
   width: 40px;
   height: 40px;
@@ -210,7 +210,7 @@ input {
   transition: background-color 0.3s, border-color 0.3s;
 }
 
-.prioridad_option input[type="radio"]:checked + .prioridad_label {
+.prioridadOption input[type="radio"]:checked + .prioridadLabel {
   background-color: #007bff;
   border-color: #007bff;
   color: #fff;

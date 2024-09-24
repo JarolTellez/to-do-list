@@ -1,13 +1,22 @@
-const conexionBD = require("../config/conexionBD");
+const ConexionBD = require("../utils/conexionBD");
 
 class TareaDAO {
   static async agregarTarea(tarea) {
+    const conexionBD= new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
       const tareaAgregada = await connection.query(
         "INSERT INTO tarea (nombre,descripcion,fechaCreacion,ultimaActualizacion,completada,idUsuario,prioridad) VALUES(?,?,?,?,?,?,?)"
-      );
+      ,[
+        tarea.nombre,
+        tarea.descripcion,
+        tarea.fechaCreacion,
+        tarea.fechaUltimaActualizacion,
+        tarea.completada,
+        tarea.idUsuario,
+        tarea.prioridad,
+      ]);
       tarea.id = tareaAgregada.insertertId;
       return tarea;
     } catch (error) {
@@ -19,6 +28,7 @@ class TareaDAO {
   }
 
   static async actualizarTarea(tarea) {
+    const conexionBD= new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
@@ -45,6 +55,7 @@ class TareaDAO {
   }
 
   static async eliminarTarea(idTarea) {
+    const conexionBD= new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
@@ -58,6 +69,7 @@ class TareaDAO {
   }
 
   static async consultarTodasTareas() {
+    const conexionBD= new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
@@ -72,6 +84,7 @@ class TareaDAO {
   }
 
   static async consultarTareaPorNombre(nombreTarea) {
+    const conexionBD= new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
@@ -86,6 +99,7 @@ class TareaDAO {
   }
 
   static async consultarTareaPorId(idTarea) {
+    const conexionBD= new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
