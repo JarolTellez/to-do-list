@@ -1,32 +1,34 @@
-const botonAgregarTarea = document.querySelector("#agregar_tarea");
-const modal = document.querySelector('#miModal');
-const btnCancelarModal=document.querySelector(".cancelarModal");
+const tareasDAO = require("../datos/TareaDAO");
+const Tarea = require("../dominio/Tarea");
 
+exports.agregarTarea = async (req, res) => {
+  try {
+    const {
+      nombre,
+      descripcion,
+      fechaCreacion,
+      fechaUltimaActualizacion,
+      completada,
+      idUsuario,
+      prioridad,
+    } = req.body;
 
+    const tarea = new Tarea(
+      null,
+      nombre,
+      descripcion,
+      fechaCreacion,
+      fechaUltimaActualizacion,
+      completada,
+      idUsuario,
+      prioridad
+    );
+    const tareaAgregada = await tareasDAO.agregarTarea(tarea);
 
-
-
-const generarElementoTarea = () => {
- /* const contenedorTareas = document.getElementById("lista_tareas");
-  const ultimoAgregado = contenedorTareas.lastElementChild;
-
-  if (ultimoAgregado) {
-    const titulo = ultimoAgregado.querySelector(".titulo_tarea").value.trim();
-    if (titulo == "") {
-      return;
-    }
+    console.log("Tarea agregada:", tareaAgregada);
+    return res.status(201).json(tareaAgregada);
+  } catch (error) {
+    console.error("Error al agregar la tarea:", error);
+    res.status(500).json({ mensaje: "Error al agregar la tarea" });
   }
-
-  const taskTemplate = document.getElementById("template_tarea").content;
-  const newTask = document.importNode(taskTemplate, true);
-  contenedorTareas.appendChild(newTask);*/
-  modal.style.display = 'flex';
 };
-
-const cerrarModal=()=>{
-    modal.style.display = 'none';
-}
-
-
-btnCancelarModal.addEventListener("click",cerrarModal);
-botonAgregarTarea.addEventListener("click", generarElementoTarea);

@@ -39,8 +39,7 @@ exports.loginUsuario = async (req, res) => {
     return res.status(404).json({ mensaje: "Usuario no encontrado" });
   }
 
-  console.log("ContrasenBD: ", usuarioEncontrado.contrasena);
-  console.log("ContrasenaMandada: ", contrasena);
+
   const esValida = await bcrypt.compare(
     contrasena.trim(),
     usuarioEncontrado.contrasena
