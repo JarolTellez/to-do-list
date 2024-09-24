@@ -5,7 +5,6 @@ body {
   padding: 0;
   display: flex;
   justify-content: center;
-
   height: 100vh;
 }
 
@@ -13,15 +12,15 @@ body {
   display: flex;
   margin-top: 20px;
   flex-direction: column;
-  gap: 10px; 
+  gap: 10px;
 }
 
 .estadistica-item {
   background-color: #f8f9fa;
-  padding: 15px; 
-  border-radius: 8px; 
+  padding: 15px;
+  border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  text-align: center; 
+  text-align: center;
   height: 80px;
 }
 
@@ -32,15 +31,15 @@ body {
 
 .estadistica-item p:last-child {
   font-weight: bold;
-  font-size: 1.5em; 
+  font-size: 1.5em;
 }
 
-.estadisticasCompletadas{
-  box-shadow: 0 2px 5px rgba(3, 175, 40, 0.801);
+.estadisticasCompletadas {
+  box-shadow: 0 2px 5px rgba(3, 120, 175, 0.801);
 }
 
-.estadisticasPendientes{
-  box-shadow: 0 2px 5px rgba(231, 125, 4, 0.952);
+.estadisticasPendientes {
+  box-shadow: 0 2px 5px rgba(231, 38, 4, 0.952);
 }
 
 .container {
@@ -80,7 +79,7 @@ body {
   align-items: center;
 }
 
-.modal-content {
+.modalContent {
   background-color: #fff;
   padding: 20px;
   border: 1px solid #ddd;
@@ -115,7 +114,7 @@ button:hover {
   background-color: #0056b3;
 }
 
-.container_tarea {
+.containerTarea {
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
@@ -125,13 +124,13 @@ button:hover {
   gap: 15px;
 }
 
-.inputs_tarea {
+.inputsTarea {
   flex-grow: 1;
 }
 
-.titulo_tarea,
-.descripcion_tarea,
-.etiquetas_tarea,
+.tituloTarea,
+.descripcionTarea,
+.etiquetasTarea,
 input {
   width: 95%;
   padding: 10px;
@@ -140,12 +139,12 @@ input {
   margin-bottom: 10px;
 }
 
-.descripcion_tarea {
+.descripcionTarea {
   resize: vertical;
 }
 
-.campo_etiquetas,
-.campo_prioridad {
+.campoEtiquetas,
+.campoPrioridad {
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -175,29 +174,29 @@ input {
   background-color: #0056b3;
 }
 
-.campo_prioridad {
+.campoPrioridad {
   margin-top: 20px;
   text-align: center;
 }
 
-.prioridad_selector {
+.prioridadSelector {
   display: flex;
   justify-content: space-between;
   margin-top: 10px;
 }
 
-.prioridad_option {
+.prioridadOption {
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
 }
 
-.prioridad_option input[type="radio"] {
+.prioridadOption input[type="radio"] {
   display: none;
 }
 
-.prioridad_label {
+.prioridadLabel {
   display: inline-block;
   width: 40px;
   height: 40px;
@@ -211,7 +210,7 @@ input {
   transition: background-color 0.3s, border-color 0.3s;
 }
 
-.prioridad_option input[type="radio"]:checked + .prioridad_label {
+.prioridadOption input[type="radio"]:checked + .prioridadLabel {
   background-color: #007bff;
   border-color: #007bff;
   color: #fff;
