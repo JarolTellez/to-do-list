@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
 
       if (response.ok) {
+        sessionStorage.setItem("idUsuario", data.usuario.idUsuario);
         console.log("Login exitoso:", data);
         alert("Login exitoso!");
         window.location.href = "principal.html";
