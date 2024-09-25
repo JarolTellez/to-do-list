@@ -9,7 +9,7 @@ exports.agregarUsuario = async (req, res) => {
     const { nombreUsuario, correo, contrasena } = req.body;
     const existe = await usuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
     if (existe) {
-      return res.status(409).json({ mensaje: "El usuario ya existe" }); 
+      return res.status(409).json({ mensaje: "El usuario ya existe" });
     }
 
     const contrasenaEncriptada = await bcrypt.hash(contrasena, 10);
@@ -24,7 +24,11 @@ exports.agregarUsuario = async (req, res) => {
     return res.status(201).json(usuarioAgregado);
   } catch (error) {
     console.error("Error al agregar usuario:", error);
-    res.status(500).json({ mensaje: "Error al agregar el usuario" });
+    return res.status(500).json({
+      status: "error",
+      message: "Ocurrió un error al intentar registrar el usuario.",
+      error: error.message,
+    });
   }
 };
 
@@ -36,9 +40,11 @@ exports.loginUsuario = async (req, res) => {
   );
   console.log(usuarioEncontrado);
   if (!usuarioEncontrado) {
-    return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    return res.status(404).json({
+      status: "error",
+      message: "Usuario no encontrado.",
+    });
   }
-
 
   const esValida = await bcrypt.compare(
     contrasena.trim(),
