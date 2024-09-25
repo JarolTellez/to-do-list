@@ -5,11 +5,11 @@ class UsuarioDAO {
     const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
     try {
-      const [result] = await connection.query(
+      const [resultado] = await connection.query(
         "INSERT INTO usuario (nombreUsuario, correo, contrasena) VALUES (?, ?, ?)",
         [usuario.nombreUsuario, usuario.correo, usuario.contrasena]
       );
-      usuario.idUsuario = result.insertId;
+      usuario.idUsuario = resultado.insertId;
       return usuario;
     } catch (error) {
       console.error("Error al agregar usuario", error);
