@@ -1,39 +1,73 @@
 const etiquetaDAO = require("../datos/EtiquetaDAO");
-const entidadEtiqueta = require("../dominio/Etiqueta");
+const Etiqueta = require("../dominio/Etiqueta");
 
-async function agregarEtiqueta(etiqueta) {
+exports.agregarEtiqueta = async (req, res) => {
   try {
-    const nuevaEtiqueta = await etiquetaDAO.agregarEtiqueta(etiqueta);
-    console.log("Nueva etiqueta guardada: ", nuevaEtiqueta);
-  } catch (error) {
-    console.log("Error al guardar el usuario: ", error);
-  }
-}
+    const { nombreEtiqueta, descripcionEtiqueta, idUsuario } = req.body;
 
-async function consultarEtiquetas() {
-  try {
-    const etiquetas = await etiquetaDAO.consultarTodasEtiquetas();
-    console.log(etiquetas);
-  } catch (error) {
-    console.log("Error al consultar etiquetas: ", error);
-  }
-}
+    const etiquetaNeva = new Etiqueta(
+      null,
+      nombreEtiqueta,
+      descripcionEtiqueta,
+      idUsuario
+    );
 
-async function consultarEtiquetaNombre() {
-  try {
-    const etiqueta = await etiquetaDAO.consultarEtiquetaPorNombre(nombre);
-    console.log(etiqueta);
-  } catch (error) {
-    console.log("Error al consultar etiqueta por nombre: ", error);
-  }
-}
+    const existe = await etiquetaDAO.consultarEtiquetaPorNombre(nombreEtiqueta);
 
-async function consultarEtiquetaId() {
-    try {
-      const etiqueta = await etiquetaDAO.consultarEtiquetaPorId(id);
-      console.log(etiqueta);
-    } catch (error) {
-      console.log("Error al consultar etiqueta por id: ", error);
+    if (!existe) {
+      return res.status(409).json({
+        status: "error",
+        message: "La etiqueta ya existe.",
+      });
     }
+
+    const etiquetaGuardada = await etiquetaDAO.agregarEtiqueta(etiquetaNeva);
+
+    console.log("Se agrego la etiqueta correctamente: ", etiquetaGuardada);
+    return res.status(201).json({
+      status: "success",
+      message: "Se agrego exitosamente la etiqueta",
+      data: {
+        idEtiqueta: etiquetaGuardada.idEtiqueta,
+        nombre: etiquetaGuardada.nombreEtiqueta,
+      },
+    });
+  } catch (error) {
+    console.log("Error al agregar la etiqueta: ", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al agregar la etiqueta",
+      error: error.message,
+    });
   }
-consultarEtiquetaNombre();
+};
+
+exports.consultarEtiquetasPorIdUsuario = async (req, res) => {
+  const { idUsuario } = req.body;
+
+  try {
+    const etiquetas = await etiquetaDAO.consultarEtiquetaPorIdUsuario(
+      idUsuario
+    );
+
+    if (!etiquetas || etiquetas.length === 0) {
+      return res.status(200).json({
+        status: "success",
+        message: "No se encontraron etiquetas para este usuario.",
+        data:[]
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      data: etiquetas,
+    });
+  } catch (error) {
+    console.log("Error al consultar las etiquetas: ", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al consultar las etiquetas.",
+      error: error.message,
+    });
+  }
+};
