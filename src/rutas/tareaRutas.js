@@ -1,5 +1,6 @@
 const express = require('express');
 const tareaController = require('../logica/TareaController');
+const etiquetaController=require('../logica/EtiquetaController')
 //const { handleErrors } = require('../utils/appError');
 const router = express.Router();
 
@@ -8,6 +9,10 @@ const router = express.Router();
 router
   .route('/')
     .post(tareaController.agregarTarea)
+
+router
+.route('/etiquetas')
+.post(etiquetaController.consultarEtiquetasPorIdUsuario);
    
 
     
