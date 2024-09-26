@@ -2,8 +2,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const tituloTarea = document.querySelector(".tituloTarea");
   const descripcionTarea = document.querySelector(".descripcionTarea");
   const etiquetas = document.querySelector(".listaEtiquetas");
-  const inputEtiqueta = document.querySelector("#etiquetas");
+  const inputEtiquetas = document.querySelector("#etiquetas");
   const datalist = document.querySelector("#listaEtiquetas");
+  const labelMensajeEtiqueta = document.querySelector("#labelMensajeEtiqueta");
+
+  const mensajeNuevaEtiqueta = document.getElementById("mensajeNuevaEtiqueta");
 
   const btnAgregarTarea = document.querySelector(".agregarModal");
 
@@ -12,6 +15,28 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   window.addEventListener("load", cargarEtiquetas);
+
+ 
+    inputEtiquetas.addEventListener("input", function (event) {
+      const input = event.target;
+      const etiquetas = input.value.split(" ").filter(Boolean);
+      const mensajeNuevaEtiqueta = document.getElementById(
+        "mensajeNuevaEtiqueta"
+      );
+
+      mensajeNuevaEtiqueta.innerText = "";
+
+      etiquetas.forEach((etiqueta) => {
+        const opciones = [...document.getElementById("listaEtiquetas").options];
+        const existe = opciones.some(
+          (option) => option.value.toLowerCase() === etiqueta.toLowerCase()
+        );
+
+        if (!existe) {
+          mensajeNuevaEtiqueta.innerText += `La etiqueta "${etiqueta}" no existe y se va a crear. `;
+        }
+      });
+    });
 
   async function agregarTarea() {
     const prioridad = document.querySelector('input[name="prioridad"]:checked');
@@ -80,6 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
       result.data.forEach((etiqueta) => {
         const option = document.createElement("option");
         option.value = etiqueta.nombre;
+        option.dataset.id = etiqueta.idEtiqueta;
         datalist.appendChild(option);
       });
     } catch (error) {

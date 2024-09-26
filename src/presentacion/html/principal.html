@@ -30,8 +30,6 @@
         <p id="pendientes">5</p>
       </div>
     </div>
-    
-    
 
     <div id="miModal" class="modal">
       <div class="modalContent">
@@ -52,9 +50,11 @@
               placeholder="Buscar o agregar etiqueta"
               list="listaEtiquetas"
             />
-            <datalist id="listaEtiquetas">
-            
-            </datalist>
+            <datalist id="listaEtiquetas"></datalist>
+            <div
+              id="mensajeNuevaEtiqueta"
+              style="color: red; margin-top: 10px"
+            ></div>
           </div>
 
           <div class="campoPrioridad">
@@ -74,7 +74,7 @@
                 <input type="radio" name="prioridad" value="3" />
                 <span class="prioridadLabel">3</span>
               </label>
-              
+
               <label class="prioridadOption">
                 <input type="radio" name="prioridad" value="4" />
                 <span class="prioridadLabel">4</span>
@@ -84,7 +84,6 @@
                 <input type="radio" name="prioridad" value="5" />
                 <span class="prioridadLabel">5</span>
               </label>
-             
             </div>
           </div>
 
@@ -95,11 +94,8 @@
         </div>
       </div>
     </div>
- 
+
     <script src="../javascript/mostrarElementosPrincipal.js"></script>
     <script src="../javascript/tareas.js"></script>
-   
-  
-
   </body>
 </html>
