@@ -115,6 +115,7 @@ class EtiquetaDAO {
         [idUsuario]
       );
       return etiquetas;
+      
     } catch (error) {
       console.error("Error al consultar las etiquetas por idUsuario: ", error);
       throw new Error(`Error al consultar las etiquetas por idUsuario:  ${error}`);
