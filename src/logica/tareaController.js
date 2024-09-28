@@ -28,9 +28,9 @@ exports.agregarTarea = async (req, res) => {
     console.log("Tarea agregada:", tareaAgregada);
     return res.status(201).json({
       status: "success",
-      message: `Tarea agregada: ${tarea}`,
+      message: `Tarea agregada: ${tareaAgregada}`,
       data: {
-        idTarea: tareaAgregada.id, 
+        idTarea: tareaAgregada.idTarea, 
         nombre: tareaAgregada.nombre,
       },
     });

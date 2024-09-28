@@ -1,6 +1,6 @@
 class Tarea{
     constructor(idTarea=null,nombre,descripcion,fechaCreacion=new Date(),fechaUltimaActualizacion=new Date(),completada=false,idUsuario,prioridad=null){
-        this.idTarea=id;
+        this.idTarea=idTarea;
         this.nombre=nombre;
         this.descripcion=descripcion;
         this.fechaCreacion=fechaCreacion;

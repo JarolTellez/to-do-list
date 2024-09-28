@@ -6,7 +6,7 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      const tareaAgregada = await connection.query(
+      const [tareaAgregada] = await connection.query(
         "INSERT INTO tarea (nombre,descripcion,fechaCreacion,ultimaActualizacion,completada,idUsuario,prioridad) VALUES(?,?,?,?,?,?,?)",
         [
           tarea.nombre,
@@ -18,7 +18,8 @@ class TareaDAO {
           tarea.prioridad,
         ]
       );
-      tarea.id = tareaAgregada.insertertId;
+      tarea.idTarea = tareaAgregada.insertId;
+    
       return tarea;
     } catch (error) {
       console.log("Error al agregar una tarea: ", error);
