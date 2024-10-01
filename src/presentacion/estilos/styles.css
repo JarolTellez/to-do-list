@@ -143,7 +143,97 @@ input {
   resize: vertical;
 }
 
-.campoEtiquetas,
+/*----------------------------------------------------Campo de etiquetas------------------------------------------------------------*/
+/* Contenedor del campo de etiquetas */
+#contenedorInputEtiquetas {
+  position: relative;
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column; /*Cambie a columna para permitir el scroll */
+}
+
+/* Lista de etiquetas seleccionadas */
+#listaEtiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 100px; /* Limitar la altura máxima para las etiquetas */
+  overflow-y: auto;
+}
+
+#listaEtiquetas li {
+  background-color: #007bff;
+  color: white;
+  padding: 5px 10px;
+  margin: 3px;
+  border-radius: 3px;
+  font-size: 0.9em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px; /* Limitar el ancho de las etiquetas */
+}
+
+/* Estilo del campo de entrada de etiquetas */
+#contenedorInput {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  padding: 5px;
+  font-size: 1em;
+  margin: 3px;
+}
+
+/* Estilos para la lista desplegable de sugerencias */
+#consultadas {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  max-height: 150px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: none;
+}
+
+#consultadas li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+#consultadas li:hover {
+  background-color: #f0f0f0;
+}
+
+#consultadas.active {
+  display: block;
+}
+
+.btnEliminarEtiqueta{
+  position: relative;
+  top:-6px;
+  left:4px;
+  padding: 0px;
+  cursor: pointer;
+  color: rgba(100, 15, 4, 0.979);
+  font-weight: bold;
+  font-size: 17px;
+}
+
+
+
 .campoPrioridad {
   display: flex;
   flex-direction: column;
@@ -215,3 +305,4 @@ input {
   border-color: #007bff;
   color: #fff;
 }
+
