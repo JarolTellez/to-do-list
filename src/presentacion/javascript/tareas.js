@@ -98,8 +98,35 @@ document.addEventListener("DOMContentLoaded", function () {
         li.setAttribute("data-id", etiqueta.idEtiqueta);
       }
       li.textContent = etiqueta.nombre;
+
+      const botonEliminar = document.createElement("span");
+      botonEliminar.textContent = " x";
+      botonEliminar.style.cursor = "pointer";
+      botonEliminar.style.color = "red";
+      botonEliminar.style.marginLeft = "10px";
+
+      botonEliminar.addEventListener("click", () => {
+        const nombreEtiqueta = li.textContent.split(" ");
+        eliminar(nombreEtiqueta[0].trim());
+        li.remove();
+      });
+
+      li.appendChild(botonEliminar);
+
       listaEtiquetas.appendChild(li);
     });
+  }
+
+  function eliminar(nombre) {
+    console.log(nombre);
+
+    let indice = etiquetasSeleccionadas.findIndex(
+      (etiqueta) => etiqueta.nombre == nombre
+    );
+
+    if (indice !== -1) {
+      etiquetasSeleccionadas.splice(indice, 1);
+    }
   }
 
   // Función para mostrar las sugerencias
@@ -157,11 +184,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (seleccionada) {
       return false;
     } else if (typeof etiqueta === "object") {
-      return etiqueta ;
+      return etiqueta;
     }
 
-   return etiquetaRegistrada ? etiquetaRegistrada : {nombre:etiqueta};
-    
+    return etiquetaRegistrada ? etiquetaRegistrada : { nombre: etiqueta };
   }
 
   // Evento para capturar el texto que ingresa el usuario
@@ -174,12 +200,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Evento para manejar cuando el usuario presiona la barra espaciadora
+  // Evento para manejar cuando el usuario haga enter o de click
   inputEtiqueta.addEventListener("keydown", (e) => {
-    if (e.key === " " || e.key==="Enter") {
+    if (e.key === " " || e.key === "Enter") {
       const query = inputEtiqueta.value.trim();
       const etiquetaEnviada = buscarCoincidencias(query);
-      console.log("etiqueta:",etiquetaEnviada);
+      console.log("etiqueta:", etiquetaEnviada);
       if (etiquetaEnviada) {
         agregarEtiquetaInput(etiquetaEnviada);
       }
