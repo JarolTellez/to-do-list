@@ -101,9 +101,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const botonEliminar = document.createElement("span");
       botonEliminar.textContent = " x";
-      botonEliminar.style.cursor = "pointer";
-      botonEliminar.style.color = "red";
-      botonEliminar.style.marginLeft = "10px";
+      botonEliminar.className="btnEliminarEtiqueta"
+    
 
       botonEliminar.addEventListener("click", () => {
         const nombreEtiqueta = li.textContent.split(" ");
