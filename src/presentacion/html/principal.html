@@ -41,20 +41,15 @@
               placeholder="Descripción"
             ></textarea>
           </div>
-          <div class="campoEtiquetas">
-            <label for="etiquetas">Etiquetas:</label>
+
+          <div id="contenedorInputEtiquetas">
+            <ul id="listaEtiquetas"></ul>
             <input
               type="text"
-              id="etiquetas"
-              class="etiquetasTarea"
-              placeholder="Buscar o agregar etiqueta"
-              list="listaEtiquetas"
+              id="contenedorInput"
+              placeholder="Escribe para buscar o agregar etiquetas"
             />
-            <datalist id="listaEtiquetas"></datalist>
-            <div
-              id="mensajeNuevaEtiqueta"
-              style="color: red; margin-top: 10px"
-            ></div>
+            <ul id="consultadas" class="dropdown"></ul>
           </div>
 
           <div class="campoPrioridad">
