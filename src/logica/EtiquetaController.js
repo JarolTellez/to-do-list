@@ -1,46 +1,60 @@
 const etiquetaDAO = require("../datos/EtiquetaDAO");
+const tareaEtiquetaDAO = require("../datos/TareaEtiquetaDAO");
 const Etiqueta = require("../dominio/Etiqueta");
+const TareaEtiqueta = require("../dominio/TareaEtiqueta");
 
-exports.agregarEtiqueta = async (req, res) => {
-  try {
-    const { nombreEtiqueta, descripcionEtiqueta, idUsuario } = req.body;
+exports.agregarEtiqueta = async (etiquetas, idTarea, idUsuario) => {
+  for (const etiqueta of etiquetas) {
+    if (!etiqueta.hasOwnProperty("idEtiqueta")) {
+      const etiquetaNueva = new Etiqueta(null, etiqueta.nombre, idUsuario);
+      const nuevaEtiqueta = agregarEtiqueta(etiquetaNueva);
 
-    const etiquetaNeva = new Etiqueta(
-      null,
-      nombreEtiqueta,
-      descripcionEtiqueta,
-      idUsuario
-    );
+      const tareaEtiqueta = new TareaEtiqueta(
+        null,
+        idTarea,
+        nuevaEtiqueta.idEtiqueta
+      );
 
-    const existe = await etiquetaDAO.consultarEtiquetaPorNombre(nombreEtiqueta);
-
-    if (!existe) {
-      return res.status(409).json({
-        status: "error",
-        message: "La etiqueta ya existe.",
-      });
+      agregarTareaEtiqueta(tareaEtiqueta);
+    } else {
+      const tareaEtiqueta = new TareaEtiqueta(
+        null,
+        idTarea,
+        etiqueta.idEtiqueta
+      );
+      agregarTareaEtiqueta(tareaEtiqueta);
     }
-
-    const etiquetaGuardada = await etiquetaDAO.agregarEtiqueta(etiquetaNeva);
-
-    console.log("Se agrego la etiqueta correctamente: ", etiquetaGuardada);
-    return res.status(201).json({
-      status: "success",
-      message: "Se agrego exitosamente la etiqueta",
-      data: {
-        idEtiqueta: etiquetaGuardada.idEtiqueta,
-        nombre: etiquetaGuardada.nombreEtiqueta,
-      },
-    });
-  } catch (error) {
-    console.log("Error al agregar la etiqueta: ", error);
-    return res.status(500).json({
-      status: "error",
-      message: "Error al agregar la etiqueta",
-      error: error.message,
-    });
   }
 };
+
+async function agregarEtiqueta(etiqueta) {
+  try {
+    const existe = await etiquetaDAO.consultarEtiquetaPorNombre(
+      etiqueta.nombreEtiqueta
+    );
+    if (!existe) {
+      return;
+    }
+
+    const etiquetaGuardada = await etiquetaDAO.agregarEtiqueta(etiqueta);
+    console.log("Se agrego la etiqueta correctamente: ", etiquetaGuardada);
+    return etiquetaGuardada;
+  } catch (error) {
+    console.log("Error al agregar la etiqueta: ", error);
+  }
+}
+
+async function agregarTareaEtiqueta(tareaEtiqueta) {
+  try {
+    const TareaEtiquetaGuardada = await tareaEtiquetaDAO.agregarTareaEtiqueta(
+      tareaEtiqueta
+    );
+    console.log("Se agrego la etiqueta correctamente: ", TareaEtiquetaGuardada);
+    return TareaEtiquetaGuardada;
+  } catch (error) {
+    console.log("Error al agregar la TareaEtiqueta: ", error);
+  }
+}
 
 exports.consultarEtiquetasPorIdUsuario = async (req, res) => {
   const { idUsuario } = req.body;
@@ -54,7 +68,7 @@ exports.consultarEtiquetasPorIdUsuario = async (req, res) => {
       return res.status(200).json({
         status: "success",
         message: "No se encontraron etiquetas para este usuario.",
-        data:[]
+        data: [],
       });
     }
 
