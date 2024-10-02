@@ -5,3 +5,5 @@ class TareaEtiqueta{
         this.idEtiqueta = idEtiqueta;
       }
 }
+
+module.exports= TareaEtiqueta;

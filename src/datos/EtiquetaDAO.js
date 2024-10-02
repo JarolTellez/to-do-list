@@ -3,13 +3,12 @@ const ConexionBD = require("../utils/conexionBD");
 class EtiquetaDAO {
   static async agregarEtiqueta(etiqueta) {
     const conexionBD=new ConexionBD();
-
     const connection = await conexionBD.conectar();
 
     try {
       const [result] = await connection.query(
-        "INSERT INTO etiqueta (nombre,descripcion,idUsuario) VALUES(?,?,?)",
-        [etiqueta.nombre, etiqueta.descripcion,etiqueta.idUsuario]
+        "INSERT INTO etiqueta (nombre,idUsuario) VALUES(?,?)",
+        [etiqueta.nombreEtiqueta,etiqueta.idUsuario]
       );
       etiqueta.idEtiqueta = result.insertId;
       return etiqueta;
@@ -22,13 +21,14 @@ class EtiquetaDAO {
   }
 
   static async actualizarEtiqueta(etiqueta) {
+    
     const conexionBD=new ConexionBD();
 
     const connection = await conexionBD.conectar();
     try {
       await connection.query(
-        "UPDATE etiqueta SET nombre = ?, descripcion = ?",
-        [etiqueta.nombre, etiqueta.descripcion]
+        "UPDATE etiqueta SET nombre = ?",
+        [etiqueta.nombre]
       );
       return etiqueta;
     } catch (error) {
@@ -40,6 +40,7 @@ class EtiquetaDAO {
   }
 
   static async eliminarEtiqueta(idEtiqueta) {
+    const conexionBD=new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
