@@ -1,5 +1,6 @@
 const tareasDAO = require("../datos/TareaDAO");
 const Tarea = require("../dominio/Tarea");
+const etiquetaController=require('./EtiquetaController');
 
 exports.agregarTarea = async (req, res) => {
   try {
@@ -11,6 +12,7 @@ exports.agregarTarea = async (req, res) => {
       completada,
       idUsuario,
       prioridad,
+      etiquetas
     } = req.body;
 
     const tarea = new Tarea(
@@ -24,7 +26,7 @@ exports.agregarTarea = async (req, res) => {
       prioridad
     );
     const tareaAgregada = await tareasDAO.agregarTarea(tarea);
-
+    etiquetaController.agregarEtiqueta(etiquetas,tareaAgregada.idTarea,idUsuario);
     console.log("Tarea agregada:", tareaAgregada);
     return res.status(201).json({
       status: "success",
@@ -43,6 +45,8 @@ exports.agregarTarea = async (req, res) => {
     });
   }
 };
+
+
 
 exports.eliminarTarea = async (req, res) => {
   try {

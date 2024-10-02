@@ -1,11 +1,12 @@
-const conexionBD = require("../config/conexionBD");
+const ConexionBD = require("../utils/conexionBD");
 
 class TareaEtiquetaDAO {
   static async agregarTareaEtiqueta(tareaEtiqueta) {
+    const  conexionBD=new ConexionBD();
     const connection = await conexionBD.conectar();
     try {
       const nuevaTareaEtiqueta = await connection.query(
-        "INSERT INTO tareaEtiqueta (idTarea,idEtiqueta) VALUES (?,?)",
+        "INSERT INTO tareaetiqueta (idTarea,idEtiqueta) VALUES (?,?)",
         [tareaEtiqueta.idTarea, tareaEtiqueta.idEtiqueta]
       );
       tareaEtiqueta.idTareaEtiqueta = nuevaTareaEtiqueta.insertId;
@@ -19,11 +20,12 @@ class TareaEtiquetaDAO {
   }
 
   static async actualizarTareaEtiqueta(tareaEtiqueta) {
+    const conexionBD=new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
       await connection.query(
-        "UPDATE tareaEtiqueta SET idTarea = ?, idEtiqueta = ? WHERE idTareaEtiqueta = ?",
+        "UPDATE tareaetiqueta SET idTarea = ?, idEtiqueta = ? WHERE idTareaEtiqueta = ?",
         [tareaEtiqueta.idTarea, tareaEtiqueta.idEtiqueta,tareaEtiqueta.idTareaEtiqueta]
       );
 
@@ -37,11 +39,12 @@ class TareaEtiquetaDAO {
   }
 
   static async eliminarTareaEtiqueta(idTareaEtiqueta) {
+    const conexionBD=new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
         const [resultado] = await connection.query(
-            "DELETE FROM tareaEtiqueta WHERE idTareaEtiqueta = ? ",
+            "DELETE FROM tareaetiqueta WHERE idTareaEtiqueta = ? ",
             [idTareaEtiqueta]
           );
           return resultado.affectedRows;
@@ -54,11 +57,12 @@ class TareaEtiquetaDAO {
   }
 
   static async consultarTodasTareasEtiquetas() {
+    const conexionBD=new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
       const [tareasEtiquetas] = await connection.query(
-        "SELECT * FROM tareaEtiqueta"
+        "SELECT * FROM tareaetiqueta"
       );
       return tareasEtiquetas;
     } catch (error) {
@@ -70,11 +74,12 @@ class TareaEtiquetaDAO {
   }
 
   static async consultarTareaEtiquetaPorIdTarea(idTarea) {
+    const conexionBD=new ConexionBD();
     const connection = await conexionBD.conectar();
 
     try {
       const [tareasEtiquetas] = await connection.query(
-        "SELECT * FROM tareaEtiqueta WHERE idTarea = ?",
+        "SELECT * FROM tareaetiqueta WHERE idTarea = ?",
         [idTarea]
       );
       return tareasEtiquetas;
