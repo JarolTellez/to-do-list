@@ -7,22 +7,23 @@ exports.agregarEtiqueta = async (etiquetas, idTarea, idUsuario) => {
   for (const etiqueta of etiquetas) {
     if (!etiqueta.hasOwnProperty("idEtiqueta")) {
       const etiquetaNueva = new Etiqueta(null, etiqueta.nombre, idUsuario);
-      const nuevaEtiqueta = agregarEtiqueta(etiquetaNueva);
-
+      const nuevaEtiqueta = await agregarEtiqueta(etiquetaNueva);
+      
+console.log("NUEVA ETIQUETAA: ",nuevaEtiqueta);
       const tareaEtiqueta = new TareaEtiqueta(
         null,
         idTarea,
         nuevaEtiqueta.idEtiqueta
       );
 
-      agregarTareaEtiqueta(tareaEtiqueta);
+      await agregarTareaEtiqueta(tareaEtiqueta);
     } else {
       const tareaEtiqueta = new TareaEtiqueta(
         null,
         idTarea,
         etiqueta.idEtiqueta
       );
-      agregarTareaEtiqueta(tareaEtiqueta);
+     await agregarTareaEtiqueta(tareaEtiqueta);
     }
   }
 };
@@ -32,8 +33,8 @@ async function agregarEtiqueta(etiqueta) {
     const existe = await etiquetaDAO.consultarEtiquetaPorNombre(
       etiqueta.nombreEtiqueta
     );
-    if (!existe) {
-      return;
+    if (existe) {
+      return null;
     }
 
     const etiquetaGuardada = await etiquetaDAO.agregarEtiqueta(etiqueta);
@@ -49,7 +50,8 @@ async function agregarTareaEtiqueta(tareaEtiqueta) {
     const TareaEtiquetaGuardada = await tareaEtiquetaDAO.agregarTareaEtiqueta(
       tareaEtiqueta
     );
-    console.log("Se agrego la etiqueta correctamente: ", TareaEtiquetaGuardada);
+    
+    console.log("Se agrego la Tareaetiqueta correctamente: ", TareaEtiquetaGuardada);
     return TareaEtiquetaGuardada;
   } catch (error) {
     console.log("Error al agregar la TareaEtiqueta: ", error);

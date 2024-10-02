@@ -5,11 +5,12 @@ class TareaEtiquetaDAO {
     const  conexionBD=new ConexionBD();
     const connection = await conexionBD.conectar();
     try {
-      const nuevaTareaEtiqueta = await connection.query(
+      const [nuevaTareaEtiqueta] = await connection.query(
         "INSERT INTO tareaetiqueta (idTarea,idEtiqueta) VALUES (?,?)",
         [tareaEtiqueta.idTarea, tareaEtiqueta.idEtiqueta]
       );
       tareaEtiqueta.idTareaEtiqueta = nuevaTareaEtiqueta.insertId;
+     
       return tareaEtiqueta;
     } catch (error) {
       console.log("Error al agregar tarea etiqueta: ", error);
