@@ -70,14 +70,14 @@ class EtiquetaDAO {
     }
   }
 
-  static async consultarEtiquetaPorNombre(nombreEtiqueta) {
+  static async consultarEtiquetaPorNombreIdUsuario(nombreEtiqueta,idUsuario) {
     const conexionBD=new ConexionBD();
 
     const connection = await conexionBD.conectar();
     try {
       const [etiqueta] = await connection.query(
-        "SELECT * FROM etiqueta WHERE nombre = ?",
-        [nombreEtiqueta]
+        "SELECT * FROM etiqueta WHERE nombre = ? AND idUsuario = ?",
+        [nombreEtiqueta,idUsuario]
       );
       return etiqueta[0];
     } catch (error) {

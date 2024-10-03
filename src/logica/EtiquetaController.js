@@ -3,13 +3,16 @@ const tareaEtiquetaDAO = require("../datos/TareaEtiquetaDAO");
 const Etiqueta = require("../dominio/Etiqueta");
 const TareaEtiqueta = require("../dominio/TareaEtiqueta");
 
-exports.agregarEtiqueta = async (etiquetas, idTarea, idUsuario) => {
+//Agrega a etiquetas las que no estan registradas y guarda en tareaEtiqueta es decir la tabla donde se indica a que tarea corresponden las etiquetas
+exports.agregarEtiquetas = async (etiquetas, idTarea, idUsuario) => {
+  try{
   for (const etiqueta of etiquetas) {
+    //Verifica que la etiqueta no sea de las registradas es decir que no tenga la propiedad "idEtiqueta" para guardarla y despues ya 
+    //guardada enviar guardar a tarea etiqueta ya con el id de registro de la etiqueta
     if (!etiqueta.hasOwnProperty("idEtiqueta")) {
       const etiquetaNueva = new Etiqueta(null, etiqueta.nombre, idUsuario);
       const nuevaEtiqueta = await agregarEtiqueta(etiquetaNueva);
-      
-console.log("NUEVA ETIQUETAA: ",nuevaEtiqueta);
+      if(nuevaEtiqueta){
       const tareaEtiqueta = new TareaEtiqueta(
         null,
         idTarea,
@@ -17,6 +20,11 @@ console.log("NUEVA ETIQUETAA: ",nuevaEtiqueta);
       );
 
       await agregarTareaEtiqueta(tareaEtiqueta);
+    }else{
+     const existente= await etiquetaDAO.consultarEtiquetaPorNombreIdUsuario(etiqueta.nombre,etiqueta.idUsuario);
+     await agregarTareaEtiqueta(existente);
+    }
+      //Si es de las que ya esta guardadas en la base de datos solo guarda en tarea etiqueta
     } else {
       const tareaEtiqueta = new TareaEtiqueta(
         null,
@@ -26,12 +34,16 @@ console.log("NUEVA ETIQUETAA: ",nuevaEtiqueta);
      await agregarTareaEtiqueta(tareaEtiqueta);
     }
   }
+  }catch (error) {
+    console.error("Error en agregarEtiquetas: ", error);
+    throw error; 
+  }
 };
 
 async function agregarEtiqueta(etiqueta) {
   try {
-    const existe = await etiquetaDAO.consultarEtiquetaPorNombre(
-      etiqueta.nombreEtiqueta
+    const existe = await etiquetaDAO.consultarEtiquetaPorNombreIdUsuario(
+      etiqueta.nombreEtiqueta,etiqueta.idUsuario
     );
     if (existe) {
       return null;
@@ -87,3 +99,12 @@ exports.consultarEtiquetasPorIdUsuario = async (req, res) => {
     });
   }
 };
+
+async function obtenerEtiquetaPorNombre(nombreEtiqueta) {
+  try {
+    return await etiquetaDAO.consultarEtiquetaPorNombre(nombreEtiqueta);
+  } catch (error) {
+    console.error("Error al obtener la etiqueta por nombre: ", error);
+    throw error;
+  }
+}

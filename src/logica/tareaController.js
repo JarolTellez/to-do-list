@@ -26,7 +26,9 @@ exports.agregarTarea = async (req, res) => {
       prioridad
     );
     const tareaAgregada = await tareasDAO.agregarTarea(tarea);
-    etiquetaController.agregarEtiqueta(etiquetas,tareaAgregada.idTarea,idUsuario);
+    if(etiquetas.length>0){
+    etiquetaController.agregarEtiquetas(etiquetas,tareaAgregada.idTarea,idUsuario);
+    }
     console.log("Tarea agregada:", tareaAgregada);
     return res.status(201).json({
       status: "success",

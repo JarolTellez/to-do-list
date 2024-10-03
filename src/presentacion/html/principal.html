@@ -30,12 +30,12 @@
         <p id="pendientes">5</p>
       </div>
     </div>
-
+<form>
     <div id="miModal" class="modal">
       <div class="modalContent">
         <div class="containerTarea">
           <div class="inputsTarea">
-            <input type="text" class="tituloTarea" placeholder="Título" />
+            <input type="text" class="tituloTarea" placeholder="Título" required/>
             <textarea
               class="descripcionTarea"
               placeholder="Descripción"
@@ -52,9 +52,9 @@
             <ul id="consultadas" class="dropdown"></ul>
           </div>
 
-          <div class="campoPrioridad">
+          <div class="campoPrioridad" >
             <label>Nivel de Prioridad:</label>
-            <div class="prioridadSelector">
+            <div class="prioridadSelector" >
               <label class="prioridadOption">
                 <input type="radio" name="prioridad" value="1" />
                 <span class="prioridadLabel">1</span>
@@ -83,17 +83,18 @@
           </div>
 
           <div class="botonesModal">
-            <button class="agregarModal">Agregar</button>
-            <button class="cancelarModal">Cancelar</button>
+            <button type="submit" class="agregarModal">Agregar</button>
+            <button type="button" class="cancelarModal">Cancelar</button>
           </div>
         </div>
       </div>
     </div>
-
+  </form>
     
     <script type="module" src="../eventos/tareaEventos.js"></script>
+    <script type="module" src="../eventos/etiquetaEventos.js"></script>
     <script type="module" src="../servicios/etiquetas.js"></script>
     <script src="../servicios/mostrarElementosPrincipal.js"></script>
-    <script type="module" src="../main.js"></script>
+    
   </body>
 </html>
