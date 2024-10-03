@@ -15,5 +15,5 @@ const cerrarModal=()=>{
 }
 
 
-btnCancelarModal.addEventListener("click",cerrarModal);
+//btnCancelarModal.addEventListener("click",cerrarModal);
 botonAgregarTarea.addEventListener("click", generarElementoTarea);

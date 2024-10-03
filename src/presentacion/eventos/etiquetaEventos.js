@@ -3,11 +3,13 @@ import {
   etiquetasSeleccionadas,
 } from "../componentes/etiquetaRender.js";
 
-export function configurarEventos(
-  inputEtiqueta,
-  listaEtiquetas,
-  contenedorConsultadas
-) {
+document.addEventListener("DOMContentLoaded", function () {
+  const inputEtiqueta = document.getElementById("contenedorInput");
+  const listaEtiquetas = document.getElementById("listaEtiquetas");
+  const contenedorConsultadas = document.getElementById("consultadas");
+  configurarEventos();
+
+ function configurarEventos() {
   inputEtiqueta.addEventListener("input", async (e) => {
     const query = e.target.value.trim();
     if (query) {
@@ -37,3 +39,4 @@ export function configurarEventos(
     }
   });
 }
+});

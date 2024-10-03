@@ -1,12 +1,11 @@
-import { cargarEtiquetas } from '../servicios/etiquetas.js';
+import { cargarEtiquetas } from "../servicios/etiquetas.js";
 
 export const etiquetasSeleccionadas = []; // Almacenar etiquetas que se van seleccionando
 const etiquetas = []; // Para almacenar las etiquetas consultadas
 
 export const componentesEtiquetas = {
-  
   renderizarEtiquetas(listaEtiquetas) {
-    listaEtiquetas.innerHTML = ""; 
+    listaEtiquetas.innerHTML = "";
     etiquetasSeleccionadas.forEach((etiqueta) => {
       const li = document.createElement("li");
       if (etiqueta.idEtiqueta) {
@@ -41,15 +40,19 @@ export const componentesEtiquetas = {
     }
   },
 
-  // Método para mostrar las etiquetas del usuario guardadas en la base de datos 
-  async mostrarEtiquetasConsultadas(query, contenedorConsultadas,inputEtiqueta) {
+  // Método para mostrar las etiquetas del usuario guardadas en la base de datos
+  async mostrarEtiquetasConsultadas(
+    query,
+    contenedorConsultadas,
+    inputEtiqueta
+  ) {
     contenedorConsultadas.innerHTML = ""; // Limpiar sugerencias previas
     if (query) {
       const etiquetasConsultadas = await cargarEtiquetas(); // Cargar etiquetas dinámicamente
       etiquetas.length = 0;
       etiquetasConsultadas.forEach((el) => etiquetas.push(el));
 
-      // Filtra para mostrar las que coincidan y que no han sido agregadas previamente en el input
+      // Filtra para mostrar las que coincidan con el query(ingreso el usuario) y que no han sido agregadas previamente en el input
       const etiquetasFiltradas = etiquetasConsultadas.filter(
         (etiqueta) =>
           etiqueta.nombre.toLowerCase().includes(query.toLowerCase()) &&
@@ -62,7 +65,12 @@ export const componentesEtiquetas = {
           li.textContent = etiqueta.nombre;
           li.setAttribute("data-id", etiqueta.idEtiqueta);
           li.addEventListener("click", () => {
-            this.agregarEtiquetaInput(etiqueta, listaEtiquetas, contenedorConsultadas, inputEtiqueta);
+            this.agregarEtiquetaInput(
+              etiqueta,
+              listaEtiquetas,
+              contenedorConsultadas,
+              inputEtiqueta
+            );
           });
           contenedorConsultadas.appendChild(li);
         });
@@ -77,7 +85,12 @@ export const componentesEtiquetas = {
   },
 
   // Método para agregar una etiqueta que esta en el input
-  agregarEtiquetaInput(etiqueta, listaEtiquetas, contenedorConsultadas, inputEtiqueta) {
+  agregarEtiquetaInput(
+    etiqueta,
+    listaEtiquetas,
+    contenedorConsultadas,
+    inputEtiqueta
+  ) {
     etiquetasSeleccionadas.push(etiqueta);
     this.renderizarEtiquetas(listaEtiquetas);
     inputEtiqueta.value = ""; // Limpiar el input
