@@ -124,6 +124,24 @@ class TareaDAO {
       connection.release();
     }
   }
-}
 
+
+static async consultarTareaPorIdUsuario(idUsuario) {
+  const conexionBD = new ConexionBD();
+  const connection = await conexionBD.conectar();
+
+  try {
+    const [tareas] = await connection.query(
+      "SELECT * FROM tarea WHERE idUsuario = ?",
+      [idUsuario]
+    );
+    return tareas;
+  } catch (error) {
+    console.log("Error al consultar una tarea por id: ", error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+}
 module.exports = TareaDAO;

@@ -1,6 +1,6 @@
 const tareasDAO = require("../datos/TareaDAO");
 const Tarea = require("../dominio/Tarea");
-const etiquetaController=require('./EtiquetaController');
+const etiquetaController = require("./EtiquetaController");
 
 exports.agregarTarea = async (req, res) => {
   try {
@@ -12,7 +12,7 @@ exports.agregarTarea = async (req, res) => {
       completada,
       idUsuario,
       prioridad,
-      etiquetas
+      etiquetas,
     } = req.body;
 
     const tarea = new Tarea(
@@ -26,15 +26,19 @@ exports.agregarTarea = async (req, res) => {
       prioridad
     );
     const tareaAgregada = await tareasDAO.agregarTarea(tarea);
-    if(etiquetas.length>0){
-    etiquetaController.agregarEtiquetas(etiquetas,tareaAgregada.idTarea,idUsuario);
+    if (etiquetas.length > 0) {
+      etiquetaController.agregarEtiquetas(
+        etiquetas,
+        tareaAgregada.idTarea,
+        idUsuario
+      );
     }
     console.log("Tarea agregada:", tareaAgregada);
     return res.status(201).json({
       status: "success",
       message: `Tarea agregada: ${tareaAgregada}`,
       data: {
-        idTarea: tareaAgregada.idTarea, 
+        idTarea: tareaAgregada.idTarea,
         nombre: tareaAgregada.nombre,
       },
     });
@@ -48,19 +52,17 @@ exports.agregarTarea = async (req, res) => {
   }
 };
 
-
-
 exports.eliminarTarea = async (req, res) => {
   try {
     const { idTarea } = req.body;
 
-    const tareaExistente=await tareasDAO.consultarTareaPorId(idTarea);
+    const tareaExistente = await tareasDAO.consultarTareaPorId(idTarea);
 
-    if(!tareaExistente){
+    if (!tareaExistente) {
       return res.status(404).json({
-        status:"error",
-        message:`No se encontro la tarea con id ${idTarea}`,
-      })
+        status: "error",
+        message: `No se encontro la tarea con id ${idTarea}`,
+      });
     }
 
     const eliminada = await tareasDAO.eliminarTarea(idTarea);
@@ -113,21 +115,40 @@ exports.actualizarTarea = async (req, res) => {
       });
     }
 
-    const TareaActualizada= await tareasDAO.actualizarTarea(tarea);
-    console.log("Tarea actualizada correctamente: ",TareaActualizada);
+    const TareaActualizada = await tareasDAO.actualizarTarea(tarea);
+    console.log("Tarea actualizada correctamente: ", TareaActualizada);
     return res.status(201).json({
-      status:succes,
-      message:`Tarea actualizada: ${TareaActualizada}`,
-      data:tarea,TareaActualizada,
+      status: "success",
+      message: `Tarea actualizada: ${TareaActualizada}`,
+      data: tarea,
+      TareaActualizada,
     });
-
-
-
   } catch (error) {
     console.error("Error al actualizar la tarea:", error);
     return res.status(500).json({
       status: "error",
       message: "Ocurrió un error al intentar actualizar la tarea.",
+      error: error.message,
+    });
+  }
+};
+
+exports.consultarTareasPorIdUsuario= async (req, res) => {
+  try {
+    const { idUsuario } = req.body;
+
+    const tareas = await tareasDAO.consultarTareaPorIdUsuario(idUsuario);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Tareas consultadas",
+      data: tareas,
+    });
+  } catch (error) {
+    console.error("Error al consultar las tareas :", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Ocurrió un error al intentar consultar las tareas.",
       error: error.message,
     });
   }
