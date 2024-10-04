@@ -1,4 +1,4 @@
-import { cargarEtiquetas } from "../servicios/etiquetas.js";
+
 
 export const etiquetasSeleccionadas = []; // Almacenar etiquetas que se van seleccionando
 const etiquetas = []; // Para almacenar las etiquetas consultadas
@@ -44,11 +44,12 @@ export const componentesEtiquetas = {
   async mostrarEtiquetasConsultadas(
     query,
     contenedorConsultadas,
-    inputEtiqueta
+    inputEtiqueta,
+    etiquetasConsultadas
   ) {
     contenedorConsultadas.innerHTML = ""; // Limpiar sugerencias previas
     if (query) {
-      const etiquetasConsultadas = await cargarEtiquetas(); // Cargar etiquetas dinámicamente
+    
       etiquetas.length = 0;
       etiquetasConsultadas.forEach((el) => etiquetas.push(el));
 
