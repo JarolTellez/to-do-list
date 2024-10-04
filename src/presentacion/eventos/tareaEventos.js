@@ -1,7 +1,7 @@
 import { etiquetasSeleccionadas, componentesEtiquetas } from "../componentes/etiquetaRender.js";
-import { agregarTarea } from "../servicios/tareas.js"; 
+import { agregarTarea,consultarTareasUsuario } from "../servicios/tareas.js"; 
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
   const descripcionTarea = document.querySelector(".descripcionTarea");
   const btnAgregarTarea = document.querySelector(".agregarModal");
@@ -10,7 +10,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const btnCancelarModal=document.querySelector(".cancelarModal")
   const modal = document.querySelector('#miModal');
 
- 
+
+
+ console.log(await consultarTareasUsuario(sessionStorage.getItem("idUsuario")));
 
   formTarea.addEventListener('submit', async function(e) {
     e.preventDefault(); // Para que no se recargue la pagina
@@ -62,6 +64,10 @@ modal.style.display = 'none';
     }
   }
 
+
+    
+  
+
   function limpiarCampos(){
     const prioridad = document.querySelector('input[name="prioridad"]:checked');
     tituloTarea.value = "";
@@ -73,4 +79,6 @@ modal.style.display = 'none';
       etiquetasSeleccionadas.length = 0;
     
   }
+
+ 
 });

@@ -7,7 +7,12 @@ const router = express.Router();
 
 router
   .route('/')
-    .post(tareaController.agregarTarea)
+    .post(tareaController.agregarTarea);
+
+router
+.route('/consultar')
+.post(tareaController.consultarTareasPorIdUsuario);
+   
 
 
     
