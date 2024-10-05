@@ -35,11 +35,11 @@ export async function consultarTareasUsuario(idUsuario){
 
     })
 
-    const data=await response.json();
+    const respuesta=await response.json();
     if(response.ok){
-      return data;
+      return respuesta.data;
     }else {
-      throw new Error(data.mensaje);
+      throw new Error(respuesta.mensaje);
     }
   } catch (error) {
     throw new Error("Error al consultar las tareas: " + error.message);

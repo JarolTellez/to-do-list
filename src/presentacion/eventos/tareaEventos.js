@@ -1,4 +1,5 @@
 import { etiquetasSeleccionadas, componentesEtiquetas } from "../componentes/etiquetaRender.js";
+import {rendersTareas} from "../componentes/tareaRender.js";
 import { agregarTarea,consultarTareasUsuario } from "../servicios/tareas.js"; 
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -6,6 +7,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   const descripcionTarea = document.querySelector(".descripcionTarea");
   const btnAgregarTarea = document.querySelector(".agregarModal");
   const listaEtiquetas = document.querySelector("#listaEtiquetas");
+  const campoTareas=document.querySelector("#listaTareas");
   const formTarea=document.querySelector("form");
   const btnCancelarModal=document.querySelector(".cancelarModal")
   const modal = document.querySelector('#miModal');
@@ -13,6 +15,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 const tareas =await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
  console.log(tareas);
+ rendersTareas.renderizarTareas(campoTareas,tareas);
 
   formTarea.addEventListener('submit', async function(e) {
     e.preventDefault(); // Para que no se recargue la pagina
