@@ -3,6 +3,8 @@ import {
   etiquetasSeleccionadas,
 } from "../componentes/etiquetaRender.js";
 
+import { cargarEtiquetas } from "../servicios/etiquetas.js";
+
 document.addEventListener("DOMContentLoaded", function () {
   const inputEtiqueta = document.getElementById("contenedorInput");
   const listaEtiquetas = document.getElementById("listaEtiquetas");
@@ -13,10 +15,13 @@ document.addEventListener("DOMContentLoaded", function () {
   inputEtiqueta.addEventListener("input", async (e) => {
     const query = e.target.value.trim();
     if (query) {
+    const etiquetasConsultadas=await cargarEtiquetas();
+    if(etiquetasConsultadas){
       await componentesEtiquetas.mostrarEtiquetasConsultadas(
         query,
-        contenedorConsultadas,inputEtiqueta
+        contenedorConsultadas,inputEtiqueta,etiquetasConsultadas
       );
+    }
     } else {
       contenedorConsultadas.classList.remove("active");
     }

@@ -1,16 +1,21 @@
 import { etiquetasSeleccionadas, componentesEtiquetas } from "../componentes/etiquetaRender.js";
-import { agregarTarea } from "../servicios/tareas.js"; 
+import {rendersTareas} from "../componentes/tareaRender.js";
+import { agregarTarea,consultarTareasUsuario } from "../servicios/tareas.js"; 
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
   const descripcionTarea = document.querySelector(".descripcionTarea");
   const btnAgregarTarea = document.querySelector(".agregarModal");
   const listaEtiquetas = document.querySelector("#listaEtiquetas");
+  const campoTareas=document.querySelector("#listaTareas");
   const formTarea=document.querySelector("form");
   const btnCancelarModal=document.querySelector(".cancelarModal")
   const modal = document.querySelector('#miModal');
 
- 
+
+const tareas =await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
+ console.log(tareas);
+ rendersTareas.renderizarTareas(campoTareas,tareas);
 
   formTarea.addEventListener('submit', async function(e) {
     e.preventDefault(); // Para que no se recargue la pagina
@@ -62,6 +67,10 @@ modal.style.display = 'none';
     }
   }
 
+
+    
+  
+
   function limpiarCampos(){
     const prioridad = document.querySelector('input[name="prioridad"]:checked');
     tituloTarea.value = "";
@@ -73,4 +82,6 @@ modal.style.display = 'none';
       etiquetasSeleccionadas.length = 0;
     
   }
+
+ 
 });
