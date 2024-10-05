@@ -11,17 +11,18 @@ export const rendersTareas = {
           <p>Prioridad: ${tarea.tarea_prioridad}</p>
           <div class="etiquetas">
             <strong>Etiquetas:</strong>
+             <ul id="listaEtiquetas" class="ulEtiquetas"></ul>
           </div>
         `;
 
-      const etiquetasDiv = tareaDiv.querySelector(".etiquetas");
+      const etiquetasDiv = tareaDiv.querySelector(".ulEtiquetas");
 
       if (tarea.etiquetas && tarea.etiquetas.length > 0) {
         tarea.etiquetas.forEach((etiqueta) => {
-          const etiquetaSpan = document.createElement("span");
-          etiquetaSpan.className = "etiqueta";
-          etiquetaSpan.textContent = etiqueta.nombreEtiqueta;
-          etiquetasDiv.appendChild(etiquetaSpan);
+          const li = document.createElement("li");
+          li.className = "etiqueta";
+          li.textContent = etiqueta.nombre;
+          etiquetasDiv.appendChild(li);
         });
       }
 
