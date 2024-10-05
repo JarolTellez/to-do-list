@@ -21,3 +21,27 @@ export async function agregarTarea(tareaNueva) {
     throw new Error("Error al agregar la tarea: " + error.message);
   }
 }
+
+export async function consultarTareasUsuario(idUsuario){
+  const urlTareasUsuario="http://localhost:3000/tarea/consultar"
+
+  try {
+    const response=await fetch(urlTareasUsuario,{
+      method:"POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ idUsuario: idUsuario }),
+
+    })
+
+    const respuesta=await response.json();
+    if(response.ok){
+      return respuesta.data;
+    }else {
+      throw new Error(respuesta.mensaje);
+    }
+  } catch (error) {
+    throw new Error("Error al consultar las tareas: " + error.message);
+  }
+}
