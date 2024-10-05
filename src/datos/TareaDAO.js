@@ -126,13 +126,33 @@ class TareaDAO {
   }
 
 
-static async consultarTareaPorIdUsuario(idUsuario) {
+static async consultarTareasPorIdUsuario(idUsuario) {
   const conexionBD = new ConexionBD();
   const connection = await conexionBD.conectar();
 
   try {
     const [tareas] = await connection.query(
-      "SELECT * FROM tarea WHERE idUsuario = ?",
+      `SELECT 
+      t.idTarea AS tarea_id,
+      t.nombre AS tarea_nombre,
+      t.descripcion AS tarea_descripcion,
+      t.fechaCreacion AS tarea_fecha_creacion,
+      t.ultimaActualizacion AS tarea_ultima_actualizacion,
+      t.completada AS tarea_completada,
+      t.prioridad AS tarea_prioridad,
+      GROUP_CONCAT(e.idEtiqueta) AS etiquetas_ids,
+      GROUP_CONCAT(e.nombre) AS etiquetas_nombres,
+      GROUP_CONCAT(e.idUsuario) AS etiquetas_usuarios
+   FROM 
+      tarea t
+   LEFT JOIN 
+      tareaEtiqueta te ON t.idTarea = te.idTarea
+   LEFT JOIN 
+      etiqueta e ON te.idEtiqueta = e.idEtiqueta
+   WHERE 
+      t.idUsuario = ?
+   GROUP BY 
+      t.idTarea;`,
       [idUsuario]
     );
     return tareas;

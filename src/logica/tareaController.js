@@ -137,12 +137,15 @@ exports.consultarTareasPorIdUsuario= async (req, res) => {
   try {
     const { idUsuario } = req.body;
 
-    const tareas = await tareasDAO.consultarTareaPorIdUsuario(idUsuario);
+    const tareas = await tareasDAO.consultarTareasPorIdUsuario(idUsuario);
+    const tareasProcesadas= procesarTareasConEtiquetas(tareas);
+    console.log("TAREAS SIN PROCESAS:", tareas);
+    console.log("TAREAS PROCESAS: ",tareasProcesadas);
 
     return res.status(200).json({
       status: "success",
       message: "Tareas consultadas",
-      data: tareas,
+      data: tareasProcesadas,
     });
   } catch (error) {
     console.error("Error al consultar las tareas :", error);
@@ -153,3 +156,26 @@ exports.consultarTareasPorIdUsuario= async (req, res) => {
     });
   }
 };
+
+// para agregar las etiquetas como objeto (antes de procesar estan en una linea de texto)
+const procesarTareasConEtiquetas = (tareas) => {
+  return tareas.map(tarea => {
+    const etiquetas_ids = tarea.etiquetas_ids ? tarea.etiquetas_ids.split(',') : [];
+    const etiquetas_nombres = tarea.etiquetas_nombres ? tarea.etiquetas_nombres.split(',') : [];
+    const etiquetas_usuarios = tarea.etiquetas_usuarios ? tarea.etiquetas_usuarios.split(',') : [];
+
+    // Se crea el arreglo de objetos de etiquetas
+    const etiquetas = etiquetas_ids.map((id, index) => ({
+      idEtiqueta: id,
+      nombre: etiquetas_nombres[index],
+      idUsuario: etiquetas_usuarios[index]
+    }));
+    etiquetas.reverse();
+    return {
+      ...tarea,
+      etiquetas
+    };
+  });
+};
+
+
