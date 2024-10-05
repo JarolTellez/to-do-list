@@ -11,8 +11,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   const modal = document.querySelector('#miModal');
 
 
-
- console.log(await consultarTareasUsuario(sessionStorage.getItem("idUsuario")));
+const tareas =await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
+ console.log(tareas);
 
   formTarea.addEventListener('submit', async function(e) {
     e.preventDefault(); // Para que no se recargue la pagina
