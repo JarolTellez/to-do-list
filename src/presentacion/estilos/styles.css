@@ -157,7 +157,7 @@ input {
 }
 
 /* Lista de etiquetas seleccionadas */
-#listaEtiquetas {
+.ulEtiquetas {
   display: flex;
   flex-wrap: wrap;
   list-style: none;
@@ -167,7 +167,7 @@ input {
   overflow-y: auto;
 }
 
-#listaEtiquetas li {
+.ulEtiquetas li {
   background-color: #007bff;
   color: white;
   padding: 5px 10px;

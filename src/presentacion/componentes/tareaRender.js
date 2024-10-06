@@ -4,24 +4,37 @@ export const rendersTareas = {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
       tareaDiv.innerHTML = `
+         <div class="contendorTarea" value="${tarea.tarea_id}">
           <h3>${tarea.tarea_nombre}</h3>
-          <p>${tarea.tarea_descripcion}</p>
-          <p>Creada el: ${tarea.tarea_fecha_creacion}</p>
-          <p>Última actualización: ${tarea.tarea_ultima_actualizacion}</p>
-          <p>Prioridad: ${tarea.tarea_prioridad}</p>
-          <div class="etiquetas">
-            <strong>Etiquetas:</strong>
-          </div>
+           <p class="fechaActualidada">${tarea.tarea_ultima_actualizacion}</p>
+           ${tarea.tarea_descripcion ? `<p>${tarea.tarea_descripcion}</p>` : ""}
+         
+            ${tarea.tarea_prioridad 
+      ? `<div class="prioridad-container">
+           <span class="prioridad-text">Prioridad</span>
+           <div class="prioridad-barra" style="width: ${tarea.tarea_prioridad * 20}%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
+             <span class="prioridad-numero">${tarea.tarea_prioridad}</span>
+           </div>
+         </div>`
+      : ""}
+           ${
+             tarea.etiquetas && tarea.etiquetas.length > 0
+               ? `  <strong>Etiquetas:</strong>
+               <div class="etiquetas scrollEtiqueta">
+          
+             <ul class="ulEtiquetas"></ul>
+          </div>`
+               : ""
+           }
+          </div> 
         `;
-
-      const etiquetasDiv = tareaDiv.querySelector(".etiquetas");
-
       if (tarea.etiquetas && tarea.etiquetas.length > 0) {
+        const etiquetasDiv = tareaDiv.querySelector(".ulEtiquetas");
         tarea.etiquetas.forEach((etiqueta) => {
-          const etiquetaSpan = document.createElement("span");
-          etiquetaSpan.className = "etiqueta";
-          etiquetaSpan.textContent = etiqueta.nombreEtiqueta;
-          etiquetasDiv.appendChild(etiquetaSpan);
+          const li = document.createElement("li");
+          li.className = "etiqueta";
+          li.textContent = etiqueta.nombre;
+          etiquetasDiv.appendChild(li);
         });
       }
 
