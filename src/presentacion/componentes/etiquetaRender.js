@@ -5,13 +5,14 @@ const etiquetas = []; // Para almacenar las etiquetas consultadas
 
 export const componentesEtiquetas = {
   renderizarEtiquetas(listaEtiquetas) {
+    console.log("LISTA ETIQUETAS DESDE ETIQUETA RENDER",listaEtiquetas)
     listaEtiquetas.innerHTML = "";
     etiquetasSeleccionadas.forEach((etiqueta) => {
       const li = document.createElement("li");
       if (etiqueta.idEtiqueta) {
         li.setAttribute("data-id", etiqueta.idEtiqueta);
       }
-      li.textContent = etiqueta.nombre;
+      li.textContent = etiqueta.nombre; 
 
       const botonEliminar = document.createElement("span");
       botonEliminar.textContent = " x";
@@ -24,6 +25,7 @@ export const componentesEtiquetas = {
       });
 
       li.appendChild(botonEliminar);
+      
       listaEtiquetas.appendChild(li);
     });
   },
