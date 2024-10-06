@@ -4,19 +4,24 @@ export const rendersTareas = {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
       tareaDiv.innerHTML = `
-         <div class="contendorTarea">
+         <div class="contendorTarea" value="${tarea.tarea_id}">
           <h3>${tarea.tarea_nombre}</h3>
+           <p class="fechaActualidada">${tarea.tarea_ultima_actualizacion}</p>
            ${tarea.tarea_descripcion ? `<p>${tarea.tarea_descripcion}</p>` : ""}
-          <p>Última actualización: ${tarea.tarea_ultima_actualizacion}</p>
-           ${
-             tarea.tarea_prioridad
-               ? `<p>Prioridad: ${tarea.tarea_prioridad}</p>`
-               : ""
-           }
+         
+            ${tarea.tarea_prioridad 
+      ? `<div class="prioridad-container">
+           <span class="prioridad-text">Prioridad</span>
+           <div class="prioridad-barra" style="width: ${tarea.tarea_prioridad * 20}%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
+             <span class="prioridad-numero">${tarea.tarea_prioridad}</span>
+           </div>
+         </div>`
+      : ""}
            ${
              tarea.etiquetas && tarea.etiquetas.length > 0
-               ? `<div class="etiquetas">
-            <strong>Etiquetas:</strong>
+               ? `  <strong>Etiquetas:</strong>
+               <div class="etiquetas scrollEtiqueta">
+          
              <ul class="ulEtiquetas"></ul>
           </div>`
                : ""
@@ -37,4 +42,3 @@ export const rendersTareas = {
     });
   },
 };
-

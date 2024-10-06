@@ -12,7 +12,7 @@ export const componentesEtiquetas = {
       if (etiqueta.idEtiqueta) {
         li.setAttribute("data-id", etiqueta.idEtiqueta);
       }
-      li.textContent = etiqueta.nombre;
+      li.textContent = etiqueta.nombre; 
 
       const botonEliminar = document.createElement("span");
       botonEliminar.textContent = " x";
