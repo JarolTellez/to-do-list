@@ -4,20 +4,27 @@ export const rendersTareas = {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
       tareaDiv.innerHTML = `
+         <div class="contendorTarea">
           <h3>${tarea.tarea_nombre}</h3>
-          <p>${tarea.tarea_descripcion}</p>
-          <p>Creada el: ${tarea.tarea_fecha_creacion}</p>
+           ${tarea.tarea_descripcion ? `<p>${tarea.tarea_descripcion}</p>` : ""}
           <p>Última actualización: ${tarea.tarea_ultima_actualizacion}</p>
-          <p>Prioridad: ${tarea.tarea_prioridad}</p>
-          <div class="etiquetas">
+           ${
+             tarea.tarea_prioridad
+               ? `<p>Prioridad: ${tarea.tarea_prioridad}</p>`
+               : ""
+           }
+           ${
+             tarea.etiquetas && tarea.etiquetas.length > 0
+               ? `<div class="etiquetas">
             <strong>Etiquetas:</strong>
-             <ul id="listaEtiquetas" class="ulEtiquetas"></ul>
-          </div>
+             <ul class="ulEtiquetas"></ul>
+          </div>`
+               : ""
+           }
+          </div> 
         `;
-
-      const etiquetasDiv = tareaDiv.querySelector(".ulEtiquetas");
-
       if (tarea.etiquetas && tarea.etiquetas.length > 0) {
+        const etiquetasDiv = tareaDiv.querySelector(".ulEtiquetas");
         tarea.etiquetas.forEach((etiqueta) => {
           const li = document.createElement("li");
           li.className = "etiqueta";
@@ -30,3 +37,4 @@ export const rendersTareas = {
     });
   },
 };
+
