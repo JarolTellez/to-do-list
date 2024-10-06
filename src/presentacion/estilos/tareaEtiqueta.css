@@ -1,0 +1,23 @@
+
+
+.contendorTarea {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    border: 2px solid rgb(128, 161, 223);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    padding:10px;
+    height: 200px;
+  
+  }
+  
+  #listaTareas{
+  height:715px;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  }
+  
+  #listaTareas::-webkit-scrollbar {
+      display: none; 
+    }

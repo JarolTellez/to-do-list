@@ -5,6 +5,7 @@ const etiquetas = []; // Para almacenar las etiquetas consultadas
 
 export const componentesEtiquetas = {
   renderizarEtiquetas(listaEtiquetas) {
+    console.log("LISTA ETIQUETAS DESDE ETIQUETA RENDER",listaEtiquetas)
     listaEtiquetas.innerHTML = "";
     etiquetasSeleccionadas.forEach((etiqueta) => {
       const li = document.createElement("li");
@@ -24,6 +25,7 @@ export const componentesEtiquetas = {
       });
 
       li.appendChild(botonEliminar);
+      
       listaEtiquetas.appendChild(li);
     });
   },
