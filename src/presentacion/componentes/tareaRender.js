@@ -4,10 +4,11 @@ export const rendersTareas = {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
       tareaDiv.innerHTML = `
+      <div class="principal">
          <div class="contendorTarea" value="${tarea.tarea_id}">
           <h3>${tarea.tarea_nombre}</h3>
            <p class="fechaActualidada">${tarea.tarea_ultima_actualizacion}</p>
-           ${tarea.tarea_descripcion ? `<p>${tarea.tarea_descripcion}</p>` : ""}
+           ${tarea.tarea_descripcion ? `<p class="textoTarea">${tarea.tarea_descripcion}</p>` : ""}
          
             ${tarea.tarea_prioridad 
       ? `<div class="prioridad-container">
@@ -27,6 +28,7 @@ export const rendersTareas = {
                : ""
            }
           </div> 
+          </div>
         `;
       if (tarea.etiquetas && tarea.etiquetas.length > 0) {
         const etiquetasDiv = tareaDiv.querySelector(".ulEtiquetas");
