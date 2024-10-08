@@ -52,7 +52,9 @@ body {
   margin-bottom: 20px;
   margin-right: 10px;
 }
-
+.containerPrincipal{
+  width: 750px;
+}
 .infoUsuario {
   display: flex;
   justify-content: flex-end;
