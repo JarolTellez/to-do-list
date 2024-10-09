@@ -133,6 +133,42 @@ exports.actualizarTarea = async (req, res) => {
   }
 };
 
+exports.actualizarTareaCompletada = async (req, res) => {
+  try {
+    const {
+      idTarea,
+      completada,
+    } = req.body;
+
+    
+    const tareaExistente = await tareasDAO.consultarTareaPorId(idTarea);
+    if (!tareaExistente) {
+      return res.status(404).json({
+        status: "error",
+        message: `No se encontró la tarea con el id: ${id}.`,
+      });
+    }
+
+    const respuesta = await tareasDAO.actualizarTareaCompletada(idTarea,completada);
+    if(respuesta>0){
+    const tareaActualizada=await tareasDAO.consultarTareaPorId(idTarea);
+    console.log("Tarea actualizada correctamente: ", tareaActualizada);
+    return res.status(201).json({
+      status: "success",
+      message: `Tarea actualizada: ${tareaActualizada}`,
+      data: tareaActualizada,
+    });
+  }
+  } catch (error) {
+    console.error("Error al actualizar la tarea:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Ocurrió un error al intentar actualizar la tarea.",
+      error: error.message,
+    });
+  }
+};
+
 exports.consultarTareasPorIdUsuario= async (req, res) => {
   try {
     const { idUsuario } = req.body;

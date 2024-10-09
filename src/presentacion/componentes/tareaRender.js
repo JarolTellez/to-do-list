@@ -8,16 +8,24 @@ export const rendersTareas = {
          <div class="contendorTarea" value="${tarea.tarea_id}">
           <h3>${tarea.tarea_nombre}</h3>
            <p class="fechaActualidada">${tarea.tarea_ultima_actualizacion}</p>
-           ${tarea.tarea_descripcion ? `<p class="textoTarea">${tarea.tarea_descripcion}</p>` : ""}
+           ${
+             tarea.tarea_descripcion
+               ? `<p class="textoTarea">${tarea.tarea_descripcion}</p>`
+               : ""
+           }
          
-            ${tarea.tarea_prioridad 
-      ? `<div class="prioridad-container">
+            ${
+              tarea.tarea_prioridad
+                ? `<div class="prioridad-container">
            <span class="prioridad-text">Prioridad</span>
-           <div class="prioridad-barra" style="width: ${tarea.tarea_prioridad * 20}%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
+           <div class="prioridad-barra" style="width: ${
+             tarea.tarea_prioridad * 20
+           }%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
              <span class="prioridad-numero">${tarea.tarea_prioridad}</span>
            </div>
          </div>`
-      : ""}
+                : ""
+            }
            ${
              tarea.etiquetas && tarea.etiquetas.length > 0
                ? `  <strong>Etiquetas:</strong>
@@ -27,6 +35,14 @@ export const rendersTareas = {
           </div>`
                : ""
            }
+           <div class="completado-container">
+  <input type="checkbox" id="completado-${
+    tarea.tarea_id
+  }" class="checkbox-completado"  value="${tarea}"/>
+  <label for="completado-${tarea.tarea_id}" class="checkbox-label"></label>
+</div>
+
+           
           </div> 
           </div>
         `;
@@ -43,4 +59,10 @@ export const rendersTareas = {
       componenteTareas.appendChild(tareaDiv);
     });
   },
+
+  eliminarRenderEspecifico(contenedor,componenteTarea){
+    if(componenteTarea){
+      contenedor.removeChild(componenteTarea);
+    }
+  }
 };

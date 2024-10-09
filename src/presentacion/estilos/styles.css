@@ -55,6 +55,11 @@ body {
 .containerPrincipal{
   width: 750px;
 }
+
+.contenedorBoton{
+  display: flex;
+  justify-content: center;
+}
 .infoUsuario {
   display: flex;
   justify-content: flex-end;
@@ -99,7 +104,7 @@ h1 {
 }
 
 button {
-  width: 100%;
+  width: 90%;
   padding: 12px;
   background-color: #007bff;
   color: #fff;

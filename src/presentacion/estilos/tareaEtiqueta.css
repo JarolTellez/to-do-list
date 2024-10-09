@@ -1,13 +1,52 @@
-#listaTareas {
-  height: 715px;
-  overflow-y: scroll;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-gap: 10px;
+.completado-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
 }
+
+.checkbox-completado {
+  display: none;
+}
+
+.checkbox-label {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #007bff;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.checkbox-label::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 14px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  top: 3px;
+  left: 8px;
+  opacity: 0;
+  transform: rotate(45deg);
+  transition: opacity 0.3s ease;
+}
+
+.checkbox-completado:checked + .checkbox-label {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.checkbox-completado:checked + .checkbox-label::after {
+  opacity: 1;
+}
+
 .contendorTarea {
+  position: relative;
   height: 180px;
   width: 330px;
   background-color: #f0f0f0;
@@ -17,6 +56,22 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   margin: 10px;
   padding: 10px;
+}
+
+.contendorTarea.completed {
+  background-color: #d4edda;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+#listaTareas {
+  height: 715px;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 10px;
 }
 
 .contendorTarea h3 {
@@ -39,6 +94,7 @@
 .etiquetas {
   height: 30px;
 }
+
 .scrollEtiqueta {
   overflow-y: scroll;
   scrollbar-width: none;
