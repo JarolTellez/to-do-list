@@ -35,19 +35,40 @@ class TareaDAO {
 
     try {
      const [resultado]= await connection.query(
-        "UPDATE tarea SET nombre = ?, descripcion = ?, fechaCreacion = ?, ultimaActualizacion = ?, completada = ?, idUsuario = ?, prioridad = ?",
+        "UPDATE tarea SET nombre = ?, descripcion = ?, fechaCreacion = ?, ultimaActualizacion = ?, completada = ?, prioridad = ? WHERE idTarea=?",
         [
           tarea.nombre,
           tarea.descripcion,
           tarea.fechaCreacion,
-          fecha.fechaUltimaActualizacion,
-          fecha.completada,
-          fecha.idUsuario,
-          fecha.prioridad,
+          tarea.fechaUltimaActualizacion,
+          tarea.completada,
+          tarea.prioridad,
+          tarea.idTarea,
         ]
       );
       tarea.idTarea=resultado.insertId;
       return tarea;
+    } catch (error) {
+      console.log("Error al actualizar una tarea: ", error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async actualizarTareaCompletada(idTarea,completada) {
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
+    try {
+     const [resultado]= await connection.query(
+        "UPDATE tarea SET completada = ? WHERE idTarea = ?",
+        [
+          completada,
+          idTarea
+        ]
+      );
+    
+      return resultado.affectedRows;
     } catch (error) {
       console.log("Error al actualizar una tarea: ", error);
       throw error;
@@ -150,7 +171,7 @@ static async consultarTareasPorIdUsuario(idUsuario) {
    LEFT JOIN 
       etiqueta e ON te.idEtiqueta = e.idEtiqueta
    WHERE 
-      t.idUsuario = ?
+      t.idUsuario = ? AND t.completada = 0
    GROUP BY 
       t.idTarea;`,
       [idUsuario]
