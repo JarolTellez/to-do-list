@@ -4,6 +4,7 @@ export const etiquetasSeleccionadas = []; // Almacenar etiquetas que se van sele
 const etiquetas = []; // Para almacenar las etiquetas consultadas
 
 export const componentesEtiquetas = {
+  //Para mostrar las etiquetas que el usuario va agregando a la tarea
   renderizarEtiquetas(listaEtiquetas) {
     listaEtiquetas.innerHTML = "";
     etiquetasSeleccionadas.forEach((etiqueta) => {
