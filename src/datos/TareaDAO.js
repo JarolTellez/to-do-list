@@ -127,7 +127,7 @@ class TareaDAO {
       connection.release();
     }
   }
-
+ 
   static async consultarTareaPorId(idTarea) {
     const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
@@ -145,6 +145,54 @@ class TareaDAO {
       connection.release();
     }
   }
+
+  static async consultarTareasPorIdTarea(idTarea) {
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
+  
+    try {
+      console.log("Consultando tarea con id:", idTarea); // Imprime el idTarea
+      
+      const [tareas] = await connection.query(
+        `SELECT 
+            t.idTarea AS tarea_id,
+            t.nombre AS tarea_nombre,
+            t.descripcion AS tarea_descripcion,
+            t.fechaCreacion AS tarea_fecha_creacion,
+            t.ultimaActualizacion AS tarea_ultima_actualizacion,
+            t.completada AS tarea_completada,
+            t.prioridad AS tarea_prioridad,
+            GROUP_CONCAT(e.idEtiqueta) AS etiquetas_ids,
+            GROUP_CONCAT(e.nombre) AS etiquetas_nombres,
+            GROUP_CONCAT(e.idUsuario) AS etiquetas_usuarios
+        FROM 
+            tarea t
+        LEFT JOIN 
+            tareaEtiqueta te ON t.idTarea = te.idTarea
+        LEFT JOIN 
+            etiqueta e ON te.idEtiqueta = e.idEtiqueta
+        WHERE 
+            t.idTarea = ?
+        GROUP BY 
+            t.idTarea;`,
+        [idTarea]
+      );
+      
+      
+      
+      if (tareas.length === 0) {
+          console.log("No se encontraron tareas para el id proporcionado.");
+      }
+      
+      return tareas;
+    } catch (error) {
+      console.log("Error al consultar una tarea por id: ", error.message);
+      console.error("Detalles del error: ", error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+}
 
 
 static async consultarTareasPorIdUsuario(idUsuario) {
