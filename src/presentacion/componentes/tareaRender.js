@@ -1,33 +1,34 @@
 export const rendersTareas = {
   renderizarTareas(componenteTareas, listaTareas) {
-    listaTareas.forEach((tarea) => {
+    console.log(listaTareas);
+    listaTareas.forEach((tareaElemento) => {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
       tareaDiv.innerHTML = `
       <div class="principal">
-         <div class="contendorTarea" value="${tarea.tarea_id}">
-          <h3>${tarea.tarea_nombre}</h3>
-           <p class="fechaActualidada">${tarea.tarea_ultima_actualizacion}</p>
+         <div class="contendorTarea" value="${tareaElemento.idTarea}">
+          <h3>${tareaElemento.nombre}</h3>
+           <p class="fechaActualidada">${tareaElemento.fechaUltimaActualizacion}</p>
            ${
-             tarea.tarea_descripcion
-               ? `<p class="textoTarea">${tarea.tarea_descripcion}</p>`
+             tareaElemento.descripcion
+               ? `<p class="textoTarea">${tareaElemento.descripcion}</p>`
                : ""
            }
          
             ${
-              tarea.tarea_prioridad
+              tareaElemento.prioridad
                 ? `<div class="prioridad-container">
            <span class="prioridad-text">Prioridad</span>
            <div class="prioridad-barra" style="width: ${
-             tarea.tarea_prioridad * 20
+             tareaElemento.prioridad * 20
            }%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
-             <span class="prioridad-numero">${tarea.tarea_prioridad}</span>
+             <span class="prioridad-numero">${tareaElemento.prioridad}</span>
            </div>
          </div>`
                 : ""
             }
            ${
-             tarea.etiquetas && tarea.etiquetas.length > 0
+             tareaElemento.etiquetas && tareaElemento.etiquetas.length > 0
                ? `  <strong>Etiquetas:</strong>
                <div class="etiquetas scrollEtiqueta">
           
@@ -37,18 +38,18 @@ export const rendersTareas = {
            }
            <div class="completado-container">
   <input type="checkbox" id="completado-${
-    tarea.tarea_id
-  }" class="checkbox-completado"  value="${tarea}"/>
-  <label for="completado-${tarea.tarea_id}" class="checkbox-label"></label>
+    tareaElemento.idTarea
+  }" class="checkbox-completado"  value="${tareaElemento}"/>
+  <label for="completado-${tareaElemento.idTarea}" class="checkbox-label"></label>
 </div>
 
            
           </div> 
           </div>
         `;
-      if (tarea.etiquetas && tarea.etiquetas.length > 0) {
+      if (tareaElemento.etiquetas && tareaElemento.etiquetas.length > 0) {
         const etiquetasDiv = tareaDiv.querySelector(".ulEtiquetas");
-        tarea.etiquetas.forEach((etiqueta) => {
+        tareaElemento.etiquetas.forEach((etiqueta) => {
           const li = document.createElement("li");
           li.className = "etiqueta";
           li.textContent = etiqueta.nombre;

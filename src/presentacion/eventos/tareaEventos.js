@@ -3,7 +3,11 @@ import {
   componentesEtiquetas,
 } from "../componentes/etiquetaRender.js";
 import { rendersTareas } from "../componentes/tareaRender.js";
-import { agregarTarea, consultarTareasUsuario,actualizarTareaCompletada } from "../servicios/tareas.js";
+import {
+  agregarTarea,
+  consultarTareasUsuario,
+  actualizarTareaCompletada,
+} from "../servicios/tareas.js";
 
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
@@ -25,27 +29,25 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (event.target.classList.contains("checkbox-completado")) {
       const checkbox = event.target;
       const tareaId = checkbox.id.split("-")[1];
-      const indice= tareas.findIndex(tarea=>tarea.tarea_id==tareaId);
+      console.log("id completada:",tareaId);
+      console.log("TAREAS",tareas);
+      const indice = tareas.findIndex((tarea) => tarea.idTarea == tareaId);
+      console.log("INDICE",indice);
       const tareaElemento = checkbox.closest(".tarea");
-      console.log("TAREA ID COMPLETADO: ",indice);
-      console.log("TAREAS length", tareas.length);
+      
 
       if (checkbox.checked) {
-          actualizarTareaCompletada(tareaId,true);
-          if(indice!==-1){
-            tareas.splice(indice,1);
-            rendersTareas.eliminarRenderEspecifico(campoTareas,tareaElemento);
-          }
-         
-
-        
+        actualizarTareaCompletada(tareaId, true);
+        if (indice !== -1) {
+          tareas.splice(indice, 1);
+          rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
+        }
       } else {
         console.log("Tarea desmarcada con ID:", tareaId);
       }
     }
   });
 
-  console.log(tareas);
   rendersTareas.renderizarTareas(campoTareas, tareas);
 
   formTarea.addEventListener("submit", async function (e) {
@@ -85,10 +87,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     };
 
     try {
-      const data = await agregarTarea(tareaNueva);
-      console.log(data);
+      const nuevaTarea = await agregarTarea(tareaNueva);
+
+      
 
       limpiarCampos();
+      tareas.push(nuevaTarea.data[0]);
+      console.log(tareas);
+      rendersTareas.renderizarTareas(campoTareas, nuevaTarea.data);
+     
 
       alert("Se ha guardado correctamente la tarea");
     } catch (error) {

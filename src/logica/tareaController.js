@@ -27,20 +27,24 @@ exports.agregarTarea = async (req, res) => {
     );
     const tareaAgregada = await tareasDAO.agregarTarea(tarea);
     if (etiquetas.length > 0) {
-      etiquetaController.agregarEtiquetas(
+      await etiquetaController.agregarEtiquetas(
         etiquetas,
         tareaAgregada.idTarea,
         idUsuario
       );
     }
-    console.log("Tarea agregada:", tareaAgregada);
+
+    const tareaConEtiquetas = await tareasDAO.consultarTareasPorIdTarea(
+      tareaAgregada.idTarea
+    );
+
+    const tareaProcesada = procesarTareasConEtiquetas(tareaConEtiquetas);
+    
+
     return res.status(201).json({
       status: "success",
-      message: `Tarea agregada: ${tareaAgregada}`,
-      data: {
-        idTarea: tareaAgregada.idTarea,
-        nombre: tareaAgregada.nombre,
-      },
+      message: `Tarea agregada: ${tareaProcesada}`,
+      data: tareaProcesada,
     });
   } catch (error) {
     console.error("Error al agregar la tarea:", error);
@@ -135,12 +139,8 @@ exports.actualizarTarea = async (req, res) => {
 
 exports.actualizarTareaCompletada = async (req, res) => {
   try {
-    const {
-      idTarea,
-      completada,
-    } = req.body;
+    const { idTarea, completada } = req.body;
 
-    
     const tareaExistente = await tareasDAO.consultarTareaPorId(idTarea);
     if (!tareaExistente) {
       return res.status(404).json({
@@ -149,16 +149,19 @@ exports.actualizarTareaCompletada = async (req, res) => {
       });
     }
 
-    const respuesta = await tareasDAO.actualizarTareaCompletada(idTarea,completada);
-    if(respuesta>0){
-    const tareaActualizada=await tareasDAO.consultarTareaPorId(idTarea);
-    console.log("Tarea actualizada correctamente: ", tareaActualizada);
-    return res.status(201).json({
-      status: "success",
-      message: `Tarea actualizada: ${tareaActualizada}`,
-      data: tareaActualizada,
-    });
-  }
+    const respuesta = await tareasDAO.actualizarTareaCompletada(
+      idTarea,
+      completada
+    );
+    if (respuesta > 0) {
+      const tareaActualizada = await tareasDAO.consultarTareaPorId(idTarea);
+      console.log("Tarea actualizada correctamente: ", tareaActualizada);
+      return res.status(201).json({
+        status: "success",
+        message: `Tarea actualizada: ${tareaActualizada}`,
+        data: tareaActualizada,
+      });
+    }
   } catch (error) {
     console.error("Error al actualizar la tarea:", error);
     return res.status(500).json({
@@ -169,14 +172,12 @@ exports.actualizarTareaCompletada = async (req, res) => {
   }
 };
 
-exports.consultarTareasPorIdUsuario= async (req, res) => {
+exports.consultarTareasPorIdUsuario = async (req, res) => {
   try {
     const { idUsuario } = req.body;
 
     const tareas = await tareasDAO.consultarTareasPorIdUsuario(idUsuario);
-    const tareasProcesadas= procesarTareasConEtiquetas(tareas);
-    console.log("TAREAS SIN PROCESAS:", tareas);
-    console.log("TAREAS PROCESAS: ",tareasProcesadas);
+    const tareasProcesadas = procesarTareasConEtiquetas(tareas);
 
     return res.status(200).json({
       status: "success",
@@ -194,24 +195,49 @@ exports.consultarTareasPorIdUsuario= async (req, res) => {
 };
 
 // para agregar las etiquetas como objeto (antes de procesar estan en una linea de texto)
-const procesarTareasConEtiquetas = (tareas) => {
-  return tareas.map(tarea => {
-    const etiquetas_ids = tarea.etiquetas_ids ? tarea.etiquetas_ids.split(',') : [];
-    const etiquetas_nombres = tarea.etiquetas_nombres ? tarea.etiquetas_nombres.split(',') : [];
-    const etiquetas_usuarios = tarea.etiquetas_usuarios ? tarea.etiquetas_usuarios.split(',') : [];
 
-    // Se crea el arreglo de objetos de etiquetas
+const procesarTareasConEtiquetas = (tareas) => {
+  return tareas.map((tarea) => {
+    const etiquetas_ids = tarea.etiquetas_ids
+      ? tarea.etiquetas_ids.split(",")
+      : [];
+    const etiquetas_nombres = tarea.etiquetas_nombres
+      ? tarea.etiquetas_nombres.split(",")
+      : [];
+    const etiquetas_usuarios = tarea.etiquetas_usuarios
+      ? tarea.etiquetas_usuarios.split(",")
+      : [];
+
     const etiquetas = etiquetas_ids.map((id, index) => ({
       idEtiqueta: id,
       nombre: etiquetas_nombres[index],
-      idUsuario: etiquetas_usuarios[index]
+      idUsuario: etiquetas_usuarios[index],
     }));
     etiquetas.reverse();
-    return {
-      ...tarea,
-      etiquetas
-    };
+
+    const nuevaTarea = new Tarea(
+      tarea.tarea_id,
+      tarea.tarea_nombre,
+      tarea.tarea_descripcion || "",
+      tarea.tarea_fecha_creacion
+        ? new Date(tarea.tarea_fecha_creacion)
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")
+        : new Date(),
+      tarea.tarea_ultima_actualizacion
+        ? new Date(tarea.tarea_ultima_actualizacion)
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")
+        : new Date(),
+      tarea.tarea_completada || false,
+      tarea.etiquetas_usuarios ? tarea.etiquetas_usuarios.split(",")[0] : null, // Asignar el idUsuario si está disponible
+      tarea.tarea_prioridad
+    );
+
+    nuevaTarea.etiquetas = etiquetas;
+
+    return nuevaTarea;
   });
 };
-
-

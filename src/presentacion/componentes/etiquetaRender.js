@@ -5,7 +5,6 @@ const etiquetas = []; // Para almacenar las etiquetas consultadas
 
 export const componentesEtiquetas = {
   renderizarEtiquetas(listaEtiquetas) {
-    console.log("LISTA ETIQUETAS DESDE ETIQUETA RENDER",listaEtiquetas)
     listaEtiquetas.innerHTML = "";
     etiquetasSeleccionadas.forEach((etiqueta) => {
       const li = document.createElement("li");
@@ -32,7 +31,6 @@ export const componentesEtiquetas = {
 
   // Método para eliminar una etiqueta de las seleccionadas
   eliminar(nombre) {
-    console.log(nombre);
     let indice = etiquetasSeleccionadas.findIndex(
       (etiqueta) => etiqueta.nombre === nombre
     );
