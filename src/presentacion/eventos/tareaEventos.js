@@ -30,32 +30,24 @@ document.addEventListener("DOMContentLoaded", async function () {
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
   campoTareas.addEventListener("click", function (event) {
-    const checkboxElemento = event.target.closest(".checkbox-completado");
-    if (checkboxElemento) {
-      
-      const tareaId = checkboxElemento.id.split("-")[1];
+    if (event.target.classList.contains("checkbox-completado")) {
+      const tareaId = event.target.value;
       const indice = tareas.findIndex((tarea) => tarea.idTarea == tareaId);
-      const tareaElemento = checkboxElemento.closest(".tarea");
+      const tareaElemento = event.target.closest(".tarea");
 
-     
-      if (checkboxElemento.checked) {
-        actualizarTareaCompletada(tareaId, true);
-        if (indice !== -1) {
-          tareas.splice(indice, 1);
-          rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
-        }
-      } else {
-        console.log("Tarea desmarcada con ID:", tareaId);
+      actualizarTareaCompletada(tareaId, true);
+      if (indice !== -1) {
+        tareas.splice(indice, 1);
+        rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
       }
-      console.log(checkboxElemento.checked);
-       // Detener la propagación para que no se ejecute la lógica del clic en la tarea general
-       event.stopPropagation();
-       console.log(checkboxElemento.checked);
-    } else {
-      console.log("ENTROOOO");
-      const elementoTarea = event.target.closest(".principalTarea");
-      if (elementoTarea) {
-        const idBuscado = elementoTarea.id;
+    } else if (
+      !event.target.classList.contains("checkbox-completado") &&
+      !event.target.closest(".checkbox-label")&&
+      event.target.closest(".principalTarea") 
+    ) {
+      const tareaElemento = event.target.closest(".principalTarea");
+        const idBuscado = tareaElemento.id;
+        event.stopPropagation();
         const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
         if (tareaDetalle) {
           rendersTareas.mostrarModalDetalleTarea(
@@ -63,7 +55,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             tareaDetalle
           );
         }
-      }
+      
     }
   });
 

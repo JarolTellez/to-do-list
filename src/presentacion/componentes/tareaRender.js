@@ -41,7 +41,7 @@ export const rendersTareas = {
            <div class="completado-container">
   <input type="checkbox" id="completado-${
     tareaElemento.idTarea
-  }" class="checkbox-completado"  value="${tareaElemento}"/>
+  }" class="checkbox-completado"  value="${tareaElemento.idTarea}"/>
   <label for="completado-${
     tareaElemento.idTarea
   }" class="checkbox-label"></label>
