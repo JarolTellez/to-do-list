@@ -18,6 +18,10 @@ document.addEventListener("DOMContentLoaded", async function () {
   const formTarea = document.querySelector("form");
   const btnCancelarModal = document.querySelector(".cancelarModal");
   const modal = document.querySelector("#miModal");
+  const modalDetalleTarea = document.querySelector("#modalDetalleTarea");
+  const btnCancelarModalDetalle = document.querySelector(
+    "#cancelarModalDetalle"
+  );
 
   const tareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
@@ -26,17 +30,15 @@ document.addEventListener("DOMContentLoaded", async function () {
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
   campoTareas.addEventListener("click", function (event) {
-    if (event.target.classList.contains("checkbox-completado")) {
-      const checkbox = event.target;
-      const tareaId = checkbox.id.split("-")[1];
-      console.log("id completada:",tareaId);
-      console.log("TAREAS",tareas);
-      const indice = tareas.findIndex((tarea) => tarea.idTarea == tareaId);
-      console.log("INDICE",indice);
-      const tareaElemento = checkbox.closest(".tarea");
+    const checkboxElemento = event.target.closest(".checkbox-completado");
+    if (checkboxElemento) {
       
+      const tareaId = checkboxElemento.id.split("-")[1];
+      const indice = tareas.findIndex((tarea) => tarea.idTarea == tareaId);
+      const tareaElemento = checkboxElemento.closest(".tarea");
 
-      if (checkbox.checked) {
+     
+      if (checkboxElemento.checked) {
         actualizarTareaCompletada(tareaId, true);
         if (indice !== -1) {
           tareas.splice(indice, 1);
@@ -45,7 +47,28 @@ document.addEventListener("DOMContentLoaded", async function () {
       } else {
         console.log("Tarea desmarcada con ID:", tareaId);
       }
+      console.log(checkboxElemento.checked);
+       // Detener la propagación para que no se ejecute la lógica del clic en la tarea general
+       event.stopPropagation();
+       console.log(checkboxElemento.checked);
+    } else {
+      console.log("ENTROOOO");
+      const elementoTarea = event.target.closest(".principalTarea");
+      if (elementoTarea) {
+        const idBuscado = elementoTarea.id;
+        const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
+        if (tareaDetalle) {
+          rendersTareas.mostrarModalDetalleTarea(
+            modalDetalleTarea,
+            tareaDetalle
+          );
+        }
+      }
     }
+  });
+
+  btnCancelarModalDetalle.addEventListener("click", function () {
+    rendersTareas.ocultarModal(modalDetalleTarea);
   });
 
   rendersTareas.renderizarTareas(campoTareas, tareas);
@@ -89,13 +112,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     try {
       const nuevaTarea = await agregarTarea(tareaNueva);
 
-      
-
       limpiarCampos();
       tareas.push(nuevaTarea.data[0]);
       console.log(tareas);
       rendersTareas.renderizarTareas(campoTareas, nuevaTarea.data);
-     
 
       alert("Se ha guardado correctamente la tarea");
     } catch (error) {
