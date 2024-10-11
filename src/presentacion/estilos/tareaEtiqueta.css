@@ -129,3 +129,15 @@
 .textoTarea {
   margin-top: 0;
 }
+
+
+.labelModal{
+  display: block; 
+  margin-bottom: 2px;
+  margin-left: 2px;
+  font-size:14px;
+}
+
+.btnModal{
+  width: 120px;
+}
