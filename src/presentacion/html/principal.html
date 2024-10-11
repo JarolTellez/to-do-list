@@ -8,12 +8,16 @@
     <link rel="stylesheet" href="../estilos/tareaEtiqueta.css"/>
   </head>
   <body>
-    <div class="container">
+    <div class="container containerPrincipal">
       <div class="infoUsuario">
         <a id="cerrarSesion">Cerrar sesion</a>
       </div>
+   
       <h1>To-Do List</h1>
+      <div class="contenedorBoton">
       <button id="agregar_tarea">Agregar Tarea</button>
+    </div>
+    
       <div id="listaTareas"></div>
     </div>
 
@@ -86,6 +90,44 @@
           <div class="botonesModal">
             <button type="submit" class="agregarModal">Agregar</button>
             <button type="button" class="cancelarModal">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <form>
+    <div id="modalDetalleTarea" class="modal">
+      <div class="modalContent">
+        <div class="containerTarea">
+          <div class="inputsTarea">
+            <label for="tituloTareaDetalle" class="labelModal">Nombre</label>
+            <input type="text" id="tituloTareaDetalle" class="tituloTarea" placeholder="Título" required/>
+
+            <label for="descripcionDetalle" class="labelModal">Descripción</label>
+            <textarea
+              class="descripcionTareaDetalle descripcionTarea"
+              id="descripcionDetalle"
+              placeholder="Descripción"
+            ></textarea>
+          </div>
+
+        <label id="fechaDetalleTarea">Agregada el: <span id="fechaCreacionDetalle"></span></label>
+        <label id="fechaActualizadaDetalleTarea">Actualizada el: <span id="fechaUltimaActualizacionDetalle"></span></label>
+
+          <div id="contenedorEtiquetasDetalle">
+            <ul id="listaEtiquetasDetalle" class="ulEtiquetas"></ul>
+          </div>
+
+          <div class="campoPrioridad" id="prioridadDetalleTarea">
+           
+            
+          </div>
+
+          <div class="botonesModal">
+            <button type="button" class="btnModal">Editar</button>
+            <button type="button" class="btnModal">Eliminar</button>
+            <button type="button" class="btnModal" id="cancelarModalDetalle">Cancelar</button>
           </div>
         </div>
       </div>
