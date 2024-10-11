@@ -35,19 +35,40 @@ class TareaDAO {
 
     try {
      const [resultado]= await connection.query(
-        "UPDATE tarea SET nombre = ?, descripcion = ?, fechaCreacion = ?, ultimaActualizacion = ?, completada = ?, idUsuario = ?, prioridad = ?",
+        "UPDATE tarea SET nombre = ?, descripcion = ?, fechaCreacion = ?, ultimaActualizacion = ?, completada = ?, prioridad = ? WHERE idTarea=?",
         [
           tarea.nombre,
           tarea.descripcion,
           tarea.fechaCreacion,
-          fecha.fechaUltimaActualizacion,
-          fecha.completada,
-          fecha.idUsuario,
-          fecha.prioridad,
+          tarea.fechaUltimaActualizacion,
+          tarea.completada,
+          tarea.prioridad,
+          tarea.idTarea,
         ]
       );
       tarea.idTarea=resultado.insertId;
       return tarea;
+    } catch (error) {
+      console.log("Error al actualizar una tarea: ", error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async actualizarTareaCompletada(idTarea,completada) {
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
+    try {
+     const [resultado]= await connection.query(
+        "UPDATE tarea SET completada = ? WHERE idTarea = ?",
+        [
+          completada,
+          idTarea
+        ]
+      );
+    
+      return resultado.affectedRows;
     } catch (error) {
       console.log("Error al actualizar una tarea: ", error);
       throw error;
@@ -106,7 +127,7 @@ class TareaDAO {
       connection.release();
     }
   }
-
+ 
   static async consultarTareaPorId(idTarea) {
     const conexionBD = new ConexionBD();
     const connection = await conexionBD.conectar();
@@ -124,6 +145,54 @@ class TareaDAO {
       connection.release();
     }
   }
+
+  static async consultarTareasPorIdTarea(idTarea) {
+    const conexionBD = new ConexionBD();
+    const connection = await conexionBD.conectar();
+  
+    try {
+      console.log("Consultando tarea con id:", idTarea); // Imprime el idTarea
+      
+      const [tareas] = await connection.query(
+        `SELECT 
+            t.idTarea AS tarea_id,
+            t.nombre AS tarea_nombre,
+            t.descripcion AS tarea_descripcion,
+            t.fechaCreacion AS tarea_fecha_creacion,
+            t.ultimaActualizacion AS tarea_ultima_actualizacion,
+            t.completada AS tarea_completada,
+            t.prioridad AS tarea_prioridad,
+            GROUP_CONCAT(e.idEtiqueta) AS etiquetas_ids,
+            GROUP_CONCAT(e.nombre) AS etiquetas_nombres,
+            GROUP_CONCAT(e.idUsuario) AS etiquetas_usuarios
+        FROM 
+            tarea t
+        LEFT JOIN 
+            tareaEtiqueta te ON t.idTarea = te.idTarea
+        LEFT JOIN 
+            etiqueta e ON te.idEtiqueta = e.idEtiqueta
+        WHERE 
+            t.idTarea = ?
+        GROUP BY 
+            t.idTarea;`,
+        [idTarea]
+      );
+      
+      
+      
+      if (tareas.length === 0) {
+          console.log("No se encontraron tareas para el id proporcionado.");
+      }
+      
+      return tareas;
+    } catch (error) {
+      console.log("Error al consultar una tarea por id: ", error.message);
+      console.error("Detalles del error: ", error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+}
 
 
 static async consultarTareasPorIdUsuario(idUsuario) {
@@ -150,7 +219,7 @@ static async consultarTareasPorIdUsuario(idUsuario) {
    LEFT JOIN 
       etiqueta e ON te.idEtiqueta = e.idEtiqueta
    WHERE 
-      t.idUsuario = ?
+      t.idUsuario = ? AND t.completada = 0
    GROUP BY 
       t.idTarea;`,
       [idUsuario]

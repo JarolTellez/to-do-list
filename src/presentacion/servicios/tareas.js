@@ -45,3 +45,30 @@ export async function consultarTareasUsuario(idUsuario){
     throw new Error("Error al consultar las tareas: " + error.message);
   }
 }
+
+export async function actualizarTareaCompletada(idTarea,completada) {
+  const urlTareaCompletada="http://localhost:3000/tarea/:id/completar"
+
+  try {
+    const response=await fetch(urlTareaCompletada,{
+      method:"PATCH",
+      headers:{
+        "Content-Type": "application/json",
+      },
+      body:JSON.stringify({idTarea:idTarea,completada:completada})
+    });
+
+    const respuesta=await response.json();
+
+    if(response.ok){
+      return respuesta.data;
+    }else {
+      throw new Error(respuesta.mensaje);
+    }
+
+
+  } catch (error) {
+    throw new Error("Error al actualizar la tarea: " + error.message);
+  }
+  
+}

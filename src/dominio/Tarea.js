@@ -8,6 +8,7 @@ class Tarea{
         this.fechaUltimaActualizacion=fechaUltimaActualizacion;
         this.idUsuario=idUsuario;
         this.prioridad=prioridad;
+        this.etiquetas = [];
     }
 
 }
