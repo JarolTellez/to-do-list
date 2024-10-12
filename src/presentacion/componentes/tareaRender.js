@@ -71,54 +71,50 @@ export const rendersTareas = {
 
   mostrarModalDetalleTarea(modalDetalle, tarea) {
     const inputTituloDetalle = modalDetalle.querySelector(
-      "#tituloTareaDetalle"
-    );
-    const fechaCreacion = modalDetalle.querySelector("#fechaCreacionDetalle");
-    const fechaUltimaActualizacion = modalDetalle.querySelector(
-      "#fechaUltimaActualizacionDetalle"
+      ".tituloTarea"
     );
     const descripcionDetalle = modalDetalle.querySelector(
-      "#descripcionDetalle"
+      ".descripcionTarea"
     );
-    const descripcionLabel = document.querySelector(
-      "label[for='descripcionDetalle']"
-    );
+   
     const contenedorPrioridad = modalDetalle.querySelector(
-      "#prioridadDetalleTarea"
+      ".campoPrioridad"
     );
+
 
     modalDetalle.style.display = "flex";
     inputTituloDetalle.value = tarea.nombre;
     if (!tarea.descripcion || tarea.descripcion === "") {
       descripcionDetalle.style.display = "none";
-      descripcionLabel.style.display = "none";
+    //  descripcionLabel.style.display = "none";
     } else {
       descripcionDetalle.style.display = "block";
-      descripcionLabel.style.display = "block";
+    //descripcionLabel.style.display = "block";
       descripcionDetalle.value = tarea.descripcion;
     }
-    fechaCreacion.textContent = tarea.fechaCreacion;
-    fechaUltimaActualizacion.textContent = tarea.fechaUltimaActualizacion;
+    // fechaCreacion.textContent = tarea.fechaCreacion;
+    // fechaUltimaActualizacion.textContent = tarea.fechaUltimaActualizacion;
 
-    //Limpia el campo prioridad para mostrar el nuevo
-    contenedorPrioridad.innerHTML = "";
-    //Verifica que haya prioridad en la tarea para mostrarla
-    if (tarea.prioridad) {
-      const prioridadHTML = `
-    <div class="prioridad-container">
-      <span class="prioridad-text">Prioridad</span>
-      <div class="prioridad-barra" style="width: ${
-        tarea.prioridad * 20
-      }%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
-        <span class="prioridad-numero">${tarea.prioridad}</span>
-      </div>
-    </div>
-  `;
-
-      contenedorPrioridad.innerHTML = prioridadHTML;
+    //Se quita el campo de prioridad si la tarea no tiene prioridad
+    if (!tarea.prioridad) {
+      contenedorPrioridad.style.display = "none";
+     
+    } else {
+      contenedorPrioridad.style.display = "block";
+      const prioridadRadio = contenedorPrioridad.querySelector(
+        `input[name="prioridad"][value="${tarea.prioridad}"]`
+      );
+      prioridadRadio.checked = true;
     }
   },
 
+  mostrarModal(modal){
+    const descripcionDetalle = modal.querySelector(
+      ".descripcionTarea"
+    );
+    descripcionDetalle.style.display="block";
+    modal.style.display="flex";
+  },
   ocultarModal(modal) {
     if (modal) {
       modal.style.display = "none";

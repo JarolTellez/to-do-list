@@ -12,20 +12,23 @@ import {
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
   const descripcionTarea = document.querySelector(".descripcionTarea");
-  const btnAgregarTarea = document.querySelector(".agregarModal");
+  const btnAgregarTareaPrincipal = document.querySelector("#agregarTareaPrincipal");
   const listaEtiquetas = document.querySelector("#listaEtiquetas");
   const campoTareas = document.querySelector("#listaTareas");
   const formTarea = document.querySelector("form");
   const btnCancelarModal = document.querySelector(".cancelarModal");
   const modal = document.querySelector("#miModal");
-  const modalDetalleTarea = document.querySelector("#modalDetalleTarea");
-  const btnCancelarModalDetalle = document.querySelector(
-    "#cancelarModalDetalle"
-  );
+  const modalOriginal=modal.innerHTML;
+ 
 
   const tareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
   );
+
+  btnAgregarTareaPrincipal.addEventListener("click",function(){
+
+   rendersTareas.mostrarModal(modal);
+  })
 
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
@@ -51,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
         if (tareaDetalle) {
           rendersTareas.mostrarModalDetalleTarea(
-            modalDetalleTarea,
+            modal,
             tareaDetalle
           );
         }
@@ -59,10 +62,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   });
 
-  btnCancelarModalDetalle.addEventListener("click", function () {
-    rendersTareas.ocultarModal(modalDetalleTarea);
-  });
-
+ 
   rendersTareas.renderizarTareas(campoTareas, tareas);
 
   formTarea.addEventListener("submit", async function (e) {
