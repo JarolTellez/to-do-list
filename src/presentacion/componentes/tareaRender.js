@@ -1,3 +1,4 @@
+import {componentesEtiquetas}from"../componentes/etiquetaRender.js";
 export const rendersTareas = {
   renderizarTareas(componenteTareas, listaTareas) {
     console.log(listaTareas);
@@ -81,6 +82,9 @@ export const rendersTareas = {
       ".campoPrioridad"
     );
 
+    const listaEtiquetas=modalDetalle.querySelector("#listaEtiquetas");
+    const inputEtiqueta=modalDetalle.querySelector("#contenedorInput");
+    const consultadas=modalDetalle.querySelector("#consultadas");
 
     modalDetalle.style.display = "flex";
     inputTituloDetalle.value = tarea.nombre;
@@ -105,6 +109,12 @@ export const rendersTareas = {
         `input[name="prioridad"][value="${tarea.prioridad}"]`
       );
       prioridadRadio.checked = true;
+    }
+
+    //Enviar a cargar las etiquetas
+    if(tarea.etiquetas){
+      componentesEtiquetas.agregarEtiquetaInput(tarea.etiquetas,listaEtiquetas,consultadas,inputEtiqueta);
+
     }
   },
 
