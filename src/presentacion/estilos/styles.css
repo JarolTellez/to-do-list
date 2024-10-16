@@ -254,6 +254,19 @@ input {
   gap: 10px;
 }
 
+.limpiarRestaurarModal {
+  width: 48%;
+  padding: 10px;
+  background-color: #dc3545; 
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+
 .agregarModal,
 .cancelarModal {
   width: 48%;

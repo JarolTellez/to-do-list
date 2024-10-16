@@ -81,6 +81,7 @@ export const rendersTareas = {
     const contenedorPrioridad = modalDetalle.querySelector(
       ".campoPrioridad"
     );
+   
 
     const listaEtiquetas=modalDetalle.querySelector("#listaEtiquetas");
     const inputEtiqueta=modalDetalle.querySelector("#contenedorInput");
@@ -116,12 +117,19 @@ export const rendersTareas = {
       componentesEtiquetas.agregarEtiquetaInput(tarea.etiquetas,listaEtiquetas,consultadas,inputEtiqueta);
 
     }
+  
   },
 
+  //Muestra el modal y cambia texto de los botones ya que al mostrar detalle se cambia 
   mostrarModal(modal){
+    const btnLimpiarEliminarModal = modal.querySelector(".limpiarRestaurarModal");
+  const btnAgregarModal=modal.querySelector(".agregarModal");
     const descripcionDetalle = modal.querySelector(
       ".descripcionTarea"
     );
+
+    btnAgregarModal.textContent="Agregar";
+    btnLimpiarEliminarModal.textContent="Limpiar";
     descripcionDetalle.style.display="block";
     modal.style.display="flex";
   },
