@@ -12,23 +12,30 @@ import {
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
   const descripcionTarea = document.querySelector(".descripcionTarea");
-  const btnAgregarTareaPrincipal = document.querySelector("#agregarTareaPrincipal");
+  const btnAgregarTareaPrincipal = document.querySelector(
+    "#agregarTareaPrincipal"
+  );
   const listaEtiquetas = document.querySelector("#listaEtiquetas");
   const campoTareas = document.querySelector("#listaTareas");
   const formTarea = document.querySelector("form");
+  const btnLimpiarEliminarModal = document.querySelector(
+    ".limpiarRestaurarModal"
+  );
+  const btnAgregarModal = document.querySelector(".agregarModal");
   const btnCancelarModal = document.querySelector(".cancelarModal");
   const modal = document.querySelector("#miModal");
-  const modalOriginal=modal.innerHTML;
- 
+  const modalOriginal = modal.innerHTML;
+
+  //botones del modal
+  const botonesContenedor = document.querySelector(".botonesModal");
 
   const tareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
   );
 
-  btnAgregarTareaPrincipal.addEventListener("click",function(){
-
-   rendersTareas.mostrarModal(modal);
-  })
+  btnAgregarTareaPrincipal.addEventListener("click", function () {
+    rendersTareas.mostrarModal(modal);
+  });
 
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
@@ -45,26 +52,39 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
     } else if (
       !event.target.classList.contains("checkbox-completado") &&
-      !event.target.closest(".checkbox-label")&&
-      event.target.closest(".principalTarea") 
+      !event.target.closest(".checkbox-label") &&
+      event.target.closest(".principalTarea")
     ) {
       const tareaElemento = event.target.closest(".principalTarea");
-        const idBuscado = tareaElemento.id;
-        event.stopPropagation();
-        const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
-        if (tareaDetalle) {
-          rendersTareas.mostrarModalDetalleTarea(
-            modal,
-            tareaDetalle
-          );
-        }
-      
+      const idBuscado = tareaElemento.id;
+      event.stopPropagation();
+      const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
+      if (!document.querySelector(".actualizarModal")) {
+        btnAgregarModal.classList.add("actualizarModal");
+        btnAgregarModal.textContent = "Actualizar";
+        btnLimpiarEliminarModal.textContent = "Eliminar";
+      }
+
+      if (tareaDetalle) {
+        rendersTareas.mostrarModalDetalleTarea(modal, tareaDetalle);
+      }
     }
   });
 
- 
-  rendersTareas.renderizarTareas(campoTareas, tareas);
+ async function manejarEventosAgregarActualizar() {
+    if (document.querySelector(".actualizarModal")) {
+        await manejarActualizarTarea();
+        btnAgregarModal.classList.remove("actualizarModal");
 
+ 
+    }else{
+
+    await manejarAgregarTarea();
+    }
+
+  }
+
+  
   formTarea.addEventListener("submit", async function (e) {
     e.preventDefault(); // Para que no se recargue la pagina
 
@@ -73,8 +93,14 @@ document.addEventListener("DOMContentLoaded", async function () {
       return; // Si no hay titulo, termina la ejecucion del submit
     }
 
-    await manejarAgregarTarea();
+    await manejarEventosAgregarActualizar();
   });
+
+  btnLimpiarEliminarModal.addEventListener("click", function () {
+    limpiarCampos();
+  });
+
+  rendersTareas.renderizarTareas(campoTareas, tareas);
 
   btnCancelarModal.addEventListener("click", function () {
     limpiarCampos();
@@ -114,6 +140,14 @@ document.addEventListener("DOMContentLoaded", async function () {
       console.log(error);
       alert(error.message);
     }
+  }
+
+  async function manejarEliminarTarea() {
+    console.log("Eliminar Tarea");
+  }
+
+  async function manejarActualizarTarea() {
+    console.log("Actualizar Tarea");
   }
 
   function limpiarCampos() {
