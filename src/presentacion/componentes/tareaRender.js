@@ -82,12 +82,12 @@ export const rendersTareas = {
       ".campoPrioridad"
     );
    
+    inputTituloDetalle.setAttribute("data-id", tarea.idTarea);
 
     const listaEtiquetas=modalDetalle.querySelector("#listaEtiquetas");
     const inputEtiqueta=modalDetalle.querySelector("#contenedorInput");
     const consultadas=modalDetalle.querySelector("#consultadas");
-
-    modalDetalle.style.display = "flex";
+   
     inputTituloDetalle.value = tarea.nombre;
     if (!tarea.descripcion || tarea.descripcion === "") {
       descripcionDetalle.style.display = "none";
@@ -117,8 +117,14 @@ export const rendersTareas = {
       componentesEtiquetas.agregarEtiquetaInput(tarea.etiquetas,listaEtiquetas,consultadas,inputEtiqueta);
 
     }
+
+    //Para que se desplegue si no esta desplegado y si ya lo esta solo va a actulizar sus datos
+    if(modalDetalle.style.display !=="flex"){
+    modalDetalle.style.display = "flex";
+    }
   
   },
+  
 
   //Muestra el modal y cambia texto de los botones ya que al mostrar detalle se cambia 
   mostrarModal(modal){
