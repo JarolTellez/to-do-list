@@ -7,6 +7,7 @@ import {
   agregarTarea,
   consultarTareasUsuario,
   actualizarTareaCompletada,
+  actualizarTarea,
 } from "../servicios/tareas.js";
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -59,12 +60,12 @@ document.addEventListener("DOMContentLoaded", async function () {
       const idBuscado = tareaElemento.id;
       event.stopPropagation();
       const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
-      if (!document.querySelector(".actualizarModal")) {
+      if (!btnAgregarModal.classList.contains("actualizarModal")) {
         btnAgregarModal.classList.add("actualizarModal");
         btnAgregarModal.textContent = "Actualizar";
         btnLimpiarEliminarModal.textContent = "Eliminar";
       }
-
+    
       if (tareaDetalle) {
         rendersTareas.mostrarModalDetalleTarea(modal, tareaDetalle);
       }
@@ -72,14 +73,12 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 
  async function manejarEventosAgregarActualizar() {
-    if (document.querySelector(".actualizarModal")) {
+    if (btnAgregarModal.classList.contains("actualizarModal")) {
         await manejarActualizarTarea();
-        btnAgregarModal.classList.remove("actualizarModal");
-
- 
     }else{
 
     await manejarAgregarTarea();
+   
     }
 
   }
@@ -102,8 +101,10 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   rendersTareas.renderizarTareas(campoTareas, tareas);
 
+  //PASARLO A RENDER TAREA
   btnCancelarModal.addEventListener("click", function () {
     limpiarCampos();
+    btnAgregarModal.classList.remove("actualizarModal");
     modal.style.display = "none";
   });
 
@@ -148,6 +149,32 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   async function manejarActualizarTarea() {
     console.log("Actualizar Tarea");
+    const prioridad = document.querySelector('input[name="prioridad"]:checked');
+
+    //Se obtiene el valor solo si se selecciono una opcion, si no, entonces null, la prioridad es opcional
+    const valorPrioridad = prioridad ? prioridad.value : null;
+
+    const tareaActualizar= {
+      idTarea:tituloTarea.getAttribute("data-id"),
+      nombre: tituloTarea.value,
+      descripcion: descripcionTarea.value,
+      fechaUltimaActualizacion: new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " "),
+      idUsuario: sessionStorage.getItem("idUsuario"),
+      prioridad: valorPrioridad,
+      etiquetas: etiquetasSeleccionadas,
+    };
+
+    try {
+     const tareaActualizada= await actualizarTarea(tareaActualizar);
+     rendersTareas.mostrarModalDetalleTarea(modal, tareaActualizada);
+    } catch (error) {
+      console.log(error);
+      alert(error.message);
+    }
+
   }
 
   function limpiarCampos() {

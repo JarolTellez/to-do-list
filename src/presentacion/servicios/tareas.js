@@ -72,3 +72,31 @@ export async function actualizarTareaCompletada(idTarea,completada) {
   }
   
 }
+
+export async function actualizarTarea(tareaActualizada){
+ 
+  const urlTareaActualizar="http://localhost:3000/tarea/actualizar";
+
+  try {
+    const response= await fetch(urlTareaActualizar,{
+      method:"PATCH",
+      headers:{
+        "Content-Type": "application/json",
+      },
+      body:JSON.stringify(tareaActualizada)
+    });
+
+    const respuesta= await response.json();
+
+    if(response.ok){
+      return respuesta.data;
+    }else{
+
+    }throw new Error(respuesta.mensaje);
+
+
+  } catch (error) {
+    throw new Error("Error al actualizar la tarea: " + error.message);
+  }
+
+}

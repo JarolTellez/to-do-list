@@ -90,24 +90,24 @@ exports.eliminarTarea = async (req, res) => {
 
 exports.actualizarTarea = async (req, res) => {
   try {
+   
     const {
       idTarea,
       nombre,
       descripcion,
-      fechaCreacion,
       fechaUltimaActualizacion,
-      completada,
       idUsuario,
       prioridad,
+      etiquetas
     } = req.body;
 
     const tarea = new Tarea(
       idTarea,
       nombre,
       descripcion,
-      fechaCreacion,
+      null,
       fechaUltimaActualizacion,
-      completada,
+      null,
       idUsuario,
       prioridad
     );
@@ -115,17 +115,17 @@ exports.actualizarTarea = async (req, res) => {
     if (!tareaExistente) {
       return res.status(404).json({
         status: "error",
-        message: `No se encontró la tarea con el id: ${id}.`,
+        message: `No se encontró la tarea con el id: ${idTarea}.`,
       });
     }
 
     const TareaActualizada = await tareasDAO.actualizarTarea(tarea);
-    console.log("Tarea actualizada correctamente: ", TareaActualizada);
+    const TareaActualizadaConsulta=await tareasDAO.consultarTareaPorId(tarea.idTarea);
+    console.log("Tarea actualizada correctamente: ", TareaActualizadaConsulta);
     return res.status(201).json({
       status: "success",
-      message: `Tarea actualizada: ${TareaActualizada}`,
-      data: tarea,
-      TareaActualizada,
+      message: `Tarea actualizada: ${TareaActualizadaConsulta}`,
+      data:TareaActualizadaConsulta,
     });
   } catch (error) {
     console.error("Error al actualizar la tarea:", error);
