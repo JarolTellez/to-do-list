@@ -22,6 +22,7 @@ export const componentesEtiquetas = {
         const nombreEtiqueta = li.textContent.split(" ");
         this.eliminar(nombreEtiqueta[0].trim());
         li.remove();
+      
       });
 
       li.appendChild(botonEliminar);
@@ -38,6 +39,7 @@ export const componentesEtiquetas = {
 
     if (indice !== -1) {
       etiquetasSeleccionadas.splice(indice, 1);
+      console.log("Etiquetas actuales:",etiquetasSeleccionadas);
     }
   },
 
@@ -93,7 +95,13 @@ export const componentesEtiquetas = {
     contenedorConsultadas,
     inputEtiqueta
   ) {
-    etiquetasSeleccionadas.push(etiqueta);
+
+    if(!Array.isArray(etiqueta)){
+      etiqueta=[etiqueta];
+    }
+    etiqueta.forEach(el=>{
+    etiquetasSeleccionadas.push(el);
+  });
     this.renderizarEtiquetas(listaEtiquetas);
     inputEtiqueta.value = ""; // Limpiar el input
     this.mostrarEtiquetasConsultadas("", contenedorConsultadas); // Limpiar sugerencias

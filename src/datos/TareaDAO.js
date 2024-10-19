@@ -35,18 +35,17 @@ class TareaDAO {
 
     try {
      const [resultado]= await connection.query(
-        "UPDATE tarea SET nombre = ?, descripcion = ?, fechaCreacion = ?, ultimaActualizacion = ?, completada = ?, prioridad = ? WHERE idTarea=?",
+        "UPDATE tarea SET nombre = ?, descripcion = ?, ultimaActualizacion = ?, prioridad = ? WHERE idTarea=?",
         [
           tarea.nombre,
           tarea.descripcion,
-          tarea.fechaCreacion,
           tarea.fechaUltimaActualizacion,
-          tarea.completada,
           tarea.prioridad,
           tarea.idTarea,
         ]
       );
-      tarea.idTarea=resultado.insertId;
+
+      console.log("desde dao",resultado);
       return tarea;
     } catch (error) {
       console.log("Error al actualizar una tarea: ", error);

@@ -7,72 +7,83 @@ import {
   agregarTarea,
   consultarTareasUsuario,
   actualizarTareaCompletada,
+  actualizarTarea,
 } from "../servicios/tareas.js";
 
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
   const descripcionTarea = document.querySelector(".descripcionTarea");
-  const btnAgregarTarea = document.querySelector(".agregarModal");
+  const btnAgregarTareaPrincipal = document.querySelector(
+    "#agregarTareaPrincipal"
+  );
   const listaEtiquetas = document.querySelector("#listaEtiquetas");
   const campoTareas = document.querySelector("#listaTareas");
   const formTarea = document.querySelector("form");
+  const btnLimpiarEliminarModal = document.querySelector(
+    ".limpiarRestaurarModal"
+  );
+  const btnAgregarModal = document.querySelector(".agregarModal");
   const btnCancelarModal = document.querySelector(".cancelarModal");
   const modal = document.querySelector("#miModal");
-  const modalDetalleTarea = document.querySelector("#modalDetalleTarea");
-  const btnCancelarModalDetalle = document.querySelector(
-    "#cancelarModalDetalle"
-  );
+  const modalOriginal = modal.innerHTML;
+
+  //botones del modal
+  const botonesContenedor = document.querySelector(".botonesModal");
 
   const tareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
   );
 
+  btnAgregarTareaPrincipal.addEventListener("click", function () {
+    rendersTareas.mostrarModal(modal);
+  });
+
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
   campoTareas.addEventListener("click", function (event) {
-    const checkboxElemento = event.target.closest(".checkbox-completado");
-    if (checkboxElemento) {
-      
-      const tareaId = checkboxElemento.id.split("-")[1];
+    if (event.target.classList.contains("checkbox-completado")) {
+      const tareaId = event.target.value;
       const indice = tareas.findIndex((tarea) => tarea.idTarea == tareaId);
-      const tareaElemento = checkboxElemento.closest(".tarea");
+      const tareaElemento = event.target.closest(".tarea");
 
-     
-      if (checkboxElemento.checked) {
-        actualizarTareaCompletada(tareaId, true);
-        if (indice !== -1) {
-          tareas.splice(indice, 1);
-          rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
-        }
-      } else {
-        console.log("Tarea desmarcada con ID:", tareaId);
+      actualizarTareaCompletada(tareaId, true);
+      if (indice !== -1) {
+        tareas.splice(indice, 1);
+        rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
       }
-      console.log(checkboxElemento.checked);
-       // Detener la propagación para que no se ejecute la lógica del clic en la tarea general
-       event.stopPropagation();
-       console.log(checkboxElemento.checked);
-    } else {
-      console.log("ENTROOOO");
-      const elementoTarea = event.target.closest(".principalTarea");
-      if (elementoTarea) {
-        const idBuscado = elementoTarea.id;
-        const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
-        if (tareaDetalle) {
-          rendersTareas.mostrarModalDetalleTarea(
-            modalDetalleTarea,
-            tareaDetalle
-          );
-        }
+    } else if (
+      !event.target.classList.contains("checkbox-completado") &&
+      !event.target.closest(".checkbox-label") &&
+      event.target.closest(".principalTarea")
+    ) {
+      const tareaElemento = event.target.closest(".principalTarea");
+      const idBuscado = tareaElemento.id;
+      event.stopPropagation();
+      const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
+      if (!btnAgregarModal.classList.contains("actualizarModal")) {
+        btnAgregarModal.classList.add("actualizarModal");
+        btnAgregarModal.textContent = "Actualizar";
+        btnLimpiarEliminarModal.textContent = "Eliminar";
+      }
+    
+      if (tareaDetalle) {
+        rendersTareas.mostrarModalDetalleTarea(modal, tareaDetalle);
       }
     }
   });
 
-  btnCancelarModalDetalle.addEventListener("click", function () {
-    rendersTareas.ocultarModal(modalDetalleTarea);
-  });
+ async function manejarEventosAgregarActualizar() {
+    if (btnAgregarModal.classList.contains("actualizarModal")) {
+        await manejarActualizarTarea();
+    }else{
 
-  rendersTareas.renderizarTareas(campoTareas, tareas);
+    await manejarAgregarTarea();
+   
+    }
 
+  }
+
+  
   formTarea.addEventListener("submit", async function (e) {
     e.preventDefault(); // Para que no se recargue la pagina
 
@@ -81,11 +92,19 @@ document.addEventListener("DOMContentLoaded", async function () {
       return; // Si no hay titulo, termina la ejecucion del submit
     }
 
-    await manejarAgregarTarea();
+    await manejarEventosAgregarActualizar();
   });
 
+  btnLimpiarEliminarModal.addEventListener("click", function () {
+    limpiarCampos();
+  });
+
+  rendersTareas.renderizarTareas(campoTareas, tareas);
+
+  //PASARLO A RENDER TAREA
   btnCancelarModal.addEventListener("click", function () {
     limpiarCampos();
+    btnAgregarModal.classList.remove("actualizarModal");
     modal.style.display = "none";
   });
 
@@ -122,6 +141,40 @@ document.addEventListener("DOMContentLoaded", async function () {
       console.log(error);
       alert(error.message);
     }
+  }
+
+  async function manejarEliminarTarea() {
+    console.log("Eliminar Tarea");
+  }
+
+  async function manejarActualizarTarea() {
+    console.log("Actualizar Tarea");
+    const prioridad = document.querySelector('input[name="prioridad"]:checked');
+
+    //Se obtiene el valor solo si se selecciono una opcion, si no, entonces null, la prioridad es opcional
+    const valorPrioridad = prioridad ? prioridad.value : null;
+
+    const tareaActualizar= {
+      idTarea:tituloTarea.getAttribute("data-id"),
+      nombre: tituloTarea.value,
+      descripcion: descripcionTarea.value,
+      fechaUltimaActualizacion: new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " "),
+      idUsuario: sessionStorage.getItem("idUsuario"),
+      prioridad: valorPrioridad,
+      etiquetas: etiquetasSeleccionadas,
+    };
+
+    try {
+     const tareaActualizada= await actualizarTarea(tareaActualizar);
+     rendersTareas.mostrarModalDetalleTarea(modal, tareaActualizada);
+    } catch (error) {
+      console.log(error);
+      alert(error.message);
+    }
+
   }
 
   function limpiarCampos() {

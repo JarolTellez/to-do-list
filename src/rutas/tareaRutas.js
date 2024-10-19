@@ -17,6 +17,10 @@ router
   .route('/:id/completar')
   .patch(tareaController.actualizarTareaCompletada);
 
+router
+ .route('/actualizar')
+ .patch(tareaController.actualizarTarea);
+
     
 
 module.exports = router;
