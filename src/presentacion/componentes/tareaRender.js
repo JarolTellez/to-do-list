@@ -1,3 +1,4 @@
+import {componentesEtiquetas}from"../componentes/etiquetaRender.js";
 export const rendersTareas = {
   renderizarTareas(componenteTareas, listaTareas) {
     console.log(listaTareas);
@@ -41,7 +42,7 @@ export const rendersTareas = {
            <div class="completado-container">
   <input type="checkbox" id="completado-${
     tareaElemento.idTarea
-  }" class="checkbox-completado"  value="${tareaElemento}"/>
+  }" class="checkbox-completado"  value="${tareaElemento.idTarea}"/>
   <label for="completado-${
     tareaElemento.idTarea
   }" class="checkbox-label"></label>
@@ -71,54 +72,73 @@ export const rendersTareas = {
 
   mostrarModalDetalleTarea(modalDetalle, tarea) {
     const inputTituloDetalle = modalDetalle.querySelector(
-      "#tituloTareaDetalle"
-    );
-    const fechaCreacion = modalDetalle.querySelector("#fechaCreacionDetalle");
-    const fechaUltimaActualizacion = modalDetalle.querySelector(
-      "#fechaUltimaActualizacionDetalle"
+      ".tituloTarea"
     );
     const descripcionDetalle = modalDetalle.querySelector(
-      "#descripcionDetalle"
+      ".descripcionTarea"
     );
-    const descripcionLabel = document.querySelector(
-      "label[for='descripcionDetalle']"
-    );
+   
     const contenedorPrioridad = modalDetalle.querySelector(
-      "#prioridadDetalleTarea"
+      ".campoPrioridad"
     );
+   
+    inputTituloDetalle.setAttribute("data-id", tarea.idTarea);
 
-    modalDetalle.style.display = "flex";
+    const listaEtiquetas=modalDetalle.querySelector("#listaEtiquetas");
+    const inputEtiqueta=modalDetalle.querySelector("#contenedorInput");
+    const consultadas=modalDetalle.querySelector("#consultadas");
+   
     inputTituloDetalle.value = tarea.nombre;
     if (!tarea.descripcion || tarea.descripcion === "") {
       descripcionDetalle.style.display = "none";
-      descripcionLabel.style.display = "none";
+    //  descripcionLabel.style.display = "none";
     } else {
       descripcionDetalle.style.display = "block";
-      descripcionLabel.style.display = "block";
+    //descripcionLabel.style.display = "block";
       descripcionDetalle.value = tarea.descripcion;
     }
-    fechaCreacion.textContent = tarea.fechaCreacion;
-    fechaUltimaActualizacion.textContent = tarea.fechaUltimaActualizacion;
+    // fechaCreacion.textContent = tarea.fechaCreacion;
+    // fechaUltimaActualizacion.textContent = tarea.fechaUltimaActualizacion;
 
-    //Limpia el campo prioridad para mostrar el nuevo
-    contenedorPrioridad.innerHTML = "";
-    //Verifica que haya prioridad en la tarea para mostrarla
-    if (tarea.prioridad) {
-      const prioridadHTML = `
-    <div class="prioridad-container">
-      <span class="prioridad-text">Prioridad</span>
-      <div class="prioridad-barra" style="width: ${
-        tarea.prioridad * 20
-      }%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
-        <span class="prioridad-numero">${tarea.prioridad}</span>
-      </div>
-    </div>
-  `;
-
-      contenedorPrioridad.innerHTML = prioridadHTML;
+    //Se quita el campo de prioridad si la tarea no tiene prioridad
+    if (!tarea.prioridad) {
+      contenedorPrioridad.style.display = "none";
+     
+    } else {
+      contenedorPrioridad.style.display = "block";
+      const prioridadRadio = contenedorPrioridad.querySelector(
+        `input[name="prioridad"][value="${tarea.prioridad}"]`
+      );
+      prioridadRadio.checked = true;
     }
-  },
 
+    //Enviar a cargar las etiquetas
+    if(tarea.etiquetas){
+      componentesEtiquetas.agregarEtiquetaInput(tarea.etiquetas,listaEtiquetas,consultadas,inputEtiqueta);
+
+    }
+
+    //Para que se desplegue si no esta desplegado y si ya lo esta solo va a actulizar sus datos
+    if(modalDetalle.style.display !=="flex"){
+    modalDetalle.style.display = "flex";
+    }
+  
+  },
+  
+
+  //Muestra el modal y cambia texto de los botones ya que al mostrar detalle se cambia 
+  mostrarModal(modal){
+    const btnLimpiarEliminarModal = modal.querySelector(".limpiarRestaurarModal");
+  const btnAgregarModal=modal.querySelector(".agregarModal");
+    const descripcionDetalle = modal.querySelector(
+      ".descripcionTarea"
+    );
+
+    btnAgregarModal.textContent="Agregar";
+    btnLimpiarEliminarModal.textContent="Limpiar";
+    descripcionDetalle.style.display="block";
+    modal.style.display="flex";
+  },
   ocultarModal(modal) {
     if (modal) {
       modal.style.display = "none";
