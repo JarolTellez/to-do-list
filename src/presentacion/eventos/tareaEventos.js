@@ -30,9 +30,13 @@ document.addEventListener("DOMContentLoaded", async function () {
   //botones del modal
   const botonesContenedor = document.querySelector(".botonesModal");
 
-  const tareas = await consultarTareasUsuario(
+  let etiquetasParaActualizar;
+
+  let tareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
   );
+
+ 
 
   btnAgregarTareaPrincipal.addEventListener("click", function () {
     rendersTareas.mostrarModal(modal);
@@ -40,7 +44,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
-  campoTareas.addEventListener("click", function (event) {
+  campoTareas.addEventListener("click", async function (event) {
+    tareas = await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
+    console.log("TAREAAAS", tareas);
     if (event.target.classList.contains("checkbox-completado")) {
       const tareaId = event.target.value;
       const indice = tareas.findIndex((tarea) => tarea.idTarea == tareaId);
@@ -65,25 +71,23 @@ document.addEventListener("DOMContentLoaded", async function () {
         btnAgregarModal.textContent = "Actualizar";
         btnLimpiarEliminarModal.textContent = "Eliminar";
       }
-    
+
       if (tareaDetalle) {
         rendersTareas.mostrarModalDetalleTarea(modal, tareaDetalle);
       }
+      etiquetasParaActualizar = [...etiquetasSeleccionadas];
+     
     }
   });
 
- async function manejarEventosAgregarActualizar() {
+  async function manejarEventosAgregarActualizar() {
     if (btnAgregarModal.classList.contains("actualizarModal")) {
-        await manejarActualizarTarea();
-    }else{
-
-    await manejarAgregarTarea();
-   
+      await manejarActualizarTarea();
+    } else {
+      await manejarAgregarTarea();
     }
-
   }
 
-  
   formTarea.addEventListener("submit", async function (e) {
     e.preventDefault(); // Para que no se recargue la pagina
 
@@ -148,14 +152,14 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   async function manejarActualizarTarea() {
-    console.log("Actualizar Tarea");
+    console.log("Actualizar Tarea", etiquetasParaActualizar);
     const prioridad = document.querySelector('input[name="prioridad"]:checked');
 
     //Se obtiene el valor solo si se selecciono una opcion, si no, entonces null, la prioridad es opcional
     const valorPrioridad = prioridad ? prioridad.value : null;
 
-    const tareaActualizar= {
-      idTarea:tituloTarea.getAttribute("data-id"),
+    const tareaActualizar = {
+      idTarea: tituloTarea.getAttribute("data-id"),
       nombre: tituloTarea.value,
       descripcion: descripcionTarea.value,
       fechaUltimaActualizacion: new Date()
@@ -164,17 +168,28 @@ document.addEventListener("DOMContentLoaded", async function () {
         .replace("T", " "),
       idUsuario: sessionStorage.getItem("idUsuario"),
       prioridad: valorPrioridad,
-      etiquetas: etiquetasSeleccionadas,
+      etiquetasAnteriores: etiquetasParaActualizar,
+      etiquetasNuevas: etiquetasSeleccionadas,
     };
 
+    console.log("ANTERIORES eventos",etiquetasParaActualizar);
+    console.log("Nuevas eventos",etiquetasSeleccionadas);
+
+
     try {
-     const tareaActualizada= await actualizarTarea(tareaActualizar);
-     rendersTareas.mostrarModalDetalleTarea(modal, tareaActualizada);
+      const tareaActualizada = await actualizarTarea(tareaActualizar);
+      //rendersTareas.mostrarModalDetalleTarea(modal, tareaActualizada);
+
+      const tareasActualizadas = await consultarTareasUsuario(
+        sessionStorage.getItem("idUsuario")
+      );
+      etiquetasParaActualizar = [...etiquetasSeleccionadas];
+      rendersTareas.renderizarTareas(campoTareas, tareasActualizadas);
+      alert("Se actualizo la tarea");
     } catch (error) {
       console.log(error);
       alert(error.message);
     }
-
   }
 
   function limpiarCampos() {

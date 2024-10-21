@@ -100,6 +100,20 @@ exports.consultarEtiquetasPorIdUsuario = async (req, res) => {
   }
 };
 
+exports.eliminarEtiquetas=async(etiquetas)=>{
+  try {
+    for (const etiqueta of etiquetas) {
+      console.log("Elimando: ",etiqueta);
+    const eliminado= await tareaEtiquetaDAO.eliminarTareaEtiqueta(etiqueta.idTareaEtiqueta);
+    return eliminado;
+    };
+  } catch (error) {
+    console.error("Error al eliminar tareaEtiqueta: ", error);
+    throw error; 
+  }
+ 
+};
+
 async function obtenerEtiquetaPorNombre(nombreEtiqueta) {
   try {
     return await etiquetaDAO.consultarEtiquetaPorNombre(nombreEtiqueta);

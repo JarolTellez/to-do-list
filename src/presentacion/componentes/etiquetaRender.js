@@ -1,6 +1,7 @@
 
 
 export const etiquetasSeleccionadas = []; // Almacenar etiquetas que se van seleccionando
+
 const etiquetas = []; // Para almacenar las etiquetas consultadas
 
 export const componentesEtiquetas = {
