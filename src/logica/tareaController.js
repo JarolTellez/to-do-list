@@ -121,8 +121,9 @@ exports.actualizarTarea = async (req, res) => {
     }
 
     const TareaActualizada = await tareasDAO.actualizarTarea(tarea);
-    const TareaActualizadaConsulta=await tareasDAO.consultarTareaPorId(tarea.idTarea);
-    console.log("Tarea actualizada correctamente: ", TareaActualizadaConsulta);
+   
+
+    
 
 const etiquetasParaAgregar= etiquetasNuevas.filter(etiquetaNueva=>!etiquetasAnteriores.some(etiquetaAnterior=> etiquetaAnterior.nombre===etiquetaNueva.nombre));
 const etiquetasParaEliminar= etiquetasAnteriores.filter(etiquetaAnterior=>!etiquetasNuevas.some(etiquetaNueva=>etiquetaNueva.nombre===etiquetaAnterior.nombre));
@@ -141,11 +142,17 @@ console.log("etiquetas a eliminar",etiquetasParaEliminar);
   if(etiquetasParaEliminar){
     await etiquetaController.eliminarEtiquetas(etiquetasParaEliminar);
   }
+  const tareaActualizadaConsulta=await tareasDAO.consultarTareasPorIdTarea(tarea.idTarea);
+  //Le paso la primer posicion para enviar solo el objeto y no el array, ya que el metodo
+  //para procesar regresa un array porque puede procesar muchas tareas en este caso solo le mando
+  //una por eso solo regreso la primer posicion para evitar que se mande como array.
+  const tareaProcesada=procesarTareasConEtiquetas(tareaActualizadaConsulta)[0];
+ 
 
     return res.status(201).json({
       status: "success",
-      message: `Tarea actualizada: ${TareaActualizadaConsulta}`,
-      data:TareaActualizadaConsulta,
+      message: `Tarea actualizada: ${tareaProcesada}`,
+      data:tareaProcesada,
     });
   } catch (error) {
     console.error("Error al actualizar la tarea:", error);
