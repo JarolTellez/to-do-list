@@ -36,8 +36,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     sessionStorage.getItem("idUsuario")
   );
 
- 
-
   btnAgregarTareaPrincipal.addEventListener("click", function () {
     rendersTareas.mostrarModal(modal);
   });
@@ -46,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async function () {
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
   campoTareas.addEventListener("click", async function (event) {
     tareas = await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
-    console.log("TAREAAAS", tareas);
+
     if (event.target.classList.contains("checkbox-completado")) {
       const tareaId = event.target.value;
       const indice = tareas.findIndex((tarea) => tarea.idTarea == tareaId);
@@ -63,7 +61,10 @@ document.addEventListener("DOMContentLoaded", async function () {
       event.target.closest(".principalTarea")
     ) {
       const tareaElemento = event.target.closest(".principalTarea");
-      const idBuscado = tareaElemento.id;
+      const idCompleto = tareaElemento.id;
+      // Elimina  "tarea-" para obtener solo el id de la tarea
+      const idBuscado = idCompleto.replace("tarea-", "");
+
       event.stopPropagation();
       const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
       if (!btnAgregarModal.classList.contains("actualizarModal")) {
@@ -71,12 +72,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         btnAgregarModal.textContent = "Actualizar";
         btnLimpiarEliminarModal.textContent = "Eliminar";
       }
-
+      console.log("TAREA DETALLE", tareaDetalle);
       if (tareaDetalle) {
         rendersTareas.mostrarModalDetalleTarea(modal, tareaDetalle);
       }
       etiquetasParaActualizar = [...etiquetasSeleccionadas];
-     
     }
   });
 
@@ -172,19 +172,33 @@ document.addEventListener("DOMContentLoaded", async function () {
       etiquetasNuevas: etiquetasSeleccionadas,
     };
 
-    console.log("ANTERIORES eventos",etiquetasParaActualizar);
-    console.log("Nuevas eventos",etiquetasSeleccionadas);
-
+    console.log("ANTERIORES eventos", etiquetasParaActualizar);
+    console.log("NUEVAS eventos", etiquetasSeleccionadas);
 
     try {
       const tareaActualizada = await actualizarTarea(tareaActualizar);
       //rendersTareas.mostrarModalDetalleTarea(modal, tareaActualizada);
+      console.log("ACTUALIZAAADA", tareaActualizada);
 
+      //Consulto las tareas de nuevo
       const tareasActualizadas = await consultarTareasUsuario(
         sessionStorage.getItem("idUsuario")
       );
+      tareas = tareasActualizadas;
+      etiquetasSeleccionadas.length = 0;
+
+      // const tareaActual= tareas.find((tarea) => tarea.idTarea ==  tituloTarea.getAttribute("data-id"));
+      // console.log("TAREA ACTUAL",tareaActual);
+      // tareaActual.etiquetas.forEach(element => {
+      //   etiquetasSeleccionadas.push(element);
+      // });
+
+      tareaActualizada.etiquetas.forEach((element) => {
+        etiquetasSeleccionadas.push(element);
+      });
+      rendersTareas.actualizarRenderTarea(campoTareas, tareaActualizada);
       etiquetasParaActualizar = [...etiquetasSeleccionadas];
-      rendersTareas.renderizarTareas(campoTareas, tareasActualizadas);
+
       alert("Se actualizo la tarea");
     } catch (error) {
       console.log(error);

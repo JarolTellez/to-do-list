@@ -2,13 +2,13 @@ import {componentesEtiquetas}from"../componentes/etiquetaRender.js";
 export const rendersTareas = {
   renderizarTareas(componenteTareas, listaTareas) {
     //PARA LIMPIAR
-    componenteTareas.innerHTML='';
-    console.log(listaTareas);
+   // componenteTareas.innerHTML='';
+    console.log("Renderizando",listaTareas);
     listaTareas.forEach((tareaElemento) => {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
       tareaDiv.innerHTML = `
-      <div class="principalTarea" id="${tareaElemento.idTarea}">
+      <div class="principalTarea" id="tarea-${tareaElemento.idTarea}">
          <div class="contendorTarea" value="${tareaElemento.idTarea}">
           <h3>${tareaElemento.nombre}</h3>
            <p class="fechaActualidada">${
@@ -65,6 +65,55 @@ export const rendersTareas = {
       componenteTareas.appendChild(tareaDiv);
     });
   },
+
+  actualizarRenderTarea(componenteTareas, tareaActualizada) {
+    // Encuentra el contenedor de la tarea por ID
+    const tareaDiv = componenteTareas.querySelector(`#tarea-${tareaActualizada.idTarea}`);
+console.log("id",tareaActualizada.idTarea);
+  
+    if (tareaDiv) {
+      // Actualiza el contenido de la tarea
+      tareaDiv.querySelector("h3").textContent = tareaActualizada.nombre;
+      tareaDiv.querySelector(".fechaActualidada").textContent = tareaActualizada.fechaUltimaActualizacion;
+      
+      const descripcionElemento = tareaDiv.querySelector(".textoTarea");
+      if (tareaActualizada.descripcion) {
+        if (descripcionElemento) {
+          descripcionElemento.textContent = tareaActualizada.descripcion;
+        } else {
+          const descripcionNueva = document.createElement("p");
+          descripcionNueva.className = "textoTarea";
+          descripcionNueva.textContent = tareaActualizada.descripcion;
+          tareaDiv.querySelector(".contendorTarea").appendChild(descripcionNueva);
+        }
+      } else if (descripcionElemento) {
+        descripcionElemento.remove();
+      }
+  
+      // Actualizar la prioridad, si la tiene
+      if (tareaActualizada.prioridad) {
+        const prioridadBarra = tareaDiv.querySelector(".prioridad-barra");
+        if (prioridadBarra) {
+          prioridadBarra.style.width = `${tareaActualizada.prioridad * 20}%`;
+          prioridadBarra.querySelector(".prioridad-numero").textContent = tareaActualizada.prioridad;
+        }
+      }
+  
+      // Actualizar etiquetas
+      const etiquetasUl = tareaDiv.querySelector(".ulEtiquetas");
+      if (etiquetasUl) {
+        etiquetasUl.innerHTML = ""; // Limpiar las etiquetas existentes
+        tareaActualizada.etiquetas.forEach((etiqueta) => {
+          const li = document.createElement("li");
+          li.className = "etiqueta";
+          li.textContent = etiqueta.nombre;
+          etiquetasUl.appendChild(li);
+        });
+      }
+    } else {
+      console.error("No se encontró la tarea para actualizarla.");
+    }
+  },  
 
   eliminarRenderEspecifico(contenedor, componenteTarea) {
     if (componenteTarea) {
