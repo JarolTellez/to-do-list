@@ -34,12 +34,19 @@ export const rendersTareas = {
             }
            ${
              tareaElemento.etiquetas && tareaElemento.etiquetas.length > 0
-               ? `  <strong>Etiquetas:</strong>
-               <div class="etiquetas scrollEtiqueta">
-          
-             <ul class="ulEtiquetas"></ul>
+               ? `  
+               <div class="etiquetas-container">
+    <strong>Etiquetas:</strong>
+    <div class="etiquetas scrollEtiqueta">
+        <ul class="ulEtiquetas"></ul>
+    </div>
           </div>`
-               : ""
+               :  `  <div class="etiquetas-container hidden">
+    <strong>Etiquetas:</strong>
+    <div class="etiquetas scrollEtiqueta">
+        <ul class="ulEtiquetas"></ul>
+    </div>
+          </div>`
            }
            <div class="completado-container">
   <input type="checkbox" id="completado-${
@@ -100,6 +107,11 @@ console.log("id",tareaActualizada.idTarea);
       }
   
       // Actualizar etiquetas
+      const etiquetasContenedor = tareaDiv.querySelector(".etiquetas-container");
+      
+      //Verifica que la tarea tenga eiquetas, si las tiene muestra el html para mostrar las etiquetas y las carga
+      // si no las tiene se asegura de ocultar el html contenedor donde se muestran las etiquetas
+     if(tareaActualizada.etiquetas && tareaActualizada.etiquetas.length > 0){
       const etiquetasUl = tareaDiv.querySelector(".ulEtiquetas");
       if (etiquetasUl) {
         etiquetasUl.innerHTML = ""; // Limpiar las etiquetas existentes
@@ -109,7 +121,21 @@ console.log("id",tareaActualizada.idTarea);
           li.textContent = etiqueta.nombre;
           etiquetasUl.appendChild(li);
         });
+     
       }
+      if(etiquetasContenedor){
+        etiquetasContenedor.style.display = "block";
+        etiquetasContenedor.classList.remove("hidden"); 
+      }
+      
+    }else{
+      if (etiquetasContenedor) {
+        etiquetasContenedor.classList.add("hidden"); 
+        etiquetasContenedor.style.display = "none";
+    }
+  
+    }
+      
     } else {
       console.error("No se encontró la tarea para actualizarla.");
     }
@@ -185,9 +211,12 @@ console.log("id",tareaActualizada.idTarea);
       ".descripcionTarea"
     );
 
+   const prioridad=modal.querySelector(".campoPrioridad");
+
     btnAgregarModal.textContent="Agregar";
     btnLimpiarEliminarModal.textContent="Limpiar";
     descripcionDetalle.style.display="block";
+    prioridad.style.display="block";
     modal.style.display="flex";
   },
   ocultarModal(modal) {

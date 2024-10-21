@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
   campoTareas.addEventListener("click", async function (event) {
-    tareas = await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
+  //  tareas = await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
 
     if (event.target.classList.contains("checkbox-completado")) {
       const tareaId = event.target.value;
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     ) {
       const tareaElemento = event.target.closest(".principalTarea");
       const idCompleto = tareaElemento.id;
-      // Elimina  "tarea-" para obtener solo el id de la tarea
+      // Elimina  "tarea-" para obtener solo el id de la tarea del elemento html cargado dinamicamente para mostrar cada una de las tareas
       const idBuscado = idCompleto.replace("tarea-", "");
 
       event.stopPropagation();
@@ -176,26 +176,29 @@ document.addEventListener("DOMContentLoaded", async function () {
     console.log("NUEVAS eventos", etiquetasSeleccionadas);
 
     try {
+      
       const tareaActualizada = await actualizarTarea(tareaActualizar);
-      //rendersTareas.mostrarModalDetalleTarea(modal, tareaActualizada);
-      console.log("ACTUALIZAAADA", tareaActualizada);
+     
 
-      //Consulto las tareas de nuevo
+      //Consulto las tareas de nuevo para tenerlas actualizadas
       const tareasActualizadas = await consultarTareasUsuario(
         sessionStorage.getItem("idUsuario")
       );
       tareas = tareasActualizadas;
+
+      //Elimino todas las tareas de etiquetasSeleccionadas para volverlo a llenar
       etiquetasSeleccionadas.length = 0;
-
-      // const tareaActual= tareas.find((tarea) => tarea.idTarea ==  tituloTarea.getAttribute("data-id"));
-      // console.log("TAREA ACTUAL",tareaActual);
-      // tareaActual.etiquetas.forEach(element => {
-      //   etiquetasSeleccionadas.push(element);
-      // });
-
+      // agrego a etiquetas seleccionadas las etiquetas actuales de la tarea es decir
+      // las etiquetas que se actualizaron(guardaron la bd despues de actualizar las etiquetas de la tarea)
       tareaActualizada.etiquetas.forEach((element) => {
         etiquetasSeleccionadas.push(element);
       });
+
+      //Envio a actualizar el render de la tarea, es decir una tarea en especifico, le paso el campo tareas que es
+      //donde se se agregan dinamicamente las tareas cada una al agregarla en un campo se le agrega el id de la tarea
+      //y le paso la tarea que regreso el metodo de actualizar es decir
+      //la tarea actualizada para que busque en el campo tareas el elemento que coincida con el id de la tareaActualizada y carge
+      // todos los datos de la tareaActualizada en el elemento html que le corresponda
       rendersTareas.actualizarRenderTarea(campoTareas, tareaActualizada);
       etiquetasParaActualizar = [...etiquetasSeleccionadas];
 

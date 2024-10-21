@@ -327,3 +327,6 @@ input {
   color: #fff;
 }
 
+.hidden {
+  display: none;
+}
