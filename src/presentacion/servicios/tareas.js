@@ -47,7 +47,7 @@ export async function consultarTareasUsuario(idUsuario){
 }
 
 export async function actualizarTareaCompletada(idTarea,completada) {
-  const urlTareaCompletada="http://localhost:3000/tarea/:id/completar"
+  const urlTareaCompletada="http://localhost:3000/tarea/gestionar"
 
   try {
     const response=await fetch(urlTareaCompletada,{
@@ -99,4 +99,31 @@ export async function actualizarTarea(tareaActualizada){
     throw new Error("Error al actualizar la tarea: " + error.message);
   }
 
+}
+
+export async function eliminarTarea(idTarea,idUsuario) {
+  const urlTareaEliminar="http://localhost:3000/tarea/gestionar"
+
+  try {
+    const response=await fetch(urlTareaEliminar,{
+      method:"POST",
+      headers:{
+        "Content-Type": "application/json",
+      },
+      body:JSON.stringify({idTarea:idTarea,idUsuario:idUsuario})
+    });
+
+    const respuesta=await response.json();
+
+    if(response.ok){
+      return respuesta.data;
+    }else {
+      throw new Error(respuesta.mensaje);
+    }
+
+
+  } catch (error) {
+    throw new Error("Error al eliminar la tarea: " + error.message);
+  }
+  
 }

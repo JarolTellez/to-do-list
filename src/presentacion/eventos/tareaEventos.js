@@ -8,6 +8,7 @@ import {
   consultarTareasUsuario,
   actualizarTareaCompletada,
   actualizarTarea,
+  eliminarTarea
 } from "../servicios/tareas.js";
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -126,9 +127,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     await manejarEventosAgregarActualizar();
   });
 
-  btnLimpiarEliminarModal.addEventListener("click", function () {
+  btnLimpiarEliminarModal.addEventListener("click", async function () {
     //limpiarCampos();
-    manejarLimpiarEliminar();
+    manejarLimpiarEliminar(event);
   });
 
   rendersTareas.renderizarTareas(campoTareas, tareas);
@@ -177,6 +178,26 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   async function manejarEliminarTarea() {
     console.log("Eliminar Tarea");
+    try {
+      const idTarea=tituloTarea.getAttribute("data-id");
+    await eliminarTarea(idTarea,sessionStorage.getItem("idUsuario"));
+    //Vuelvo a cargar las tareas
+    tareas = await consultarTareasUsuario(
+      sessionStorage.getItem("idUsuario")
+    );
+
+    //Elimino el elemento render de la tarea
+    
+    const tareaElementoEliminar = document.querySelector(`#tareaDiv-${idTarea}`);
+    rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElementoEliminar);
+      
+    alert("Tarea eliminada")
+  } catch (error) {
+    console.log(error);
+    alert(error.message);
+  }
+
+
   }
 
   async function manejarActualizarTarea() {
