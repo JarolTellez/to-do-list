@@ -26,15 +26,32 @@ document.addEventListener("DOMContentLoaded", async function () {
   const btnCancelarModal = document.querySelector(".cancelarModal");
   const modal = document.querySelector("#miModal");
   const modalOriginal = modal.innerHTML;
-
-  //botones del modal
   const botonesContenedor = document.querySelector(".botonesModal");
 
+  
   let etiquetasParaActualizar;
-
   let tareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
   );
+
+  //Para iterarar y encontrar el radio seleccionado
+  let selectedRadio = null;
+
+  function deseleccionarPrioridad(){
+  document.querySelectorAll('.prioridadOption input[type="radio"]').forEach((radio) => {
+    radio.addEventListener('click', function () {
+      // Si ya está seleccionado y es el mismo que el anterior
+      if (this === selectedRadio) {
+        this.checked = false; // Deseleccionar
+        selectedRadio = null; // Reiniciar selección
+      } else {
+        selectedRadio = this; // Actualizar el radio seleccionado
+      }
+    });
+  });
+  
+}
+deseleccionarPrioridad();
 
   btnAgregarTareaPrincipal.addEventListener("click", function () {
     rendersTareas.mostrarModal(modal);
@@ -101,6 +118,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   btnLimpiarEliminarModal.addEventListener("click", function () {
     limpiarCampos();
+  
   });
 
   rendersTareas.renderizarTareas(campoTareas, tareas);
@@ -210,13 +228,10 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   function limpiarCampos() {
-    const prioridad = document.querySelector('input[name="prioridad"]:checked');
-    tituloTarea.value = "";
-    descripcionTarea.value = "";
-    if (prioridad) {
-      prioridad.checked = false;
-    }
+    formTarea.reset();
     listaEtiquetas.innerHTML = "";
     etiquetasSeleccionadas.length = 0;
   }
 });
+
+

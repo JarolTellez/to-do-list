@@ -244,7 +244,7 @@ const procesarTareasConEtiquetas = (tareas) => {
       idTareaEtiqueta: tarea_etiqueta_ids[index] // Agregando idTareaEtiqueta
     }));
     
-    etiquetas.reverse();
+   // etiquetas.reverse();
 
     const nuevaTarea = new Tarea(
       tarea.tarea_id,
