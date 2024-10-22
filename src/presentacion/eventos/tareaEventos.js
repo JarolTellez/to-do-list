@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   const modalOriginal = modal.innerHTML;
   const botonesContenedor = document.querySelector(".botonesModal");
 
-  
   let etiquetasParaActualizar;
   let tareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
@@ -37,30 +36,32 @@ document.addEventListener("DOMContentLoaded", async function () {
   //Para iterarar y encontrar el radio seleccionado
   let selectedRadio = null;
 
-  function deseleccionarPrioridad(){
-  document.querySelectorAll('.prioridadOption input[type="radio"]').forEach((radio) => {
-    radio.addEventListener('click', function () {
-      // Si ya está seleccionado y es el mismo que el anterior
-      if (this === selectedRadio) {
-        this.checked = false; // Deseleccionar
-        selectedRadio = null; // Reiniciar selección
-      } else {
-        selectedRadio = this; // Actualizar el radio seleccionado
-      }
-    });
-  });
-  
-}
-deseleccionarPrioridad();
+  function deseleccionarPrioridad() {
+    document
+      .querySelectorAll('.prioridadOption input[type="radio"]')
+      .forEach((radio) => {
+        radio.addEventListener("click", function () {
+          // Si ya está seleccionado y es el mismo que el anterior
+          if (this === selectedRadio) {
+            this.checked = false; // Deseleccionar
+            selectedRadio = null; // Reiniciar selección
+          } else {
+            selectedRadio = this; // Actualizar el radio seleccionado
+          }
+        });
+      });
+  }
+  deseleccionarPrioridad();
 
   btnAgregarTareaPrincipal.addEventListener("click", function () {
+    btnLimpiarEliminarModal.classList.remove("eliminar");
     rendersTareas.mostrarModal(modal);
   });
 
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
   campoTareas.addEventListener("click", async function (event) {
-  //  tareas = await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
+    //  tareas = await consultarTareasUsuario(sessionStorage.getItem("idUsuario"));
 
     if (event.target.classList.contains("checkbox-completado")) {
       const tareaId = event.target.value;
@@ -88,6 +89,7 @@ deseleccionarPrioridad();
         btnAgregarModal.classList.add("actualizarModal");
         btnAgregarModal.textContent = "Actualizar";
         btnLimpiarEliminarModal.textContent = "Eliminar";
+        btnLimpiarEliminarModal.classList.add("eliminar");
       }
       console.log("TAREA DETALLE", tareaDetalle);
       if (tareaDetalle) {
@@ -105,6 +107,14 @@ deseleccionarPrioridad();
     }
   }
 
+  async function manejarLimpiarEliminar() {
+    if (btnLimpiarEliminarModal.classList.contains("eliminar")) {
+      await manejarEliminarTarea();
+    } else {
+     limpiarCampos();
+    }
+  }
+
   formTarea.addEventListener("submit", async function (e) {
     e.preventDefault(); // Para que no se recargue la pagina
 
@@ -117,8 +127,8 @@ deseleccionarPrioridad();
   });
 
   btnLimpiarEliminarModal.addEventListener("click", function () {
-    limpiarCampos();
-  
+    //limpiarCampos();
+    manejarLimpiarEliminar();
   });
 
   rendersTareas.renderizarTareas(campoTareas, tareas);
@@ -190,14 +200,11 @@ deseleccionarPrioridad();
       etiquetasNuevas: etiquetasSeleccionadas,
     };
 
-    console.log("ANTERIORES eventos", etiquetasParaActualizar);
-    console.log("NUEVAS eventos", etiquetasSeleccionadas);
+    // console.log("ANTERIORES eventos", etiquetasParaActualizar);
+    // console.log("NUEVAS eventos", etiquetasSeleccionadas);
 
     try {
-      
       const tareaActualizada = await actualizarTarea(tareaActualizar);
-     
-
       //Consulto las tareas de nuevo para tenerlas actualizadas
       const tareasActualizadas = await consultarTareasUsuario(
         sessionStorage.getItem("idUsuario")
@@ -233,5 +240,3 @@ deseleccionarPrioridad();
     etiquetasSeleccionadas.length = 0;
   }
 });
-
-
