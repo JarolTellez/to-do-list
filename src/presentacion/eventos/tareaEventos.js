@@ -136,10 +136,14 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   //PASARLO A RENDER TAREA
   btnCancelarModal.addEventListener("click", function () {
-    limpiarCampos();
-    btnAgregarModal.classList.remove("actualizarModal");
-    modal.style.display = "none";
+    cancelar();
   });
+
+function cancelar(){
+  limpiarCampos();
+  btnAgregarModal.classList.remove("actualizarModal");
+  modal.style.display = "none";
+}
 
   async function manejarAgregarTarea() {
     const prioridad = document.querySelector('input[name="prioridad"]:checked');
@@ -186,10 +190,12 @@ document.addEventListener("DOMContentLoaded", async function () {
       sessionStorage.getItem("idUsuario")
     );
 
-    //Elimino el elemento render de la tarea
-    
+    //Elimino el elemento render de la tarea, recupero el elemento del dom que coincide con el idTarea para mandarlo eliminar
     const tareaElementoEliminar = document.querySelector(`#tareaDiv-${idTarea}`);
     rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElementoEliminar);
+
+    //Cierro y limpio el modal
+    cancelar();
       
     alert("Tarea eliminada")
   } catch (error) {
@@ -248,7 +254,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       rendersTareas.actualizarRenderTarea(campoTareas, tareaActualizada);
       etiquetasParaActualizar = [...etiquetasSeleccionadas];
 
-      alert("Se actualizo la tarea");
+      
     } catch (error) {
       console.log(error);
       alert(error.message);
