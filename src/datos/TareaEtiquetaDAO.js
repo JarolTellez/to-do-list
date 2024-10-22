@@ -57,6 +57,26 @@ class TareaEtiquetaDAO {
     }
   }
 
+  
+ static async eliminarTareaEtiquetaPorIdTarea(idTarea) {
+  const conexionBD=new ConexionBD();
+  const connection = await conexionBD.conectar();
+
+  try {
+      const [resultado] = await connection.query(
+          "DELETE FROM tareaetiqueta WHERE idTarea = ? ",
+          [idTarea]
+        );
+        
+        return resultado.affectedRows;
+  } catch (error) {
+    console.log("Error al eliminar una tareaEtiqueta: ", error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
   static async consultarTodasTareasEtiquetas() {
     const conexionBD=new ConexionBD();
     const connection = await conexionBD.conectar();

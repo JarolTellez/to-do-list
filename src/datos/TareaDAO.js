@@ -81,11 +81,11 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      const resultado = await connection.query(
+      const resultado= await connection.query(
         "DELETE FROM tarea WHERE idTarea = ?",
         [idTarea]
       );
-      return resultado.affectedRows;
+      return resultado[0].affectedRows;
     } catch (error) {
       console.log("Error al eliminar una tarea: ", error);
       throw error;
@@ -194,6 +194,23 @@ GROUP BY
     }
 }
 
+static async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
+  const conexionBD = new ConexionBD();
+  const connection = await conexionBD.conectar();
+
+  try {
+    const [tarea] = await connection.query(
+      "SELECT * FROM tarea WHERE idTarea = ? AND idUsuario = ?",
+      [idTarea,idUsuario]
+    );
+    return tarea[0];
+  } catch (error) {
+    console.log("Error al consultar una tarea por id: ", error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
 
 static async consultarTareasPorIdUsuario(idUsuario) {
   const conexionBD = new ConexionBD();

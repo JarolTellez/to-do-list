@@ -57,10 +57,14 @@ exports.agregarTarea = async (req, res) => {
 };
 
 exports.eliminarTarea = async (req, res) => {
+  console.log("LLEGOO A ELIMINAR CONTOL")
   try {
-    const { idTarea } = req.body;
+    const { idTarea, idUsuario } = req.body;
 
-    const tareaExistente = await tareasDAO.consultarTareaPorId(idTarea);
+    const tareaExistente = await tareasDAO.consultarTareaPorIdTareaUsuario(
+      idTarea,
+      idUsuario
+    );
 
     if (!tareaExistente) {
       return res.status(404).json({
@@ -69,15 +73,18 @@ exports.eliminarTarea = async (req, res) => {
       });
     }
 
-    const eliminada = await tareasDAO.eliminarTarea(idTarea);
+    const etiquetasEliminadas =
+      await etiquetaController.eliminarEtiquetasPorIdTarea(idTarea);
 
-    if (eliminada > 0) {
-      console.log("Tarea eliminada");
-      return res.status(200).json({
-        status: "success",
-        message: `Tarea con ID ${idTarea} eliminada correctamente.`,
-      });
-    }
+      const eliminada = await tareasDAO.eliminarTarea(idTarea);
+      if (eliminada > 0) {
+        console.log("Tarea eliminada");
+        return res.status(200).json({
+          status: "success",
+          message: `Tarea con ID ${idTarea} eliminada correctamente.`,
+        });
+      }
+    
   } catch (error) {
     console.error("Error al eliminar la tarea:", error);
     return res.status(500).json({

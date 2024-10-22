@@ -7,6 +7,7 @@ export const rendersTareas = {
     listaTareas.forEach((tareaElemento) => {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
+      tareaDiv.id = `tareaDiv-${tareaElemento.idTarea}`
       tareaDiv.innerHTML = `
       <div class="principalTarea" id="tarea-${tareaElemento.idTarea}">
          <div class="contendorTarea" value="${tareaElemento.idTarea}">
