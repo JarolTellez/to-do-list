@@ -1,43 +1,53 @@
-import {componentesEtiquetas}from"../componentes/etiquetaRender.js";
+import { componentesEtiquetas } from "../componentes/etiquetaRender.js";
 export const rendersTareas = {
   renderizarTareas(componenteTareas, listaTareas) {
-    console.log(listaTareas);
+    //PARA LIMPIAR
+    // componenteTareas.innerHTML='';
+    console.log("Renderizando", listaTareas);
     listaTareas.forEach((tareaElemento) => {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
       tareaDiv.innerHTML = `
-      <div class="principalTarea" id="${tareaElemento.idTarea}">
+      <div class="principalTarea" id="tarea-${tareaElemento.idTarea}">
          <div class="contendorTarea" value="${tareaElemento.idTarea}">
           <h3>${tareaElemento.nombre}</h3>
            <p class="fechaActualidada">${
              tareaElemento.fechaUltimaActualizacion
            }</p>
            ${
-             tareaElemento.descripcion
-               ? `<p class="textoTarea">${tareaElemento.descripcion}</p>`
-               : ""
+             `<p class="textoTarea ${
+               !tareaElemento.descripcion ? "hidden" : ""
+             }">
+     ${tareaElemento.descripcion || ""}
+   </p>`
            }
          
             ${
-              tareaElemento.prioridad
-                ? `<div class="prioridad-container">
-           <span class="prioridad-text">Prioridad</span>
-           <div class="prioridad-barra" style="width: ${
-             tareaElemento.prioridad * 20
-           }%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
-             <span class="prioridad-numero">${tareaElemento.prioridad}</span>
-           </div>
-         </div>`
-                : ""
+              `<div class="prioridad-container ${!tareaElemento.prioridad?"hidden":''}">
+   <span class="prioridad-text">Prioridad</span>
+   <div class="prioridad-barra" style="width: ${
+     tareaElemento.prioridad
+                ? tareaElemento.prioridad * 20:''
+   }%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
+     <span class="prioridad-numero">${tareaElemento.prioridad?tareaElemento.prioridad:''}</span>
+   </div>
+ </div>`
             }
            ${
              tareaElemento.etiquetas && tareaElemento.etiquetas.length > 0
-               ? `  <strong>Etiquetas:</strong>
-               <div class="etiquetas scrollEtiqueta">
-          
-             <ul class="ulEtiquetas"></ul>
+               ? `  
+               <div class="etiquetas-container">
+    <strong>Etiquetas:</strong>
+    <div class="etiquetas scrollEtiqueta">
+        <ul class="ulEtiquetas"></ul>
+    </div>
           </div>`
-               : ""
+               : `  <div class="etiquetas-container hidden">
+    <strong>Etiquetas:</strong>
+    <div class="etiquetas scrollEtiqueta">
+        <ul class="ulEtiquetas"></ul>
+    </div>
+          </div>`
            }
            <div class="completado-container">
   <input type="checkbox" id="completado-${
@@ -64,6 +74,84 @@ export const rendersTareas = {
     });
   },
 
+  actualizarRenderTarea(componenteTareas, tareaActualizada) {
+    // Encuentra el contenedor de la tarea por ID
+    const tareaDiv = componenteTareas.querySelector(
+      `#tarea-${tareaActualizada.idTarea}`
+    );
+    console.log("id", tareaActualizada.idTarea);
+
+    if (tareaDiv) {
+      // Actualiza el contenido de la tarea
+      tareaDiv.querySelector("h3").textContent = tareaActualizada.nombre;
+      tareaDiv.querySelector(".fechaActualidada").textContent =
+        tareaActualizada.fechaUltimaActualizacion;
+
+      const descripcionElemento = tareaDiv.querySelector(".textoTarea");
+      //Si la tarea tiene descripcion se muestra el elemento html de la descripcion con
+      //la descripcion cargada
+      if (tareaActualizada.descripcion) {
+        if (descripcionElemento) {
+          descripcionElemento.textContent = tareaActualizada.descripcion;
+          descripcionElemento.style.display = "block";
+          descripcionElemento.classList.remove("hidden");
+        }
+        //Si no tiene descripcion se oculta el elemento html donde va la descripcion
+      } else if (descripcionElemento) {
+        descripcionElemento.classList.add("hidden");
+        descripcionElemento.style.display = "none";
+      }
+
+      // Actualizar la prioridad, si la tiene
+      const prioridadContainter=tareaDiv.querySelector(".prioridad-container");
+      if (tareaActualizada.prioridad) {
+
+        const prioridadBarra = tareaDiv.querySelector(".prioridad-barra");
+        if (prioridadContainter) {
+          prioridadBarra.style.width = `${tareaActualizada.prioridad * 20}%`;
+          prioridadBarra.querySelector(".prioridad-numero").textContent =
+            tareaActualizada.prioridad;
+            prioridadContainter.classList.remove("hidden");
+
+        }
+        //Se oculta el elemento html donde se muestra a prioridad si la tarea no tiene
+      }else{
+        prioridadContainter.classList.add("hidden");
+      }
+
+      // Actualizar etiquetas
+      const etiquetasContenedor = tareaDiv.querySelector(
+        ".etiquetas-container"
+      );
+
+      //Verifica que la tarea tenga eiquetas, si las tiene muestra el html para mostrar las etiquetas y las carga
+      // si no las tiene se asegura de ocultar el html contenedor donde se muestran las etiquetas
+      if (tareaActualizada.etiquetas && tareaActualizada.etiquetas.length > 0) {
+        const etiquetasUl = tareaDiv.querySelector(".ulEtiquetas");
+        if (etiquetasUl) {
+          etiquetasUl.innerHTML = ""; // Limpiar las etiquetas existentes
+          tareaActualizada.etiquetas.forEach((etiqueta) => {
+            const li = document.createElement("li");
+            li.className = "etiqueta";
+            li.textContent = etiqueta.nombre;
+            etiquetasUl.appendChild(li);
+          });
+        }
+        if (etiquetasContenedor) {
+          etiquetasContenedor.style.display = "block";
+          etiquetasContenedor.classList.remove("hidden");
+        }
+      } else {
+        if (etiquetasContenedor) {
+          etiquetasContenedor.classList.add("hidden");
+          etiquetasContenedor.style.display = "none";
+        }
+      }
+    } else {
+      console.error("No se encontró la tarea para actualizarla.");
+    }
+  },
+
   eliminarRenderEspecifico(contenedor, componenteTarea) {
     if (componenteTarea) {
       contenedor.removeChild(componenteTarea);
@@ -71,41 +159,24 @@ export const rendersTareas = {
   },
 
   mostrarModalDetalleTarea(modalDetalle, tarea) {
-    const inputTituloDetalle = modalDetalle.querySelector(
-      ".tituloTarea"
-    );
-    const descripcionDetalle = modalDetalle.querySelector(
-      ".descripcionTarea"
-    );
-   
-    const contenedorPrioridad = modalDetalle.querySelector(
-      ".campoPrioridad"
-    );
-   
+    const inputTituloDetalle = modalDetalle.querySelector(".tituloTarea");
+    const descripcionDetalle = modalDetalle.querySelector(".descripcionTarea");
+
+    const contenedorPrioridad = modalDetalle.querySelector(".campoPrioridad");
+
     inputTituloDetalle.setAttribute("data-id", tarea.idTarea);
 
-    const listaEtiquetas=modalDetalle.querySelector("#listaEtiquetas");
-    const inputEtiqueta=modalDetalle.querySelector("#contenedorInput");
-    const consultadas=modalDetalle.querySelector("#consultadas");
-   
+    const listaEtiquetas = modalDetalle.querySelector("#listaEtiquetas");
+    const inputEtiqueta = modalDetalle.querySelector("#contenedorInput");
+    const consultadas = modalDetalle.querySelector("#consultadas");
+
     inputTituloDetalle.value = tarea.nombre;
-    if (!tarea.descripcion || tarea.descripcion === "") {
-      descripcionDetalle.style.display = "none";
-    //  descripcionLabel.style.display = "none";
-    } else {
-      descripcionDetalle.style.display = "block";
-    //descripcionLabel.style.display = "block";
+    if (tarea.descripcion || tarea.descripcion !== "") {
       descripcionDetalle.value = tarea.descripcion;
     }
-    // fechaCreacion.textContent = tarea.fechaCreacion;
-    // fechaUltimaActualizacion.textContent = tarea.fechaUltimaActualizacion;
 
     //Se quita el campo de prioridad si la tarea no tiene prioridad
-    if (!tarea.prioridad) {
-      contenedorPrioridad.style.display = "none";
-     
-    } else {
-      contenedorPrioridad.style.display = "block";
+    if (tarea.prioridad) {
       const prioridadRadio = contenedorPrioridad.querySelector(
         `input[name="prioridad"][value="${tarea.prioridad}"]`
       );
@@ -113,31 +184,36 @@ export const rendersTareas = {
     }
 
     //Enviar a cargar las etiquetas
-    if(tarea.etiquetas){
-      componentesEtiquetas.agregarEtiquetaInput(tarea.etiquetas,listaEtiquetas,consultadas,inputEtiqueta);
-
+    if (tarea.etiquetas) {
+      componentesEtiquetas.agregarEtiquetaInput(
+        tarea.etiquetas,
+        listaEtiquetas,
+        consultadas,
+        inputEtiqueta
+      );
     }
 
     //Para que se desplegue si no esta desplegado y si ya lo esta solo va a actulizar sus datos
-    if(modalDetalle.style.display !=="flex"){
-    modalDetalle.style.display = "flex";
+    if (modalDetalle.style.display !== "flex") {
+      modalDetalle.style.display = "flex";
     }
-  
   },
-  
 
-  //Muestra el modal y cambia texto de los botones ya que al mostrar detalle se cambia 
-  mostrarModal(modal){
-    const btnLimpiarEliminarModal = modal.querySelector(".limpiarRestaurarModal");
-  const btnAgregarModal=modal.querySelector(".agregarModal");
-    const descripcionDetalle = modal.querySelector(
-      ".descripcionTarea"
+  //Muestra el modal y cambia texto de los botones ya que al mostrar detalle se cambia
+  mostrarModal(modal) {
+    const btnLimpiarEliminarModal = modal.querySelector(
+      ".limpiarRestaurarModal"
     );
+    const btnAgregarModal = modal.querySelector(".agregarModal");
+    const descripcionDetalle = modal.querySelector(".descripcionTarea");
 
-    btnAgregarModal.textContent="Agregar";
-    btnLimpiarEliminarModal.textContent="Limpiar";
-    descripcionDetalle.style.display="block";
-    modal.style.display="flex";
+    const prioridad = modal.querySelector(".campoPrioridad");
+
+    btnAgregarModal.textContent = "Agregar";
+    btnLimpiarEliminarModal.textContent = "Limpiar";
+    descripcionDetalle.style.display = "block";
+    prioridad.style.display = "block";
+    modal.style.display = "flex";
   },
   ocultarModal(modal) {
     if (modal) {
