@@ -171,7 +171,6 @@ console.log("etiquetas a eliminar",etiquetasParaEliminar);
   }
 };
 
-
  
 
 exports.actualizarTareaCompletada = async (req, res) => {
@@ -213,14 +212,20 @@ exports.consultarTareasPorIdUsuario = async (req, res) => {
   try {
     const { idUsuario } = req.body;
 
-    const tareas = await tareasDAO.consultarTareasPorIdUsuario(idUsuario);
-    const tareasProcesadas = procesarTareasConEtiquetas(tareas);
-   
+    //Accedo a las tareas pendientes
+    const tareasPendientes = await tareasDAO.consultarTareasPorIdUsuario(idUsuario);
+    const tareasPendientesProcesadas = procesarTareasConEtiquetas(tareasPendientes);
+    //Accedo a todas las tareas
+   const tareasCompletadas=await tareasDAO.consultarTareasCompletadasUsuario(idUsuario);
+   const tareasCompletadasProcesadas=procesarTareasConEtiquetas(tareasCompletadas);
 
     return res.status(200).json({
       status: "success",
       message: "Tareas consultadas",
-      data: tareasProcesadas,
+      data: {
+        tareasPendientes: tareasPendientesProcesadas,
+        tareasCompletadas: tareasCompletadasProcesadas
+    }
     });
   } catch (error) {
     console.error("Error al consultar las tareas :", error);
