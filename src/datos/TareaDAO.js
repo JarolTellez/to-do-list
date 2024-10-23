@@ -2,7 +2,7 @@ const ConexionBD = require("../utils/conexionBD");
 
 class TareaDAO {
   static async agregarTarea(tarea) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -30,7 +30,7 @@ class TareaDAO {
   }
 
   static async actualizarTarea(tarea) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -56,7 +56,7 @@ class TareaDAO {
   }
 
   static async actualizarTareaCompletada(idTarea,completada) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
      const [resultado]= await connection.query(
@@ -77,7 +77,7 @@ class TareaDAO {
   }
 
   static async eliminarTarea(idTarea) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -95,7 +95,7 @@ class TareaDAO {
   }
 
   static async consultarTodasTareas() {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -110,7 +110,7 @@ class TareaDAO {
   }
 
   static async consultarTareaPorNombre(nombreTarea) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -128,7 +128,7 @@ class TareaDAO {
   }
  
   static async consultarTareaPorId(idTarea) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -146,7 +146,7 @@ class TareaDAO {
   }
 
   static async consultarTareasPorIdTarea(idTarea) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
   
     try {
@@ -195,7 +195,7 @@ GROUP BY
 }
 
 static async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
-  const conexionBD = new ConexionBD();
+  const conexionBD = ConexionBD.getInstance();
   const connection = await conexionBD.conectar();
 
   try {
@@ -214,7 +214,7 @@ static async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
 
 //Consulta las tareas pendientes del usuario, es decir las que no estan marcadas como completadas
 static async consultarTareasPorIdUsuario(idUsuario) {
-  const conexionBD = new ConexionBD();
+  const conexionBD = ConexionBD.getInstance();
   const connection = await conexionBD.conectar();
 
   try {
@@ -256,7 +256,7 @@ GROUP BY
 
 //Consulta todas las tareas del usuario tanto las que estan completadas como las que no
 static async consultarTareasCompletadasUsuario(idUsuario) {
-  const conexionBD = new ConexionBD();
+  const conexionBD = ConexionBD.getInstance();
   const connection = await conexionBD.conectar();
   try {
     const [tareas] = await connection.query( `SELECT 

@@ -2,7 +2,7 @@ const ConexionBD = require("../utils/conexionBD");
 
 class EtiquetaDAO {
   static async agregarEtiqueta(etiqueta) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -23,7 +23,7 @@ class EtiquetaDAO {
   }
 
   static async actualizarEtiqueta(etiqueta) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
 
     const connection = await conexionBD.conectar();
     try {
@@ -40,7 +40,7 @@ class EtiquetaDAO {
   }
 
   static async eliminarEtiqueta(idEtiqueta) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -56,7 +56,7 @@ class EtiquetaDAO {
   }
 
   static async consultarTodasEtiquetas() {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
 
     const connection = await conexionBD.conectar();
     try {
@@ -71,7 +71,7 @@ class EtiquetaDAO {
   }
 
   static async consultarEtiquetaPorNombreIdUsuario(nombreEtiqueta, idUsuario) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
 
     const connection = await conexionBD.conectar();
     try {
@@ -89,7 +89,7 @@ class EtiquetaDAO {
   }
 
   static async consultarEtiquetaPorId(idEtiqueta) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
 
     const connection = await conexionBD.conectar();
     try {
@@ -107,7 +107,7 @@ class EtiquetaDAO {
   }
 
   static async consultarEtiquetaPorIdUsuario(idUsuario) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
 
     const connection = await conexionBD.conectar();
     try {
