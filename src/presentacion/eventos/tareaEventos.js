@@ -90,13 +90,11 @@ document.addEventListener("DOMContentLoaded", async function () {
       const tareaElemento = event.target.closest(".tarea");
 
       await actualizarTareaCompletada(tareaId, true);
+      
       //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
       await actualizarEstadisticas();
       if (indice !== -1) {
-        tareasPendientes.splice(indice, 1);
         rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
-        
-        
       }
     } else if (
       !event.target.classList.contains("checkbox-completado") &&
