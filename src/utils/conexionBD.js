@@ -5,6 +5,7 @@ require('dotenv').config();
 class ConexionBD {
   constructor() {
   
+    if (!ConexionBD.instance) {
     this.pool = mysql.createPool({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
@@ -14,6 +15,9 @@ class ConexionBD {
       connectionLimit: 10, // el maximo numero de conexiones
       queueLimit: 0 
     });
+    ConexionBD.instance=this;
+  }
+  return ConexionBD.instance;
   }
 
 
@@ -31,6 +35,16 @@ class ConexionBD {
       throw error;
     }
   }
+
+  static getInstance() {
+    if (!ConexionBD.instance) {
+      ConexionBD.instance = new ConexionBD();
+    }
+    return ConexionBD.instance;
+  }
+
+
+  
 }
 
 module.exports=ConexionBD;
