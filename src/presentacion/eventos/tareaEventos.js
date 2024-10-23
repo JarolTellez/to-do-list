@@ -29,13 +29,33 @@ document.addEventListener("DOMContentLoaded", async function () {
   const modalOriginal = modal.innerHTML;
   const botonesContenedor = document.querySelector(".botonesModal");
 
+  //ESTADISTICAS
+  const totalTareasP=document.querySelector("#total-tareas");
+  const completadasP=document.querySelector("#completadas");
+  const pendientesP=document.querySelector("#pendientes");
+
   let etiquetasParaActualizar;
-  let tareas = await consultarTareasUsuario(
-    sessionStorage.getItem("idUsuario")
-  );
+
+ let tareasPendientes;
+ let tareasCompletadas;
+
+ //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
+ await actualizarEstadisticas();
+
+  console.log("Tareas Pendientes",tareasPendientes);
+  //console.log("Todas las tareas", tareasPendientes.todasLasTareas)
 
   //Para iterarar y encontrar el radio seleccionado
   let selectedRadio = null;
+
+ 
+  async function actualizarListaTareas(){
+    const todasTareas = await consultarTareasUsuario(
+      sessionStorage.getItem("idUsuario")
+    );
+    tareasCompletadas=todasTareas.tareasCompletadas;
+    tareasPendientes=todasTareas.tareasPendientes;
+  }
 
   function deseleccionarPrioridad() {
     document
@@ -66,13 +86,17 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     if (event.target.classList.contains("checkbox-completado")) {
       const tareaId = event.target.value;
-      const indice = tareas.findIndex((tarea) => tarea.idTarea == tareaId);
+      const indice = tareasPendientes.findIndex((tarea) => tarea.idTarea == tareaId);
       const tareaElemento = event.target.closest(".tarea");
 
-      actualizarTareaCompletada(tareaId, true);
+      await actualizarTareaCompletada(tareaId, true);
+      //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
+      await actualizarEstadisticas();
       if (indice !== -1) {
-        tareas.splice(indice, 1);
+        tareasPendientes.splice(indice, 1);
         rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
+        
+        
       }
     } else if (
       !event.target.classList.contains("checkbox-completado") &&
@@ -85,7 +109,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       const idBuscado = idCompleto.replace("tarea-", "");
 
       event.stopPropagation();
-      const tareaDetalle = tareas.find((tarea) => tarea.idTarea == idBuscado);
+      const tareaDetalle = tareasPendientes.find((tarea) => tarea.idTarea == idBuscado);
       if (!btnAgregarModal.classList.contains("actualizarModal")) {
         btnAgregarModal.classList.add("actualizarModal");
         btnAgregarModal.textContent = "Actualizar";
@@ -132,7 +156,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     manejarLimpiarEliminar(event);
   });
 
-  rendersTareas.renderizarTareas(campoTareas, tareas);
+  rendersTareas.renderizarTareas(campoTareas, tareasPendientes);
 
   //PASARLO A RENDER TAREA
   btnCancelarModal.addEventListener("click", function () {
@@ -144,6 +168,14 @@ function cancelar(){
   btnAgregarModal.classList.remove("actualizarModal");
   modal.style.display = "none";
 }
+
+async function actualizarEstadisticas(){
+  await actualizarListaTareas();
+totalTareasP.textContent=(tareasCompletadas.length+tareasPendientes.length);
+completadasP.textContent=tareasCompletadas.length;
+pendientesP.textContent=tareasPendientes.length;
+}
+
 
   async function manejarAgregarTarea() {
     const prioridad = document.querySelector('input[name="prioridad"]:checked');
@@ -169,9 +201,11 @@ function cancelar(){
       const nuevaTarea = await agregarTarea(tareaNueva);
 
       limpiarCampos();
-      tareas.push(nuevaTarea.data[0]);
-      console.log(tareas);
+      tareasPendientes.push(nuevaTarea.data[0]);
+      console.log(tareasPendientes);
       rendersTareas.renderizarTareas(campoTareas, nuevaTarea.data);
+      //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
+      await actualizarEstadisticas();
 
       alert("Se ha guardado correctamente la tarea");
     } catch (error) {
@@ -186,10 +220,7 @@ function cancelar(){
       const idTarea=tituloTarea.getAttribute("data-id");
     await eliminarTarea(idTarea,sessionStorage.getItem("idUsuario"));
     //Vuelvo a cargar las tareas
-    tareas = await consultarTareasUsuario(
-      sessionStorage.getItem("idUsuario")
-    );
-
+  await actualizarEstadisticas();
     //Elimino el elemento render de la tarea, recupero el elemento del dom que coincide con el idTarea para mandarlo eliminar
     const tareaElementoEliminar = document.querySelector(`#tareaDiv-${idTarea}`);
     rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElementoEliminar);
@@ -233,10 +264,10 @@ function cancelar(){
     try {
       const tareaActualizada = await actualizarTarea(tareaActualizar);
       //Consulto las tareas de nuevo para tenerlas actualizadas
-      const tareasActualizadas = await consultarTareasUsuario(
-        sessionStorage.getItem("idUsuario")
-      );
-      tareas = tareasActualizadas;
+     
+      //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
+      await actualizarEstadisticas();
+  
 
       //Elimino todas las tareas de etiquetasSeleccionadas para volverlo a llenar
       etiquetasSeleccionadas.length = 0;

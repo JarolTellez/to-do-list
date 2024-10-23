@@ -37,6 +37,7 @@ export async function consultarTareasUsuario(idUsuario){
 
     const respuesta=await response.json();
     if(response.ok){
+      console.log("DATA",respuesta.data.tareasPendientes);
       return respuesta.data;
     }else {
       throw new Error(respuesta.mensaje);

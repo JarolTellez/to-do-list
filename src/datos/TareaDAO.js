@@ -212,6 +212,7 @@ static async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
   }
 }
 
+//Consulta las tareas pendientes del usuario, es decir las que no estan marcadas como completadas
 static async consultarTareasPorIdUsuario(idUsuario) {
   const conexionBD = new ConexionBD();
   const connection = await conexionBD.conectar();
@@ -252,5 +253,44 @@ GROUP BY
     connection.release();
   }
 }
+
+//Consulta todas las tareas del usuario tanto las que estan completadas como las que no
+static async consultarTareasCompletadasUsuario(idUsuario) {
+  const conexionBD = new ConexionBD();
+  const connection = await conexionBD.conectar();
+  try {
+    const [tareas] = await connection.query( `SELECT 
+      t.idTarea AS tarea_id,
+      t.nombre AS tarea_nombre,
+      t.descripcion AS tarea_descripcion,
+      t.fechaCreacion AS tarea_fecha_creacion,
+      t.ultimaActualizacion AS tarea_ultima_actualizacion,
+      t.completada AS tarea_completada,
+      t.prioridad AS tarea_prioridad,
+      GROUP_CONCAT(DISTINCT te.idTareaEtiqueta ORDER BY te.idTareaEtiqueta) AS tarea_etiqueta_ids,
+      GROUP_CONCAT(DISTINCT e.idEtiqueta ORDER BY te.idTareaEtiqueta) AS etiquetas_ids,
+      GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.idTareaEtiqueta) AS etiquetas_nombres,
+      GROUP_CONCAT(e.idUsuario ORDER BY te.idTareaEtiqueta) AS etiquetas_usuarios
+FROM 
+      tarea t
+LEFT JOIN 
+      tareaEtiqueta te ON t.idTarea = te.idTarea
+LEFT JOIN 
+      etiqueta e ON te.idEtiqueta = e.idEtiqueta
+WHERE 
+      t.idUsuario = ? AND t.completada = 1
+GROUP BY 
+      t.idTarea;
+`, [idUsuario]);
+    return tareas;
+  } catch (error) {
+    console.log("Error al consultar todas las tareas: ", error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+
 }
 module.exports = TareaDAO;
