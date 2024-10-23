@@ -1,8 +1,10 @@
 import { componentesEtiquetas } from "../componentes/etiquetaRender.js";
 export const rendersTareas = {
-  renderizarTareas(componenteTareas, listaTareas) {
+  renderizarTareas(componenteTareas, listaTareas,limpiar) {
     //PARA LIMPIAR
-    // componenteTareas.innerHTML='';
+    if(limpiar && limpiar===true){
+     componenteTareas.innerHTML='';
+    }
     console.log("Renderizando", listaTareas);
     listaTareas.forEach((tareaElemento) => {
       const tareaDiv = document.createElement("div");
@@ -53,7 +55,7 @@ export const rendersTareas = {
            <div class="completado-container">
   <input type="checkbox" id="completado-${
     tareaElemento.idTarea
-  }" class="checkbox-completado"  value="${tareaElemento.idTarea}"/>
+  }" class="checkbox-completado"  value="${tareaElemento.idTarea}" ${tareaElemento.completada>0?"checked disabled":""}/>
   <label for="completado-${
     tareaElemento.idTarea
   }" class="checkbox-label"></label>

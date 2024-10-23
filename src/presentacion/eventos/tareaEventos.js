@@ -34,6 +34,11 @@ document.addEventListener("DOMContentLoaded", async function () {
   const completadasP=document.querySelector("#completadas");
   const pendientesP=document.querySelector("#pendientes");
 
+  //FILTROS
+  const tareasPendientesButton=document.querySelector("#tareasPendientesFiltro");
+  const tareasCompletadasButton=document.querySelector("#tareasCompletadasFiltro");
+
+
   let etiquetasParaActualizar;
 
  let tareasPendientes;
@@ -47,6 +52,12 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   //Para iterarar y encontrar el radio seleccionado
   let selectedRadio = null;
+
+  //Variable para establecer true cada que se haga click en un filtro para cuando se agregue una tarea
+  //verificar si es true es decir si las tareas estan filtradas para al metodo renderizarTareas enviarle 
+  //true al parametro limpiar y asi limpie todas las tareas cargadas y carge todas las pendientes ya que cuando agrego
+  //una tarea mando a renderizar solo la tarea y la agrego a las demas no mando renderizar todas cuando no hay filtro.
+  let filtroSeleccionado=false;
 
  
   async function actualizarListaTareas(){
@@ -78,6 +89,18 @@ document.addEventListener("DOMContentLoaded", async function () {
     btnLimpiarEliminarModal.classList.remove("eliminar");
     rendersTareas.mostrarModal(modal);
   });
+
+  tareasCompletadasButton.addEventListener("click",function(){
+    filtroSeleccionado=true;
+    rendersTareas.renderizarTareas(campoTareas,tareasCompletadas,true);
+
+});
+
+tareasPendientesButton.addEventListener("click",function(){
+  filtroSeleccionado=true;
+  rendersTareas.renderizarTareas(campoTareas,tareasPendientes,true);
+
+});
 
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
@@ -201,9 +224,15 @@ pendientesP.textContent=tareasPendientes.length;
       limpiarCampos();
       tareasPendientes.push(nuevaTarea.data[0]);
       console.log(tareasPendientes);
-      rendersTareas.renderizarTareas(campoTareas, nuevaTarea.data);
-      //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
-      await actualizarEstadisticas();
+     //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
+     await actualizarEstadisticas();
+
+      rendersTareas.renderizarTareas(campoTareas,filtroSeleccionado?tareasPendientes:nuevaTarea.data,filtroSeleccionado?true:false);
+      
+      if(filtroSeleccionado){
+        filtroSeleccionado=false;
+      }
+     
 
       alert("Se ha guardado correctamente la tarea");
     } catch (error) {
