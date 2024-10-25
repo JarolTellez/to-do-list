@@ -16,8 +16,12 @@
       <div class="filtro-item estadisticasCompletadas">
         <button id="tareasCompletadasFiltro">Completadas</button>
       </div>
-      <div class="filtro-item estadisticasPendientes">
-        <button id="prioridadFiltro"></button>
+      <div class="filtro-item estadisticasPendientes radioFiltro">
+        <label>Prioridad</label>
+        <div>
+        <button id="prioridadMayorFiltro">Mayor</button>
+        <button id="prioridadMenorFiltro">Menor</button>
+      </div>
       </div>
      <div class="filtro-item estadisticasPendientes">
         <button id="prioridadFiltro"></button>
@@ -114,7 +118,7 @@
       </div>
     </div>
   </form>
-
+  <script type="module" src="../eventos/filtrosEventos.js"></script>
     <script type="module" src="../eventos/tareaEventos.js"></script>
     <script type="module" src="../eventos/etiquetaEventos.js"></script>
     <script type="module" src="../servicios/etiquetas.js"></script>
