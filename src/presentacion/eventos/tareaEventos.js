@@ -216,7 +216,10 @@ pendientesP.textContent=tareasPendientes.length;
 
       rendersTareas.renderizarTareas(campoTareas,tieneFiltro?tareasPendientes:nuevaTarea.data,tieneFiltro?true:false);
       
+      //Verifico si se aplico un filtro antes de que se intentara agregar la tarea
       if(tieneFiltro){
+          //Quito la clase filtro al contenedor de los filtros para indicar que se volvio al estado de tareas pendientes que son las que se muestran
+          //cuando se agrega una tarea
         contenedorFiltros.classList.remove("filtro");
       }
      
