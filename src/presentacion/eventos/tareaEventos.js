@@ -10,6 +10,8 @@ import {
   actualizarTarea,
   eliminarTarea
 } from "../servicios/tareas.js";
+export let tareasPendientes;
+export let tareasCompletadas;
 
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
@@ -34,15 +36,13 @@ document.addEventListener("DOMContentLoaded", async function () {
   const completadasP=document.querySelector("#completadas");
   const pendientesP=document.querySelector("#pendientes");
 
-  //FILTROS
-  const tareasPendientesButton=document.querySelector("#tareasPendientesFiltro");
-  const tareasCompletadasButton=document.querySelector("#tareasCompletadasFiltro");
+ //FILTRO
+ const contenedorFiltros=document.querySelector(".filtros");
 
 
   let etiquetasParaActualizar;
 
- let tareasPendientes;
- let tareasCompletadas;
+
 
  //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
  await actualizarEstadisticas();
@@ -53,11 +53,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   //Para iterarar y encontrar el radio seleccionado
   let selectedRadio = null;
 
-  //Variable para establecer true cada que se haga click en un filtro para cuando se agregue una tarea
-  //verificar si es true es decir si las tareas estan filtradas para al metodo renderizarTareas enviarle 
-  //true al parametro limpiar y asi limpie todas las tareas cargadas y carge todas las pendientes ya que cuando agrego
-  //una tarea mando a renderizar solo la tarea y la agrego a las demas no mando renderizar todas cuando no hay filtro.
-  let filtroSeleccionado=false;
+  
 
  
   async function actualizarListaTareas(){
@@ -90,17 +86,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     rendersTareas.mostrarModal(modal);
   });
 
-  tareasCompletadasButton.addEventListener("click",function(){
-    filtroSeleccionado=true;
-    rendersTareas.renderizarTareas(campoTareas,tareasCompletadas,true);
-
-});
-
-tareasPendientesButton.addEventListener("click",function(){
-  filtroSeleccionado=true;
-  rendersTareas.renderizarTareas(campoTareas,tareasPendientes,true);
-
-});
 
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
    se hizo click en el checbox para hacer la accion y asi funciona si agrego en tiempo de ejecucion mas tareas.*/
@@ -227,10 +212,12 @@ pendientesP.textContent=tareasPendientes.length;
      //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
      await actualizarEstadisticas();
 
-      rendersTareas.renderizarTareas(campoTareas,filtroSeleccionado?tareasPendientes:nuevaTarea.data,filtroSeleccionado?true:false);
+     const tieneFiltro=contenedorFiltros.classList.contains("filtro");
+
+      rendersTareas.renderizarTareas(campoTareas,tieneFiltro?tareasPendientes:nuevaTarea.data,tieneFiltro?true:false);
       
-      if(filtroSeleccionado){
-        filtroSeleccionado=false;
+      if(tieneFiltro){
+        contenedorFiltros.classList.remove("filtro");
       }
      
 
