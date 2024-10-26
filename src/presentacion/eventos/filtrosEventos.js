@@ -18,37 +18,84 @@ document.addEventListener("DOMContentLoaded", async function () {
   const prioridadMayorButton = document.querySelector("#prioridadMayorFiltro");
   const prioridadMenorButton = document.querySelector("#prioridadMenorFiltro");
 
+  let radioPrioridadFiltro=null;
+  let tareasRenderizadasActuales;
+
+   //LLamo al metodo para que deseleccione si se dio click al radio ya seleccionado
+   deseleccionarPrioridad();
+
+
   tareasCompletadasButton.addEventListener("click", function () {
     //Le agrego la clase filtro al contenedor de los filtros para indicar que se aplico un filtro
     contenedorFiltros.classList.add("filtro");
-    contenedorFiltros.classList.remove("prioridadMenorFiltro");
-    contenedorFiltros.classList.remove("prioridadMayorFiltro");
+    // contenedorFiltros.classList.remove("prioridadMenorFiltro");
+    // contenedorFiltros.classList.remove("prioridadMayorFiltro");
 
+    if(prioridadMayorButton.checked){
+      prioridadMayor();
+      console.log("entro a mayor")
+      tareasRenderizadasActuales=[...tareasCompletadas];
+      return;
+    }else if(prioridadMenorButton.checked){
+      console.log("entro a menor")
+      prioridadMenor();
+      tareasRenderizadasActuales=[...tareasCompletadas];
+      return;
+    }
     rendersTareas.renderizarTareas(campoTareas, tareasCompletadas, true);
+    tareasRenderizadasActuales=[...tareasCompletadas];
   });
 
   tareasPendientesButton.addEventListener("click", function () {
     //Le agrego la clase filtro al contenedor de los filtros para indicar que se aplico un filtro
     contenedorFiltros.classList.add("filtro");
-    contenedorFiltros.classList.remove("prioridadMenorFiltro");
-    contenedorFiltros.classList.remove("prioridadMayorFiltro");
+    // contenedorFiltros.classList.remove("prioridadMenorFiltro");
+    // contenedorFiltros.classList.remove("prioridadMayorFiltro");
+    if(prioridadMayorButton.checked){
+      prioridadMayor();
+      tareasRenderizadasActuales=[...tareasPendientes];
+      return;
+    }else if(prioridadMenorButton.checked){
+      prioridadMenor();
+      tareasRenderizadasActuales=[...tareasPendientes];
+      return;
+    }
     rendersTareas.renderizarTareas(campoTareas, tareasPendientes, true);
+    tareasRenderizadasActuales=[...tareasPendientes];
   });
+
+
+ 
 
   prioridadMayorButton.addEventListener("click", function () {
-    contenedorFiltros.classList.add("filtro","prioridadMayorFiltro");
-    contenedorFiltros.classList.remove("prioridadMenorFiltro");
-    const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(tareasPendientes);
-    rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMayor, true);
+    
+    prioridadMayor();
   });
 
+  function prioridadMayor(){
+    //Verifico que el radio si este seleccionado
+    if(prioridadMayorButton.checked){
+      contenedorFiltros.classList.add("filtro","prioridadMayorFiltro");
+      contenedorFiltros.classList.remove("prioridadMenorFiltro");
+      const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(tareasRenderizadasActuales);
+      rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMayor, true);
+      }
+  }
+
   prioridadMenorButton.addEventListener("click", function () {
-    console.log("entro a menor");
-    contenedorFiltros.classList.remove("prioridadMayorFiltro");
-    contenedorFiltros.classList.add("filtro","prioridadMenorFiltro");
-    const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(tareasPendientes);
-    rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMenor,true);
+    
+  prioridadMenor();
   });
+
+  function prioridadMenor(){
+     //Verifico que el radio si este seleccionado
+    if(prioridadMenorButton.checked){
+      contenedorFiltros.classList.remove("prioridadMayorFiltro");
+      contenedorFiltros.classList.add("filtro","prioridadMenorFiltro");
+      const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(tareasRenderizadasActuales);
+      rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMenor,true);
+      }
+  }
 
   function ordenarMayorMenor(tareas) {
     //Utilizo sort para ordenar de mayor a menor con respecto a la prioridad, pero uso slice para crear una
@@ -79,20 +126,39 @@ document.addEventListener("DOMContentLoaded", async function () {
     return tareasOrdenadasMenorMayor;
   }
 
+  function deseleccionarPrioridad() {
+    document
+      .querySelectorAll('.contenedorFiltroPrioridad input[type="radio"]')
+      .forEach((radio) => {
+        radio.addEventListener("click", function () {
+          // Si ya está seleccionado y es el mismo que el anterior
+          if (this === radioPrioridadFiltro) {
+            this.checked = false; // Deseleccionar
+            radioPrioridadFiltro = null; // Reiniciar selección
+          } else {
+            radioPrioridadFiltro = this; // Actualizar el radio seleccionado
+          }
+        });
+      });
+  }
+
 
 //Observer para ver cuando se modifica el componente listaTareas y asi si esta aplicado un filtro
 //aplicarlo con la nueva tarea agregada y no en su forma base.
 const observer = new MutationObserver((mutationsList) => {
   mutationsList.forEach(mutation => {
     if (mutation.type === 'childList') {
-      console.log('Se ha hecho un cambio en #listaTareas');
+    
       observer.disconnect();
      if(contenedorFiltros.classList.contains("prioridadMayorFiltro")){
+      console.log('OBERVER MAYOR');
       const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(tareasPendientes);
+      tareasRenderizadasActuales=[...tareasPendientes];
     rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMayor, true);
      }else if(contenedorFiltros.classList.contains("prioridadMenorFiltro")){
-      console.log("entro a menor");
+      console.log("OBSERVER MENOR");
       const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(tareasPendientes);
+      tareasRenderizadasActuales=[...tareasPendientes];
      rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMenor, true);
       } 
 
@@ -105,7 +171,7 @@ const observer = new MutationObserver((mutationsList) => {
 // Configurar qué tipo de cambios observar
 const config = {
   childList: true,  // Detectar cambios en los nodos hijos
-  subtree: false    // No incluir cambios en los hijos de los nodos hijos
+  subtree: true   // incluir cambios en los hijos de los nodos hijos
 };
 
 // Empezar a observar el campoTareas
