@@ -1,15 +1,24 @@
 import {
   tareasPendientes,
   tareasCompletadas,
-} from "../eventos/tareaEventos.js";
+  actualizarListaTareas} from "../eventos/tareaEventos.js";
 import { rendersTareas } from "../componentes/tareaRender.js";
+
+//Para guardar el boton para filtrar por tareas pendientes para poder usarla en la funcion
+//que exporto abajo "botonPendientesChecked" ;e establezco el valor en el "DOMContentLoaded" 
+let tareasPendientesButton;
+
+export  function botonPendientesChecked(seleccionado){
+  tareasPendientesButton.checked=seleccionado && seleccionado==true?true:false;
+}
 
 document.addEventListener("DOMContentLoaded", async function () {
   const campoTareas = document.querySelector("#listaTareas");
 
   //FILTROS
   const contenedorFiltros = document.querySelector(".filtros");
-  const tareasPendientesButton = document.querySelector(
+ 
+ tareasPendientesButton = document.querySelector(
     "#tareasPendientesFiltro"
   );
   const tareasCompletadasButton = document.querySelector(
@@ -20,26 +29,44 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   let radioPrioridadFiltro=null;
   let tareasRenderizadasActuales;
+  let estadoPendientesButton=false;
+  let estadoCompletadasButton=false;
 
+  //Actualizo las tareas pendientes y completadas para cargarlas antes de usarlas
+  await actualizarListaTareas();
    //LLamo al metodo para que deseleccione si se dio click al radio ya seleccionado
    deseleccionarPrioridad();
 
+   function cargarModoBase(){
+    tareasPendientesButton.checked=true;
+    tareasRenderizadasActuales=[...tareasPendientes];
+   
+   }
+   cargarModoBase();
+
+   function actualizarListas(){
+      tareasRenderizadasActuales=tareasPendientesButton.checked?[...tareasPendientes]:[...tareasCompletadas];
+  
+   }
+
+  
 
   tareasCompletadasButton.addEventListener("click", function () {
+    estadoCompletadasButton=true;
     //Le agrego la clase filtro al contenedor de los filtros para indicar que se aplico un filtro
     contenedorFiltros.classList.add("filtro");
     // contenedorFiltros.classList.remove("prioridadMenorFiltro");
     // contenedorFiltros.classList.remove("prioridadMayorFiltro");
 
     if(prioridadMayorButton.checked){
-      prioridadMayor();
-      console.log("entro a mayor")
       tareasRenderizadasActuales=[...tareasCompletadas];
+      prioridadMayor();
+     
       return;
     }else if(prioridadMenorButton.checked){
-      console.log("entro a menor")
-      prioridadMenor();
       tareasRenderizadasActuales=[...tareasCompletadas];
+      prioridadMenor();
+      
       return;
     }
     rendersTareas.renderizarTareas(campoTareas, tareasCompletadas, true);
@@ -47,17 +74,20 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 
   tareasPendientesButton.addEventListener("click", function () {
+    estadoCompletadasButton=false;
+    estadoPendientesButton=!estadoPendientesButton;
     //Le agrego la clase filtro al contenedor de los filtros para indicar que se aplico un filtro
     contenedorFiltros.classList.add("filtro");
     // contenedorFiltros.classList.remove("prioridadMenorFiltro");
     // contenedorFiltros.classList.remove("prioridadMayorFiltro");
     if(prioridadMayorButton.checked){
-      prioridadMayor();
       tareasRenderizadasActuales=[...tareasPendientes];
+      prioridadMayor();   
       return;
     }else if(prioridadMenorButton.checked){
-      prioridadMenor();
       tareasRenderizadasActuales=[...tareasPendientes];
+      prioridadMenor();
+      
       return;
     }
     rendersTareas.renderizarTareas(campoTareas, tareasPendientes, true);
@@ -73,8 +103,10 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 
   function prioridadMayor(){
+    
     //Verifico que el radio si este seleccionado
     if(prioridadMayorButton.checked){
+     actualizarListas();
       contenedorFiltros.classList.add("filtro","prioridadMayorFiltro");
       contenedorFiltros.classList.remove("prioridadMenorFiltro");
       const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(tareasRenderizadasActuales);
@@ -90,6 +122,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   function prioridadMenor(){
      //Verifico que el radio si este seleccionado
     if(prioridadMenorButton.checked){
+      actualizarListas();
       contenedorFiltros.classList.remove("prioridadMayorFiltro");
       contenedorFiltros.classList.add("filtro","prioridadMenorFiltro");
       const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(tareasRenderizadasActuales);
@@ -140,6 +173,8 @@ document.addEventListener("DOMContentLoaded", async function () {
           }
         });
       });
+      contenedorFiltros.classList.remove("prioridadMenorFiltro");
+      contenedorFiltros.classList.remove("prioridadMayorFiltro");
   }
 
 
@@ -147,33 +182,33 @@ document.addEventListener("DOMContentLoaded", async function () {
 //aplicarlo con la nueva tarea agregada y no en su forma base.
 const observer = new MutationObserver((mutationsList) => {
   mutationsList.forEach(mutation => {
-    if (mutation.type === 'childList') {
-    
+     // Comprueba si se modificaron atributos es decir si se actualizo en nodo
+    if (mutation.type === 'attributes') {
+      console.log("entro al mutation")
       observer.disconnect();
+      tareasRenderizadasActuales=[...tareasPendientes];
      if(contenedorFiltros.classList.contains("prioridadMayorFiltro")){
-      console.log('OBERVER MAYOR');
-      const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(tareasPendientes);
-      tareasRenderizadasActuales=[...tareasPendientes];
-    rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMayor, true);
+      const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(tareasRenderizadasActuales);
+      rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMayor, true);
      }else if(contenedorFiltros.classList.contains("prioridadMenorFiltro")){
-      console.log("OBSERVER MENOR");
-      const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(tareasPendientes);
-      tareasRenderizadasActuales=[...tareasPendientes];
+      const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(tareasRenderizadasActuales);
      rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMenor, true);
       } 
 
      observer.observe(campoTareas, config);
-     
+    
     }
   });
 });
 
 // Configurar qué tipo de cambios observar
 const config = {
-  childList: true,  // Detectar cambios en los nodos hijos
-  subtree: true   // incluir cambios en los hijos de los nodos hijos
+  childList: false,  // Detectar cambios en los nodos hijos
+  subtree: true,   // incluir cambios en los hijos de los nodos hijos
+  attributes :true //Para detectar cambios en los atributos
 };
 
 // Empezar a observar el campoTareas
 observer.observe(campoTareas, config);
 });
+

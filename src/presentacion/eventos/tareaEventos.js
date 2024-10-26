@@ -10,8 +10,29 @@ import {
   actualizarTarea,
   eliminarTarea
 } from "../servicios/tareas.js";
-export let tareasPendientes;
-export let tareasCompletadas;
+
+import {botonPendientesChecked} from "../eventos/filtrosEventos.js";
+
+export let tareasPendientes=[];
+export let tareasCompletadas=[];
+
+ 
+export async function actualizarListaTareas(){
+  const todasTareas = await consultarTareasUsuario(
+    sessionStorage.getItem("idUsuario")
+  );
+  // tareasPendientes.length=0;
+  // todasTareas.tareasPendientes.forEach(element => {
+  //   tareasPendientes.push(element);
+  // });
+  // tareasCompletadas.length=0;
+  // todasTareas.tareasCompletadas.forEach(element => {
+  //   tareasCompletadas.push(element);
+  // });
+  tareasCompletadas=todasTareas.tareasCompletadas;
+  tareasPendientes=todasTareas.tareasPendientes;
+
+}
 
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
@@ -47,22 +68,13 @@ document.addEventListener("DOMContentLoaded", async function () {
  //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
  await actualizarEstadisticas();
 
-  console.log("Tareas Pendientes",tareasPendientes);
+  //console.log("Tareas Pendientes",tareasPendientes);
   //console.log("Todas las tareas", tareasPendientes.todasLasTareas)
 
   //Para iterarar y encontrar el radio seleccionado
   let selectedRadio = null;
 
   
-
- 
-  async function actualizarListaTareas(){
-    const todasTareas = await consultarTareasUsuario(
-      sessionStorage.getItem("idUsuario")
-    );
-    tareasCompletadas=todasTareas.tareasCompletadas;
-    tareasPendientes=todasTareas.tareasPendientes;
-  }
 
   function deseleccionarPrioridad() {
     document
@@ -177,6 +189,7 @@ function cancelar(){
 
 async function actualizarEstadisticas(){
   await actualizarListaTareas();
+  console.log("PENDIENYTES AGREGADAS",tareasPendientes);
 totalTareasP.textContent=(tareasCompletadas.length+tareasPendientes.length);
 completadasP.textContent=tareasCompletadas.length;
 pendientesP.textContent=tareasPendientes.length;
@@ -215,6 +228,7 @@ pendientesP.textContent=tareasPendientes.length;
      const tieneFiltro=contenedorFiltros.classList.contains("filtro");
 
       rendersTareas.renderizarTareas(campoTareas,tieneFiltro?tareasPendientes:nuevaTarea.data,tieneFiltro?true:false);
+      botonPendientesChecked(true);
       
       //Verifico si se aplico un filtro antes de que se intentara agregar la tarea
       if(tieneFiltro){
@@ -315,3 +329,4 @@ pendientesP.textContent=tareasPendientes.length;
     etiquetasSeleccionadas.length = 0;
   }
 });
+
