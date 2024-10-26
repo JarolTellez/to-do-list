@@ -61,13 +61,17 @@ body {
 }
 
 .estadistica-item,.filtro-item {
+  display: flex;
+  flex-direction:column;
+  justify-content: center;
+  align-items: center;
   background-color: #f8f9fa;
-  padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   text-align: center;
-  height: 80px;
-
+  align-items: center;
+  height: 120px;
+  margin-top: 10px;
   
 }
 
@@ -100,6 +104,49 @@ body {
   margin-top: 20px;
   top: 20vh;
 }
+
+
+.contenedorFiltro {
+  width: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  padding: 6px;
+  border-radius: 6px; /* Bordes redondeados */
+  background-color: transparent;
+  transition: background-color 0.3s;
+}
+
+.radio input[type="radio"] {
+  display: none;
+}
+
+.radio:hover {
+  background-color: #e7f1ff;
+}
+
+.radio input[type="radio"]:checked + .radio-label {
+  background-color: #007BFF; /* Color de fondo al seleccionar */
+  color: white;
+  font-weight: bold;
+}
+
+.radio-label {
+  font-size: 13px; /* Tamaño de texto reducido */
+  color: #333;
+  padding: 5px 10px; /* Espaciado interno para el texto */
+  width: 100%; /* Asegura que el fondo cubra todo el ancho */
+  text-align: center; /* Centra el texto */
+}
+
+
 
 
 
