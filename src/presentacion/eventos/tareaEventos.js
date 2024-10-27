@@ -37,9 +37,11 @@ export async function actualizarListaTareas(){
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
   const descripcionTarea = document.querySelector(".descripcionTarea");
+  const fechaProgramadaTarea=document.querySelector("#fechaInputModal");
   const btnAgregarTareaPrincipal = document.querySelector(
     "#agregarTareaPrincipal"
   );
+
   const listaEtiquetas = document.querySelector("#listaEtiquetas");
   const campoTareas = document.querySelector("#listaTareas");
   const formTarea = document.querySelector("form");
@@ -201,21 +203,26 @@ pendientesP.textContent=tareasPendientes.length;
 
     //Se obtiene el valor solo si se selecciono una opcion, si no, entonces null, la prioridad es opcional
     const valorPrioridad = prioridad ? prioridad.value : null;
+    // Se obtiene el valor de la fecha solo si se selecciono una si no, se envia null
+    const fechaProgramadaDateTime= fechaProgramadaTarea.value? fechaProgramadaTarea.value:null;
+    //Formateo la fecha quitandole la "T" por un espacio y agregando 00 en segundos ya que el input dateTime me regresa con la "T"
+    // y sin segundos porque solo se puede seleccionar hora y minutos
+    const fechaProgramadaProcesada= fechaProgramadaDateTime.replace('T', ' ') + ':00';
 
+ 
     const tareaNueva = {
       nombre: tituloTarea.value,
       descripcion: descripcionTarea.value,
-      fechaCreacion: new Date().toISOString().slice(0, 19).replace("T", " "),
-      fechaUltimaActualizacion: new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace("T", " "),
+      fechaProgramada:fechaProgramadaProcesada,
+      fechaCreacion: convertirADatetimeMysql(new Date()),
+      fechaUltimaActualizacion:convertirADatetimeMysql(new Date()),
       completada: false,
       idUsuario: sessionStorage.getItem("idUsuario"),
       prioridad: valorPrioridad,
       etiquetas: etiquetasSeleccionadas,
     };
 
+    console.log(tareaNueva);
     try {
       const nuevaTarea = await agregarTarea(tareaNueva);
 
@@ -275,14 +282,16 @@ pendientesP.textContent=tareasPendientes.length;
     //Se obtiene el valor solo si se selecciono una opcion, si no, entonces null, la prioridad es opcional
     const valorPrioridad = prioridad ? prioridad.value : null;
 
+    const fechaProgramadaValue= fechaProgramadaTarea.value? fechaProgramadaTarea.value:null;
+    const fechaProgramadaProcesada= fechaProgramadaValue?fechaProgramadaValue.replace('T', ' ') + ':00':null;
+
+
     const tareaActualizar = {
       idTarea: tituloTarea.getAttribute("data-id"),
       nombre: tituloTarea.value,
       descripcion: descripcionTarea.value,
-      fechaUltimaActualizacion: new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace("T", " "),
+      fechaProgramada:fechaProgramadaProcesada,
+      fechaUltimaActualizacion: convertirADatetimeMysql(new Date()),
       idUsuario: sessionStorage.getItem("idUsuario"),
       prioridad: valorPrioridad,
       etiquetasAnteriores: etiquetasParaActualizar,
@@ -328,5 +337,16 @@ pendientesP.textContent=tareasPendientes.length;
     listaEtiquetas.innerHTML = "";
     etiquetasSeleccionadas.length = 0;
   }
+
+  function convertirADatetimeMysql(fecha) {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses comienzan en 0
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const horas = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+    const segundos = String(fecha.getSeconds()).padStart(2, '0');
+
+    return `${anio}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
+}
 });
 

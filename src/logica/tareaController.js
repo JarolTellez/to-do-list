@@ -7,6 +7,7 @@ exports.agregarTarea = async (req, res) => {
     const {
       nombre,
       descripcion,
+      fechaProgramada,
       fechaCreacion,
       fechaUltimaActualizacion,
       completada,
@@ -19,12 +20,15 @@ exports.agregarTarea = async (req, res) => {
       null,
       nombre,
       descripcion,
+      fechaProgramada,
       fechaCreacion,
       fechaUltimaActualizacion,
       completada,
       idUsuario,
       prioridad
     );
+
+    console.log("TAREA A AGREGAR",tarea);
     const tareaAgregada = await tareasDAO.agregarTarea(tarea);
     if (etiquetas.length > 0) {
       await etiquetaController.agregarEtiquetas(
@@ -101,6 +105,7 @@ exports.actualizarTarea = async (req, res) => {
       idTarea,
       nombre,
       descripcion,
+      fechaProgramada,
       fechaUltimaActualizacion,
       idUsuario,
       prioridad,
@@ -113,6 +118,7 @@ exports.actualizarTarea = async (req, res) => {
       idTarea,
       nombre,
       descripcion,
+      fechaProgramada,
       null,
       fechaUltimaActualizacion,
       null,
@@ -240,7 +246,7 @@ exports.consultarTareasPorIdUsuario = async (req, res) => {
 // para agregar las etiquetas como objeto (antes de procesar estan en una linea de texto)
 
 const procesarTareasConEtiquetas = (tareas) => {
-  
+ // console.log("Tareas",tareas);
   return tareas.map((tarea) => {
     const etiquetas_ids = tarea.etiquetas_ids ? tarea.etiquetas_ids.split(",") : [];
     const etiquetas_nombres = tarea.etiquetas_nombres ? tarea.etiquetas_nombres.split(",") : [];
@@ -256,23 +262,17 @@ const procesarTareasConEtiquetas = (tareas) => {
       idTareaEtiqueta: tarea_etiqueta_ids[index] // Agregando idTareaEtiqueta
     }));
     
-   // etiquetas.reverse();
 
     const nuevaTarea = new Tarea(
       tarea.tarea_id,
       tarea.tarea_nombre,
       tarea.tarea_descripcion || "",
+      tarea.tarea_fecha_programada,
       tarea.tarea_fecha_creacion
-        ? new Date(tarea.tarea_fecha_creacion)
-            .toISOString()
-            .slice(0, 19)
-            .replace("T", " ")
+        ?tarea.tarea_fecha_creacion
         : new Date(),
       tarea.tarea_ultima_actualizacion
-        ? new Date(tarea.tarea_ultima_actualizacion)
-            .toISOString()
-            .slice(0, 19)
-            .replace("T", " ")
+        ?tarea.tarea_ultima_actualizacion
         : new Date(),
       tarea.tarea_completada || false,
       tarea.etiquetas_usuarios ? tarea.etiquetas_usuarios.split(",")[0] : null, // Asignar el idUsuario si está disponible
