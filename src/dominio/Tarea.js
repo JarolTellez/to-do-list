@@ -1,8 +1,9 @@
 class Tarea{
-    constructor(idTarea=null,nombre,descripcion,fechaCreacion=new Date(),fechaUltimaActualizacion=new Date(),completada=false,idUsuario,prioridad=null){
+    constructor(idTarea=null,nombre,descripcion,fechaProgramada=null,fechaCreacion=null,fechaUltimaActualizacion=null,completada=false,idUsuario,prioridad=null){
         this.idTarea=idTarea;
         this.nombre=nombre;
         this.descripcion=descripcion;
+        this.fechaProgramada=fechaProgramada;
         this.fechaCreacion=fechaCreacion;
         this.completada=completada;
         this.fechaUltimaActualizacion=fechaUltimaActualizacion;

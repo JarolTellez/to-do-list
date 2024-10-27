@@ -30,10 +30,8 @@
             <span class="radio-label">Completadas</span>
           </label>
         </div>
-       
       </div>
       <div class="contenedorFiltrosPendientes">
-        
         <div class="filtro-item estadisticasPendientes radioFiltro">
           <label>Prioridad</label>
           <div class="contenedorFiltro contenedorFiltroPrioridad">
@@ -59,25 +57,25 @@
         </div>
       </div>
       <div class="filtro-item estadisticasPendientes">
-        <div class="contenedorFiltro ">
-        <label class="radio">
-          <input
-            type="radio"
-            name="prioridadFiltroRadio"
-            value="mayor"
-            id="tareasParaHoyFiltro"
-          />
-          <span class="radio-label">Para hoy</span>
-        </label>
-        <label class="radio">
-          <input
-            type="radio"
-            name="prioridadFiltroRadio"
-            value="menor"
-            id="tareasProximasFiltro"
-          />
-          <span class="radio-label">Proximas</span>
-        </label>
+        <div class="contenedorFiltro">
+          <label class="radio">
+            <input
+              type="radio"
+              name="prioridadFiltroRadio"
+              value="mayor"
+              id="tareasParaHoyFiltro"
+            />
+            <span class="radio-label">Para hoy</span>
+          </label>
+          <label class="radio">
+            <input
+              type="radio"
+              name="prioridadFiltroRadio"
+              value="menor"
+              id="tareasProximasFiltro"
+            />
+            <span class="radio-label">Proximas</span>
+          </label>
         </div>
       </div>
     </div>
@@ -125,6 +123,11 @@
                 class="descripcionTarea"
                 placeholder="Descripción"
               ></textarea>
+         
+                <label>Fecha</label>
+                <input type="datetime-local" id="fechaInputModal">
+                
+            
             </div>
 
             <div id="contenedorInputEtiquetas">

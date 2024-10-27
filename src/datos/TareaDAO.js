@@ -7,10 +7,11 @@ class TareaDAO {
 
     try {
       const [tareaAgregada] = await connection.query(
-        "INSERT INTO tarea (nombre,descripcion,fechaCreacion,ultimaActualizacion,completada,idUsuario,prioridad) VALUES(?,?,?,?,?,?,?)",
+        "INSERT INTO tarea (nombre,descripcion,fechaProgramada,fechaCreacion,ultimaActualizacion,completada,idUsuario,prioridad) VALUES(?,?,?,?,?,?,?,?)",
         [
           tarea.nombre,
           tarea.descripcion,
+          tarea.fechaProgramada,
           tarea.fechaCreacion,
           tarea.fechaUltimaActualizacion,
           tarea.completada,
@@ -35,10 +36,11 @@ class TareaDAO {
 
     try {
      const [resultado]= await connection.query(
-        "UPDATE tarea SET nombre = ?, descripcion = ?, ultimaActualizacion = ?, prioridad = ? WHERE idTarea=?",
+        "UPDATE tarea SET nombre = ?, descripcion = ?, fechaProgramada = ?, ultimaActualizacion = ?, prioridad = ? WHERE idTarea=?",
         [
           tarea.nombre,
           tarea.descripcion,
+          tarea.fechaProgramada,
           tarea.fechaUltimaActualizacion,
           tarea.prioridad,
           tarea.idTarea,
@@ -157,6 +159,7 @@ class TareaDAO {
     t.idTarea AS tarea_id,
     t.nombre AS tarea_nombre,
     t.descripcion AS tarea_descripcion,
+    t.fechaProgramada AS tarea_fecha_programada,
     t.fechaCreacion AS tarea_fecha_creacion,
     t.ultimaActualizacion AS tarea_ultima_actualizacion,
     t.completada AS tarea_completada,
@@ -263,6 +266,7 @@ static async consultarTareasCompletadasUsuario(idUsuario) {
       t.idTarea AS tarea_id,
       t.nombre AS tarea_nombre,
       t.descripcion AS tarea_descripcion,
+      t.fechaProgramada AS tarea_fecha_programada,
       t.fechaCreacion AS tarea_fecha_creacion,
       t.ultimaActualizacion AS tarea_ultima_actualizacion,
       t.completada AS tarea_completada,
