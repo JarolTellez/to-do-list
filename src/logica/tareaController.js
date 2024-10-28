@@ -267,7 +267,7 @@ console.log( new Date(tarea.tarea_fecha_programada).toLocaleString());
       tarea.tarea_id,
       tarea.tarea_nombre,
       tarea.tarea_descripcion || "",
-      new Date(tarea.tarea_fecha_programada).toLocaleString(),
+      tarea.tarea_fecha_programada?new Date(tarea.tarea_fecha_programada).toLocaleString():null,
       tarea.tarea_fecha_creacion
         ?new Date(tarea.tarea_fecha_creacion).toLocaleString()
         : new Date(),
