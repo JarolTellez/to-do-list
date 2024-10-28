@@ -205,15 +205,12 @@ pendientesP.textContent=tareasPendientes.length;
     const valorPrioridad = prioridad ? prioridad.value : null;
     // Se obtiene el valor de la fecha solo si se selecciono una si no, se envia null
     const fechaProgramadaDateTime= fechaProgramadaTarea.value? fechaProgramadaTarea.value:null;
-    //Formateo la fecha quitandole la "T" por un espacio y agregando 00 en segundos ya que el input dateTime me regresa con la "T"
-    // y sin segundos porque solo se puede seleccionar hora y minutos
-    const fechaProgramadaProcesada= fechaProgramadaDateTime.replace('T', ' ') + ':00';
-
+   
  
     const tareaNueva = {
       nombre: tituloTarea.value,
       descripcion: descripcionTarea.value,
-      fechaProgramada:fechaProgramadaProcesada,
+      fechaProgramada:fechaProgramadaDateTime,
       fechaCreacion: convertirADatetimeMysql(new Date()),
       fechaUltimaActualizacion:convertirADatetimeMysql(new Date()),
       completada: false,

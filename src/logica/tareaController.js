@@ -262,17 +262,17 @@ const procesarTareasConEtiquetas = (tareas) => {
       idTareaEtiqueta: tarea_etiqueta_ids[index] // Agregando idTareaEtiqueta
     }));
     
-
+console.log( new Date(tarea.tarea_fecha_programada).toLocaleString());
     const nuevaTarea = new Tarea(
       tarea.tarea_id,
       tarea.tarea_nombre,
       tarea.tarea_descripcion || "",
-      tarea.tarea_fecha_programada,
+      new Date(tarea.tarea_fecha_programada).toLocaleString(),
       tarea.tarea_fecha_creacion
-        ?tarea.tarea_fecha_creacion
+        ?new Date(tarea.tarea_fecha_creacion).toLocaleString()
         : new Date(),
       tarea.tarea_ultima_actualizacion
-        ?tarea.tarea_ultima_actualizacion
+        ?new Date(tarea.tarea_ultima_actualizacion).toLocaleString()
         : new Date(),
       tarea.tarea_completada || false,
       tarea.etiquetas_usuarios ? tarea.etiquetas_usuarios.split(",")[0] : null, // Asignar el idUsuario si está disponible
