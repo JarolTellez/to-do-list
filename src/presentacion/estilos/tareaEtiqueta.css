@@ -55,7 +55,9 @@
   border: 2px solid rgb(128, 161, 223);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   margin: 10px;
-  padding: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 10px;
 }
 
 .contendorTarea.completed {
@@ -140,4 +142,8 @@
 
 .btnModal{
   width: 120px;
+}
+/* Css para logro de fecha de tarea programada */
+.calendario {
+  margin-left: 10px; 
 }

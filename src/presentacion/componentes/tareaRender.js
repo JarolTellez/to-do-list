@@ -5,6 +5,7 @@ export const rendersTareas = {
     if (limpiar && limpiar === true) {
       componenteTareas.innerHTML = "";
     }
+    
     console.log("Renderizando", listaTareas);
     listaTareas.forEach((tareaElemento) => {
       const tareaDiv = document.createElement("div");
@@ -14,9 +15,10 @@ export const rendersTareas = {
       <div class="principalTarea" id="tarea-${tareaElemento.idTarea}">
          <div class="contendorTarea" value="${tareaElemento.idTarea}">
           <h3>${tareaElemento.nombre}</h3>
-           <p class="fechaActualidada">${
-             tareaElemento.fechaUltimaActualizacion
-           }</p>
+           <p class="fechaActualidada"> ${
+            tareaElemento.fechaUltimaActualizacion?"Registrada:"+tareaElemento.fechaUltimaActualizacion.replace(/:\d{2}\s/, ' '):""
+           } 
+           ${ tareaElemento.fechaProgramada?`<span class='calendario'>📅</span>`+tareaElemento.fechaProgramada.replace(/:\d{2}\s/, ' '):""}</p>
            ${`<p class="textoTarea ${
              !tareaElemento.descripcion ? "hidden" : ""
            }">
@@ -245,4 +247,5 @@ export const rendersTareas = {
     return fechaFormateada;
 
   },
+  
 };

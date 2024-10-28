@@ -226,6 +226,7 @@ static async consultarTareasPorIdUsuario(idUsuario) {
       t.idTarea AS tarea_id,
       t.nombre AS tarea_nombre,
       t.descripcion AS tarea_descripcion,
+      t.fechaProgramada AS tarea_fecha_programada,
       t.fechaCreacion AS tarea_fecha_creacion,
       t.ultimaActualizacion AS tarea_ultima_actualizacion,
       t.completada AS tarea_completada,
