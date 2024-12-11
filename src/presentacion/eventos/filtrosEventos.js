@@ -13,6 +13,7 @@ let contenedorFiltros;
 
 let radioPrioridadFiltro=null;
 let tareasRenderizadasActuales;
+let tareasConFiltroPrioridadActuales;
 let estadoPendientesButton=false;
 let estadoCompletadasButton=false;
 
@@ -35,6 +36,7 @@ function prioridadMayor(){
     contenedorFiltros.classList.add("filtro","prioridadMayorFiltro");
     contenedorFiltros.classList.remove("prioridadMenorFiltro");
     const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(tareasRenderizadasActuales);
+    tareasConFiltroPrioridadActuales=tareasOrdenadasPrioridadMayor;
     rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMayor, true);
     }
 }
@@ -46,10 +48,12 @@ function prioridadMenor(){
    contenedorFiltros.classList.remove("prioridadMayorFiltro");
    contenedorFiltros.classList.add("filtro","prioridadMenorFiltro");
    const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(tareasRenderizadasActuales);
+   tareasConFiltroPrioridadActuales=tareasOrdenadasPrioridadMenor;
    rendersTareas.renderizarTareas(campoTareas,tareasOrdenadasPrioridadMenor,true);
    }
 }
 
+//Establece en "tareasRenderizadasActuales" las tareas seleccionadas por el filtro de tareas pendientes o completadas
 function actualizarListas(){
   tareasRenderizadasActuales=tareasPendientesButton.checked?[...tareasPendientes]:[...tareasCompletadas];
 
@@ -107,6 +111,10 @@ function deseleccionarPrioridad() {
         }
       });
     });
+    //Vacio el arreglo donde se guardan las tareas con filtro de prioridad aplicado
+    if(tareasConFiltroPrioridadActuales){
+    tareasConFiltroPrioridadActuales.length=0;
+    }
     contenedorFiltros.classList.remove("prioridadMenorFiltro");
     contenedorFiltros.classList.remove("prioridadMayorFiltro");
 }
