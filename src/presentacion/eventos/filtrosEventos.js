@@ -50,12 +50,22 @@ function prioridadMayor() {
 
 // Procesa las tareas en el orden de filtros aplicados anteriormente para aplicar
 //el filtro de tareas solo para el dia actual.
-function tareasParaHoy(){
-  if(tareasConFiltroPrioridadActuales && tareasConFiltroPrioridadActuales.length>0){
-    console.log("Tareas a procesar: "+ JSON.stringify(tareasConFiltroPrioridadActuales));
+function tareasParaHoy() {
+  if (
+    tareasConFiltroPrioridadActuales &&
+    tareasConFiltroPrioridadActuales.length > 0
+  ) {
+    console.log(
+      "Tareas a procesar: " + JSON.stringify(tareasConFiltroPrioridadActuales)
+    );
+
+    ordenarParaHoy(tareasConFiltroPrioridadActuales);
     return;
   }
-  console.log("Tareas a procesarPendientess: "+ JSON.stringify(tareasPendientes));
+  console.log(
+    "Tareas a procesarPendientess: " + JSON.stringify(tareasPendientes)
+  );
+  ordenarParaHoy(tareasPendientes);
 }
 
 function prioridadMenor() {
@@ -112,6 +122,30 @@ function ordenarMenorMayor(tareas) {
   return tareasOrdenadasMenorMayor;
 }
 
+function ordenarParaHoy(tareas) {
+  const fechaActual = new Date();
+
+  tareas.forEach((tarea) => {
+    const fechaDeTarea = tarea.fechaCreacion;
+    const fechaSeparadaDeHora = fechaDeTarea.split(","); // Para separar de la hora
+    const fechaSeparada = fechaSeparadaDeHora[0].split("/"); // Dividir fecha por "/"
+
+    const fechaDate = new Date(
+        fechaSeparada[2], // Año
+        fechaSeparada[0] - 1, // Mes (base 0)
+        fechaSeparada[1] // Día
+    );
+
+    // Comparar usando `toDateString()` en `fechaDate`
+    const fechaSistema = new Date(); // Fecha del sistema
+    if (fechaSistema.toDateString() === fechaDate.toDateString()) {
+        console.log("Las fechas son iguales");
+    } else {
+        console.log("Las fechas son diferentes");
+    }
+});
+}
+
 //Deselecciona una opcion ya seleccionada de las 2 opciones de filtro de prioridad y vuelve a cargar y renderizar
 // las tareas dependiendo si esta seleccionado las pendientes o las completadas para mostrarlas sin el filtro
 function deseleccionarPrioridad() {
@@ -134,7 +168,7 @@ function deseleccionarPrioridad() {
           this.checked = false; // Deseleccionar
           radioPrioridadFiltro = null; // Reiniciar selección
 
-          tareasConFiltroPrioridadActuales.length=0;
+          tareasConFiltroPrioridadActuales.length = 0;
         } else {
           radioPrioridadFiltro = this; // Actualizar el radio seleccionado
         }
@@ -228,9 +262,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     prioridadMenor();
   });
 
-  tareasParaHoyFiltroButton.addEventListener("click",function(){
+  tareasParaHoyFiltroButton.addEventListener("click", function () {
     tareasParaHoy();
-  })
+  });
   //Observer para ver cuando se modifica el componente listaTareas y asi si esta aplicado un filtro
   //aplicarlo con la nueva tarea agregada y no en su forma base.
   const observer = new MutationObserver((mutationsList) => {
