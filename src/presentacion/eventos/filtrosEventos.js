@@ -15,7 +15,11 @@ let tareasParaHoyFiltroButton;
 let tareasProximasButton;
 
 let radioPrioridadFiltro = null;
+//Variable para guardar solo el input tipo radio 
 let radioParaHoyFiltro=null;
+//Variable para guardar toda la label que adentro tiene tanto el input del filtro pars hoy
+//como el span con el texto
+let filtroProgramadasLabel=null;
 let tareasRenderizadasActuales;
 let tareasConFiltroPrioridadActuales;
 let estadoPendientesButton = false;
@@ -52,8 +56,6 @@ function prioridadMayor() {
   }
 }
 
-
-
 function prioridadMenor() {
   //Verifico que el radio si este seleccionado
   if (prioridadMenorButton.checked) {
@@ -71,8 +73,6 @@ function prioridadMenor() {
     );
   }
 }
-
-
 
 function actualizarListas() {
   // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
@@ -129,7 +129,6 @@ function ordenarMenorMayor(tareas) {
 
   return tareasOrdenadasMenorMayor;
 }
-
 
 function ordenarParaHoy(tareas) {
   const fechaActual = new Date();
@@ -277,6 +276,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   prioridadMayorButton = document.querySelector("#prioridadMayorFiltro");
   prioridadMenorButton = document.querySelector("#prioridadMenorFiltro");
   tareasParaHoyFiltroButton = document.querySelector("#tareasParaHoyFiltro");
+  filtroProgramadasLabel=document.querySelector("#programadas");
   tareasProximasButton = document.querySelector("#tareasProximasFiltro");
 
   //Actualizo las tareas pendientes y completadas para cargarlas antes de usarlas
@@ -299,6 +299,19 @@ document.addEventListener("DOMContentLoaded", async function () {
       contenedorFiltros.classList.add("filtro");
       // contenedorFiltros.classList.remove("prioridadMenorFiltro");
       // contenedorFiltros.classList.remove("prioridadMayorFiltro");
+
+      
+      //Desabilito el boton del filtro "Para Hoy" al hacer click en completadas
+       filtroProgramadasLabel.disabled=true;
+       filtroProgramadasLabel.style.opacity='0.5';
+       filtroProgramadasLabel.style.pointerEvents='none';
+
+       //Pongo false el checked del input del filtro para hoy para actualizar la lista de tareas y solo tome la de completadas 
+       //que es el que se esta clickeando
+       tareasParaHoyFiltroButton.checked=false;
+       actualizarListas();
+   
+      
 
       if (prioridadMayorButton.checked) {
         tareasRenderizadasActuales = [...tareasCompletadas];
@@ -324,6 +337,14 @@ document.addEventListener("DOMContentLoaded", async function () {
       contenedorFiltros.classList.add("filtro");
       // contenedorFiltros.classList.remove("prioridadMenorFiltro");
       // contenedorFiltros.classList.remove("prioridadMayorFiltro");
+
+      //Vuelvo a habilitar el input radio del filtro "Para hoy"
+      if(filtroProgramadasLabel.disabled==true){
+      filtroProgramadasLabel.disabled=false;
+      filtroProgramadasLabel.style.opacity='1';
+      filtroProgramadasLabel.style.pointerEvents='auto';
+      }
+
       if (prioridadMayorButton.checked) {
         tareasRenderizadasActuales = [...tareasPendientes];
         prioridadMayor();
