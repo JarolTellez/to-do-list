@@ -18,7 +18,8 @@ let radioPrioridadFiltro = null;
 let tareasRenderizadasActuales;
 let tareasConFiltroPrioridadActuales;
 let estadoPendientesButton = false;
-let estadoCompletadasButton = false;
+let estadoCompletadasButton = false; 
+let filtroParaHoy=false;
 
 export function botonPendientesChecked(seleccionado) {
   tareasPendientesButton.checked =
@@ -55,17 +56,25 @@ function tareasParaHoy() {
     tareasConFiltroPrioridadActuales &&
     tareasConFiltroPrioridadActuales.length > 0
   ) {
-    console.log(
-      "Tareas a procesar: " + JSON.stringify(tareasConFiltroPrioridadActuales)
+    //Toma en cuenta solo las tareas que tengan fecha programada.
+    const tareasProgramadas = tareasConFiltroPrioridadActuales.filter(
+      (tarea) => tarea.fechaProgramada
     );
-
-    ordenarParaHoy(tareasConFiltroPrioridadActuales);
+    //  ordenarParaHoy(tareasConFiltroPrioridadActuales);
+    console.log("Tareas a procesar: " + JSON.stringify(tareasProgramadas));
+    ordenarParaHoy(tareasProgramadas);
     return;
   }
   console.log(
     "Tareas a procesarPendientess: " + JSON.stringify(tareasPendientes)
   );
-  ordenarParaHoy(tareasPendientes);
+
+  const tareasProgramadas = tareasPendientes.filter(
+    (tarea) => tarea.fechaProgramada
+  );
+  //ordenarParaHoy(tareasPendientes);
+  console.log("Tareas a procesar: " + JSON.stringify(tareasProgramadas));
+  ordenarParaHoy(tareasProgramadas);
 }
 
 function prioridadMenor() {
@@ -124,26 +133,37 @@ function ordenarMenorMayor(tareas) {
 
 function ordenarParaHoy(tareas) {
   const fechaActual = new Date();
+  const tareasRenderizar = [];
 
   tareas.forEach((tarea) => {
-    const fechaDeTarea = tarea.fechaCreacion;
+    const fechaDeTarea = tarea.fechaProgramada;
     const fechaSeparadaDeHora = fechaDeTarea.split(","); // Para separar de la hora
     const fechaSeparada = fechaSeparadaDeHora[0].split("/"); // Dividir fecha por "/"
 
     const fechaDate = new Date(
-        fechaSeparada[2], // Año
-        fechaSeparada[0] - 1, // Mes (base 0)
-        fechaSeparada[1] // Día
+      fechaSeparada[2], // Año
+      fechaSeparada[0] - 1, // Mes (base 0)
+      fechaSeparada[1] // Día
     );
 
     // Comparar usando `toDateString()` en `fechaDate`
     const fechaSistema = new Date(); // Fecha del sistema
     if (fechaSistema.toDateString() === fechaDate.toDateString()) {
-        console.log("Las fechas son iguales");
+      if (
+        !tareasRenderizar.some((tareaI) => tareaI.idTarea === tarea.idTarea)
+      ) {
+        tareasRenderizar.push(tarea);
+      }
     } else {
-        console.log("Las fechas son diferentes");
+      console.log("Las fechas son diferentes");
     }
-});
+  });
+
+  if (tareasRenderizar.length > 0) {
+    //Se manda a renderizar las tareas del dia actual
+    rendersTareas.renderizarTareas(campoTareas, tareasRenderizar, true);
+    filtroParaHoy=true;
+  }
 }
 
 //Deselecciona una opcion ya seleccionada de las 2 opciones de filtro de prioridad y vuelve a cargar y renderizar
