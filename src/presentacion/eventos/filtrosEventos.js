@@ -15,11 +15,14 @@ let tareasParaHoyFiltroButton;
 let tareasProximasButton;
 
 let radioPrioridadFiltro = null;
+let radioParaHoyFiltro=null;
 let tareasRenderizadasActuales;
 let tareasConFiltroPrioridadActuales;
 let estadoPendientesButton = false;
-let estadoCompletadasButton = false; 
-let filtroParaHoy=false;
+let estadoCompletadasButton = false;
+let filtroParaHoy = false;
+
+let tareasRenderizarParaHoy=[];
 
 export function botonPendientesChecked(seleccionado) {
   tareasPendientesButton.checked =
@@ -49,33 +52,7 @@ function prioridadMayor() {
   }
 }
 
-// Procesa las tareas en el orden de filtros aplicados anteriormente para aplicar
-//el filtro de tareas solo para el dia actual.
-function tareasParaHoy() {
-  if (
-    tareasConFiltroPrioridadActuales &&
-    tareasConFiltroPrioridadActuales.length > 0
-  ) {
-    //Toma en cuenta solo las tareas que tengan fecha programada.
-    const tareasProgramadas = tareasConFiltroPrioridadActuales.filter(
-      (tarea) => tarea.fechaProgramada
-    );
-    //  ordenarParaHoy(tareasConFiltroPrioridadActuales);
-    console.log("Tareas a procesar: " + JSON.stringify(tareasProgramadas));
-    ordenarParaHoy(tareasProgramadas);
-    return;
-  }
-  console.log(
-    "Tareas a procesarPendientess: " + JSON.stringify(tareasPendientes)
-  );
 
-  const tareasProgramadas = tareasPendientes.filter(
-    (tarea) => tarea.fechaProgramada
-  );
-  //ordenarParaHoy(tareasPendientes);
-  console.log("Tareas a procesar: " + JSON.stringify(tareasProgramadas));
-  ordenarParaHoy(tareasProgramadas);
-}
 
 function prioridadMenor() {
   //Verifico que el radio si este seleccionado
@@ -95,11 +72,33 @@ function prioridadMenor() {
   }
 }
 
-//Establece en "tareasRenderizadasActuales" las tareas seleccionadas por el filtro de tareas pendientes o completadas
+
+
 function actualizarListas() {
-  tareasRenderizadasActuales = tareasPendientesButton.checked
-    ? [...tareasPendientes]
-    : [...tareasCompletadas];
+  // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
+  if (tareasCompletadasButton.checked) {
+    tareasRenderizadasActuales = [...tareasCompletadas];
+  } else if (tareasPendientesButton.checked) {
+    tareasRenderizadasActuales = [...tareasPendientes];
+  }
+
+  // Aplicar filtro de prioridad si está seleccionado
+  if (radioPrioridadFiltro !== null) {
+    if (radioPrioridadFiltro.value === "prioridadMayor") {
+      tareasRenderizadasActuales = ordenarMayorMenor(tareasRenderizadasActuales);
+    } else if (radioPrioridadFiltro.value === "prioridadMenor") {
+      tareasRenderizadasActuales = ordenarMenorMayor(tareasRenderizadasActuales);
+    }
+  }
+
+  // Aplicar filtro "para hoy" si está seleccionado
+  if (tareasParaHoyFiltroButton.checked) {
+    tareasRenderizadasActuales= ordenarParaHoy(tareasRenderizadasActuales);
+    return; // Salir de la función después de aplicar el filtro "para hoy"
+  }
+
+  // Renderizar las tareas actualizadas
+  rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true);
 }
 
 function ordenarMayorMenor(tareas) {
@@ -131,12 +130,20 @@ function ordenarMenorMayor(tareas) {
   return tareasOrdenadasMenorMayor;
 }
 
+
 function ordenarParaHoy(tareas) {
   const fechaActual = new Date();
-  const tareasRenderizar = [];
+  tareasRenderizarParaHoy = [];
 
   tareas.forEach((tarea) => {
     const fechaDeTarea = tarea.fechaProgramada;
+
+    // Verificar si la fechaProgramada es null o undefined
+    if (!fechaDeTarea) {
+      console.log("La tarea no tiene fecha programada:", tarea);
+      return; // Saltar esta tarea
+    }
+
     const fechaSeparadaDeHora = fechaDeTarea.split(","); // Para separar de la hora
     const fechaSeparada = fechaSeparadaDeHora[0].split("/"); // Dividir fecha por "/"
 
@@ -150,20 +157,21 @@ function ordenarParaHoy(tareas) {
     const fechaSistema = new Date(); // Fecha del sistema
     if (fechaSistema.toDateString() === fechaDate.toDateString()) {
       if (
-        !tareasRenderizar.some((tareaI) => tareaI.idTarea === tarea.idTarea)
+        !tareasRenderizarParaHoy.some((tareaI) => tareaI.idTarea === tarea.idTarea)
       ) {
-        tareasRenderizar.push(tarea);
+        tareasRenderizarParaHoy.push(tarea);
       }
     } else {
       console.log("Las fechas son diferentes");
     }
   });
 
-  if (tareasRenderizar.length > 0) {
+  if (tareasRenderizarParaHoy.length > 0) {
     //Se manda a renderizar las tareas del dia actual
-    rendersTareas.renderizarTareas(campoTareas, tareasRenderizar, true);
-    filtroParaHoy=true;
+    rendersTareas.renderizarTareas(campoTareas, tareasRenderizarParaHoy, true);
+    filtroParaHoy = true;
   }
+  return tareasRenderizarParaHoy;
 }
 
 //Deselecciona una opcion ya seleccionada de las 2 opciones de filtro de prioridad y vuelve a cargar y renderizar
@@ -201,7 +209,63 @@ function deseleccionarPrioridad() {
   contenedorFiltros.classList.remove("prioridadMenorFiltro");
   contenedorFiltros.classList.remove("prioridadMayorFiltro");
 }
+/*
+//Deselecciona una opcion ya seleccionada de las 2 opciones de filtro de prioridad y vuelve a cargar y renderizar
+// las tareas dependiendo si esta seleccionado las pendientes o las completadas para mostrarlas sin el filtro
+function deseleccionarTareasParaHoy() {
+  document
+    .querySelectorAll('.contenedorFiltroProgramadas input[type="radio"]')
+    .forEach((radio) => {
+      radio.addEventListener("click", function () {
+        // Si ya está seleccionado y es el mismo que el anterior
+        if (this === radioParaHoyFiltro) {
+          actualizarListas();
 
+          rendersTareas.renderizarTareas(
+            campoTareas,
+            tareasRenderizadasActuales,
+            true
+          );
+
+           this.checked = false;
+        
+          radioParaHoyFiltro = null; // Reiniciar selección
+
+        } else {
+          radioParaHoyFiltro = this; // Actualizar el radio seleccionado
+        }
+      });
+    });
+  //Vacio el arreglo donde se guardan las tareas con filtro de prioridad aplicado
+
+}
+*/
+
+function deseleccionarTareasParaHoy() {
+  document
+    .querySelectorAll('.contenedorFiltroProgramadas input[type="radio"]')
+    .forEach((radio) => {
+      radio.addEventListener("click", function () {
+        // Si ya está seleccionado y es el mismo que el anterior
+        if (this === radioParaHoyFiltro) {
+          this.checked = false;
+          radioParaHoyFiltro = null; // Reiniciar selección
+
+          // Aplicar el filtro de prioridad que estaba activo
+          if (prioridadMayorButton.checked) {
+            prioridadMayor();
+          } else if (prioridadMenorButton.checked) {
+            prioridadMenor();
+          } else {
+            // Si no hay filtro de prioridad, simplemente actualiza las listas
+            actualizarListas();
+          }
+        } else {
+          radioParaHoyFiltro = this; // Actualizar el radio seleccionado
+        }
+      });
+    });
+}
 document.addEventListener("DOMContentLoaded", async function () {
   campoTareas = document.querySelector("#listaTareas");
 
@@ -219,6 +283,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   await actualizarListaTareas();
   //LLamo al metodo para que deseleccione si se dio click al radio ya seleccionado
   deseleccionarPrioridad();
+  deseleccionarTareasParaHoy();
 
   function cargarModoBase() {
     tareasPendientesButton.checked = true;
@@ -283,7 +348,22 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 
   tareasParaHoyFiltroButton.addEventListener("click", function () {
-    tareasParaHoy();
+    //tareasParaHoy();
+    if (this.checked) {
+  
+    actualizarListas();
+      
+    } else {
+      // Si se deselecciona el filtro "para hoy", aplicar el filtro de prioridad activo
+      if (prioridadMayorButton.checked) {
+        prioridadMayor();
+      } else if (prioridadMenorButton.checked) {
+        prioridadMenor();
+      } else {
+        // Si no hay filtro de prioridad, simplemente actualiza las listas
+        actualizarListas();
+      }
+    }
   });
   //Observer para ver cuando se modifica el componente listaTareas y asi si esta aplicado un filtro
   //aplicarlo con la nueva tarea agregada y no en su forma base.
