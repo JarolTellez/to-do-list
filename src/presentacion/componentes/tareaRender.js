@@ -16,7 +16,7 @@ export const rendersTareas = {
          <div class="contendorTarea" value="${tareaElemento.idTarea}">
           <h3>${tareaElemento.nombre}</h3>
            <p class="fechaActualidada"> ${
-            tareaElemento.fechaUltimaActualizacion?"Registrada:"+tareaElemento.fechaUltimaActualizacion.replace(/:\d{2}\s/, ' '):""
+            tareaElemento.fechaCreacion?"Registrada:"+tareaElemento.fechaCreacion.replace(/:\d{2}\s/, ' '):""
            } 
            ${ tareaElemento.fechaProgramada?`<span class='calendario'>📅</span>`+tareaElemento.fechaProgramada.replace(/:\d{2}\s/, ' '):""}</p>
            ${`<p class="textoTarea ${
