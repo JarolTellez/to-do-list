@@ -131,6 +131,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 
       event.stopPropagation();
       const tareaDetalle = tareasPendientes.find((tarea) => tarea.idTarea == idBuscado);
+      // Formateo la fecha al formato que recibe el input dateTime-local para mostrarla 
+      tareaDetalle.fechaProgramada=convertirAFormatoDateTimeLocal(tareaDetalle.fechaProgramada);
       if (!btnAgregarModal.classList.contains("actualizarModal")) {
         btnAgregarModal.classList.add("actualizarModal");
         btnAgregarModal.textContent = "Actualizar";
@@ -347,6 +349,18 @@ pendientesP.textContent=tareasPendientes.length;
     const segundos = String(fecha.getSeconds()).padStart(2, '0');
 
     return `${anio}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
+}
+
+function convertirAFormatoDateTimeLocal(fechaOriginal) {
+  const fecha=new Date(fechaOriginal);
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses comienzan en 0
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const horas = String(fecha.getHours()).padStart(2, '0');
+  const minutos = String(fecha.getMinutes()).padStart(2, '0');
+  const segundos = String(fecha.getSeconds()).padStart(2, '0');
+
+  return `${anio}-${mes}-${dia}T${horas}:${minutos}`;
 }
 });
 

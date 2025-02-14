@@ -15,10 +15,8 @@ export const rendersTareas = {
       <div class="principalTarea" id="tarea-${tareaElemento.idTarea}">
          <div class="contendorTarea" value="${tareaElemento.idTarea}">
           <h3>${tareaElemento.nombre}</h3>
-           <p class="fechaActualidada"> ${
-            tareaElemento.fechaCreacion?"Registrada:"+tareaElemento.fechaCreacion.replace(/:\d{2}\s/, ' '):""
-           } 
-           ${ tareaElemento.fechaProgramada?`<span class='calendario'>📅</span>`+tareaElemento.fechaProgramada.replace(/:\d{2}\s/, ' '):""}</p>
+           <p class="fechaActualidada"> 
+           ${tareaElemento.fechaProgramada?`<span class='calendario'>📅</span>`+tareaElemento.fechaProgramada.replace(/:\d{2}\s/, ' '):""}</p>
            ${`<p class="textoTarea ${
              !tareaElemento.descripcion ? "hidden" : ""
            }">
@@ -167,7 +165,7 @@ export const rendersTareas = {
   mostrarModalDetalleTarea(modalDetalle, tarea) {
     const inputTituloDetalle = modalDetalle.querySelector(".tituloTarea");
     const descripcionDetalle = modalDetalle.querySelector(".descripcionTarea");
-
+    const fechaInput = modalDetalle.querySelector("#fechaInputModal");
     const contenedorPrioridad = modalDetalle.querySelector(".campoPrioridad");
 
     inputTituloDetalle.setAttribute("data-id", tarea.idTarea);
@@ -181,6 +179,10 @@ export const rendersTareas = {
       descripcionDetalle.value = tarea.descripcion;
     }
 
+    if(tarea.fechaProgramada){
+      fechaInput.value=tarea.fechaProgramada;
+     // console.log("FECHA"+tarea.fechaProgramada);
+    }
     //Se quita el campo de prioridad si la tarea no tiene prioridad
     if (tarea.prioridad) {
       const prioridadRadio = contenedorPrioridad.querySelector(
