@@ -11,7 +11,8 @@ import {
   eliminarTarea
 } from "../servicios/tareas.js";
 
-import {botonPendientesChecked} from "../eventos/filtrosEventos.js";
+import {botonPendientesChecked,
+  actualizarListas} from "../eventos/filtrosEventos.js";
 
 export let tareasPendientes=[];
 export let tareasCompletadas=[];
@@ -322,6 +323,8 @@ pendientesP.textContent=tareasPendientes.length;
       rendersTareas.actualizarRenderTarea(campoTareas, tareaActualizada);
       etiquetasParaActualizar = [...etiquetasSeleccionadas];
 
+      //Aqui llamar al metodo
+      actualizarListas();
       
     } catch (error) {
       console.log(error);

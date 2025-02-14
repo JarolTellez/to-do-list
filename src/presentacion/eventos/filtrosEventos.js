@@ -32,13 +32,13 @@ let tareasRenderizarParaHoy = [];
 export function botonPendientesChecked(seleccionado) {
   tareasPendientesButton.checked =
     seleccionado && seleccionado == true ? true : false;
-  if (prioridadMayorButton.checked || rioridadMayorButton.checked) {
+  if (prioridadMayorButton.checked || prioridadMayorButton.checked) {
     // prioridadMayor();
     actualizarListas();
   }
 }
 
-function actualizarListas() {
+export function actualizarListas() {
   // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
   if (tareasCompletadasButton.checked) {
     tareasRenderizadasActuales = [...tareasCompletadas];
