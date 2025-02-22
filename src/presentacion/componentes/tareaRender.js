@@ -13,9 +13,9 @@ export const rendersTareas = {
       tareaDiv.id = `tareaDiv-${tareaElemento.idTarea}`;
       tareaDiv.innerHTML = `
       <div class="principalTarea" id="tarea-${tareaElemento.idTarea}">
-         <div class="contendorTarea" value="${tareaElemento.idTarea}">
+         <div class="contenedorTarea" value="${tareaElemento.idTarea}">
           <h3>${tareaElemento.nombre}</h3>
-           <p class="fechaActualidada"> 
+           <p class="fechaActualizada"> 
            ${tareaElemento.fechaProgramada?`<span class='calendario'>📅</span>`+tareaElemento.fechaProgramada.replace(/:\d{2}\s/, ' '):""}</p>
            ${`<p class="textoTarea ${
              !tareaElemento.descripcion ? "hidden" : ""
@@ -88,7 +88,7 @@ export const rendersTareas = {
     if (tareaDiv) {
       // Actualiza el contenido de la tarea
       tareaDiv.querySelector("h3").textContent = tareaActualizada.nombre;
-      tareaDiv.querySelector(".fechaActualidada").textContent =
+      tareaDiv.querySelector(".fechaActualizada").textContent =
         tareaActualizada.fechaUltimaActualizacion;
 
       const descripcionElemento = tareaDiv.querySelector(".textoTarea");

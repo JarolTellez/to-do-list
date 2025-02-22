@@ -44,53 +44,99 @@
 .checkbox-completado:checked + .checkbox-label::after {
   opacity: 1;
 }
-
-.contendorTarea {
+/*
+.contenedorTarea {
   position: relative;
   height: 180px;
-  width: 330px;
-  background-color: #f0f0f0;
+  width: 100%;
+  background-color: #ffffff;
   border-radius: 8px;
   font-size: 14px;
-  border: 2px solid rgb(128, 161, 223);
+  border: 1px solid #ddd;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  margin: 10px;
-  padding-left: 10px;
-  padding-right: 10px;
-  padding-bottom: 10px;
+  padding: 15px;
+  transition: transform 0.3s ease;
+}*/
+.contenedorTarea {
+  position: relative;
+  height: 200px;
+  width: 100%; /* Ocupa todo el ancho de la celda */
+  background-color: #ffffff;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 0px 15px 15px 15px;
+  transition: transform 0.3s ease;
+  box-sizing: border-box; /* Incluye el padding en el ancho total */
 }
 
-.contendorTarea.completed {
+.contenedorTarea:hover {
+  transform: translateY(-5px);
+}
+
+.contenedorTarea.completed {
   background-color: #d4edda;
   text-decoration: line-through;
   opacity: 0.7;
 }
 
+/*
 #listaTareas {
-  height: 715px;
-  overflow-y: scroll;
+  height: calc(100vh - 200px);
+  overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+*/
+
+#listaTareas {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+  gap: 20px; /* Espacio entre tareas */
+  padding: 20px; /* Espacio interno */
+  height: calc(100vh - 200px);
+  overflow-y: auto; /* Scroll vertical */
+  overflow-x: hidden; /* Evita que las tareas se salgan horizontalmente */
+  scrollbar-width: none; /* Oculta la barra de scroll en Firefox */
+  -ms-overflow-style: none; /* Oculta la barra de scroll en IE/Edge */
+  width: 100%; /* Ocupa todo el ancho disponible */
+  box-sizing: border-box; /* Incluye el padding en el ancho total */
 }
 
-.contendorTarea h3 {
-  margin-bottom: 0px;
-  padding: 0px;
-  font-size: 17px;
+@media (max-width: 768px) {
+  #listaTareas {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Menos columnas en pantallas pequeñas */
+    gap: 15px; /* Menos espacio entre tareas */
+    padding: 15px; /* Menos padding */
+  }
 }
 
-.fechaActualidada {
-  padding-bottom: 10px;
+@media (max-width: 480px) {
+  #listaTareas {
+    grid-template-columns: 1fr; /* Una sola columna en pantallas muy pequeñas */
+    gap: 10px; /* Menos espacio entre tareas */
+    padding: 10px; /* Menos padding */
+  }
+}
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%; /* Ocupa todo el ancho disponible */
+  overflow-x: hidden; /* Evita que el contenido se salga */
+}
+
+.contenedorTarea h3 {
+  margin-bottom: -10px;
+  font-size: 18px;
+  color: #333;
+}
+
+.fechaActualizada {
   font-size: 12px;
-  color: gray;
-  margin: 0;
-}
-
-#listaTareas::-webkit-scrollbar {
-  display: none;
+  color: #777;
+  margin-bottom: 10px;
 }
 
 .etiquetas {
@@ -102,6 +148,45 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
+.etiquetas::-webkit-scrollbar {
+  display: none; /* Oculta la barra de scroll en Chrome/Safari */
+}
+
+/*
+.etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.etiquetas span {
+  background-color: #007bff;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.prioridad-barra {
+  height: 10px;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.prioridad-barra div {
+  height: 100%;
+  background-color: #007bff;
+}
+
+.prioridad-numero {
+  font-size: 12px;
+  color: #007bff;
+  font-weight: bold;
+}*/
 
 .prioridad-barra {
   height: 20px;
@@ -128,10 +213,11 @@
   margin: 0px;
 }
 
-.textoTarea {
-  margin-top: 0;
-}
 
+.textoTarea {
+  font-size: 14px;
+  color: #555;
+}
 
 .labelModal{
   display: block; 
