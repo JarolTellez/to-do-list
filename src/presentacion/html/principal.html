@@ -1,190 +1,155 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
+<html lang="es">
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>To-Do List</title>
     <link rel="stylesheet" href="../estilos/styles.css" />
     <link rel="stylesheet" href="../estilos/tareaEtiqueta.css" />
-  </head>
-  <body>
-    <div class="filtros">
-      <div class="filtro-item estadisticasCompletadas">
-        <div class="contenedorFiltro">
-          <label class="radio">
-            <input
-              type="radio"
-              name="tareas"
-              value="Pendientes"
-              id="tareasPendientesFiltro"
-            />
-            <span class="radio-label">Pendientes</span>
-          </label>
-          <label class="radio">
-            <input
-              type="radio"
-              name="tareas"
-              value="Completadas"
-              id="tareasCompletadasFiltro"
-            />
-            <span class="radio-label">Completadas</span>
-          </label>
-        </div>
-      </div>
-      <div class="contenedorFiltrosPendientes">
-        <div class="filtro-item estadisticasPendientes radioFiltro">
-          <label>Prioridad</label>
-          <div class="contenedorFiltro contenedorFiltroPrioridad">
-            <label class="radio">
-              <input
-                type="radio"
-                name="prioridadFiltroRadio"
-                value="mayor"
-                id="prioridadMayorFiltro"
-              />
-              <span class="radio-label">Mayor</span>
-            </label>
-            <label class="radio">
-              <input
-                type="radio"
-                name="prioridadFiltroRadio"
-                value="menor"
-                id="prioridadMenorFiltro"
-              />
-              <span class="radio-label">Menor</span>
-            </label>
-          </div>
-        </div>
-      </div>
-      <div class="filtro-item estadisticasPendientes">
-        <div class="contenedorFiltro contenedorFiltroProgramadas">
-          <label class="radio" id="programadas">
-            <input
-              type="radio"
-              name="fechaFiltroRadio"
-              value="mayor"
-              id="tareasParaHoyFiltro"
-            />
-            <span class="radio-label">Para hoy</span>
-          </label>
-          <label class="radio">
-            <input
-              type="radio"
-              name="fechaFiltroRadio"
-              value="menor"
-              id="tareasProximasFiltro"
-            />
-            <span class="radio-label">Proximas</span>
-          </label>
-        </div>
-      </div>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Barra lateral -->
+        <aside class="sidebar">
+            <div class="filtros">
+                <h3>Filtrar Tareas</h3>
+                <div class="filtro-item estadisticasCompletadas">
+                    <div class="contenedorFiltro">
+                        <label class="radio">
+                            <input type="radio" name="tareas" value="Pendientes" id="tareasPendientesFiltro" />
+                            <span class="radio-label">Pendientes</span>
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="tareas" value="Completadas" id="tareasCompletadasFiltro" />
+                            <span class="radio-label">Completadas</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="contenedorFiltrosPendientes">
+                    <div class="filtro-item estadisticasPendientes radioFiltro">
+                        <label>Prioridad</label>
+                        <div class="contenedorFiltro contenedorFiltroPrioridad">
+                            <label class="radio">
+                                <input type="radio" name="prioridadFiltroRadio" value="mayor" id="prioridadMayorFiltro" />
+                                <span class="radio-label">Mayor</span>
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="prioridadFiltroRadio" value="menor" id="prioridadMenorFiltro" />
+                                <span class="radio-label">Menor</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="filtro-item estadisticasPendientes">
+                    <h3>Filtrar por Fecha</h3>
+                    <div class="contenedorFiltro contenedorFiltroProgramadas">
+                        <label class="radio" id="programadas">
+                            <input type="radio" name="fechaFiltroRadio" value="mayor" id="tareasParaHoyFiltro" />
+                            <span class="radio-label">Para hoy</span>
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="fechaFiltroRadio" value="menor" id="tareasProximasFiltro" />
+                            <span class="radio-label">Próximas</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="estadisticas">
+                <h3>Estadísticas</h3>
+                <div class="estadistica-item">
+                    <p>Total de Tareas</p>
+                    <p id="total-tareas">0</p>
+                </div>
+                <div class="estadistica-item estadisticasCompletadas">
+                    <p>Completadas</p>
+                    <p id="completadas">0</p>
+                </div>
+                <div class="estadistica-item estadisticasPendientes">
+                    <p>Pendientes</p>
+                    <p id="pendientes">0</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="main-content">
+            <header class="header">
+                <h1>To-Do List</h1>
+                <div class="infoUsuario">
+                    <a id="cerrarSesion">Cerrar sesión</a>
+                </div>
+            </header>
+
+            <div class="content">
+                <div class="contenedorBoton">
+                    <button id="agregarTareaPrincipal">Agregar Tarea</button>
+                </div>
+                <div id="listaTareas" class="lista-tareas">
+                    <!-- Las tareas se mostrarán aquí -->
+                </div>
+            </div>
+        </main>
     </div>
 
-    <div class="container containerPrincipal">
-      <div class="infoUsuario">
-        <a id="cerrarSesion">Cerrar sesion</a>
-      </div>
-
-      <h1>To-Do List</h1>
-      <div class="contenedorBoton">
-        <button id="agregarTareaPrincipal">Agregar Tarea</button>
-      </div>
-
-      <div id="listaTareas"></div>
-    </div>
-
-    <div class="estadisticas">
-      <div class="estadistica-item">
-        <p>Total de Tareas</p>
-        <p id="total-tareas"></p>
-      </div>
-      <div class="estadistica-item estadisticasCompletadas">
-        <p>Completadas</p>
-        <p id="completadas"></p>
-      </div>
-      <div class="estadistica-item estadisticasPendientes">
-        <p>Pendientes</p>
-        <p id="pendientes"></p>
-      </div>
-    </div>
-
+    <!-- Modal para agregar tareas -->
     <form>
-      <div id="miModal" class="modal">
-        <div class="modalContent">
-          <div class="containerTarea">
-            <div class="inputsTarea">
-              <input
-                type="text"
-                class="tituloTarea"
-                placeholder="Título"
-                required
-              />
-              <textarea
-                class="descripcionTarea"
-                placeholder="Descripción"
-              ></textarea>
-         
-                <label>Fecha</label>
-                <input type="datetime-local" id="fechaInputModal">
-                
-            
+        <div id="miModal" class="modal">
+            <div class="modalContent">
+                <div class="containerTarea">
+                    <div class="inputsTarea">
+                        <input type="text" class="tituloTarea" placeholder="Título" required />
+                        <textarea class="descripcionTarea" placeholder="Descripción"></textarea>
+                        <label>Fecha</label>
+                        <input type="datetime-local" id="fechaInputModal" />
+                    </div>
+
+                    <div id="contenedorInputEtiquetas">
+                        <ul id="listaEtiquetas" class="ulEtiquetas"></ul>
+                        <input type="text" id="contenedorInput" placeholder="Escribe para buscar o agregar etiquetas" />
+                        <ul id="consultadas" class="dropdown"></ul>
+                    </div>
+
+                    <div class="campoPrioridad">
+                        <label>Nivel de Prioridad:</label>
+                        <div class="prioridadSelector">
+                            <label class="prioridadOption">
+                                <input type="radio" name="prioridad" value="1" />
+                                <span class="prioridadLabel">1</span>
+                            </label>
+                            <label class="prioridadOption">
+                                <input type="radio" name="prioridad" value="2" />
+                                <span class="prioridadLabel">2</span>
+                            </label>
+                            <label class="prioridadOption">
+                                <input type="radio" name="prioridad" value="3" />
+                                <span class="prioridadLabel">3</span>
+                            </label>
+                            <label class="prioridadOption">
+                                <input type="radio" name="prioridad" value="4" />
+                                <span class="prioridadLabel">4</span>
+                            </label>
+                            <label class="prioridadOption">
+                                <input type="radio" name="prioridad" value="5" />
+                                <span class="prioridadLabel">5</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="botonesModal">
+                        <button type="submit" class="agregarModal">Agregar</button>
+                        <button type="button" class="cancelarModal">Cancelar</button>
+                        <button type="button" class="limpiarRestaurarModal">Limpiar</button>
+                    </div>
+                </div>
             </div>
-
-            <div id="contenedorInputEtiquetas">
-              <ul id="listaEtiquetas" class="ulEtiquetas"></ul>
-              <input
-                type="text"
-                id="contenedorInput"
-                placeholder="Escribe para buscar o agregar etiquetas"
-              />
-              <ul id="consultadas" class="dropdown"></ul>
-            </div>
-
-            <div class="campoPrioridad">
-              <label>Nivel de Prioridad:</label>
-              <div class="prioridadSelector">
-                <label class="prioridadOption">
-                  <input type="radio" name="prioridad" value="1" />
-                  <span class="prioridadLabel">1</span>
-                </label>
-
-                <label class="prioridadOption">
-                  <input type="radio" name="prioridad" value="2" />
-                  <span class="prioridadLabel">2</span>
-                </label>
-
-                <label class="prioridadOption">
-                  <input type="radio" name="prioridad" value="3" />
-                  <span class="prioridadLabel">3</span>
-                </label>
-
-                <label class="prioridadOption">
-                  <input type="radio" name="prioridad" value="4" />
-                  <span class="prioridadLabel">4</span>
-                </label>
-
-                <label class="prioridadOption">
-                  <input type="radio" name="prioridad" value="5" />
-                  <span class="prioridadLabel">5</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="botonesModal">
-              <button type="submit" class="agregarModal">Agregar</button>
-              <button type="button" class="cancelarModal">Cancelar</button>
-              <button type="button" class="limpiarRestaurarModal">
-                Limpiar
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
     </form>
+
     <script type="module" src="../eventos/filtrosEventos.js"></script>
     <script type="module" src="../eventos/tareaEventos.js"></script>
     <script type="module" src="../eventos/etiquetaEventos.js"></script>
     <script type="module" src="../servicios/etiquetas.js"></script>
     <script src="../servicios/mostrarElementosPrincipal.js"></script>
-  </body>
+</body>
 </html>
