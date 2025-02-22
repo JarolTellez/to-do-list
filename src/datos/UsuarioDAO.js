@@ -2,7 +2,7 @@ const ConexionBD = require("../utils/conexionBD");
 
 class UsuarioDAO {
   static async agregarUsuario(usuario) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
       const [resultado] = await connection.query(
@@ -20,7 +20,7 @@ class UsuarioDAO {
   }
 
   static async actualizarUsuario(usuario) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
       await connection.query(
@@ -42,7 +42,7 @@ class UsuarioDAO {
   }
 
   static async eliminarUsuario(idUsuario) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
       await connection.query("DELETE FROM usuario WHERE idUsuario = ?", [
@@ -57,7 +57,7 @@ class UsuarioDAO {
   }
 
   static async consultarTodosUsuario() {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
       const [rows] = await connection.query("SELECT * FROM usuario");
@@ -71,7 +71,7 @@ class UsuarioDAO {
   }
 
   static async consultarUsuarioPorId(idUsuario) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
       const [rows] = await connection.query(
@@ -88,7 +88,7 @@ class UsuarioDAO {
   }
 
   static async consultarUsuarioPorNombre(nombreUsuario) {
-    const conexionBD = new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
       const [rows] = await connection.query(
@@ -106,7 +106,7 @@ class UsuarioDAO {
 
 
 static async consultarUsuarioPorNombreContrasena(nombreUsuario,contrasena) {
-  const conexionBD = new ConexionBD();
+  const conexionBD = ConexionBD.getInstance();
   const connection = await conexionBD.conectar();
   try {
     const [rows] = await connection.query(

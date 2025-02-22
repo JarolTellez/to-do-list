@@ -1,48 +1,24 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
+  position:relative ;
   font-family: "Roboto", sans-serif;
   background-color: #f0f0f0;
   margin: 0;
   padding: 0;
   display: flex;
   justify-content: center;
-  height: 100vh;
+  box-sizing: border-box;
+  min-height: 100vh;
+  overflow: hidden;
 }
-
-.estadisticas {
-  display: flex;
-  margin-top: 20px;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.estadistica-item {
-  background-color: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  height: 80px;
-}
-
-.estadistica-item p {
-  margin: 0;
-  padding-top: 10px;
-}
-
-.estadistica-item p:last-child {
-  font-weight: bold;
-  font-size: 1.5em;
-}
-
-.estadisticasCompletadas {
-  box-shadow: 0 2px 5px rgba(3, 120, 175, 0.801);
-}
-
-.estadisticasPendientes {
-  box-shadow: 0 2px 5px rgba(231, 38, 4, 0.952);
-}
-
 .container {
+  position: relative;
   background-color: #fff;
   padding: 20px;
   width: 500px;
@@ -52,6 +28,7 @@ body {
   margin-bottom: 20px;
   margin-right: 10px;
 }
+/*------------Estilos para el contenedor principal-----------*/
 .containerPrincipal{
   width: 750px;
 }
@@ -72,7 +49,107 @@ body {
   font-size: 13px;
   cursor: pointer;
 }
+/*------------Estilos para las estadisticas-----------*/
+.estadisticas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 130px;
+  margin-top: 20px;
+  top: 20vh;
+}
 
+.estadistica-item,.filtro-item {
+  display: flex;
+  flex-direction:column;
+  justify-content: center;
+  align-items: center;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  align-items: center;
+  height: 120px;
+  margin-top: 10px;
+  
+}
+
+.estadistica-item p {
+  margin: 0;
+  padding-top: 10px;
+}
+
+.estadistica-item p:last-child {
+  font-weight: bold;
+  font-size: 1.5em;
+}
+
+.estadisticasCompletadas {
+  box-shadow: 0 2px 5px rgba(3, 120, 175, 0.801);
+}
+
+.estadisticasPendientes {
+  box-shadow: 0 2px 5px rgba(231, 38, 4, 0.952);
+}
+
+/*------------Estilos para los filtros-----------*/
+.filtros{
+  position: relative;
+  width: 130px;
+  margin-right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  top: 20vh;
+}
+
+
+.contenedorFiltro {
+  width: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  padding: 6px;
+  border-radius: 6px; 
+  background-color: transparent;
+  transition: background-color 0.3s;
+}
+
+.radio input[type="radio"] {
+  display: none;
+}
+
+.radio:hover {
+  background-color: #e7f1ff;
+}
+
+.radio input[type="radio"]:checked + .radio-label {
+  background-color: #007BFF; 
+  color: white;
+  font-weight: bold;
+}
+
+.radio-label {
+  font-size: 13px; 
+  color: #333;
+  padding: 5px 10px; 
+  width: 100%; 
+  text-align: center; 
+}
+
+
+
+
+/*-----------------css para el modal------------------*/
 .modal {
   display: none;
   position: fixed;
@@ -160,7 +237,7 @@ input {
   background-color: #fff;
   border-radius: 5px;
   display: flex;
-  flex-direction: column; /*Cambie a columna para permitir el scroll */
+  flex-direction: column; 
 }
 
 /* Lista de etiquetas seleccionadas */
@@ -170,7 +247,7 @@ input {
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 100px; /* Limitar la altura máxima para las etiquetas */
+  max-height: 100px; 
   overflow-y: auto;
 }
 
@@ -184,7 +261,7 @@ input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px; /* Limitar el ancho de las etiquetas */
+  max-width: 150px; 
 }
 
 /* Estilo del campo de entrada de etiquetas */
@@ -330,3 +407,4 @@ input {
 .hidden {
   display: none;
 }
+/*--------------Campo fecha en modal--------------*/

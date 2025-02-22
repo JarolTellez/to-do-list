@@ -7,6 +7,7 @@ exports.agregarTarea = async (req, res) => {
     const {
       nombre,
       descripcion,
+      fechaProgramada,
       fechaCreacion,
       fechaUltimaActualizacion,
       completada,
@@ -19,12 +20,15 @@ exports.agregarTarea = async (req, res) => {
       null,
       nombre,
       descripcion,
+      fechaProgramada,
       fechaCreacion,
       fechaUltimaActualizacion,
       completada,
       idUsuario,
       prioridad
     );
+
+    console.log("TAREA A AGREGAR",tarea);
     const tareaAgregada = await tareasDAO.agregarTarea(tarea);
     if (etiquetas.length > 0) {
       await etiquetaController.agregarEtiquetas(
@@ -57,10 +61,14 @@ exports.agregarTarea = async (req, res) => {
 };
 
 exports.eliminarTarea = async (req, res) => {
+  console.log("LLEGOO A ELIMINAR CONTOL")
   try {
-    const { idTarea } = req.body;
+    const { idTarea, idUsuario } = req.body;
 
-    const tareaExistente = await tareasDAO.consultarTareaPorId(idTarea);
+    const tareaExistente = await tareasDAO.consultarTareaPorIdTareaUsuario(
+      idTarea,
+      idUsuario
+    );
 
     if (!tareaExistente) {
       return res.status(404).json({
@@ -69,15 +77,18 @@ exports.eliminarTarea = async (req, res) => {
       });
     }
 
-    const eliminada = await tareasDAO.eliminarTarea(idTarea);
+    const etiquetasEliminadas =
+      await etiquetaController.eliminarEtiquetasPorIdTarea(idTarea);
 
-    if (eliminada > 0) {
-      console.log("Tarea eliminada");
-      return res.status(200).json({
-        status: "success",
-        message: `Tarea con ID ${idTarea} eliminada correctamente.`,
-      });
-    }
+      const eliminada = await tareasDAO.eliminarTarea(idTarea);
+      if (eliminada > 0) {
+        console.log("Tarea eliminada");
+        return res.status(200).json({
+          status: "success",
+          message: `Tarea con ID ${idTarea} eliminada correctamente.`,
+        });
+      }
+    
   } catch (error) {
     console.error("Error al eliminar la tarea:", error);
     return res.status(500).json({
@@ -94,6 +105,7 @@ exports.actualizarTarea = async (req, res) => {
       idTarea,
       nombre,
       descripcion,
+      fechaProgramada,
       fechaUltimaActualizacion,
       idUsuario,
       prioridad,
@@ -106,6 +118,7 @@ exports.actualizarTarea = async (req, res) => {
       idTarea,
       nombre,
       descripcion,
+      fechaProgramada,
       null,
       fechaUltimaActualizacion,
       null,
@@ -164,7 +177,6 @@ console.log("etiquetas a eliminar",etiquetasParaEliminar);
   }
 };
 
-
  
 
 exports.actualizarTareaCompletada = async (req, res) => {
@@ -206,14 +218,20 @@ exports.consultarTareasPorIdUsuario = async (req, res) => {
   try {
     const { idUsuario } = req.body;
 
-    const tareas = await tareasDAO.consultarTareasPorIdUsuario(idUsuario);
-    const tareasProcesadas = procesarTareasConEtiquetas(tareas);
-   
+    //Accedo a las tareas pendientes
+    const tareasPendientes = await tareasDAO.consultarTareasPorIdUsuario(idUsuario);
+    const tareasPendientesProcesadas = procesarTareasConEtiquetas(tareasPendientes);
+    //Accedo a todas las tareas
+   const tareasCompletadas=await tareasDAO.consultarTareasCompletadasUsuario(idUsuario);
+   const tareasCompletadasProcesadas=procesarTareasConEtiquetas(tareasCompletadas);
 
     return res.status(200).json({
       status: "success",
       message: "Tareas consultadas",
-      data: tareasProcesadas,
+      data: {
+        tareasPendientes: tareasPendientesProcesadas,
+        tareasCompletadas: tareasCompletadasProcesadas
+    }
     });
   } catch (error) {
     console.error("Error al consultar las tareas :", error);
@@ -228,7 +246,7 @@ exports.consultarTareasPorIdUsuario = async (req, res) => {
 // para agregar las etiquetas como objeto (antes de procesar estan en una linea de texto)
 
 const procesarTareasConEtiquetas = (tareas) => {
-  
+ // console.log("Tareas",tareas);
   return tareas.map((tarea) => {
     const etiquetas_ids = tarea.etiquetas_ids ? tarea.etiquetas_ids.split(",") : [];
     const etiquetas_nombres = tarea.etiquetas_nombres ? tarea.etiquetas_nombres.split(",") : [];
@@ -244,23 +262,17 @@ const procesarTareasConEtiquetas = (tareas) => {
       idTareaEtiqueta: tarea_etiqueta_ids[index] // Agregando idTareaEtiqueta
     }));
     
-   // etiquetas.reverse();
-
+console.log( new Date(tarea.tarea_fecha_programada).toLocaleString());
     const nuevaTarea = new Tarea(
       tarea.tarea_id,
       tarea.tarea_nombre,
       tarea.tarea_descripcion || "",
+      tarea.tarea_fecha_programada?new Date(tarea.tarea_fecha_programada).toLocaleString():null,
       tarea.tarea_fecha_creacion
-        ? new Date(tarea.tarea_fecha_creacion)
-            .toISOString()
-            .slice(0, 19)
-            .replace("T", " ")
+        ?new Date(tarea.tarea_fecha_creacion).toLocaleString()
         : new Date(),
       tarea.tarea_ultima_actualizacion
-        ? new Date(tarea.tarea_ultima_actualizacion)
-            .toISOString()
-            .slice(0, 19)
-            .replace("T", " ")
+        ?new Date(tarea.tarea_ultima_actualizacion).toLocaleString()
         : new Date(),
       tarea.tarea_completada || false,
       tarea.etiquetas_usuarios ? tarea.etiquetas_usuarios.split(",")[0] : null, // Asignar el idUsuario si está disponible
