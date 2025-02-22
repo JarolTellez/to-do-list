@@ -115,6 +115,22 @@ exports.eliminarEtiquetas=async(etiquetas)=>{
  
 };
 
+exports.eliminarEtiquetasPorIdTarea=async(idTarea)=>{
+  try {
+
+    const etiquetas= await tareaEtiquetaDAO.consultarTareaEtiquetaPorIdTarea(idTarea);
+    if(etiquetas && etiquetas.length>0){
+    const eliminado= await tareaEtiquetaDAO.eliminarTareaEtiquetaPorIdTarea(idTarea);
+    return eliminado;
+    }
+ 
+  } catch (error) {
+    console.error("Error al eliminar tareaEtiqueta: ", error);
+    throw error; 
+  }
+ 
+};
+
 async function obtenerEtiquetaPorNombre(nombreEtiqueta) {
   try {
     return await etiquetaDAO.consultarEtiquetaPorNombre(nombreEtiqueta);

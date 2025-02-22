@@ -1,38 +1,42 @@
 import { componentesEtiquetas } from "../componentes/etiquetaRender.js";
 export const rendersTareas = {
-  renderizarTareas(componenteTareas, listaTareas) {
+  renderizarTareas(componenteTareas, listaTareas, limpiar) {
     //PARA LIMPIAR
-    // componenteTareas.innerHTML='';
+    if (limpiar && limpiar === true) {
+      componenteTareas.innerHTML = "";
+    }
+    
     console.log("Renderizando", listaTareas);
     listaTareas.forEach((tareaElemento) => {
       const tareaDiv = document.createElement("div");
       tareaDiv.className = "tarea";
+      tareaDiv.id = `tareaDiv-${tareaElemento.idTarea}`;
       tareaDiv.innerHTML = `
       <div class="principalTarea" id="tarea-${tareaElemento.idTarea}">
          <div class="contendorTarea" value="${tareaElemento.idTarea}">
           <h3>${tareaElemento.nombre}</h3>
-           <p class="fechaActualidada">${
-             tareaElemento.fechaUltimaActualizacion
-           }</p>
-           ${
-             `<p class="textoTarea ${
-               !tareaElemento.descripcion ? "hidden" : ""
-             }">
+           <p class="fechaActualidada"> ${
+            tareaElemento.fechaUltimaActualizacion?"Registrada:"+tareaElemento.fechaUltimaActualizacion.replace(/:\d{2}\s/, ' '):""
+           } 
+           ${ tareaElemento.fechaProgramada?`<span class='calendario'>📅</span>`+tareaElemento.fechaProgramada.replace(/:\d{2}\s/, ' '):""}</p>
+           ${`<p class="textoTarea ${
+             !tareaElemento.descripcion ? "hidden" : ""
+           }">
      ${tareaElemento.descripcion || ""}
-   </p>`
-           }
+   </p>`}
          
-            ${
-              `<div class="prioridad-container ${!tareaElemento.prioridad?"hidden":''}">
+            ${`<div class="prioridad-container ${
+              !tareaElemento.prioridad ? "hidden" : ""
+            }">
    <span class="prioridad-text">Prioridad</span>
    <div class="prioridad-barra" style="width: ${
-     tareaElemento.prioridad
-                ? tareaElemento.prioridad * 20:''
+     tareaElemento.prioridad ? tareaElemento.prioridad * 20 : ""
    }%; background: linear-gradient(to right, rgba(0, 128, 0, 0.3), rgba(0, 128, 0, 1));">
-     <span class="prioridad-numero">${tareaElemento.prioridad?tareaElemento.prioridad:''}</span>
+     <span class="prioridad-numero">${
+       tareaElemento.prioridad ? tareaElemento.prioridad : ""
+     }</span>
    </div>
- </div>`
-            }
+ </div>`}
            ${
              tareaElemento.etiquetas && tareaElemento.etiquetas.length > 0
                ? `  
@@ -52,7 +56,9 @@ export const rendersTareas = {
            <div class="completado-container">
   <input type="checkbox" id="completado-${
     tareaElemento.idTarea
-  }" class="checkbox-completado"  value="${tareaElemento.idTarea}"/>
+  }" class="checkbox-completado"  value="${tareaElemento.idTarea}" ${
+        tareaElemento.completada > 0 ? "checked disabled" : ""
+      }/>
   <label for="completado-${
     tareaElemento.idTarea
   }" class="checkbox-label"></label>
@@ -103,19 +109,19 @@ export const rendersTareas = {
       }
 
       // Actualizar la prioridad, si la tiene
-      const prioridadContainter=tareaDiv.querySelector(".prioridad-container");
+      const prioridadContainter = tareaDiv.querySelector(
+        ".prioridad-container"
+      );
       if (tareaActualizada.prioridad) {
-
         const prioridadBarra = tareaDiv.querySelector(".prioridad-barra");
         if (prioridadContainter) {
           prioridadBarra.style.width = `${tareaActualizada.prioridad * 20}%`;
           prioridadBarra.querySelector(".prioridad-numero").textContent =
             tareaActualizada.prioridad;
-            prioridadContainter.classList.remove("hidden");
-
+          prioridadContainter.classList.remove("hidden");
         }
         //Se oculta el elemento html donde se muestra a prioridad si la tarea no tiene
-      }else{
+      } else {
         prioridadContainter.classList.add("hidden");
       }
 
@@ -209,9 +215,17 @@ export const rendersTareas = {
 
     const prioridad = modal.querySelector(".campoPrioridad");
 
+    const fechaInput = modal.querySelector("#fechaInputModal");
+  
+
+    // Formateo la fecha actual al formato valido por el input para establecer
+    //como fecha minima
+   const fechaFormateada=this.formatearFechaDateInput(new Date());
+
     btnAgregarModal.textContent = "Agregar";
     btnLimpiarEliminarModal.textContent = "Limpiar";
     descripcionDetalle.style.display = "block";
+    fechaInput.setAttribute("min", fechaFormateada);
     prioridad.style.display = "block";
     modal.style.display = "flex";
   },
@@ -220,4 +234,18 @@ export const rendersTareas = {
       modal.style.display = "none";
     }
   },
+
+  formatearFechaDateInput(fecha) {
+    // Formatear la fecha en YYYY-MM-DD
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, "0"); // Los meses empiezan en 0
+    const dia = String(fecha.getDate()).padStart(2, "0");
+    const horas = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+
+    const fechaFormateada = `${anio}-${mes}-${dia}T${horas}:${minutos}`;
+    return fechaFormateada;
+
+  },
+  
 };

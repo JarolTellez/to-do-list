@@ -2,7 +2,7 @@ const ConexionBD = require("../utils/conexionBD");
 
 class TareaEtiquetaDAO {
   static async agregarTareaEtiqueta(tareaEtiqueta) {
-    const  conexionBD=new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
       const [nuevaTareaEtiqueta] = await connection.query(
@@ -10,7 +10,7 @@ class TareaEtiquetaDAO {
         [tareaEtiqueta.idTarea, tareaEtiqueta.idEtiqueta]
       );
       tareaEtiqueta.idTareaEtiqueta = nuevaTareaEtiqueta.insertId;
-     
+
       return tareaEtiqueta;
     } catch (error) {
       console.log("Error al agregar tarea etiqueta: ", error);
@@ -21,13 +21,17 @@ class TareaEtiquetaDAO {
   }
 
   static async actualizarTareaEtiqueta(tareaEtiqueta) {
-    const conexionBD=new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
       await connection.query(
         "UPDATE tareaetiqueta SET idTarea = ?, idEtiqueta = ? WHERE idTareaEtiqueta = ?",
-        [tareaEtiqueta.idTarea, tareaEtiqueta.idEtiqueta,tareaEtiqueta.idTareaEtiqueta]
+        [
+          tareaEtiqueta.idTarea,
+          tareaEtiqueta.idEtiqueta,
+          tareaEtiqueta.idTareaEtiqueta,
+        ]
       );
 
       return tareaEtiqueta;
@@ -40,15 +44,34 @@ class TareaEtiquetaDAO {
   }
 
   static async eliminarTareaEtiqueta(idTareaEtiqueta) {
-    const conexionBD=new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
-        const [resultado] = await connection.query(
-            "DELETE FROM tareaetiqueta WHERE idTareaEtiqueta = ? ",
-            [idTareaEtiqueta]
-          );
-          return resultado.affectedRows;
+      const [resultado] = await connection.query(
+        "DELETE FROM tareaetiqueta WHERE idTareaEtiqueta = ? ",
+        [idTareaEtiqueta]
+      );
+      return resultado.affectedRows;
+    } catch (error) {
+      console.log("Error al eliminar una tareaEtiqueta: ", error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async eliminarTareaEtiquetaPorIdTarea(idTarea) {
+    const conexionBD = ConexionBD.getInstance();
+    const connection = await conexionBD.conectar();
+
+    try {
+      const [resultado] = await connection.query(
+        "DELETE FROM tareaetiqueta WHERE idTarea = ? ",
+        [idTarea]
+      );
+
+      return resultado.affectedRows;
     } catch (error) {
       console.log("Error al eliminar una tareaEtiqueta: ", error);
       throw error;
@@ -58,7 +81,7 @@ class TareaEtiquetaDAO {
   }
 
   static async consultarTodasTareasEtiquetas() {
-    const conexionBD=new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {
@@ -75,7 +98,7 @@ class TareaEtiquetaDAO {
   }
 
   static async consultarTareaEtiquetaPorIdTarea(idTarea) {
-    const conexionBD=new ConexionBD();
+    const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
     try {

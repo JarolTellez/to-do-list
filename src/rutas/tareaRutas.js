@@ -14,7 +14,8 @@ router
 .post(tareaController.consultarTareasPorIdUsuario);
    
 router
-  .route('/:id/completar')
+  .route('/gestionar')
+  .post(tareaController.eliminarTarea)
   .patch(tareaController.actualizarTareaCompletada);
 
 router
