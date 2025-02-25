@@ -49,14 +49,14 @@ export function actualizarListas() {
   // Aplicar filtro de prioridad si está seleccionado
   if (radioPrioridadFiltro !== null) {
     if (
-      radioPrioridadFiltro.value === "prioridadMayor" ||
+      radioPrioridadFiltro.value === "mayor" ||
       prioridadMayorButton.checked
     ) {
       tareasRenderizadasActuales = ordenarMayorMenor(
         tareasRenderizadasActuales
       );
     } else if (
-      radioPrioridadFiltro.value === "prioridadMenor" ||
+      radioPrioridadFiltro.value === "menor" ||
       prioridadMenorButton.checked
     ) {
       tareasRenderizadasActuales = ordenarMenorMayor(
@@ -169,6 +169,8 @@ function deseleccionarPrioridad() {
           //   tareasRenderizadasActuales,
           //   true
           // );
+          //Quita el css del radio para que se vea deseleccion
+          this.closest('.radio').classList.remove('selected');
           this.checked = false; // Deseleccionar
           radioPrioridadFiltro = null; // Reiniciar selección
           actualizarListas();
@@ -225,6 +227,8 @@ function deseleccionarTareasParaHoy() {
         // Si ya está seleccionado y es el mismo que el anterior
         if (this === radioParaHoyFiltro) {
           console.log("Filtro para hoy");
+          //Quita el css del radio para que se vea deseleccion
+          this.closest('.radio').classList.remove('selected');
           this.checked = false;
           tareasParaHoyFiltroButton.checked=false;
           radioParaHoyFiltro = null; // Reiniciar selección
@@ -263,6 +267,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   function cargarModoBase() {
     tareasPendientesButton.checked = true;
+    tareasPendientesButton.closest('.radio').classList.add('selected');
     tareasRenderizadasActuales = [...tareasPendientes];
   }
   cargarModoBase();
@@ -285,6 +290,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       radioParaHoyFiltro=null;
       //Deselecciono el filtro
       tareasParaHoyFiltroButton.checked = false;
+     
       actualizarListas();
 
       if (prioridadMayorButton.checked || prioridadMenorButton.checked) {
@@ -346,6 +352,30 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
     }
   });
+
+
+  // //Remueve o agrega la clase selected si cambia el estado del radio para que se aplique
+  // //el css de la clase selected que es para que cambia el fondo de color al hacer click en el radio
+  document.querySelectorAll('input[type="radio"]').forEach((radio) => {
+    radio.addEventListener('change', function () {
+      // Obtiene el nombre del grupo al que pertenece el radio seleccionado
+      const groupName = this.name;
+  
+      // Remueve la clase 'selected' de todos los radios del mismo grupo
+      document.querySelectorAll(`input[name="${groupName}"]`).forEach((radioInGroup) => {
+        radioInGroup.closest('.radio').classList.remove('selected');
+      });
+  
+      // Agrega la clase 'selected' al contenedor del radio seleccionado
+      if (this.checked) {
+        this.closest('.radio').classList.add('selected');
+      }
+    });
+  });
+
+
+ 
+
   //Observer para ver cuando se modifica el componente listaTareas y asi si esta aplicado un filtro
   //aplicarlo con la nueva tarea agregada y no en su forma base.
   const observer = new MutationObserver((mutationsList) => {
@@ -391,4 +421,5 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Empezar a observar el campoTareas
   observer.observe(campoTareas, config);
+
 });
