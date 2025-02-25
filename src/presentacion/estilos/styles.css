@@ -51,7 +51,8 @@ html, body {
 }
 
 .radio:hover {
-  background-color: #e7f1ff;
+ background-color: #e7f1ff; 
+
 }
 
 .radio input[type="radio"] {
@@ -61,6 +62,18 @@ html, body {
 .radio-label {
   font-size: 14px;
   color: #333;
+}
+
+ /* .radio input[type="radio"]:checked + .radio-label {
+  background-color: #007BFF; 
+  color: white;
+  font-weight: bold;
+}  */
+
+.radio.selected{
+  background-color: #007BFF; 
+  color: white;
+  font-weight: bold;
 }
 
 .estadisticas {
