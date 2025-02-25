@@ -61,7 +61,7 @@ html, body {
 
 .radio-label {
   font-size: 14px;
-  color: #333;
+  
 }
 
  /* .radio input[type="radio"]:checked + .radio-label {
@@ -70,10 +70,9 @@ html, body {
   font-weight: bold;
 }  */
 
-.radio.selected{
+.radio.selected {
   background-color: #007BFF; 
-  color: white;
-  font-weight: bold;
+  color:white;
 }
 
 .estadisticas {

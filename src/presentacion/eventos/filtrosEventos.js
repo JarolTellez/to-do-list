@@ -23,15 +23,21 @@ let filtroProgramadasLabel = null;
 let contenedorFiltroProgramadas = null;
 let tareasRenderizadasActuales;
 let tareasConFiltroPrioridadActuales;
-let estadoPendientesButton = false;
-let estadoCompletadasButton = false;
-let filtroParaHoy = false;
+// let estadoPendientesButton = false;
+// let estadoCompletadasButton = false;
+// let filtroParaHoy = false;
 
 let tareasRenderizarParaHoy = [];
 
 export function botonPendientesChecked(seleccionado) {
   tareasPendientesButton.checked =
     seleccionado && seleccionado == true ? true : false;
+    tareasPendientesButton.checked=true;
+    tareasPendientesButton.closest('.radio').classList.add('selected');
+
+    tareasCompletadasButton.checked=false;
+    tareasCompletadasButton.closest('.radio').classList.remove('selected');
+
   if (prioridadMayorButton.checked || prioridadMayorButton.checked) {
     // prioridadMayor();
     actualizarListas();
@@ -68,7 +74,7 @@ export function actualizarListas() {
   // Aplicar filtro "para hoy" si está seleccionado
   if ( radioParaHoyFiltro!==null) {
     tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
-    return; // Salir de la función después de aplicar el filtro "para hoy"
+   // return; // Salir de la función después de aplicar el filtro "para hoy"
   }
 
   // Renderizar las tareas actualizadas
@@ -144,8 +150,8 @@ function ordenarParaHoy(tareas) {
 
   if (tareasRenderizarParaHoy.length > 0) {
     //Se manda a renderizar las tareas del dia actual
-    rendersTareas.renderizarTareas(campoTareas, tareasRenderizarParaHoy, true);
-    filtroParaHoy = true;
+  //  rendersTareas.renderizarTareas(campoTareas, tareasRenderizarParaHoy, true);
+   // filtroParaHoy = true;
   }
   return tareasRenderizarParaHoy;
 }
@@ -273,64 +279,65 @@ document.addEventListener("DOMContentLoaded", async function () {
   cargarModoBase();
 
   tareasCompletadasButton.addEventListener("click", function () {
-    if (!estadoCompletadasButton) {
-      estadoCompletadasButton = true;
-      estadoPendientesButton = false;
+    // if (!estadoCompletadasButton) {
+    //   estadoCompletadasButton = true;
+    //   estadoPendientesButton = false;
       //Le agrego la clase filtro al contenedor de los filtros para indicar que se aplico un filtro
-      contenedorFiltros.classList.add("filtro");
+     // contenedorFiltros.classList.add("filtro");
       // contenedorFiltros.classList.remove("prioridadMenorFiltro");
       // contenedorFiltros.classList.remove("prioridadMayorFiltro");
 
-      contenedorFiltroProgramadas.disabled = true;
-      contenedorFiltroProgramadas.style.opacity = "0.5";
-      contenedorFiltroProgramadas.style.pointerEvents = "none";
+      //PARA OCULTAR EL FILTRO DE FECHA CON LAS TAREAS COMPLETADAS
+      // contenedorFiltroProgramadas.disabled = true;
+      // contenedorFiltroProgramadas.style.opacity = "0.5";
+      // contenedorFiltroProgramadas.style.pointerEvents = "none";
 
       //Pongo null el input tipo radio del filtro para hoy para actualizar la lista de tareas y solo tome la de completadas
       //que es el que se esta clickeando
-      radioParaHoyFiltro=null;
-      //Deselecciono el filtro
-      tareasParaHoyFiltroButton.checked = false;
+      // radioParaHoyFiltro=null;
+      // //Deselecciono el filtro
+      // tareasParaHoyFiltroButton.checked = false;
      
       actualizarListas();
 
-      if (prioridadMayorButton.checked || prioridadMenorButton.checked) {
-        tareasRenderizadasActuales = [...tareasCompletadas];
+      // if (prioridadMayorButton.checked || prioridadMenorButton.checked) {
+      //   tareasRenderizadasActuales = [...tareasCompletadas];
 
-        actualizarListas();
+      //   actualizarListas();
 
-        return;
-      }
+      //   return;
+      // }
 
-      rendersTareas.renderizarTareas(campoTareas, tareasCompletadas, true);
-      tareasRenderizadasActuales = [...tareasCompletadas];
-    }
+      // rendersTareas.renderizarTareas(campoTareas, tareasCompletadas, true);
+      // tareasRenderizadasActuales = [...tareasCompletadas];
+    // }
   });
 
   tareasPendientesButton.addEventListener("click", function () {
-    if (!estadoPendientesButton) {
-      estadoCompletadasButton = false;
-      estadoPendientesButton = true;
+    // if (!estadoPendientesButton) {
+    //   estadoCompletadasButton = false;
+    //   estadoPendientesButton = true;
       //Le agrego la clase filtro al contenedor de los filtros para indicar que se aplico un filtro
-      contenedorFiltros.classList.add("filtro");
+     // contenedorFiltros.classList.add("filtro");
       // contenedorFiltros.classList.remove("prioridadMenorFiltro");
       // contenedorFiltros.classList.remove("prioridadMayorFiltro");
 
-      //Vuelvo a habilitar el elemento donde estan los inputs radio para los filtros de las tareas prgroamadas "Para hoy" y "Vencidas"
-      if (contenedorFiltroProgramadas.disabled == true) {
-        contenedorFiltroProgramadas.disabled = false;
-        contenedorFiltroProgramadas.style.opacity = "1";
-        contenedorFiltroProgramadas.style.pointerEvents = "auto";
-      }
+      // //Vuelvo a habilitar el elemento donde estan los inputs radio para los filtros de las tareas prgroamadas "Para hoy" y "Vencidas"
+      // if (contenedorFiltroProgramadas.disabled == true) {
+      //   contenedorFiltroProgramadas.disabled = false;
+      //   contenedorFiltroProgramadas.style.opacity = "1";
+      //   contenedorFiltroProgramadas.style.pointerEvents = "auto";
+      // }
 
-      if (prioridadMayorButton.checked || prioridadMenorButton.checked) {
-        tareasRenderizadasActuales = [...tareasPendientes];
+      // if (prioridadMayorButton.checked || prioridadMenorButton.checked) {
+      //   tareasRenderizadasActuales = [...tareasPendientes];
         actualizarListas();
-        return;
-      }
+      //   return;
+      // }
 
-      rendersTareas.renderizarTareas(campoTareas, tareasPendientes, true);
-      tareasRenderizadasActuales = [...tareasPendientes];
-    }
+      // rendersTareas.renderizarTareas(campoTareas, tareasPendientes, true);
+      // tareasRenderizadasActuales = [...tareasPendientes];
+    // }
   });
 
   prioridadMayorButton.addEventListener("click", function () {
@@ -342,15 +349,15 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 
   tareasParaHoyFiltroButton.addEventListener("click", function () {
-    if (this.checked) {
-      actualizarListas();
-    } else {
-      // Si se deselecciona el filtro "para hoy", aplicar el filtro de prioridad activo
-      if (prioridadMayorButton.checked || prioridadMenorButton.checked) {
+    // if (this.checked) {
+    //   actualizarListas();
+    // } else {
+    //   // Si se deselecciona el filtro "para hoy", aplicar el filtro de prioridad activo
+    //   if (prioridadMayorButton.checked || prioridadMenorButton.checked) {
         // prioridadMayor();
         actualizarListas();
-      }
-    }
+    //   }
+    // }
   });
 
 
