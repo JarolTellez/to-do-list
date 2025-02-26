@@ -363,7 +363,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // //Remueve o agrega la clase selected si cambia el estado del radio para que se aplique
   // //el css de la clase selected que es para que cambia el fondo de color al hacer click en el radio
-  document.querySelectorAll('input[type="radio"]').forEach((radio) => {
+  document.querySelectorAll('input[type="radio"].opcionFiltro').forEach((radio) => {
     radio.addEventListener('change', function () {
       // Obtiene el nombre del grupo al que pertenece el radio seleccionado
       const groupName = this.name;

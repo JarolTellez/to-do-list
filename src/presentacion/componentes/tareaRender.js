@@ -180,7 +180,7 @@ export const rendersTareas = {
     }
 
     if(tarea.fechaProgramada){
-      fechaInput.value=tarea.fechaProgramada;
+      fechaInput.value=this.convertirAFormatoDateTimeLocal(tarea.fechaProgramada);
      // console.log("FECHA"+tarea.fechaProgramada);
     }
     //Se quita el campo de prioridad si la tarea no tiene prioridad
@@ -248,6 +248,18 @@ export const rendersTareas = {
     const fechaFormateada = `${anio}-${mes}-${dia}T${horas}:${minutos}`;
     return fechaFormateada;
 
+  },
+  //Formatea la fecha para que se pueda mandar al elemento html inout tipo "datetime-local"
+  convertirAFormatoDateTimeLocal(fechaOriginal) {
+    const fecha=new Date(fechaOriginal);
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses comienzan en 0
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const horas = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+    const segundos = String(fecha.getSeconds()).padStart(2, '0');
+  
+    return `${anio}-${mes}-${dia}T${horas}:${minutos}`;
   },
   
 };
