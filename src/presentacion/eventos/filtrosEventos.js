@@ -15,8 +15,8 @@ let tareasParaHoyFiltroButton;
 let tareasProximasButton;
 
 let radioPrioridadFiltro = null;
-//Variable para guardar solo el input tipo radio
-let radioParaHoyFiltro = null;
+//Variable para guardar el estado de las opciones del filtro de filtrar por fecha programada
+let  radioProgramadasFiltro = null;
 //Variable para guardar toda la label que adentro tiene tanto el input del filtro pars hoy
 //como el span con el texto
 let filtroProgramadasLabel = null;
@@ -72,8 +72,16 @@ export function actualizarListas() {
   }
 
   // Aplicar filtro "para hoy" si está seleccionado
-  if ( radioParaHoyFiltro!==null) {
+  if ( radioProgramadasFiltro!==null && tareasParaHoyFiltroButton.checked) {
+    console.log("entro a hoy AAAAAAAAAA");
     tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
+   // return; // Salir de la función después de aplicar el filtro "para hoy"
+  }
+
+   // Aplicar filtro "para hoy" si está seleccionado
+   if ( tareasProximasButton.checked) {
+    console.log("entro a Proximas");
+    tareasRenderizadasActuales = ordenarMasProximas(tareasRenderizadasActuales);
    // return; // Salir de la función después de aplicar el filtro "para hoy"
   }
 
@@ -156,6 +164,69 @@ function ordenarParaHoy(tareas) {
   return tareasRenderizarParaHoy;
 }
 
+//Ordena las tareas por fecha programada desde la mas proxima hasta la menos proxima
+function ordenarMasProximas(tareas){
+console.log("tareas BASE",tareas);
+
+
+
+  tareas.sort((a, b) => {
+    console.log("fecha 1", convertirFecha(a.fechaProgramada));
+    console.log("fecha 2", convertirFecha(b.fechaProgramada));
+    return a.fechaProgramada == null ? 1 :         // Si 'a.fechaProgramada' es null, mueve 'a' al final
+           b.fechaProgramada ==null ? -1 :        // Si 'b.fechaProgramada' es null, mueve 'b' al final
+            convertirFecha(a.fechaProgramada) - convertirFecha(b.fechaProgramada); // Ordena por fecha
+  });
+  console.log("FECHAS ACOMODADAS POR MAS PROXIMAS", tareas);
+  return tareas;
+ 
+  }
+  
+
+
+
+//Metodo que convierte una fecha del formato MM/DD/YYYY, HH:MM:SS AM/PM a un objeto date para usar operadores
+//logicos en las fechas
+function convertirFecha(fechaString) {
+  console.log("fecha", fechaString);
+  if (!fechaString) return null; // Si la fecha es null o undefined, devuelve null
+
+  // Si la fecha ya está en formato ISO, devolver un objeto Date directamente
+  if (fechaString.includes("T")) {
+    return new Date(fechaString);
+  }
+
+  // Si la fecha está en formato normal  MM/DD/YYYY, HH:MM:SS AM/PM, convertirla a formato ISO
+  try {
+    const [datePart, timePart] = fechaString.split(", ");
+    const [month, day, year] = datePart.split("/");
+    const [time, modifier] = timePart.split(" ");
+    let [hours, minutes, seconds] = time.split(":");
+
+    // Convertir horas a formato 24 horas
+    if (modifier === "PM" && hours !== "12") {
+      hours = parseInt(hours, 10) + 12;
+    }
+    if (modifier === "AM" && hours === "12") {
+      hours = "00";
+    }
+
+
+    hours = String(hours).padStart(2, "0");
+    minutes = String(minutes).padStart(2, "0");
+    seconds = String(seconds || "00").padStart(2, "0"); // Si no hay segundos agrego "00"
+
+    // Crear la fecha en formato ISO (YYYY-MM-DDTHH:MM:SS)
+    const fechaISO = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${hours}:${minutes}:${seconds}`;
+    console.log("fechaISO", fechaISO); // Para depuración
+
+    // Devolver un objeto Date
+    return new Date(fechaISO);
+  } catch (error) {
+    console.error("Error al convertir la fecha:", error);
+    return null; // Si hay un error se devuelve null
+  }
+}
 //Deselecciona una opcion ya seleccionada de las 2 opciones de filtro de prioridad y vuelve a cargar y renderizar
 // las tareas dependiendo si esta seleccionado las pendientes o las completadas para mostrarlas sin el filtro
 function deseleccionarPrioridad() {
@@ -231,19 +302,19 @@ function deseleccionarTareasParaHoy() {
     .forEach((radio) => {
       radio.addEventListener("click", function () {
         // Si ya está seleccionado y es el mismo que el anterior
-        if (this === radioParaHoyFiltro) {
+        if (this === radioProgramadasFiltro) {
           console.log("Filtro para hoy");
           //Quita el css del radio para que se vea deseleccion
           this.closest('.radio').classList.remove('selected');
           this.checked = false;
           tareasParaHoyFiltroButton.checked=false;
-          radioParaHoyFiltro = null; // Reiniciar selección
+          radioProgramadasFiltro = null; // Reiniciar selección
 
           //Actualizar la lista de tareas para que se muestren segun los filtros que quedan puestos
           actualizarListas();
          
         } else {
-          radioParaHoyFiltro = this; // Actualizar el radio seleccionado
+          radioProgramadasFiltro = this; // Actualizar el radio seleccionado
         }
       });
     });
@@ -360,6 +431,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     // }
   });
 
+  tareasProximasButton.addEventListener("click",function(){
+    actualizarListas();
+  });
 
   // //Remueve o agrega la clase selected si cambia el estado del radio para que se aplique
   // //el css de la clase selected que es para que cambia el fondo de color al hacer click en el radio
@@ -379,9 +453,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
     });
   });
-
-
- 
 
   //Observer para ver cuando se modifica el componente listaTareas y asi si esta aplicado un filtro
   //aplicarlo con la nueva tarea agregada y no en su forma base.
