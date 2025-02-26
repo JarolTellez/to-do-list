@@ -51,11 +51,19 @@ export function botonPendientesChecked(seleccionado) {
 }
 
 export function actualizarListas() {
+  let mensaje;
   // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
   if (tareasCompletadasButton.checked) {
-    tareasRenderizadasActuales = [...tareasCompletadas];
+    tareasRenderizadasActuales = [...tareasCompletadas]
+    if(tareasCompletadas.length<=0){
+      mensaje="No hay tareas completadas";
+    }
+    
   } else if (tareasPendientesButton.checked ) {
-    tareasRenderizadasActuales = [...tareasPendientes];
+    tareasRenderizadasActuales = [...tareasPendientes]
+    if(tareasPendientes.length<=0){
+      mensaje="No hay tareas pendientes";
+    }
   }
 
   // Aplicar filtro de prioridad si está seleccionado
@@ -81,8 +89,13 @@ export function actualizarListas() {
   if ( radioProgramadasFiltro!==null && tareasParaHoyFiltroButton.checked) {
     console.log("entro a hoy AAAAAAAAAA");
   
-      tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
+    if (tareasRenderizadasActuales.length <= 0) {
+      mensaje = "No hay tareas para hoy";
     
+    }
+      tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
+     
+   
   
    // return; // Salir de la función después de aplicar el filtro "para hoy"
   }
@@ -91,11 +104,14 @@ export function actualizarListas() {
    if ( tareasProximasButton.checked) {
     console.log("entro a Proximas");
     tareasRenderizadasActuales = ordenarMasProximas(tareasRenderizadasActuales);
-   // return; // Salir de la función después de aplicar el filtro "para hoy"
+    if (tareasRenderizadasActuales.length <= 0) {
+      mensaje = "No hay tareas proximas";
+  
+    }
   }
 
   // Renderizar las tareas actualizadas
-  rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true);
+  rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true,mensaje);
 }
 
 function ordenarMayorMenor(tareas) {
