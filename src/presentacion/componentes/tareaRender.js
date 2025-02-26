@@ -1,11 +1,15 @@
 import { componentesEtiquetas } from "../componentes/etiquetaRender.js";
 export const rendersTareas = {
-  renderizarTareas(componenteTareas, listaTareas, limpiar) {
+  renderizarTareas(componenteTareas, listaTareas, limpiar,mensaje) {
     //PARA LIMPIAR
     if (limpiar && limpiar === true) {
       componenteTareas.innerHTML = "";
     }
     
+    if(listaTareas.length<=0 && mensaje){
+      componenteTareas.innerHTML = mensaje;
+      return;
+    }
     console.log("Renderizando", listaTareas);
     listaTareas.forEach((tareaElemento) => {
       const tareaDiv = document.createElement("div");

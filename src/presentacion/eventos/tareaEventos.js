@@ -177,7 +177,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     manejarLimpiarEliminar(event);
   });
 
-  rendersTareas.renderizarTareas(campoTareas, tareasPendientes);
+  rendersTareas.renderizarTareas(campoTareas, tareasPendientes,true,tareasPendientes.length<=0?"No hay tareas pendientes":null);
 
   //PASARLO A RENDER TAREA
   btnCancelarModal.addEventListener("click", function () {
