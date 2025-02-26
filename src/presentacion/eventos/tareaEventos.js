@@ -229,17 +229,18 @@ pendientesP.textContent=tareasPendientes.length;
      //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
      await actualizarEstadisticas();
 
-     const tieneFiltro=contenedorFiltros.classList.contains("filtro");
+     //const tieneFiltro=contenedorFiltros.classList.contains("filtro");
 
-      rendersTareas.renderizarTareas(campoTareas,tieneFiltro?tareasPendientes:nuevaTarea.data,tieneFiltro?true:false);
+    //  rendersTareas.renderizarTareas(campoTareas,tieneFiltro?tareasPendientes:nuevaTarea.data,tieneFiltro?true:false);
+    //rendersTareas.renderizarTareas(campoTareas,tareasPendientes,true);
       botonPendientesChecked(true);
       
-      //Verifico si se aplico un filtro antes de que se intentara agregar la tarea
-      if(tieneFiltro){
-          //Quito la clase filtro al contenedor de los filtros para indicar que se volvio al estado de tareas pendientes que son las que se muestran
-          //cuando se agrega una tarea
-        contenedorFiltros.classList.remove("filtro");
-      }
+      // //Verifico si se aplico un filtro antes de que se intentara agregar la tarea
+      // if(tieneFiltro){
+      //     //Quito la clase filtro al contenedor de los filtros para indicar que se volvio al estado de tareas pendientes que son las que se muestran
+      //     //cuando se agrega una tarea
+      //   contenedorFiltros.classList.remove("filtro");
+      // }
      
 
       alert("Se ha guardado correctamente la tarea");
