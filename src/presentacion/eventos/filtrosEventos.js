@@ -29,6 +29,8 @@ let tareasConFiltroPrioridadActuales;
 
 let tareasRenderizarParaHoy = [];
 
+// Metodo que se llama desde tareaEventos cuando se agrega una tarea para mostrar las tareas pendientes
+// y quitar el filtro para hoy y el de completadas si estan seleccionado
 export function botonPendientesChecked(seleccionado) {
   tareasPendientesButton.checked =
     seleccionado && seleccionado == true ? true : false;
@@ -38,10 +40,14 @@ export function botonPendientesChecked(seleccionado) {
     tareasCompletadasButton.checked=false;
     tareasCompletadasButton.closest('.radio').classList.remove('selected');
 
-  if (prioridadMayorButton.checked || prioridadMayorButton.checked) {
+   tareasParaHoyFiltroButton.checked=false;
+   tareasParaHoyFiltroButton.closest('.radio').classList.remove('selected');
+
+
+  // if (prioridadMayorButton.checked || prioridadMayorButton.checked) {
     // prioridadMayor();
     actualizarListas();
-  }
+  // }
 }
 
 export function actualizarListas() {
@@ -74,7 +80,10 @@ export function actualizarListas() {
   // Aplicar filtro "para hoy" si está seleccionado
   if ( radioProgramadasFiltro!==null && tareasParaHoyFiltroButton.checked) {
     console.log("entro a hoy AAAAAAAAAA");
-    tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
+  
+      tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
+    
+  
    // return; // Salir de la función después de aplicar el filtro "para hoy"
   }
 
@@ -454,50 +463,50 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 
-  //Observer para ver cuando se modifica el componente listaTareas y asi si esta aplicado un filtro
-  //aplicarlo con la nueva tarea agregada y no en su forma base.
-  const observer = new MutationObserver((mutationsList) => {
-    mutationsList.forEach((mutation) => {
-      // Comprueba si se modificaron atributos es decir si se actualizo en nodo
-      if (mutation.type === "attributes") {
-        console.log("entro al mutation");
-        observer.disconnect();
-        tareasRenderizadasActuales = [...tareasPendientes];
-        if (contenedorFiltros.classList.contains("prioridadMayorFiltro")) {
-          const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(
-            tareasRenderizadasActuales
-          );
-          rendersTareas.renderizarTareas(
-            campoTareas,
-            tareasOrdenadasPrioridadMayor,
-            true
-          );
-        } else if (
-          contenedorFiltros.classList.contains("prioridadMenorFiltro")
-        ) {
-          const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(
-            tareasRenderizadasActuales
-          );
-          rendersTareas.renderizarTareas(
-            campoTareas,
-            tareasOrdenadasPrioridadMenor,
-            true
-          );
-        }
+  // //Observer para ver cuando se modifica el componente listaTareas y asi si esta aplicado un filtro
+  // //aplicarlo con la nueva tarea agregada y no en su forma base.
+  // const observer = new MutationObserver((mutationsList) => {
+  //   mutationsList.forEach((mutation) => {
+  //     // Comprueba si se modificaron atributos es decir si se actualizo en nodo
+  //     if (mutation.type === "attributes") {
+  //       console.log("entro al mutation");
+  //       observer.disconnect();
+  //       tareasRenderizadasActuales = [...tareasPendientes];
+  //       if (contenedorFiltros.classList.contains("prioridadMayorFiltro")) {
+  //         const tareasOrdenadasPrioridadMayor = ordenarMayorMenor(
+  //           tareasRenderizadasActuales
+  //         );
+  //         rendersTareas.renderizarTareas(
+  //           campoTareas,
+  //           tareasOrdenadasPrioridadMayor,
+  //           true
+  //         );
+  //       } else if (
+  //         contenedorFiltros.classList.contains("prioridadMenorFiltro")
+  //       ) {
+  //         const tareasOrdenadasPrioridadMenor = ordenarMenorMayor(
+  //           tareasRenderizadasActuales
+  //         );
+  //         rendersTareas.renderizarTareas(
+  //           campoTareas,
+  //           tareasOrdenadasPrioridadMenor,
+  //           true
+  //         );
+  //       }
 
-        observer.observe(campoTareas, config);
-      }
-    });
-  });
+  //       observer.observe(campoTareas, config);
+  //     }
+  //   });
+  // });
 
-  // Configurar qué tipo de cambios observar
-  const config = {
-    childList: false, // Detectar cambios en los nodos hijos
-    subtree: true, // incluir cambios en los hijos de los nodos hijos
-    attributes: true, //Para detectar cambios en los atributos
-  };
+  // // Configurar qué tipo de cambios observar
+  // const config = {
+  //   childList: false, // Detectar cambios en los nodos hijos
+  //   subtree: true, // incluir cambios en los hijos de los nodos hijos
+  //   attributes: true, //Para detectar cambios en los atributos
+  // };
 
-  // Empezar a observar el campoTareas
-  observer.observe(campoTareas, config);
+  // // Empezar a observar el campoTareas
+  // observer.observe(campoTareas, config);
 
 });
