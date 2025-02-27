@@ -411,4 +411,25 @@ input {
 .hidden {
   display: none;
 }
-/*--------------Campo fecha en modal--------------*/
+/*--------------TOAST--------------*/
+.toast {
+  visibility: hidden; 
+  min-width: 250px; 
+  background-color: #025abe; 
+  color: #ffffff; 
+  text-align: center; 
+  border-radius: 4px;
+  padding: 16px; 
+  position: fixed; 
+  z-index: 1; 
+  bottom: 30px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  opacity: 0; 
+  transition: opacity 0.5s, visibility 0.5s;
+}
+
+.toast.mostrar {
+  visibility: visible; /* Muestra el toast */
+  opacity: 1; /* Hace el toast completamente visible */
+}
