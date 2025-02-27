@@ -51,8 +51,10 @@ export function botonPendientesChecked(seleccionado) {
 }
 
 export function actualizarListas() {
+  console.log("ENTRO A ACTUALIZARLISTAS");
   let mensaje;
   // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
+ 
   if (tareasCompletadasButton.checked) {
     tareasRenderizadasActuales = [...tareasCompletadas]
     if(tareasCompletadas.length<=0){
@@ -63,40 +65,55 @@ export function actualizarListas() {
     tareasRenderizadasActuales = [...tareasPendientes]
     if(tareasPendientes.length<=0){
       mensaje="No hay tareas pendientes";
+      prioridadMayorButton.closest('.radio').classList.remove('selected');
+      prioridadMenorButton.closest('.radio').classList.remove('selected');
+      tareasParaHoyFiltroButton.closest('.radio').classList.remove('selected');
+      tareasProximasButton.closest('.radio').classList.remove('selected');
+
+      prioridadMayorButton.checked=false;
+      prioridadMenorButton.checked=false;
+      tareasParaHoyFiltroButton.checked=false;
+      tareasProximasButton.checked=false;
+      //tareasCompletadasButton.checked=false;
     }
   }
 
+  if( tareasRenderizadasActuales.length>0){
   // Aplicar filtro de prioridad si está seleccionado
   if (radioPrioridadFiltro !== null) {
     if (
-      radioPrioridadFiltro.value === "mayor" ||
+      // radioPrioridadFiltro.value === "mayor" ||
       prioridadMayorButton.checked
     ) {
+     
       tareasRenderizadasActuales = ordenarMayorMenor(
         tareasRenderizadasActuales
       );
+    
     } else if (
-      radioPrioridadFiltro.value === "menor" ||
+      // radioPrioridadFiltro.value === "menor" ||
       prioridadMenorButton.checked
     ) {
+      
       tareasRenderizadasActuales = ordenarMenorMayor(
         tareasRenderizadasActuales
       );
+    
     }
   }
 
   // Aplicar filtro "para hoy" si está seleccionado
   if ( radioProgramadasFiltro!==null && tareasParaHoyFiltroButton.checked) {
-    console.log("entro a hoy AAAAAAAAAA");
   
+    tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
     if (tareasRenderizadasActuales.length <= 0) {
       mensaje = "No hay tareas para hoy";
-    
+      
+      //return;
     }
-      tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
      
-   
-  
+    
+    
    // return; // Salir de la función después de aplicar el filtro "para hoy"
   }
 
@@ -106,12 +123,15 @@ export function actualizarListas() {
     tareasRenderizadasActuales = ordenarMasProximas(tareasRenderizadasActuales);
     if (tareasRenderizadasActuales.length <= 0) {
       mensaje = "No hay tareas proximas";
-  
+      //return;
     }
+   
+   
   }
-
+  }
   // Renderizar las tareas actualizadas
   rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true,mensaje);
+ 
 }
 
 function ordenarMayorMenor(tareas) {
@@ -437,11 +457,14 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 
   prioridadMayorButton.addEventListener("click", function () {
+   
     actualizarListas();
+    
   });
 
   prioridadMenorButton.addEventListener("click", function () {
     actualizarListas();
+    
   });
 
   tareasParaHoyFiltroButton.addEventListener("click", function () {
@@ -472,10 +495,17 @@ document.addEventListener("DOMContentLoaded", async function () {
         radioInGroup.closest('.radio').classList.remove('selected');
       });
   
-      // Agrega la clase 'selected' al contenedor del radio seleccionado
+      // Agrega la clase 'selected' al contenedor del radio seleccionado, agrega la clase al radio si
+      // hay tareas a renderizar, si el radio checked es el de pendientes o el de tareas para hoy ya que esos
+      // aunque no haya tarea deben aparecer seleccionados a diferencia del de prioridad mayor y menor que no se
+      //debe permtiir mostrarlos clickeados ya que no hay tareas a las cuales aplicarle los filtros
       if (this.checked) {
+        if(tareasRenderizadasActuales.length>0||this.value=="Pendientes"||this.value=="hoy"){
         this.closest('.radio').classList.add('selected');
+        }
       }
+
+      
     });
   });
 
