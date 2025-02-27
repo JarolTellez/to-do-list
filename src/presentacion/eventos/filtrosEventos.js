@@ -50,88 +50,189 @@ export function botonPendientesChecked(seleccionado) {
   // }
 }
 
+// export function actualizarListas() {
+//   console.log("ENTRO A ACTUALIZARLISTAS");
+//   let mensaje;
+//   // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
+ 
+//   if (tareasCompletadasButton.checked) {
+//     tareasRenderizadasActuales = [...tareasCompletadas]
+//     if(tareasCompletadas.length<=0){
+//       mensaje="No hay tareas completadas";
+//     }
+    
+//   } else if (tareasPendientesButton.checked ) {
+//     tareasRenderizadasActuales = [...tareasPendientes]
+//     if(tareasPendientes.length<=0){
+//       mensaje="No hay tareas pendientes";
+//       prioridadMayorButton.closest('.radio').classList.remove('selected');
+//       prioridadMenorButton.closest('.radio').classList.remove('selected');
+//       tareasParaHoyFiltroButton.closest('.radio').classList.remove('selected');
+//       tareasProximasButton.closest('.radio').classList.remove('selected');
+
+//       prioridadMayorButton.checked=false;
+//       prioridadMenorButton.checked=false;
+//       tareasParaHoyFiltroButton.checked=false;
+//       tareasProximasButton.checked=false;
+//       //tareasCompletadasButton.checked=false;
+//     }
+//   }
+
+//   console.log("TAREAS ANTES DE ENTRAR",tareasRenderizadasActuales);
+//   if( tareasRenderizadasActuales.length>0){
+//   // Aplicar filtro de prioridad si está seleccionado
+//   if (radioPrioridadFiltro !== null) {
+//     if (
+//       // radioPrioridadFiltro.value === "mayor" ||
+//       prioridadMayorButton.checked
+//     ) {
+//       console.log("FILTRO MAYOR");
+     
+//       tareasRenderizadasActuales = ordenarMayorMenor(
+//         tareasRenderizadasActuales
+//       );
+    
+//     } else if (
+//       // radioPrioridadFiltro.value === "menor" ||
+//       prioridadMenorButton.checked
+//     ) {
+//        console.log("FILTRO MENOR");
+//       tareasRenderizadasActuales = ordenarMenorMayor(
+//         tareasRenderizadasActuales
+//       );
+    
+//     }
+//   }
+
+//   // Aplicar filtro "para hoy" si está seleccionado
+//   if ( radioProgramadasFiltro!==null && tareasParaHoyFiltroButton.checked) {
+//    console.log("FILTRO PARA HOY");
+//     tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
+//     if (tareasRenderizadasActuales.length <= 0) {
+//       mensaje = "No hay tareas para hoy";
+      
+//       //return;
+//     }
+     
+    
+    
+//    // return; // Salir de la función después de aplicar el filtro "para hoy"
+//   }
+
+//    // Aplicar filtro "para hoy" si está seleccionado
+//    if ( tareasProximasButton.checked) {
+//      console.log("FILTRO PROXIMAS");
+//     tareasRenderizadasActuales = ordenarMasProximas(tareasRenderizadasActuales);
+//     if (tareasRenderizadasActuales.length <= 0) {
+//       mensaje = "No hay tareas proximas";
+//       //return;
+//     }
+   
+   
+//   }
+//   }
+//    console.log("TAREAS DESPUES DE ENTRAR",tareasRenderizadasActuales);
+//   // Renderizar las tareas actualizadas
+//   rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true,mensaje);
+ 
+// }
+
 export function actualizarListas() {
   console.log("ENTRO A ACTUALIZARLISTAS");
-  let mensaje;
+  let mensaje = null;
+
   // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
- 
   if (tareasCompletadasButton.checked) {
-    tareasRenderizadasActuales = [...tareasCompletadas]
-    if(tareasCompletadas.length<=0){
-      mensaje="No hay tareas completadas";
+    console.log("COMPLETADAS");
+    tareasRenderizadasActuales = [...tareasCompletadas];
+    if (tareasCompletadas.length <= 0) {
+      mensaje = "No hay tareas completadas";
+      desactivarFiltros(); // Desactiva los filtros si no hay tareas completadas
+      desactivarFiltrosDePrioridad() 
     }
-    
-  } else if (tareasPendientesButton.checked ) {
-    tareasRenderizadasActuales = [...tareasPendientes]
-    if(tareasPendientes.length<=0){
-      mensaje="No hay tareas pendientes";
-      prioridadMayorButton.closest('.radio').classList.remove('selected');
-      prioridadMenorButton.closest('.radio').classList.remove('selected');
-      tareasParaHoyFiltroButton.closest('.radio').classList.remove('selected');
-      tareasProximasButton.closest('.radio').classList.remove('selected');
-
-      prioridadMayorButton.checked=false;
-      prioridadMenorButton.checked=false;
-      tareasParaHoyFiltroButton.checked=false;
-      tareasProximasButton.checked=false;
-      //tareasCompletadasButton.checked=false;
+  } else if (tareasPendientesButton.checked) {
+    console.log("PENDIENTES");
+    tareasRenderizadasActuales = [...tareasPendientes];
+    if (tareasPendientes.length <= 0) {
+      mensaje = "No hay tareas pendientes";
+      desactivarFiltros(); // Desactiva los filtros si no hay tareas pendientes
+      desactivarFiltrosDePrioridad() 
     }
   }
 
-  if( tareasRenderizadasActuales.length>0){
-  // Aplicar filtro de prioridad si está seleccionado
-  if (radioPrioridadFiltro !== null) {
-    if (
-      // radioPrioridadFiltro.value === "mayor" ||
-      prioridadMayorButton.checked
-    ) {
-     
-      tareasRenderizadasActuales = ordenarMayorMenor(
-        tareasRenderizadasActuales
-      );
-    
-    } else if (
-      // radioPrioridadFiltro.value === "menor" ||
-      prioridadMenorButton.checked
-    ) {
-      
-      tareasRenderizadasActuales = ordenarMenorMayor(
-        tareasRenderizadasActuales
-      );
-    
-    }
-  }
+  console.log("TAREAS ANTES DE APLICAR FILTROS", tareasRenderizadasActuales);
 
-  // Aplicar filtro "para hoy" si está seleccionado
-  if ( radioProgramadasFiltro!==null && tareasParaHoyFiltroButton.checked) {
-  
-    tareasRenderizadasActuales = ordenarParaHoy(tareasRenderizadasActuales);
-    if (tareasRenderizadasActuales.length <= 0) {
-      mensaje = "No hay tareas para hoy";
-      
-      //return;
+  // Aplicar filtros solo si hay tareas en la lista actual
+  if (tareasRenderizadasActuales.length > 0) {
+    // Aplicar filtro "para hoy" si está seleccionado
+    if (tareasParaHoyFiltroButton.checked) {
+      console.log("FILTRO PARA HOY");
+      const tareasFiltradas = ordenarParaHoy(tareasRenderizadasActuales);
+      if (tareasFiltradas.length > 0) {
+        tareasRenderizadasActuales = tareasFiltradas;
+      } else {
+        tareasRenderizadasActuales = []; // Vacia la lista si no hay tareas para hoy
+        mensaje = "No hay tareas para hoy";
+        desactivarFiltrosDePrioridad(); // Desactiva los filtros de prioridad
+      }
     }
-     
-    
-    
-   // return; // Salir de la función después de aplicar el filtro "para hoy"
-  }
 
-   // Aplicar filtro "para hoy" si está seleccionado
-   if ( tareasProximasButton.checked) {
-    console.log("entro a Proximas");
-    tareasRenderizadasActuales = ordenarMasProximas(tareasRenderizadasActuales);
-    if (tareasRenderizadasActuales.length <= 0) {
-      mensaje = "No hay tareas proximas";
-      //return;
+    // Aplicar filtros de prioridad solo si hay tareas 
+    if (tareasRenderizadasActuales.length > 0) {
+      if (prioridadMayorButton.checked&&radioPrioridadFiltro) {
+        console.log("FILTRO MAYOR");
+        tareasRenderizadasActuales = ordenarMayorMenor(tareasRenderizadasActuales);
+      } else if (prioridadMenorButton.checked&&radioPrioridadFiltro) {
+        console.log("FILTRO MENOR");
+        tareasRenderizadasActuales = ordenarMenorMayor(tareasRenderizadasActuales);
+      }
     }
-   
+
+    // Aplicar filtro "próximas" si está seleccionado
+    if (tareasProximasButton.checked) {
+      console.log("FILTRO PRÓXIMAS");
+      const tareasFiltradas = ordenarMasProximas(tareasRenderizadasActuales);
+      if (tareasFiltradas.length > 0) {
+        tareasRenderizadasActuales = tareasFiltradas;
+      } else {
+        tareasRenderizadasActuales = []; // Vaciar la lista si no hay tareas próximas
+        mensaje = "No hay tareas próximas";
+      }
+    }
+  } else {
+    // Si no hay tareas en la lista seleccionada, desactivar los filtros
+    desactivarFiltros();
    
   }
-  }
-  // Renderizar las tareas actualizadas
-  rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true,mensaje);
- 
+
+  console.log("TAREAS DESPUES DE APLICAR FILTROS", tareasRenderizadasActuales);
+
+  // Renderizar las tareas actualizadas (incluso si la lista está vacía)
+  rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true, mensaje);
+}
+
+function desactivarFiltros() {
+  // Desactiva todos los filtros (checked = false)
+  prioridadMayorButton.checked = false;
+  prioridadMenorButton.checked = false;
+  tareasParaHoyFiltroButton.checked = false;
+  tareasProximasButton.checked = false;
+
+  // Remueve la clase 'selected' de los botones de filtro
+  prioridadMayorButton.closest('.radio').classList.remove('selected');
+  prioridadMenorButton.closest('.radio').classList.remove('selected');
+  tareasParaHoyFiltroButton.closest('.radio').classList.remove('selected');
+  tareasProximasButton.closest('.radio').classList.remove('selected');
+}
+
+function desactivarFiltrosDePrioridad() {
+  // Desactiva solo los filtros de prioridad (mayor y menor)
+  prioridadMayorButton.checked = false;
+  prioridadMenorButton.checked = false;
+
+  // Remueve la clase 'selected' de los botones de prioridad
+  prioridadMayorButton.closest('.radio').classList.remove('selected');
+  prioridadMenorButton.closest('.radio').classList.remove('selected');
 }
 
 function ordenarMayorMenor(tareas) {
@@ -280,7 +381,9 @@ function deseleccionarPrioridad() {
     .forEach((radio) => {
       radio.addEventListener("click", function () {
         // Si ya está seleccionado y es el mismo que el anterior
+        console.log("tamano",tareasRenderizadasActuales.length);
         if (this === radioPrioridadFiltro) {
+          console.log("Deseleccion PRIORIDAD");
           //actualizo las listas para establecer las tareas actuales segun la opcion seleccionada es decir
           //si es pendientes o completadas
        
@@ -292,14 +395,21 @@ function deseleccionarPrioridad() {
           //   true
           // );
           //Quita el css del radio para que se vea deseleccion
+       
           this.closest('.radio').classList.remove('selected');
           this.checked = false; // Deseleccionar
           radioPrioridadFiltro = null; // Reiniciar selección
           actualizarListas();
+         
         //  tareasConFiltroPrioridadActuales.length = 0;
-        } else {
+          
+        //Verifica que haya tareas a renderizar para aplicar el filtro de prioridad como seleccionado
+        //si no hay tareas a renderizar aunque se haga click en el boton no se va a marcar como seleccionado
+        } else if(tareasRenderizadasActuales.length>0){
+           console.log("Deseleccion asignada");
           radioPrioridadFiltro = this; // Actualizar el radio seleccionado
-        }
+          }
+        
       });
     });
   //Vacio el arreglo donde se guardan las tareas con filtro de prioridad aplicado
@@ -348,11 +458,13 @@ function deseleccionarTareasParaHoy() {
       radio.addEventListener("click", function () {
         // Si ya está seleccionado y es el mismo que el anterior
         if (this === radioProgramadasFiltro) {
-          console.log("Filtro para hoy");
+          console.log("Filtro para hoy deseleccion");
           //Quita el css del radio para que se vea deseleccion
           this.closest('.radio').classList.remove('selected');
           this.checked = false;
           tareasParaHoyFiltroButton.checked=false;
+          // prioridadMayorButton.checked=false;
+          // prioridadMenorButton.checked=false;
           radioProgramadasFiltro = null; // Reiniciar selección
 
           //Actualizar la lista de tareas para que se muestren segun los filtros que quedan puestos
