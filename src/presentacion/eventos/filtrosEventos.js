@@ -157,6 +157,8 @@ export function actualizarListas() {
       mensaje = "No hay tareas pendientes";
       desactivarFiltros(); // Desactiva los filtros si no hay tareas pendientes
       desactivarFiltrosDePrioridad() 
+      const mensajeFlotando="No hay tareas para aplicar el filtro";
+      mostrarMensajeFlotante(mensajeFlotando);
     }
   }
 
@@ -186,6 +188,9 @@ export function actualizarListas() {
         console.log("FILTRO MENOR");
         tareasRenderizadasActuales = ordenarMenorMayor(tareasRenderizadasActuales);
       }
+    }else{
+      const mensaje="No hay tareas para aplicar el filtro";
+      mostrarMensajeFlotante(mensaje);
     }
 
     // Aplicar filtro "próximas" si está seleccionado
@@ -248,6 +253,7 @@ function ordenarMayorMenor(tareas) {
     return b.prioridad - a.prioridad;
   });
 
+ 
   return tareasPendientesPrioridadMayor;
 }
 
@@ -328,7 +334,14 @@ console.log("tareas BASE",tareas);
  
   }
   
-
+function mostrarMensajeFlotante(mensaje){
+  const toast = document.querySelector(".toast");
+  toast.textContent=mensaje?mensaje:"";
+  toast.classList.add("mostrar");
+  setTimeout(()=>{
+    toast.classList.remove("mostrar");
+  },3000)
+}
 
 
 //Metodo que convierte una fecha del formato MM/DD/YYYY, HH:MM:SS AM/PM a un objeto date para usar operadores
