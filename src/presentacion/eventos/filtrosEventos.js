@@ -139,7 +139,10 @@ export function botonPendientesChecked(seleccionado) {
 
 export function actualizarListas() {
   console.log("ENTRO A ACTUALIZARLISTAS");
+  //Mensaje que aparece en donde se muestran las tareas
   let mensaje = null;
+  //Mensaje que aparecera en el toast 
+  let mensajeFlotante="No hay tareas para aplicar el filtro";
 
   // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
   if (tareasCompletadasButton.checked) {
@@ -157,8 +160,8 @@ export function actualizarListas() {
       mensaje = "No hay tareas pendientes";
       desactivarFiltros(); // Desactiva los filtros si no hay tareas pendientes
       desactivarFiltrosDePrioridad() 
-      const mensajeFlotando="No hay tareas para aplicar el filtro";
-      mostrarMensajeFlotante(mensajeFlotando);
+    
+      rendersTareas.mostrarMensajeFlotante(mensajeFlotante);
     }
   }
 
@@ -189,8 +192,8 @@ export function actualizarListas() {
         tareasRenderizadasActuales = ordenarMenorMayor(tareasRenderizadasActuales);
       }
     }else{
-      const mensaje="No hay tareas para aplicar el filtro";
-      mostrarMensajeFlotante(mensaje);
+   
+      rendersTareas.mostrarMensajeFlotante(mensajeFlotante);
     }
 
     // Aplicar filtro "próximas" si está seleccionado
@@ -334,15 +337,7 @@ console.log("tareas BASE",tareas);
  
   }
   
-function mostrarMensajeFlotante(mensaje){
-  const toast = document.querySelector(".toast");
-  toast.textContent=mensaje?mensaje:"";
-  toast.classList.add("mostrar");
-  setTimeout(()=>{
-    toast.classList.remove("mostrar");
-  },3000)
-}
-
+ 
 
 //Metodo que convierte una fecha del formato MM/DD/YYYY, HH:MM:SS AM/PM a un objeto date para usar operadores
 //logicos en las fechas
