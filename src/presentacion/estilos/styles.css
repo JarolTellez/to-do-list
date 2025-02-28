@@ -415,21 +415,36 @@ input {
 .toast {
   visibility: hidden; 
   min-width: 250px; 
-  background-color: #025abe; 
+  background-color: #007BFF; 
   color: #ffffff; 
   text-align: center; 
   border-radius: 4px;
   padding: 16px; 
   position: fixed; 
   z-index: 1; 
-  bottom: 30px; 
+  top: -100px; /* Inicia fuera de la pantalla (arriba) */
   left: 50%; 
   transform: translateX(-50%); 
   opacity: 0; 
-  transition: opacity 0.5s, visibility 0.5s;
+  transition: opacity 0.5s, visibility 0.5s, top 0.5s ease-out;
 }
 
 .toast.mostrar {
-  visibility: visible; /* Muestra el toast */
-  opacity: 1; /* Hace el toast completamente visible */
+  visibility: visible; 
+  opacity: 1; 
+  top: 30px; /* Posición final */
+  animation: bounce 0.5s ease-out; /* Animación de rebote */
+}
+
+/* Animación de rebote */
+@keyframes bounce {
+  0% {
+    top: -100px; /* Inicia fuera de la pantalla */
+  }
+  50% {
+    top: 50px; /* Rebota un poco más abajo */
+  }
+  100% {
+    top: 30px; /* Vuelve a la posición final */
+  }
 }

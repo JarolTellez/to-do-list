@@ -243,10 +243,11 @@ pendientesP.textContent=tareasPendientes.length;
       // }
      
 
-      alert("Se ha guardado correctamente la tarea");
+      rendersTareas.mostrarMensajeFlotante("Se ha guardado la tarea");
     } catch (error) {
       console.log(error);
       alert(error.message);
+
     }
   }
 
@@ -264,7 +265,7 @@ pendientesP.textContent=tareasPendientes.length;
     //Cierro y limpio el modal
     cancelar();
       
-    alert("Tarea eliminada")
+    rendersTareas.mostrarMensajeFlotante("Tarea eliminada");
   } catch (error) {
     console.log(error);
     alert(error.message);
@@ -326,7 +327,7 @@ pendientesP.textContent=tareasPendientes.length;
 
       //Aqui llamar al metodo
       actualizarListas();
-      
+      rendersTareas.mostrarMensajeFlotante("Tarea actualizada");
     } catch (error) {
       console.log(error);
       alert(error.message);
