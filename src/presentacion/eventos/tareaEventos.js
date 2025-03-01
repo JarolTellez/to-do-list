@@ -116,6 +116,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       
       //Consulta tareas, actualiza las listas de consultadas y pendientes y actualiza las estadisticas
       await actualizarEstadisticas();
+      actualizarListas();
       if (indice !== -1) {
         rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
       }
