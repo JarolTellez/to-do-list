@@ -19,6 +19,7 @@ exports.agregarUsuario = async (req, res) => {
       correo,
       contrasenaEncriptada
     );
+    usuario.validar();
     const usuarioAgregado = await usuarioDAO.agregarUsuario(usuario);
     console.log("Usuario agregado:", usuarioAgregado);
     return res.status(201).json(usuarioAgregado);

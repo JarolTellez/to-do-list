@@ -11,6 +11,7 @@ exports.agregarEtiquetas = async (etiquetas, idTarea, idUsuario) => {
     //guardada enviar guardar a tarea etiqueta ya con el id de registro de la etiqueta
     if (!etiqueta.hasOwnProperty("idEtiqueta")) {
       const etiquetaNueva = new Etiqueta(null, etiqueta.nombre, idUsuario);
+      etiquetaNueva.validar();
       const nuevaEtiqueta = await agregarEtiqueta(etiquetaNueva);
       if(nuevaEtiqueta){
       const tareaEtiqueta = new TareaEtiqueta(
@@ -19,6 +20,7 @@ exports.agregarEtiquetas = async (etiquetas, idTarea, idUsuario) => {
         nuevaEtiqueta.idEtiqueta
       );
 
+      tareaEtiqueta.validar();
       await agregarTareaEtiqueta(tareaEtiqueta);
     }else{
      const existente= await etiquetaDAO.consultarEtiquetaPorNombreIdUsuario(etiqueta.nombre,etiqueta.idUsuario);
@@ -31,6 +33,7 @@ exports.agregarEtiquetas = async (etiquetas, idTarea, idUsuario) => {
         idTarea,
         etiqueta.idEtiqueta
       );
+      tareaEtiqueta.validar();
      await agregarTareaEtiqueta(tareaEtiqueta);
     }
   }

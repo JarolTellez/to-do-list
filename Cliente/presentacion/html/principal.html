@@ -98,8 +98,10 @@
             <div class="modalContent">
                 <div class="containerTarea">
                     <div class="inputsTarea">
-                        <input type="text" class="tituloTarea" placeholder="Título" required />
-                        <textarea class="descripcionTarea" placeholder="Descripción"></textarea>
+                        <input type="text" class="tituloTarea" maxlength="50" placeholder="Título" required />
+                        <p id="tituloMensaje" class="caracteresLimite hidden">Limite de caracteres</p>
+                        <textarea class="descripcionTarea" maxlength="255" placeholder="Descripción"></textarea>
+                        <p id="descripcionMensaje" class="caracteresLimite hidden">Limite de caracteres</p>
                         <label>Fecha</label>
                         <input type="datetime-local" id="fechaInputModal" />
                     </div>

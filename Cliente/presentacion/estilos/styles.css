@@ -411,6 +411,14 @@ input {
 .hidden {
   display: none;
 }
+/* CSS para mensaje de limite de caracteres */
+.caracteresLimite{
+margin-top: -10px;
+margin-bottom: 0px;
+margin-left: 3px;
+font-size: 11px;
+color: rgb(170, 26, 7);
+}
 /*--------------TOAST--------------*/
 .toast {
   visibility: hidden; 
