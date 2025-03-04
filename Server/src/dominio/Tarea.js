@@ -20,8 +20,8 @@ class Tarea{
           errores.push({ campo: 'nombre', mensaje: 'El nombre es obligatorio' });
         }
     
-        if (this.descripcion.length>20) {
-          errores.push({ campo: 'descripción', mensaje: 'La descripción no puede exceder los 100 caracteres' });
+        if (this.descripcion.length>255) {
+          errores.push({ campo: 'descripción', mensaje: 'La descripción no puede exceder los 255 caracteres' });
         }
     
         if (!this.idUsuario) {
@@ -29,8 +29,8 @@ class Tarea{
         }
     
         // Validar longitud máxima del nombre
-        if (this.nombre.length > 100) {
-          errores.push({ campo: 'nombre', mensaje: 'El nombre no puede exceder los 100 caracteres' });
+        if (this.nombre.length > 50) {
+          errores.push({ campo: 'nombre', mensaje: 'El título no puede exceder los 50 caracteres' });
         }
     
         // Validar fecha programada no sea en el pasado

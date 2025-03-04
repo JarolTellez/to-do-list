@@ -153,6 +153,7 @@ exports.actualizarTarea = async (req, res) => {
       });
     }
 
+    tarea.validar();
     const TareaActualizada = await tareasDAO.actualizarTarea(tarea);
    
 
@@ -173,6 +174,7 @@ const etiquetasParaEliminar= etiquetasAnteriores.filter(etiquetaAnterior=>!etiqu
   console.log("etiquetas a agregar",etiquetasParaAgregar);
 console.log("etiquetas a eliminar",etiquetasParaEliminar);
   if(etiquetasParaEliminar){
+    
     await etiquetaController.eliminarEtiquetas(etiquetasParaEliminar);
   }
   const tareaActualizadaConsulta=await tareasDAO.consultarTareasPorIdTarea(tarea.idTarea);

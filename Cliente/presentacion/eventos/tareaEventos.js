@@ -38,11 +38,15 @@ export async function actualizarListaTareas(){
 
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
+  const tituloMensaje = document.querySelector('#tituloMensaje');
   const descripcionTarea = document.querySelector(".descripcionTarea");
+  const descripcionMensaje = document.querySelector('#descripcionMensaje');
   const fechaProgramadaTarea=document.querySelector("#fechaInputModal");
   const btnAgregarTareaPrincipal = document.querySelector(
     "#agregarTareaPrincipal"
   );
+
+
 
   const listaEtiquetas = document.querySelector("#listaEtiquetas");
   const campoTareas = document.querySelector("#listaTareas");
@@ -101,6 +105,16 @@ document.addEventListener("DOMContentLoaded", async function () {
     btnLimpiarEliminarModal.classList.remove("eliminar");
     rendersTareas.mostrarModal(modal);
   });
+
+    // Escuchar eventos de entrada
+    tituloTarea.addEventListener('input', () => {
+      rendersMensajes.actualizarContador(tituloTarea, tituloMensaje, 50);
+    });
+  
+    descripcionTarea.addEventListener('input', () => {
+     rendersMensajes.actualizarContador(descripcionTarea, descripcionMensaje, 255);
+    });
+  
 
 
   /* Para manejar los clicks en de checkboxes para marcar como completado, se hace en el contenedor y se verifica si 
