@@ -1,4 +1,5 @@
 const ConexionBD = require("../utils/conexionBD");
+const { logError } = require('../utils/logger');
 
 class TareaDAO {
   static async agregarTarea(tarea) {
@@ -23,10 +24,13 @@ class TareaDAO {
     
       return tarea;
     } catch (error) {
-      console.log("Error al agregar una tarea: ", error);
-      throw error;
+       logError('Error al agregar una tarea:', error);
+       // Lanzar una excepción personalizada
+       throw new Error('Error en la base de datos: ' + error.message);
     } finally {
+      if(connection){
       connection.release();
+      }
     }
   }
 
@@ -50,10 +54,13 @@ class TareaDAO {
       console.log("desde dao",resultado);
       return tarea;
     } catch (error) {
-      console.log("Error al actualizar una tarea: ", error);
-      throw error;
+      logError('Error al actualizar una tarea:', error);
+       // Lanzar una excepción personalizada
+       throw new Error('Error al actualizar la tarea: ' + error.message);
     } finally {
-      connection.release();
+      if(connection){
+        connection.release();
+        }
     }
   }
 
@@ -71,10 +78,13 @@ class TareaDAO {
     
       return resultado.affectedRows;
     } catch (error) {
-      console.log("Error al actualizar una tarea: ", error);
-      throw error;
+      logError('Error al actualizar una tarea para completar:', error);
+       // Lanzar una excepción personalizada
+       throw new Error('Error al actualizar la tarea: ' + error.message);
     } finally {
+      if(connection){
       connection.release();
+      }
     }
   }
 
@@ -89,10 +99,13 @@ class TareaDAO {
       );
       return resultado[0].affectedRows;
     } catch (error) {
-      console.log("Error al eliminar una tarea: ", error);
-      throw error;
+      logError('Error al eliminar una tarea:', error);
+      // Lanzar una excepción personalizada
+      throw new Error('Error al eliminar la tarea: ' + error.message);
     } finally {
+      if(connection){
       connection.release();
+      }
     }
   }
 
@@ -104,10 +117,13 @@ class TareaDAO {
       const [tareas] = await connection.query("SELECT * FROM tarea");
       return tareas;
     } catch (error) {
-      console.log("Error al consultar todas las tareas: ", error);
-      throw error;
+      logError('Error al consultar todas las tareas:', error);
+      // Lanzar una excepción personalizada
+      throw new Error('Error al consultar todas las tareas: ' + error.message);
     } finally {
+      if(connection){
       connection.release();
+      }
     }
   }
 
@@ -122,10 +138,13 @@ class TareaDAO {
       );
       return tarea[0];
     } catch (error) {
-      console.log("Error al consultar una tarea por nombre: ", error);
-      throw error;
+      logError('Error al consultar una tarea por nombre:', error);
+       // Lanzar una excepción personalizada
+       throw new Error('Error al consultar una tarea por nombre: ' + error.message);
     } finally {
+      if(connection){
       connection.release();
+      }
     }
   }
  
@@ -140,10 +159,13 @@ class TareaDAO {
       );
       return tarea[0];
     } catch (error) {
-      console.log("Error al consultar una tarea por id: ", error);
-      throw error;
+      logError('Error al consultar tarea por id:', error);
+      // Lanzar una excepción personalizada
+      throw new Error('Error al consultar tarea por id: ' + error.message);
     } finally {
+      if(connection){
       connection.release();
+      }
     }
   }
 
@@ -189,11 +211,13 @@ GROUP BY
       
       return tareas;
     } catch (error) {
-      console.log("Error al consultar una tarea por id: ", error.message);
-      console.error("Detalles del error: ", error);
-      throw error;
+      logError('Error al consultar tarea por idTarea:', error);
+      // Lanzar una excepción personalizada
+      throw new Error('Error al consultar tarea por idTarea' + error.message);
     } finally {
+      if(connection){
       connection.release();
+      }
     }
 }
 
@@ -208,10 +232,13 @@ static async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
     );
     return tarea[0];
   } catch (error) {
-    console.log("Error al consultar una tarea por id: ", error);
-    throw error;
+    logError('Error al consultar tarea por idTarea e idUsuario:', error);
+      // Lanzar una excepción personalizada
+      throw new Error('Error al consultar la tarea' + error.message);
   } finally {
+    if(connection){
     connection.release();
+    }
   }
 }
 
@@ -251,10 +278,13 @@ GROUP BY
     
     return tareas;
   } catch (error) {
-    console.log("Error al consultar una tarea por id: ", error);
-    throw error;
+    logError('Error al consultar tarea por idTarea e idUsuario:', error);
+    // Lanzar una excepción personalizada
+    throw new Error('Error al consultar la tarea' + error.message);
   } finally {
+    if(connection){
     connection.release();
+    }
   }
 }
 
@@ -289,10 +319,13 @@ GROUP BY
 `, [idUsuario]);
     return tareas;
   } catch (error) {
-    console.log("Error al consultar todas las tareas: ", error);
-    throw error;
+    logError('Error al consultar todas las tareas:', error);
+      // Lanzar una excepción personalizada
+      throw new Error('Error al consultar todas las tareas' + error.message);
   } finally {
+    if(connection){
     connection.release();
+    }
   }
 }
 

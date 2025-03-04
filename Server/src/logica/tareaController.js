@@ -28,9 +28,12 @@ exports.agregarTarea = async (req, res) => {
       prioridad
     );
 
+    //Validar los atributos de la tarea
+    tarea.validar();
     console.log("TAREA A AGREGAR",tarea);
     const tareaAgregada = await tareasDAO.agregarTarea(tarea);
-    if (etiquetas.length > 0) {
+
+    if (etiquetas && etiquetas.length > 0) {
       await etiquetaController.agregarEtiquetas(
         etiquetas,
         tareaAgregada.idTarea,
@@ -52,6 +55,23 @@ exports.agregarTarea = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al agregar la tarea:", error);
+    // return res.status(500).json({
+    //   status: "error",
+    //   message: "Ocurrió un error al intentar guardar la tarea.",
+    //   error: error.message,
+    // });
+
+      // Manejar errores de validación 
+    if (error.message.startsWith('[')) {
+      const errores = JSON.parse(error.message);
+      return res.status(400).json({
+        status: "error",
+        message: "Errores de validación",
+        error: errores,
+      });
+    }
+
+    // Manejar otros errores
     return res.status(500).json({
       status: "error",
       message: "Ocurrió un error al intentar guardar la tarea.",
@@ -176,8 +196,6 @@ console.log("etiquetas a eliminar",etiquetasParaEliminar);
     });
   }
 };
-
- 
 
 exports.actualizarTareaCompletada = async (req, res) => {
   try {
