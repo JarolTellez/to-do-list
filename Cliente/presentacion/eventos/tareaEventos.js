@@ -3,6 +3,7 @@ import {
   componentesEtiquetas,
 } from "../componentes/etiquetaRender.js";
 import { rendersTareas } from "../componentes/tareaRender.js";
+import { rendersMensajes } from "../componentes/mensajesRender.js";
 import {
   agregarTarea,
   consultarTareasUsuario,
@@ -242,13 +243,23 @@ pendientesP.textContent=tareasPendientes.length;
       //     //cuando se agrega una tarea
       //   contenedorFiltros.classList.remove("filtro");
       // }
-     
-
-      rendersTareas.mostrarMensajeFlotante("Se ha guardado la tarea");
+    
+      rendersMensajes.mostrarMensaje("Se ha guardado la tarea");
     } catch (error) {
-      console.log(error);
-      alert(error.message);
-
+         // Mostrar mensajes de error al usuario
+    if (error.status === "error" && Array.isArray(error.error)) {
+      // Errores de validación (error.error es un arreglo de objetos)
+      const mensajesError = error.error.map((err) => err.mensaje); // Extraer solo los mensajes
+     rendersMensajes.mostrarError(mensajesError.join('\n')); // Mostrar todos los mensajes en un solo alert
+    } else if (error.status === "error" && error.error) {
+      // Errores técnicos (error.error es un mensaje de texto)
+      
+      rendersMensajes.mostrarError(`Error: ${error.error}`);
+    } else {
+      // Errores inesperados
+      rendersMensajes.mostrarError('Ocurrió un error inesperado.');
+    }
+    
     }
   }
 
@@ -266,7 +277,7 @@ pendientesP.textContent=tareasPendientes.length;
     //Cierro y limpio el modal
     cancelar();
       
-    rendersTareas.mostrarMensajeFlotante("Tarea eliminada");
+    rendersMensajes.mostrarMensaje("Tarea eliminada");
   } catch (error) {
     console.log(error);
     alert(error.message);
@@ -328,7 +339,7 @@ pendientesP.textContent=tareasPendientes.length;
 
       //Aqui llamar al metodo
       actualizarListas();
-      rendersTareas.mostrarMensajeFlotante("Tarea actualizada");
+      rendersMensajes.mostrarMensaje("Tarea actualizada");
     } catch (error) {
       console.log(error);
       alert(error.message);

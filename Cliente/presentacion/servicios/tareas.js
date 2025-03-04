@@ -12,13 +12,20 @@ export async function agregarTarea(tareaNueva) {
     });
 
     const data = await response.json();
-    if (response.ok) {
-      return data; // Devuelve los datos de la tarea creada
-    } else {
-      throw new Error(data.mensaje);
+    if (!response.ok) {
+      // Si la respuesta no es exitosa, lanzar el error
+      throw data; // data ya contiene el objeto de error del backend
     }
+
+    // Si la respuesta es exitosa, devolver los datos
+    return data;
   } catch (error) {
-    throw new Error("Error al agregar la tarea: " + error.message);
+   
+    console.error("Error al agregar la tarea:", error);
+
+    // Relanzar el error para que pueda ser manejado por otros componentes
+    throw error;
+   
   }
 }
 
