@@ -244,20 +244,20 @@ pendientesP.textContent=tareasPendientes.length;
       //   contenedorFiltros.classList.remove("filtro");
       // }
     
-      rendersMensajes.mostrarMensaje("Se ha guardado la tarea");
+      rendersMensajes.mostrarToast("Se ha guardado la tarea",false);
     } catch (error) {
          // Mostrar mensajes de error al usuario
     if (error.status === "error" && Array.isArray(error.error)) {
       // Errores de validación (error.error es un arreglo de objetos)
       const mensajesError = error.error.map((err) => err.mensaje); // Extraer solo los mensajes
-     rendersMensajes.mostrarError(mensajesError.join('\n')); // Mostrar todos los mensajes en un solo alert
+     rendersMensajes.mostrarToast(mensajesError.join('\n'),true); // Mostrar todos los mensajes en un solo alert
     } else if (error.status === "error" && error.error) {
       // Errores técnicos (error.error es un mensaje de texto)
       
-      rendersMensajes.mostrarError(`Error: ${error.error}`);
+      rendersMensajes.mostrarToast(`Error: ${error.error}`,true);
     } else {
       // Errores inesperados
-      rendersMensajes.mostrarError('Ocurrió un error inesperado.');
+      rendersMensajes.mostrarToast('Ocurrió un error inesperado.',true);
     }
     
     }
@@ -277,7 +277,7 @@ pendientesP.textContent=tareasPendientes.length;
     //Cierro y limpio el modal
     cancelar();
       
-    rendersMensajes.mostrarMensaje("Tarea eliminada");
+    rendersMensajes.mostrarToast("Tarea eliminada",false);
   } catch (error) {
     console.log(error);
     alert(error.message);
@@ -339,7 +339,7 @@ pendientesP.textContent=tareasPendientes.length;
 
       //Aqui llamar al metodo
       actualizarListas();
-      rendersMensajes.mostrarMensaje("Tarea actualizada");
+      rendersMensajes.mostrarToast("Tarea actualizada",false);
     } catch (error) {
       console.log(error);
       alert(error.message);
