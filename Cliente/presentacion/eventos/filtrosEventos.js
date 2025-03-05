@@ -4,6 +4,7 @@ import {
   actualizarListaTareas,
 } from "../eventos/tareaEventos.js";
 import { rendersTareas } from "../componentes/tareaRender.js";
+import { rendersMensajes } from "../componentes/mensajesRender.js";
 // import e from "cors";
 
 //Para guardar el boton para filtrar por tareas pendientes para poder usarla en la funcion
@@ -180,7 +181,7 @@ export function actualizarListas() {
       desactivarFiltros(); // Desactiva los filtros si no hay tareas pendientes
       desactivarFiltrosDePrioridad() 
     
-      rendersTareas.mostrarMensajeFlotante(mensajeFlotante);
+      rendersMensajes.mostrarToast(mensajeFlotante,true);
     }
   }
 
@@ -212,7 +213,7 @@ export function actualizarListas() {
       }
     }else  {
   console.log("entra");
-      rendersTareas.mostrarMensajeFlotante(mensajeFlotante);
+      rendersMensajes.mostrarToast(mensajeFlotante,false);
     }
 
     // Aplicar filtro "próximas" si está seleccionado
