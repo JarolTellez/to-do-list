@@ -135,6 +135,24 @@ document.addEventListener("DOMContentLoaded", async function () {
       if (indice !== -1) {
         rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElemento);
       }
+      /**
+       * Elimina la tarea si se hizo click en el span btn-eliminar o el bote de basura en cada tarea
+       */
+    } else if (
+      event.target.classList.contains("btn-eliminar") || // Clase del contenedor
+      event.target.closest(".btn-eliminar") // Si el clic fue en el ícono dentro del contenedor
+    ) {
+      const btnEliminar = event.target.classList.contains("btn-eliminar")
+      ? event.target // Si el clic fue en el contenedor <span>
+      : event.target.closest(".btn-eliminar"); // Si el clic fue en el ícono 
+
+    // Obtén el data-id del botón de eliminar
+    const tareaId = btnEliminar.getAttribute("data-id"); 
+    
+     const idUsuario= sessionStorage.getItem("idUsuario");
+      await manejarEliminarTarea(tareaId,idUsuario);
+      
+       
     } else if (
       !event.target.classList.contains("checkbox-completado") &&
       !event.target.closest(".checkbox-label") &&
@@ -171,7 +189,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   async function manejarLimpiarEliminar() {
     if (btnLimpiarEliminarModal.classList.contains("eliminar")) {
-      await manejarEliminarTarea();
+      const idTarea=tituloTarea.getAttribute("data-id");
+     const idUsuario= sessionStorage.getItem("idUsuario");
+      await manejarEliminarTarea(idTarea,idUsuario);
     } else {
      limpiarCampos();
     }
@@ -277,15 +297,16 @@ pendientesP.textContent=tareasPendientes.length;
     }
   }
 
-  async function manejarEliminarTarea() {
+  async function manejarEliminarTarea(idTarea,idUsuario) {
     console.log("Eliminar Tarea");
     try {
-      const idTarea=tituloTarea.getAttribute("data-id");
-    await eliminarTarea(idTarea,sessionStorage.getItem("idUsuario"));
+    //  const idTarea=tituloTarea.getAttribute("data-id");
+    await eliminarTarea(idTarea,idUsuario);
     //Vuelvo a cargar las tareas
   await actualizarEstadisticas();
     //Elimino el elemento render de la tarea, recupero el elemento del dom que coincide con el idTarea para mandarlo eliminar
     const tareaElementoEliminar = document.querySelector(`#tareaDiv-${idTarea}`);
+    console.log(tareaElementoEliminar);
     rendersTareas.eliminarRenderEspecifico(campoTareas, tareaElementoEliminar);
 
     //Cierro y limpio el modal

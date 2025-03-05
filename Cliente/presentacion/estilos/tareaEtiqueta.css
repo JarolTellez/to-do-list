@@ -1,7 +1,7 @@
 .completado-container {
   position: absolute;
   top: 10px;
-  right: 10px;
+  right: 5px;
   width: 24px;
   height: 24px;
   margin-right: 10px;
@@ -9,6 +9,15 @@
 
 .checkbox-completado {
   display: none;
+}
+.btn-eliminar{
+  position: absolute;
+  /* top: 10px; */
+  bottom: 0px;
+  right: -5px;
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
 }
 
 .checkbox-label {
@@ -128,14 +137,39 @@
 }
 
 .contenedorTarea h3 {
+  margin-top: 10px;
   margin-bottom: -10px;
   font-size: 18px;
   color: #333;
+  width: 90%;
+  max-height: 25px; /* Altura máxima antes de que aparezca el scroll */
+}
+.descripcionRender{
+  width: 100%; /* Ocupa el 100% del ancho del contenedor padre */
+  height: 100px; /* Altura fija */
+  box-sizing: border-box;
+  margin-top: -7px;
+  padding: 0px;
+  max-height: 35px; /* Altura máxima antes de que aparezca el scroll */
+  overflow-y: scroll; /* Scroll vertical siempre visible */
+  overflow-x: hidden; /* Evita el scroll horizontal */
+}
+
+.scrollTituloDescripcion{
+  overflow-y: auto; /* Scroll vertical */
+  overflow-x: hidden; /* Evita el scroll horizontal */
+  white-space: normal; /* Permite que el texto se ajuste */
+  word-wrap: break-word; /* Rompe palabras largas */
+ 
+  padding: 5px; /* Espaciado interno */
+  box-sizing: border-box; /* Incluye el padding en el ancho y alto */
+  scrollbar-width: none;
 }
 
 .fechaActualizada {
   font-size: 12px;
   color: #777;
+  margin-top: 15px;
   margin-bottom: 10px;
 }
 
@@ -205,7 +239,7 @@
 
 .prioridad-container {
   align-items: center;
-  margin-top: 5px;
+  margin-top: -5px;
 }
 
 .prioridad-text {
@@ -229,6 +263,7 @@
 .btnModal{
   width: 120px;
 }
+
 /* Css para logro de fecha de tarea programada */
 .calendario {
   margin-left: -1px; 
