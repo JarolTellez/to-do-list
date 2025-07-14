@@ -1,11 +1,18 @@
- export class FiltradoOrdenamiento {
+export class FiltradoOrdenamiento {
   constructor() {
-    this.strategy = null;
+    this.estrategiasOrdenamiento = [];
     this.filtro = null;
   }
 
-  setOrdenamiento(strategy) {
-    this.strategy = strategy;
+  agregarOrdenamiento(estrategia) {
+    if (estrategia) {
+      this.estrategiasOrdenamiento.push(estrategia);
+    }
+    return this;
+  }
+
+  setOrdenamiento(estrategia) {
+    this.estrategiasOrdenamiento = estrategia ? [estrategia] : [];
     return this;
   }
 
@@ -15,18 +22,21 @@
   }
 
   ordenar(tareas) {
-    let tareasFiltradas = tareas;
+    let tareasFiltradas = this.filtro
+      ? tareas.filter((tarea) => this.filtro.cumple(tarea))
+      : [...tareas];
 
-    // Aplicar filtro si existe
-    if (this.filtro) {
-      tareasFiltradas = tareas.filter((tarea) => this.filtro.cumple(tarea));
-    }
-
-    // Aplicar ordenamiento si existe
-    if (this.strategy) {
-      return this.strategy.ordenar(tareasFiltradas);
+    if (this.estrategiasOrdenamiento.length > 0) {
+      for (const estrategia of this.estrategiasOrdenamiento.reverse()) {
+        tareasFiltradas = estrategia.ordenar(tareasFiltradas);
+      }
     }
 
     return tareasFiltradas;
+  }
+
+  limpiarOrdenamientos() {
+    this.estrategiasOrdenamiento = [];
+    return this;
   }
 }

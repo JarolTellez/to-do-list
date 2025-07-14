@@ -5,7 +5,7 @@ export class OrdenarPorFechaAsc extends StrategyOrdenamiento{
       return [...tareas].sort((a, b) => {
       return a.fechaProgramada == null ? 1 : 
              b.fechaProgramada == null ? -1 :
-             convertirFecha(a.fechaProgramada) - convertirFecha(b.fechaProgramada);
+             this.convertirFecha(a.fechaProgramada) - this.convertirFecha(b.fechaProgramada);
     });
     }
 
