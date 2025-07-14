@@ -320,7 +320,7 @@ GROUP BY
     return tareas;
   } catch (error) {
     logError('Error al consultar todas las tareas:', error);
-      // Lanzar una excepción personalizada
+  
       throw new Error('Error al consultar todas las tareas' + error.message);
   } finally {
     if(connection){
