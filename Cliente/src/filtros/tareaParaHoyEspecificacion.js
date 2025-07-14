@@ -1,3 +1,6 @@
+import { Especificacion } from './base_operadores/Especificacion.js';
+
+
 class TareaParaHoyEspecificacion extends Especificacion {
   cumple(tarea) {
     if (!tarea.fechaProgramada) return false;

@@ -1,4 +1,6 @@
-class OrdenarPorPrioridadAsc extends StrategyOrdenamiento{
+import {StrategyOrdenamiento} from "./strategyOrdenamiento.js";
+
+export class OrdenarPorPrioridadAsc extends StrategyOrdenamiento{
 
      ordenar(tareas){
         //Utilizo sort para ordenar de mayor a menor con respecto a la prioridad, pero uso slice para crear una
