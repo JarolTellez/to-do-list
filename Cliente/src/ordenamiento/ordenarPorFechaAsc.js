@@ -1,15 +1,11 @@
 class OrdenarPorFechaAsc extends StrategyOrdenamiento{
 
      ordenar(tareas){
-      tareas.sort((a, b) => {
-    console.log("fecha 1", convertirFecha(a.fechaProgramada));
-    console.log("fecha 2", convertirFecha(b.fechaProgramada));
-    return a.fechaProgramada == null ? 1 :         // Si 'a.fechaProgramada' es null, mueve 'a' al final
-           b.fechaProgramada ==null ? -1 :        // Si 'b.fechaProgramada' es null, mueve 'b' al final
-            convertirFecha(a.fechaProgramada) - convertirFecha(b.fechaProgramada); // Ordena por fecha
-  });
-  console.log("FECHAS ACOMODADAS POR MAS PROXIMAS", tareas);
-  return tareas;
+      return [...tareas].sort((a, b) => {
+      return a.fechaProgramada == null ? 1 : 
+             b.fechaProgramada == null ? -1 :
+             convertirFecha(a.fechaProgramada) - convertirFecha(b.fechaProgramada);
+    });
     }
 
     //Metodo que convierte una fecha del formato MM/DD/YYYY, HH:MM:SS AM/PM a un objeto date para usar operadores
