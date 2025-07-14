@@ -1,4 +1,6 @@
-class OrdenarPorPrioridadDesc extends StrategyOrdenamiento {
+import {StrategyOrdenamiento} from "./strategyOrdenamiento.js";
+
+export class OrdenarPorPrioridadDesc extends StrategyOrdenamiento {
   ordenar(tareas) {
      return [...tareas].sort((a, b) => {
       if (a.prioridad === null || a.prioridad === undefined) return 1;

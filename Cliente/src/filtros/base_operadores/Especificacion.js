@@ -1,4 +1,4 @@
-class Especificacion {
+export class Especificacion {
   cumple(tarea) {
     throw new Error("Metodo debe ser implementado");
   }

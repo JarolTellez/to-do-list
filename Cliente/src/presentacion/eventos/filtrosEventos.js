@@ -5,6 +5,13 @@ import {
 } from "../eventos/tareaEventos.js";
 import { rendersTareas } from "../componentes/tareaRender.js";
 import { rendersMensajes } from "../componentes/mensajesRender.js";
+import{ FiltradoOrdenamiento } from "../../../src/filtradoOrdenamiento.js"
+import{TareaPendienteEspecificacion} from "../../../src/filtros/tareaPendienteEspecificacion.js"
+import {OrdenarPorFechaAsc} from "../../../src/ordenamiento/ordenarPorFechaAsc.js"
+import {OrdenarPorFechaDesc} from "../../../src/ordenamiento/ordenarPorFechaDesc.js"
+import {OrdenarPorPrioridadAsc} from "../../../src/ordenamiento/ordenarPorPrioridadAsc.js"
+import {OrdenarPorPrioridadDesc} from "../../../src/ordenamiento/ordenarPorPrioridadDesc.js"
+
 // import e from "cors";
 
 //Para guardar el boton para filtrar por tareas pendientes para poder usarla en la funcion
@@ -30,6 +37,8 @@ let tareasConFiltroPrioridadActuales;
 // let filtroParaHoy = false;
 
 let tareasRenderizarParaHoy = [];
+
+const ordenador=new FiltradoOrdenamiento();
 
 // Metodo que se llama desde tareaEventos cuando se agrega una tarea para mostrar las tareas pendientes
 // y quitar el filtro para hoy y el de completadas si estan seleccionado
@@ -70,88 +79,159 @@ export function botonPendientesChecked(seleccionado) {
 }
 
 
+//ORIGINAL
+// export function actualizarListas() {
+//   console.log("ENTRO A ACTUALIZARLISTAS");
+//   //Mensaje que aparece en donde se muestran las tareas
+//   let mensaje = null;
+//   //Mensaje que aparecera en el toast 
+//   let mensajeFlotante="No hay tareas para aplicar filtros";
+
+//   // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
+//   if (tareasCompletadasButton.checked) {
+//     console.log("COMPLETADAS");
+//     tareasRenderizadasActuales = [...tareasCompletadas];
+//     if (tareasCompletadas.length <= 0) {
+//       mensaje = "No hay tareas completadas";
+//       desactivarFiltros(); // Desactiva los filtros si no hay tareas completadas
+//       desactivarFiltrosDePrioridad() 
+//     }
+//   } else if (tareasPendientesButton.checked) {
+//     console.log("PENDIENTES");
+//     tareasRenderizadasActuales = [...tareasPendientes];
+//     if (tareasPendientes.length <= 0) {
+//       console.log("mPENDIENTES 2");
+//       mensaje = "No hay tareas pendientes";
+//       desactivarFiltros(); // Desactiva los filtros si no hay tareas pendientes
+//       desactivarFiltrosDePrioridad() 
+    
+//       rendersMensajes.mostrarToast(mensajeFlotante,true);
+//     }
+//   }
+
+//   console.log("TAREAS ANTES DE APLICAR FILTROS", tareasRenderizadasActuales);
+
+//   // Aplicar filtros solo si hay tareas en la lista actual
+//   if (tareasRenderizadasActuales.length > 0) {
+//     // Aplicar filtro "para hoy" si está seleccionado
+//     if (tareasParaHoyFiltroButton.checked) {
+//       console.log("FILTRO PARA HOY");
+//       const tareasFiltradas = ordenarParaHoy(tareasRenderizadasActuales);
+//       if (tareasFiltradas.length > 0) {
+//         tareasRenderizadasActuales = tareasFiltradas;
+//       } else {
+//         tareasRenderizadasActuales = []; // Vacia la lista si no hay tareas para hoy
+//         mensaje = "No hay tareas para hoy";
+//         desactivarFiltrosDePrioridad(); // Desactiva los filtros de prioridad
+//       }
+//     }
+
+//     // Aplicar filtros de prioridad solo si hay tareas 
+//     if (tareasRenderizadasActuales.length > 0) {
+//       if (prioridadMayorButton.checked&&radioPrioridadFiltro) {
+//         console.log("FILTRO MAYOR");
+//         tareasRenderizadasActuales = ordenarMayorMenor(tareasRenderizadasActuales);
+//       } else if (prioridadMenorButton.checked&&radioPrioridadFiltro) {
+//         console.log("FILTRO MENOR");
+//         tareasRenderizadasActuales = ordenarMenorMayor(tareasRenderizadasActuales);
+//       }
+//     }else  {
+//   console.log("entra");
+//       rendersMensajes.mostrarToast(mensajeFlotante,false);
+//     }
+
+//     // Aplicar filtro "próximas" si está seleccionado
+//     if (tareasProximasButton.checked) {
+//       console.log("FILTRO PRÓXIMAS");
+//       const tareasFiltradas = ordenarMasProximas(tareasRenderizadasActuales);
+//       if (tareasFiltradas.length > 0) {
+//         tareasRenderizadasActuales = tareasFiltradas;
+//       } else {
+//         tareasRenderizadasActuales = []; // Vaciar la lista si no hay tareas próximas
+//         mensaje = "No hay tareas próximas";
+//       }
+//     }
+//   } else {
+//     // Si no hay tareas en la lista seleccionada, desactivar los filtros
+//     desactivarFiltros();
+   
+//   }
+
+//   console.log("TAREAS DESPUES DE APLICAR FILTROS", tareasRenderizadasActuales);
+
+//   // Renderizar las tareas actualizadas (incluso si la lista está vacía)
+//   rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true, mensaje);
+// }
 
 export function actualizarListas() {
-  console.log("ENTRO A ACTUALIZARLISTAS");
-  //Mensaje que aparece en donde se muestran las tareas
   let mensaje = null;
-  //Mensaje que aparecera en el toast 
-  let mensajeFlotante="No hay tareas para aplicar filtros";
+  let mensajeFlotante = "No hay tareas para aplicar filtros";
 
-  // Inicializar con las tareas pendientes o completadas según el filtro seleccionado
+  // Configurar filtro base (pendientes o completadas)
+  let filtroBase;
   if (tareasCompletadasButton.checked) {
-    console.log("COMPLETADAS");
-    tareasRenderizadasActuales = [...tareasCompletadas];
+    filtroBase = new TareaCompletadaEspecificacion();
     if (tareasCompletadas.length <= 0) {
       mensaje = "No hay tareas completadas";
-      desactivarFiltros(); // Desactiva los filtros si no hay tareas completadas
-      desactivarFiltrosDePrioridad() 
+      desactivarFiltros();
+      desactivarFiltrosDePrioridad();
     }
   } else if (tareasPendientesButton.checked) {
-    console.log("PENDIENTES");
-    tareasRenderizadasActuales = [...tareasPendientes];
+    filtroBase = new TareaPendienteEspecificacion();
     if (tareasPendientes.length <= 0) {
-      console.log("mPENDIENTES 2");
       mensaje = "No hay tareas pendientes";
-      desactivarFiltros(); // Desactiva los filtros si no hay tareas pendientes
-      desactivarFiltrosDePrioridad() 
-    
-      rendersMensajes.mostrarToast(mensajeFlotante,true);
+      desactivarFiltros();
+      desactivarFiltrosDePrioridad();
+      rendersMensajes.mostrarToast(mensajeFlotante, true);
     }
   }
 
-  console.log("TAREAS ANTES DE APLICAR FILTROS", tareasRenderizadasActuales);
-
-  // Aplicar filtros solo si hay tareas en la lista actual
-  if (tareasRenderizadasActuales.length > 0) {
-    // Aplicar filtro "para hoy" si está seleccionado
-    if (tareasParaHoyFiltroButton.checked) {
-      console.log("FILTRO PARA HOY");
-      const tareasFiltradas = ordenarParaHoy(tareasRenderizadasActuales);
-      if (tareasFiltradas.length > 0) {
-        tareasRenderizadasActuales = tareasFiltradas;
-      } else {
-        tareasRenderizadasActuales = []; // Vacia la lista si no hay tareas para hoy
-        mensaje = "No hay tareas para hoy";
-        desactivarFiltrosDePrioridad(); // Desactiva los filtros de prioridad
-      }
-    }
-
-    // Aplicar filtros de prioridad solo si hay tareas 
-    if (tareasRenderizadasActuales.length > 0) {
-      if (prioridadMayorButton.checked&&radioPrioridadFiltro) {
-        console.log("FILTRO MAYOR");
-        tareasRenderizadasActuales = ordenarMayorMenor(tareasRenderizadasActuales);
-      } else if (prioridadMenorButton.checked&&radioPrioridadFiltro) {
-        console.log("FILTRO MENOR");
-        tareasRenderizadasActuales = ordenarMenorMayor(tareasRenderizadasActuales);
-      }
-    }else  {
-  console.log("entra");
-      rendersMensajes.mostrarToast(mensajeFlotante,false);
-    }
-
-    // Aplicar filtro "próximas" si está seleccionado
-    if (tareasProximasButton.checked) {
-      console.log("FILTRO PRÓXIMAS");
-      const tareasFiltradas = ordenarMasProximas(tareasRenderizadasActuales);
-      if (tareasFiltradas.length > 0) {
-        tareasRenderizadasActuales = tareasFiltradas;
-      } else {
-        tareasRenderizadasActuales = []; // Vaciar la lista si no hay tareas próximas
-        mensaje = "No hay tareas próximas";
-      }
-    }
+  // Configurar ordenamiento según selección
+  if (prioridadMayorButton.checked && radioPrioridadFiltro) {
+    ordenador.setOrdenamiento(new OrdenarPorPrioridadDesc());
+  } else if (prioridadMenorButton.checked && radioPrioridadFiltro) {
+    ordenador.setOrdenamiento(new OrdenarPorPrioridadAsc());
+  } else if (tareasProximasButton.checked) {
+    ordenador.setOrdenamiento(new OrdenarPorFechaAsc());
   } else {
-    // Si no hay tareas en la lista seleccionada, desactivar los filtros
-    desactivarFiltros();
-   
+    ordenador.setOrdenamiento(null);
   }
 
-  console.log("TAREAS DESPUES DE APLICAR FILTROS", tareasRenderizadasActuales);
+  // Configurar filtros adicionales
+  let filtroAdicional = null;
+  if (tareasParaHoyFiltroButton.checked) {
+    filtroAdicional = new TareaParaHoyEspecificacion();
+  }
 
-  // Renderizar las tareas actualizadas (incluso si la lista está vacía)
-  rendersTareas.renderizarTareas(campoTareas, tareasRenderizadasActuales, true, mensaje);
+  // Combinar filtros si es necesario
+  if (filtroBase && filtroAdicional) {
+    ordenador.setFiltro(filtroBase.and(filtroAdicional));
+  } else {
+    ordenador.setFiltro(filtroBase);
+  }
+
+  // Obtener tareas a procesar
+  const tareasAProcesar = tareasCompletadasButton.checked 
+    ? tareasCompletadas 
+    : tareasPendientes;
+
+  // Aplicar filtros y ordenamiento
+  tareasRenderizadasActuales = ordenador.ordenar(tareasAProcesar);
+
+  // Manejar casos sin resultados
+  if (tareasRenderizadasActuales.length === 0 && filtroAdicional) {
+    mensaje = tareasParaHoyFiltroButton.checked 
+      ? "No hay tareas para hoy" 
+      : "No hay tareas próximas";
+  }
+
+  // Renderizar resultados
+  rendersTareas.renderizarTareas(
+    campoTareas, 
+    tareasRenderizadasActuales, 
+    true, 
+    mensaje
+  );
 }
 
 function desactivarFiltros() {

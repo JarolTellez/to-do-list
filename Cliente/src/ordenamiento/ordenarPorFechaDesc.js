@@ -1,4 +1,6 @@
-class OrdenarPorFechaDesc extends StrategyOrdenamiento{
+import {StrategyOrdenamiento} from "./strategyOrdenamiento.js";
+
+export class OrdenarPorFechaDesc extends StrategyOrdenamiento{
 
      ordenar(tareas){
          return [...tareas].sort((a, b) => {
