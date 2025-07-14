@@ -1,4 +1,6 @@
-class AndEspecificacion extends Especificacion{ 
+ import { Especificacion } from "./Especificacion.js";
+
+export class AndEspecificacion extends Especificacion{ 
     constructor(izquierda, derecha){
         super();
         this.izquierda=izquierda;

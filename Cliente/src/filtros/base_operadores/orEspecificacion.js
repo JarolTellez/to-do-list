@@ -1,4 +1,6 @@
-class OrEspecificacion extends Especificacion{
+import { Especificacion } from "./Especificacion.js";
+
+export class OrEspecificacion extends Especificacion{
         constructor(izquierda, derecha){
         super();
         this.izquierda=izquierda;
