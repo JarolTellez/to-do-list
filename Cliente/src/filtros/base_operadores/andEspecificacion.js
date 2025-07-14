@@ -1,4 +1,4 @@
-class AndEspecificacion{
+class AndEspecificacion extends Especificacion{ 
     constructor(izquierda, derecha){
         super();
         this.izquierda=izquierda;
