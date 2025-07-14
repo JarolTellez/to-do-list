@@ -167,8 +167,10 @@ export async function actualizarListas() {
 
   let filtroBase;
   if (tareasCompletadasButton.checked) {
+
     filtroBase = new TareaCompletadaEspecificacion();
     if (tareasCompletadas.length <= 0) {
+   
       mensaje = "No hay tareas completadas";
       desactivarFiltros();
       desactivarFiltrosDePrioridad();

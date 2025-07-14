@@ -21,18 +21,35 @@ export class FiltradoOrdenamiento {
     return this;
   }
 
+  // ordenar(tareas) {
+ 
+  //   let tareasFiltradas = this.filtro
+  //     ? tareas.filter((tarea) => this.filtro.cumple(tarea))
+  //     : [...tareas];
+
+  //   if (this.estrategiasOrdenamiento.length > 0) {
+  //     for (const estrategia of this.estrategiasOrdenamiento.reverse()) {
+  //       tareasFiltradas = estrategia.ordenar(tareasFiltradas);
+  //     }
+  //   }
+
+  //   return tareasFiltradas;
+  // }
+
   ordenar(tareas) {
-    let tareasFiltradas = this.filtro
+
+      let resultadoTareas = this.filtro
       ? tareas.filter((tarea) => this.filtro.cumple(tarea))
       : [...tareas];
 
+   
     if (this.estrategiasOrdenamiento.length > 0) {
       for (const estrategia of this.estrategiasOrdenamiento.reverse()) {
-        tareasFiltradas = estrategia.ordenar(tareasFiltradas);
+       resultadoTareas = estrategia.ordenar(resultadoTareas);
       }
     }
 
-    return tareasFiltradas;
+    return resultadoTareas;
   }
 
   limpiarOrdenamientos() {
