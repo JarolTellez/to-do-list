@@ -1,19 +1,19 @@
 import {
   etiquetasSeleccionadas,
   componentesEtiquetas,
-} from "../componentes/etiquetaRender.js";
-import { rendersTareas } from "../componentes/tareaRender.js";
-import { rendersMensajes } from "../componentes/mensajesRender.js";
+} from "../../presentacion/componentes/etiquetaRender.js";
+import { rendersTareas } from "../../presentacion/componentes/tareaRender.js";
+import { rendersMensajes } from "../../presentacion/componentes/mensajesRender.js";
 import {
   agregarTarea,
   consultarTareasUsuario,
   actualizarTareaCompletada,
   actualizarTarea,
   eliminarTarea
-} from "../servicios/tareas.js";
+} from "../../core/servicios/tareas.js";
 
 import {botonPendientesChecked,
-  actualizarListas} from "../eventos/filtrosEventos.js";
+  actualizarListas} from "../manejadores/filtrosManejador.js";
 
 export let tareasPendientes=[];
 export let tareasCompletadas=[];
@@ -23,14 +23,7 @@ export async function actualizarListaTareas(){
   const todasTareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
   );
-  // tareasPendientes.length=0;
-  // todasTareas.tareasPendientes.forEach(element => {
-  //   tareasPendientes.push(element);
-  // });
-  // tareasCompletadas.length=0;
-  // todasTareas.tareasCompletadas.forEach(element => {
-  //   tareasCompletadas.push(element);
-  // });
+
   tareasCompletadas=todasTareas.tareasCompletadas;
   tareasPendientes=todasTareas.tareasPendientes;
 

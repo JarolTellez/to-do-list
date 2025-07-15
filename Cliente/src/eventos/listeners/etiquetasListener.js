@@ -1,9 +1,9 @@
 import {
   componentesEtiquetas,
   etiquetasSeleccionadas,
-} from "../componentes/etiquetaRender.js";
+} from "../../presentacion/componentes/etiquetaRender.js";
 
-import { cargarEtiquetas } from "../servicios/etiquetas.js";
+import { cargarEtiquetas } from "../../core/servicios/etiquetas.js";
 
 document.addEventListener("DOMContentLoaded", function () {
   const inputEtiqueta = document.getElementById("contenedorInput");
