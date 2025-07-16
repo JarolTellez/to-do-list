@@ -12,5 +12,5 @@ app.use('/usuario',routerUsuario);
 app.use("/tarea",routerTarea)
 app.use("/etiqueta",routerEtiqueta);
 app.listen(PORT, () => {
-    console.log('Servidor de asistencias')
+    console.log('Servidor ')
 })

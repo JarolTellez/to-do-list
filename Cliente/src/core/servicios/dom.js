@@ -11,7 +11,7 @@ export function setupLogin() {
       try {
         const success = await login(inputNombreUsuario.value, inputContrasenaUsuario.value);
         if (success) {
-          window.location.href = "principal.html"; // Redirigir después del login
+        //  window.location.href = "principal.html"; // Redirigir después del login
         }
       } catch (error) {
         alert(error.message); // Mostrar mensaje de error

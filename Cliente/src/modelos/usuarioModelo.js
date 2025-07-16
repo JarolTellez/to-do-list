@@ -1,9 +1,9 @@
 export class Usuario {
-  constructor(idUsuario = null, nombreUsuario, correo, contrasena) {
+  constructor(idUsuario = null, nombreUsuario, correo, contrasena=null) {
     this.idUsuario = idUsuario;
     this.nombreUsuario = nombreUsuario;
     this.correo = correo;
-    this.contrasena = contrasena;
+    //this.contrasena = contrasena;
   }
 
   validar() {
@@ -17,9 +17,9 @@ export class Usuario {
       errores.push({ campo: 'correo', mensaje: 'El correo del usuario es obligatorio' });
     }
 
-    if (!this.contrasena || this.contrasena.trim() === '') {
-      errores.push({ campo: 'contrasena', mensaje: 'La contraseña del usuario es obligatoria' });
-    }
+    // if (!this.contrasena || this.contrasena.trim() === '') {
+    //   errores.push({ campo: 'contrasena', mensaje: 'La contraseña del usuario es obligatoria' });
+    // }
 
     if (errores.length > 0) {
       throw errores;
