@@ -1,4 +1,4 @@
-import { actualizarListaTareas } from "./tareasListener.js";
+import { actualizarListaTareas } from "../manejadores/tareasManejador.js";
 import {
   actualizarListas,
   getTareasRenderizadas,

@@ -2,7 +2,7 @@ import {
   tareasPendientes,
   tareasCompletadas,
   actualizarListaTareas,
-} from "../listeners/tareasListener.js";
+} from "../manejadores/tareasManejador.js";
 import { rendersTareas } from "../../presentacion/componentes/tareaRender.js";
 import { rendersMensajes } from "../../presentacion/componentes/mensajesRender.js";
 import { FiltradoOrdenamiento } from "../../filtradoOrdenamiento.js";
