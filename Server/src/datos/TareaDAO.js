@@ -8,7 +8,7 @@ class TareaDAO {
 
     try {
       const [tareaAgregada] = await connection.query(
-        "INSERT INTO tarea (nombre,descripcion,fechaProgramada,fechaCreacion,ultimaActualizacion,completada,idUsuario,prioridad) VALUES(?,?,?,?,?,?,?,?)",
+        "INSERT INTO tareas (nombre,descripcion,fecha_programada,fecha_creacion,ultima_actualizacion,completada,id_usuario,prioridad) VALUES(?,?,?,?,?,?,?,?)",
         [
           tarea.nombre,
           tarea.descripcion,
@@ -40,7 +40,7 @@ class TareaDAO {
 
     try {
      const [resultado]= await connection.query(
-        "UPDATE tarea SET nombre = ?, descripcion = ?, fechaProgramada = ?, ultimaActualizacion = ?, prioridad = ? WHERE idTarea=?",
+        "UPDATE tareas SET nombre = ?, descripcion = ?, fecha_programada = ?, ultima_actualizacion = ?, prioridad = ? WHERE id_tarea=?",
         [
           tarea.nombre,
           tarea.descripcion,
@@ -69,7 +69,7 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
     try {
      const [resultado]= await connection.query(
-        "UPDATE tarea SET completada = ? WHERE idTarea = ?",
+        "UPDATE tareas SET completada = ? WHERE id_tarea = ?",
         [
           completada,
           idTarea
@@ -79,7 +79,6 @@ class TareaDAO {
       return resultado.affectedRows;
     } catch (error) {
       logError('Error al actualizar una tarea para completar:', error);
-       // Lanzar una excepción personalizada
        throw new Error('Error al actualizar la tarea: ' + error.message);
     } finally {
       if(connection){
@@ -94,13 +93,12 @@ class TareaDAO {
 
     try {
       const resultado= await connection.query(
-        "DELETE FROM tarea WHERE idTarea = ?",
+        "DELETE FROM tareas WHERE id_tarea = ?",
         [idTarea]
       );
       return resultado[0].affectedRows;
     } catch (error) {
       logError('Error al eliminar una tarea:', error);
-      // Lanzar una excepción personalizada
       throw new Error('Error al eliminar la tarea: ' + error.message);
     } finally {
       if(connection){
@@ -114,11 +112,11 @@ class TareaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      const [tareas] = await connection.query("SELECT * FROM tarea");
+      const [tareas] = await connection.query("SELECT * FROM tareas");
       return tareas;
     } catch (error) {
       logError('Error al consultar todas las tareas:', error);
-      // Lanzar una excepción personalizada
+
       throw new Error('Error al consultar todas las tareas: ' + error.message);
     } finally {
       if(connection){
@@ -133,13 +131,12 @@ class TareaDAO {
 
     try {
       const [tarea] = await connection.query(
-        "SELECT * FROM tarea WHERE nombre = ?",
+        "SELECT * FROM tareas WHERE nombre = ?",
         [nombreTarea]
       );
       return tarea[0];
     } catch (error) {
       logError('Error al consultar una tarea por nombre:', error);
-       // Lanzar una excepción personalizada
        throw new Error('Error al consultar una tarea por nombre: ' + error.message);
     } finally {
       if(connection){
@@ -154,13 +151,12 @@ class TareaDAO {
 
     try {
       const [tarea] = await connection.query(
-        "SELECT * FROM tarea WHERE idTarea = ?",
+        "SELECT * FROM tareas WHERE id_tarea = ?",
         [idTarea]
       );
       return tarea[0];
     } catch (error) {
       logError('Error al consultar tarea por id:', error);
-      // Lanzar una excepción personalizada
       throw new Error('Error al consultar tarea por id: ' + error.message);
     } finally {
       if(connection){
@@ -178,28 +174,28 @@ class TareaDAO {
       
       const [tareas] = await connection.query(
         `SELECT 
-    t.idTarea AS tarea_id,
+    t.id_tarea AS tarea_id,
     t.nombre AS tarea_nombre,
     t.descripcion AS tarea_descripcion,
-    t.fechaProgramada AS tarea_fecha_programada,
-    t.fechaCreacion AS tarea_fecha_creacion,
-    t.ultimaActualizacion AS tarea_ultima_actualizacion,
+    t.fecha_programada AS tarea_fecha_programada,
+    t.fecha_creacion AS tarea_fecha_creacion,
+    t.ultima_actualizacion AS tarea_ultima_actualizacion,
     t.completada AS tarea_completada,
     t.prioridad AS tarea_prioridad,
-    GROUP_CONCAT(DISTINCT te.idTareaEtiqueta ORDER BY te.idTareaEtiqueta) AS tarea_etiqueta_ids,
-    GROUP_CONCAT(e.idEtiqueta ORDER BY te.idTareaEtiqueta) AS etiquetas_ids,
-    GROUP_CONCAT(e.nombre ORDER BY te.idTareaEtiqueta) AS etiquetas_nombres,
-    GROUP_CONCAT(e.idUsuario ORDER BY te.idTareaEtiqueta) AS etiquetas_usuarios
+    GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
+    GROUP_CONCAT(e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
+    GROUP_CONCAT(e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
+    GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta) AS etiquetas_usuarios
 FROM 
-    tarea t
+    tareas t
 LEFT JOIN 
-    tareaEtiqueta te ON t.idTarea = te.idTarea
+    tarea_etiqueta te ON t.id_tarea = te.id_tarea
 LEFT JOIN 
-    etiqueta e ON te.idEtiqueta = e.idEtiqueta
+    etiquetas e ON te.id_etiqueta = e.id_etiqueta
 WHERE 
-    t.idTarea = ?
+    t.id_tarea = ?
 GROUP BY 
-    t.idTarea`,
+    t.id_tarea`,
         [idTarea]
       );
       
@@ -227,13 +223,12 @@ static async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
 
   try {
     const [tarea] = await connection.query(
-      "SELECT * FROM tarea WHERE idTarea = ? AND idUsuario = ?",
+      "SELECT * FROM tareas WHERE id_tarea = ? AND id_usuario = ?",
       [idTarea,idUsuario]
     );
     return tarea[0];
   } catch (error) {
     logError('Error al consultar tarea por idTarea e idUsuario:', error);
-      // Lanzar una excepción personalizada
       throw new Error('Error al consultar la tarea' + error.message);
   } finally {
     if(connection){
@@ -250,28 +245,28 @@ static async consultarTareasPorIdUsuario(idUsuario) {
   try {
     const [tareas] = await connection.query(
       `SELECT 
-      t.idTarea AS tarea_id,
+      t.id_tarea AS tarea_id,
       t.nombre AS tarea_nombre,
       t.descripcion AS tarea_descripcion,
-      t.fechaProgramada AS tarea_fecha_programada,
-      t.fechaCreacion AS tarea_fecha_creacion,
-      t.ultimaActualizacion AS tarea_ultima_actualizacion,
+      t.fecha_programada AS tarea_fecha_programada,
+      t.fecha_creacion AS tarea_fecha_creacion,
+      t.ultima_actualizacion AS tarea_ultima_actualizacion,
       t.completada AS tarea_completada,
       t.prioridad AS tarea_prioridad,
-      GROUP_CONCAT(DISTINCT te.idTareaEtiqueta ORDER BY te.idTareaEtiqueta) AS tarea_etiqueta_ids,
-      GROUP_CONCAT(DISTINCT e.idEtiqueta ORDER BY te.idTareaEtiqueta) AS etiquetas_ids,
-      GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.idTareaEtiqueta) AS etiquetas_nombres,
-      GROUP_CONCAT(e.idUsuario ORDER BY te.idTareaEtiqueta) AS etiquetas_usuarios
+      GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
+      GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
+      GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
+      GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta) AS etiquetas_usuarios
 FROM 
-      tarea t
+      tareas t
 LEFT JOIN 
-      tareaEtiqueta te ON t.idTarea = te.idTarea
+      tarea_etiqueta te ON t.id_tarea = te.id_tarea
 LEFT JOIN 
-      etiqueta e ON te.idEtiqueta = e.idEtiqueta
+      etiquetas e ON te.id_etiqueta = e.id_etiqueta
 WHERE 
-      t.idUsuario = ? AND t.completada = 0
+      t.id_usuario = ? AND t.completada = 0
 GROUP BY 
-      t.idTarea;
+      t.id_tarea;
 `,
       [idUsuario]
     );
@@ -294,28 +289,28 @@ static async consultarTareasCompletadasUsuario(idUsuario) {
   const connection = await conexionBD.conectar();
   try {
     const [tareas] = await connection.query( `SELECT 
-      t.idTarea AS tarea_id,
+      t.id_tarea AS tarea_id,
       t.nombre AS tarea_nombre,
       t.descripcion AS tarea_descripcion,
-      t.fechaProgramada AS tarea_fecha_programada,
-      t.fechaCreacion AS tarea_fecha_creacion,
-      t.ultimaActualizacion AS tarea_ultima_actualizacion,
+      t.fecha_programada AS tarea_fecha_programada,
+      t.fecha_creacion AS tarea_fecha_creacion,
+      t.ultima_actualizacion AS tarea_ultima_actualizacion,
       t.completada AS tarea_completada,
       t.prioridad AS tarea_prioridad,
-      GROUP_CONCAT(DISTINCT te.idTareaEtiqueta ORDER BY te.idTareaEtiqueta) AS tarea_etiqueta_ids,
-      GROUP_CONCAT(DISTINCT e.idEtiqueta ORDER BY te.idTareaEtiqueta) AS etiquetas_ids,
-      GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.idTareaEtiqueta) AS etiquetas_nombres,
-      GROUP_CONCAT(e.idUsuario ORDER BY te.idTareaEtiqueta) AS etiquetas_usuarios
+      GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
+      GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
+      GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
+      GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta) AS etiquetas_usuarios
 FROM 
-      tarea t
+      tareas t
 LEFT JOIN 
-      tareaEtiqueta te ON t.idTarea = te.idTarea
+      tarea_etiqueta te ON t.id_tarea = te.id_tarea
 LEFT JOIN 
-      etiqueta e ON te.idEtiqueta = e.idEtiqueta
+      etiquetas e ON te.id_etiqueta = e.id_etiqueta
 WHERE 
-      t.idUsuario = ? AND t.completada = 1
+      t.id_usuario = ? AND t.completada = 1
 GROUP BY 
-      t.idTarea;
+      t.id_tarea;
 `, [idUsuario]);
     return tareas;
   } catch (error) {

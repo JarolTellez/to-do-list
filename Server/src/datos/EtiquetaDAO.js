@@ -7,7 +7,7 @@ class EtiquetaDAO {
 
     try {
       const [result] = await connection.query(
-        "INSERT INTO etiqueta (nombre,idUsuario) VALUES(?,?)",
+        "INSERT INTO etiquetas (nombre,id_usuario) VALUES(?,?)",
         [etiqueta.nombreEtiqueta, etiqueta.idUsuario]
       );
       etiqueta.idEtiqueta = result.insertId;
@@ -27,7 +27,7 @@ class EtiquetaDAO {
 
     const connection = await conexionBD.conectar();
     try {
-      await connection.query("UPDATE etiqueta SET nombre = ?", [
+      await connection.query("UPDATE etiquetas SET nombre = ?", [
         etiqueta.nombre,
       ]);
       return etiqueta;
@@ -44,7 +44,7 @@ class EtiquetaDAO {
     const connection = await conexionBD.conectar();
 
     try {
-      await connection.query("DELETE FROM etiqueta WHERE idEtiqueta = ?", [
+      await connection.query("DELETE FROM etiquetas WHERE id_etiqueta = ?", [
         idEtiqueta,
       ]);
     } catch (error) {
@@ -60,7 +60,7 @@ class EtiquetaDAO {
 
     const connection = await conexionBD.conectar();
     try {
-      const [etiquetas] = await connection.query("SELECT * FROM etiqueta");
+      const [etiquetas] = await connection.query("SELECT * FROM etiquetas");
       return etiquetas;
     } catch (error) {
       console.log("Eror al consultar etiquetas: ", error);
@@ -76,7 +76,7 @@ class EtiquetaDAO {
     const connection = await conexionBD.conectar();
     try {
       const [etiqueta] = await connection.query(
-        "SELECT * FROM etiqueta WHERE nombre = ? AND idUsuario = ?",
+        "SELECT * FROM etiquetas WHERE nombre = ? AND id_usuario = ?",
         [nombreEtiqueta, idUsuario]
       );
       return etiqueta[0];
@@ -94,7 +94,7 @@ class EtiquetaDAO {
     const connection = await conexionBD.conectar();
     try {
       const [etiqueta] = await connection.query(
-        "SELECT * FROM etiqueta WHERE idEtiqueta = ?",
+        "SELECT * FROM etiquetas WHERE id_etiqueta = ?",
         [idEtiqueta]
       );
       return etiqueta[0];
@@ -112,7 +112,7 @@ class EtiquetaDAO {
     const connection = await conexionBD.conectar();
     try {
       const [etiquetas] = await connection.query(
-        "SELECT * FROM etiqueta WHERE idUsuario = ?",
+        "SELECT * FROM etiquetas WHERE id_usuario = ?",
         [idUsuario]
       );
       return etiquetas;

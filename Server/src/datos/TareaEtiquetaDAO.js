@@ -6,7 +6,7 @@ class TareaEtiquetaDAO {
     const connection = await conexionBD.conectar();
     try {
       const [nuevaTareaEtiqueta] = await connection.query(
-        "INSERT INTO tareaetiqueta (idTarea,idEtiqueta) VALUES (?,?)",
+        "INSERT INTO tarea_etiqueta (id_tarea,id_etiqueta) VALUES (?,?)",
         [tareaEtiqueta.idTarea, tareaEtiqueta.idEtiqueta]
       );
       tareaEtiqueta.idTareaEtiqueta = nuevaTareaEtiqueta.insertId;
@@ -26,7 +26,7 @@ class TareaEtiquetaDAO {
 
     try {
       await connection.query(
-        "UPDATE tareaetiqueta SET idTarea = ?, idEtiqueta = ? WHERE idTareaEtiqueta = ?",
+        "UPDATE tarea_etiqueta SET id_tarea = ?, id_etiqueta = ? WHERE id_tarea_etiqueta = ?",
         [
           tareaEtiqueta.idTarea,
           tareaEtiqueta.idEtiqueta,
@@ -49,7 +49,7 @@ class TareaEtiquetaDAO {
 
     try {
       const [resultado] = await connection.query(
-        "DELETE FROM tareaetiqueta WHERE idTareaEtiqueta = ? ",
+        "DELETE FROM tarea_etiqueta WHERE id_tarea_etiqueta = ? ",
         [idTareaEtiqueta]
       );
       return resultado.affectedRows;
@@ -67,7 +67,7 @@ class TareaEtiquetaDAO {
 
     try {
       const [resultado] = await connection.query(
-        "DELETE FROM tareaetiqueta WHERE idTarea = ? ",
+        "DELETE FROM tarea_etiqueta WHERE id_tarea = ? ",
         [idTarea]
       );
 
@@ -86,7 +86,7 @@ class TareaEtiquetaDAO {
 
     try {
       const [tareasEtiquetas] = await connection.query(
-        "SELECT * FROM tareaetiqueta"
+        "SELECT * FROM tarea_etiqueta"
       );
       return tareasEtiquetas;
     } catch (error) {
@@ -103,7 +103,7 @@ class TareaEtiquetaDAO {
 
     try {
       const [tareasEtiquetas] = await connection.query(
-        "SELECT * FROM tareaetiqueta WHERE idTarea = ?",
+        "SELECT * FROM tarea_etiqueta WHERE id_tarea = ?",
         [idTarea]
       );
       return tareasEtiquetas;
