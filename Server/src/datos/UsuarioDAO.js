@@ -6,8 +6,8 @@ class UsuarioDAO {
     const connection = await conexionBD.conectar();
     try {
       const [resultado] = await connection.query(
-        "INSERT INTO usuario (nombreUsuario, correo, contrasena) VALUES (?, ?, ?)",
-        [usuario.nombreUsuario, usuario.correo, usuario.contrasena]
+        "INSERT INTO usuarios (nombre_usuario, correo, contrasena, rol) VALUES (?, ?, ?, ?)",
+        [usuario.nombreUsuario, usuario.correo, usuario.contrasena, usuario.rol]
       );
       usuario.idUsuario = resultado.insertId;
       return usuario;
@@ -24,7 +24,7 @@ class UsuarioDAO {
     const connection = await conexionBD.conectar();
     try {
       await connection.query(
-        "UPDATE usuario SET nombreUsuario = ?, correo = ?, contrasena = ? WHERE idUsuario = ?",
+        "UPDATE usuarios SET nombre_usuario = ?, correo = ?, contrasena = ? WHERE id_usuario = ?",
         [
           usuario.nombreUsuario,
           usuario.correo,
@@ -45,7 +45,7 @@ class UsuarioDAO {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
-      await connection.query("DELETE FROM usuario WHERE idUsuario = ?", [
+      await connection.query("DELETE FROM usuarios WHERE id_usuario = ?", [
         idUsuario,
       ]);
     } catch (error) {
@@ -60,7 +60,7 @@ class UsuarioDAO {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
-      const [rows] = await connection.query("SELECT * FROM usuario");
+      const [rows] = await connection.query("SELECT * FROM usuarios");
       return rows;
     } catch (error) {
       console.error("Error al consultar todos los usuarios", error);
@@ -75,7 +75,7 @@ class UsuarioDAO {
     const connection = await conexionBD.conectar();
     try {
       const [rows] = await connection.query(
-        "SELECT * FROM usuario WHERE idUsuario = ?",
+        "SELECT * FROM usuarios WHERE id_usuario = ?",
         [idUsuario]
       );
       return rows[0];
@@ -92,7 +92,7 @@ class UsuarioDAO {
     const connection = await conexionBD.conectar();
     try {
       const [rows] = await connection.query(
-        "SELECT * FROM usuario WHERE nombreUsuario = ?",
+        "SELECT * FROM usuarios WHERE nombre_usuario = ?",
         [nombreUsuario]
       );
       return rows[0];
@@ -110,7 +110,7 @@ static async consultarUsuarioPorNombreContrasena(nombreUsuario,contrasena) {
   const connection = await conexionBD.conectar();
   try {
     const [rows] = await connection.query(
-      "SELECT * FROM usuario WHERE nombreUsuario = ? AND contrasena = ?",
+      "SELECT * FROM usuarios WHERE nombre_usuario = ? AND contrasena = ?",
       [nombreUsuario,contrasena]
     );
     return rows[0];

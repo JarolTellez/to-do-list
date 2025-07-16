@@ -11,14 +11,14 @@ export async function login(nombreUsuario, contrasenaUsuario) {
         body: JSON.stringify({ nombreUsuario, contrasena: contrasenaUsuario }),
       });
   
-      const data = await response.json();
-      console.log("DATOS DEL USUARIO ++++", data);
+      const datos = await response.json();
+      console.log("DATOS DEL USUARIO ++++", datos);
   
       if (response.ok) {
-        sessionStorage.setItem("idUsuario", data.usuario.idUsuario);
+         sessionStorage.setItem("idUsuario", datos.data.usuario.idUsuario);
         return true; // Login exitoso
       } else {
-        throw new Error(data.mensaje || "Error al iniciar sesión");
+        throw new Error(datos.mensaje || "Error al iniciar sesión");
       }
     } catch (error) {
       console.error("Hubo un error con la solicitud de login:", error);
