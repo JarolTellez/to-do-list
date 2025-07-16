@@ -12,6 +12,7 @@ export async function agregarTarea(tareaNueva) {
     });
 
     const data = await response.json();
+    
     if (!response.ok) {
       // Si la respuesta no es exitosa, lanzar el error
       throw data; // data ya contiene el objeto de error del backend

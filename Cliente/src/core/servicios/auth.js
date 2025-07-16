@@ -12,6 +12,7 @@ export async function login(nombreUsuario, contrasenaUsuario) {
       });
   
       const data = await response.json();
+      console.log("DATOS DEL USUARIO ++++", data);
   
       if (response.ok) {
         sessionStorage.setItem("idUsuario", data.usuario.idUsuario);
@@ -32,6 +33,6 @@ export async function login(nombreUsuario, contrasenaUsuario) {
   export function verificarSesion() {
     const idUsuario = sessionStorage.getItem("idUsuario");
     if (!idUsuario) {
-      window.location.href = "index.html"; // Redirigir al login si no hay sesión
+     window.location.href = "index.html"; // Redirigir al login si no hay sesión
     }
   }

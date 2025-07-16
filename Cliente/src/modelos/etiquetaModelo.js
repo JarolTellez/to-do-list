@@ -1,8 +1,10 @@
 export class Etiqueta {
-  constructor(idEtiqueta = null, nombreEtiqueta, idUsuario) {
+  constructor(idEtiqueta = null, idTareaEtiqueta=null, idUsuario, nombreEtiqueta) {
     this.idEtiqueta = idEtiqueta;
-    this.nombreEtiqueta = nombreEtiqueta;
+    this.idTareaEtiqueta = idTareaEtiqueta;
     this.idUsuario = idUsuario;
+    this.nombreEtiqueta = nombreEtiqueta;
+  
   }
 
   validar() {
