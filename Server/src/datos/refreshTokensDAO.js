@@ -1,12 +1,12 @@
 const ConexionBD = require("../utils/conexionBD");
 
 class RefreshTokensDAO{
-     static async agregarRefreshToken(refreshToken) {
+     static async guardarRefreshToken(refreshToken) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
       const [nuevoRefreshToken] = await connection.query(
-        "INSERT INTO refresh_tokens ( id_usuario, token, fecha_creacion, fecha_expiracion, revocado) VALUES (?,?,?,?,?,?)",
+        "INSERT INTO refresh_tokens ( id_usuario, token, fecha_creacion, fecha_expiracion, revocado) VALUES (?,?,?,?,?)",
         [refreshToken.idUsuario, refreshToken.token, refreshToken.fechaCreacion, refreshToken.fechaExpiracion, refreshToken.revocado ]
       );
       refreshToken.idRefreshToken = nuevoRefreshToken.insertId;
@@ -20,3 +20,5 @@ class RefreshTokensDAO{
     }
   }
 }
+
+module.exports= RefreshTokensDAO;
