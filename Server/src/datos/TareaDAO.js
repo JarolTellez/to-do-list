@@ -25,7 +25,6 @@ class TareaDAO {
       return tarea;
     } catch (error) {
        logError('Error al agregar una tarea:', error);
-       // Lanzar una excepción personalizada
        throw new Error('Error en la base de datos: ' + error.message);
     } finally {
       if(connection){

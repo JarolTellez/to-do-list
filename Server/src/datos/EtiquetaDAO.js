@@ -79,6 +79,7 @@ class EtiquetaDAO {
         "SELECT * FROM etiquetas WHERE nombre = ? AND id_usuario = ?",
         [nombreEtiqueta, idUsuario]
       );
+      console.log("SE ENCONTRO4: ", etiqueta[0]);
       return etiqueta[0];
     } catch (error) {
       console.log("Error al consultar etiqueta por nombre: ", error);
