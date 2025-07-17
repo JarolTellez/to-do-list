@@ -1,7 +1,9 @@
 const bcrypt = require("bcryptjs");
 const JwtAuth = require('../utils/jwtAuth');
 const usuarioDAO = require("../datos/UsuarioDAO");
+const RefreshTokensDAO = require("../datos/refreshTokensDAO");
 const Usuario = require("../dominio/Usuario");
+const RefreshToken = require ("../dominio/refreshToken");
 
 class UsuarioService {
   static async registrarUsuario({ nombreUsuario, correo, contrasena }) {
@@ -38,9 +40,21 @@ class UsuarioService {
     }
 
     const tokenAcceso = JwtAuth.generarTokenAcceso(usuarioEncontrado.id_usuario, usuarioEncontrado.rol);
-    const tokenRefresco = JwtAuth.generarRefreshToken(usuarioEncontrado.id_usuario);
+    const refreshToken= JwtAuth.generarRefreshToken(usuarioEncontrado.id_usuario);
 
-    //await guardarRefreshTokenEnBD(usuarioEncontrado.id, tokenRefresco);
+    const fechaCreacion = new Date();
+    const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+
+    const refreshTokenEntidad = new RefreshToken(
+      null,
+      usuarioEncontrado.id_usuario,
+      refreshToken,
+      fechaCreacion,
+      fechaExpiracion,
+      false
+    );
+
+    await RefreshTokensDAO.guardarRefreshToken(refreshTokenEntidad);
 
     const usuarioRespuesta = {
       idUsuario: usuarioEncontrado.id_usuario,
@@ -52,7 +66,7 @@ class UsuarioService {
     return {
       usuario: usuarioRespuesta,
       tokenAcceso,
-      tokenRefresco,
+      refreshToken,
       expiraEn: 900 // 15 minutos en segundos
     };
   }
