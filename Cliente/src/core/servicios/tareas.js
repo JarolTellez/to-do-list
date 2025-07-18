@@ -1,3 +1,4 @@
+import {mapApiToTarea} from "../../mappers/tareaMapper.js";
 
 export async function agregarTarea(tareaNueva) {
   const urlTarea = "http://localhost:3000/tarea/";
@@ -12,6 +13,10 @@ export async function agregarTarea(tareaNueva) {
     });
 
     const data = await response.json();
+    const tareaAgregada = mapApiToTarea(data.data);
+    console.log("TAREA AGREGADA: ", tareaAgregada);
+
+    
     
     if (!response.ok) {
       // Si la respuesta no es exitosa, lanzar el error
@@ -19,7 +24,8 @@ export async function agregarTarea(tareaNueva) {
     }
 
     // Si la respuesta es exitosa, devolver los datos
-    return data;
+   // return data;
+   return tareaAgregada;
   } catch (error) {
    
     console.error("Error al agregar la tarea:", error);

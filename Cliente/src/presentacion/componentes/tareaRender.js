@@ -79,7 +79,7 @@ export const rendersTareas = {
         tareaElemento.etiquetas.forEach((etiqueta) => {
           const li = document.createElement("li");
           li.className = "etiqueta";
-          li.textContent = etiqueta.nombre;
+          li.textContent = etiqueta.nombreEtiqueta;
           etiquetasDiv.appendChild(li);
         });
       }

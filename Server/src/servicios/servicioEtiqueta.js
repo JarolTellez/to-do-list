@@ -1,7 +1,7 @@
 const etiquetaDAO = require("../datos/EtiquetaDAO");
 const tareaEtiquetaDAO = require("../datos/TareaEtiquetaDAO");
 const Etiqueta = require("../dominio/Etiqueta");
-const TareaEtiqueta = require("../dominio/TareaEtiqueta");
+
 
 class EtiquetaService {
   async agregarEtiquetas(etiquetas, idTarea, idUsuario) {

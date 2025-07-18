@@ -54,7 +54,7 @@ class UsuarioService {
       false
     );
 
-    await RefreshTokensDAO.guardarRefreshToken(refreshTokenEntidad);
+    //await RefreshTokensDAO.guardarRefreshToken(refreshTokenEntidad);
 
     const usuarioRespuesta = {
       idUsuario: usuarioEncontrado.id_usuario,

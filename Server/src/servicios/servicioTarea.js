@@ -1,42 +1,88 @@
-const tareasDAO = require("../datos/TareaDAO");
 const Tarea = require("../dominio/Tarea");
-const etiquetaService = require("../servicios/servicioEtiqueta");
 
-class TareaService {
-  async agregarTarea(tareaData) {
-    const {
-      nombre,
-      descripcion,
-      fechaProgramada,
-      fechaCreacion,
-      fechaUltimaActualizacion,
-      completada,
-      idUsuario,
-      prioridad,
-      etiquetas,
-    } = tareaData;
 
-    const tarea = new Tarea(
-      null,
-      nombre,
-      descripcion,
-      fechaProgramada,
-      fechaCreacion,
-      fechaUltimaActualizacion,
-      completada,
-      idUsuario,
-      prioridad
-    );
+const etiquetaServicio = require("../servicios/servicioEtiqueta");
 
-    tarea.validar();
-    const tareaAgregada = await tareasDAO.agregarTarea(tarea);
+class ServicioTarea {
+   constructor(tareaDAO, etiquetaDAO) {
+    this.tareaDAO =  tareaDAO
+    this.etiquetaDAO = etiquetaDAO; 
+   }
+ 
+  // async agregarTarea(tarea) {
+  //   // const {
+  //   //   nombre,
+  //   //   descripcion,
+  //   //   fechaProgramada,
+  //   //   fechaCreacion,
+  //   //   fechaUltimaActualizacion,
+  //   //   completada,
+  //   //   idUsuario,
+  //   //   prioridad,
+  //   //   etiquetas,
+  //   // } = tarea;
 
-    if (etiquetas && etiquetas.length > 0) {
-      await etiquetaService.agregarEtiquetas(etiquetas, tareaAgregada.idTarea, idUsuario);
+  //   // const etiquetasAgregar = etiquetas.map(etiqueta =>{
+  //   //   try {
+  //   //     return new Etiqueta(
+  //   //       etiqueta.idEtiqueta,
+  //   //       etiqueta.nombre,
+  //   //       idUsuario
+  //   //     );
+        
+  //   //   } catch (error) {
+  //   //      throw {
+  //   //       etiqueta: etiqueta,
+  //   //       error: JSON.parse(error.message) 
+  //   //     };
+
+  //   //   }
+  //   // })
+  //   // const tarea = new Tarea(
+  //   //   null,
+  //   //   nombre,
+  //   //   descripcion,
+  //   //   fechaProgramada,
+  //   //   fechaCreacion,
+  //   //   fechaUltimaActualizacion,
+  //   //   completada,
+  //   //   idUsuario,
+  //   //   prioridad,
+  //   //   etiquetasAgregar
+  //   // );
+
+  //   //tarea.validar();
+  //   const tareaAgregada = await tareasDAO.agregarTarea(tarea);
+
+  //   if (etiquetas && etiquetas.length > 0) {
+  //     await etiquetaService.agregarEtiquetas(etiquetas, tareaAgregada.idTarea, idUsuario);
+  //   }
+
+  //   const tareaConEtiquetas = await tareasDAO.consultarTareasPorIdTarea(tareaAgregada.idTarea);
+  //   return this.procesarTareasConEtiquetas(tareaConEtiquetas)[0];
+  // }
+
+   async agregarTarea(tarea) {
+    
+   // const tareaAgregada = await tareasDAO.agregarTarea(tarea);
+   const tareaAgregada = await this.tareaDAO.agregarTarea(tarea);
+    if (tarea.etiquetas && tarea.etiquetas.length > 0) {
+        //CAMBIAR A QUE LLAME A DAO
+      await etiquetaServicio.agregarEtiquetas(
+        tarea.etiquetas,
+        tareaAgregada.idTarea,
+        tarea.idUsuario
+      );
     }
 
-    const tareaConEtiquetas = await tareasDAO.consultarTareasPorIdTarea(tareaAgregada.idTarea);
-    return this.procesarTareasConEtiquetas(tareaConEtiquetas)[0];
+    // const tareaConEtiquetas = await tareasDAO.consultarTareasPorIdTarea(
+    //   tareaAgregada.idTarea
+    // );
+    return tarea;
+  
+   
+   // return this.procesarTareasConEtiquetas(tareaConEtiquetas)[0];
+  //  return tareaAgregada;
   }
 
   async eliminarTarea(idTarea, idUsuario) {
@@ -46,7 +92,7 @@ class TareaService {
       throw new Error(`No se encontró la tarea con id ${idTarea}`);
     }
 
-    await etiquetaService.eliminarEtiquetasPorIdTarea(idTarea);
+    await etiquetaServicio.eliminarEtiquetasPorIdTarea(idTarea);
     const eliminada = await tareasDAO.eliminarTarea(idTarea);
 
     if (eliminada <= 0) {
@@ -93,11 +139,11 @@ class TareaService {
       !etiquetasNuevas.some(etiquetaNueva => etiquetaNueva.nombre === etiquetaAnterior.nombre));
 
     if (etiquetasParaAgregar.length > 0) {
-      await etiquetaService.agregarEtiquetas(etiquetasParaAgregar, idTarea, idUsuario);
+      await etiquetaServicio.agregarEtiquetas(etiquetasParaAgregar, idTarea, idUsuario);
     }
 
     if (etiquetasParaEliminar.length > 0) {
-      await etiquetaService.eliminarEtiquetas(etiquetasParaEliminar);
+      await etiquetaServicio.eliminarEtiquetas(etiquetasParaEliminar);
     }
 
     const tareaActualizadaConsulta = await tareasDAO.consultarTareasPorIdTarea(tarea.idTarea);
@@ -118,14 +164,18 @@ class TareaService {
     return await tareasDAO.consultarTareaPorId(idTarea);
   }
 
-  async consultarTareasPorIdUsuario(idUsuario) {
-    const tareasPendientes = await tareasDAO.consultarTareasPorIdUsuario(idUsuario);
-    const tareasCompletadas = await tareasDAO.consultarTareasCompletadasUsuario(idUsuario);
+  async obtenerTareasPorIdUsuario(idUsuario) {
+    // const tareasPendientes = await tareasDAO.consultarTareasPorIdUsuario(idUsuario);
+    // const tareasCompletadas = await tareasDAO.consultarTareasCompletadasUsuario(idUsuario);
 
-    return {
-      tareasPendientes: this.procesarTareasConEtiquetas(tareasPendientes),
-      tareasCompletadas: this.procesarTareasConEtiquetas(tareasCompletadas)
-    };
+    // return {
+    //   tareasPendientes: this.procesarTareasConEtiquetas(tareasPendientes),
+    //   tareasCompletadas: this.procesarTareasConEtiquetas(tareasCompletadas)
+    // };
+  const tareasPendientes = await this.tareaDAO.consultarTareasPorIdUsuario(idUsuario);
+    const tareasCompletadas = await this.tareaDAO.consultarTareasCompletadasUsuario(idUsuario);
+
+    return {tareasPendientes, tareasCompletadas};
   }
 
   procesarTareasConEtiquetas(tareas) {
@@ -160,4 +210,4 @@ class TareaService {
   }
 }
 
-module.exports = new TareaService();
+module.exports = ServicioTarea;
