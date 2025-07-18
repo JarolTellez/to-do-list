@@ -1,11 +1,15 @@
-
-const tareaService = require("../servicios/servicioTarea");
 const etiquetaService = require("../servicios/servicioEtiqueta");
+const {tareaMapper} = require("../config/dependencias");
+const { servicioTarea } = require('../config/dependencias');
+
+
 
 exports.agregarTarea = async (req, res) => {
   try {
-    const tareaData = req.body;
-    const tareaProcesada = await tareaService.agregarTarea(tareaData);
+   // const tareaData = req.body;
+   console.log("TAAAAAAAAAAAAAREA", req.body);
+    const tarea = tareaMapper.requestToDominio(req.body);
+    const tareaProcesada = await servicioTarea.agregarTarea(tarea);
 
     return res.status(201).json({
       status: "success",
@@ -33,7 +37,7 @@ exports.agregarTarea = async (req, res) => {
 exports.eliminarTarea = async (req, res) => {
   try {
     const { idTarea, idUsuario } = req.body;
-    await tareaService.eliminarTarea(idTarea, idUsuario);
+    await servicioTarea.eliminarTarea(idTarea, idUsuario);
 
     return res.status(200).json({
       status: "success",
@@ -52,7 +56,7 @@ exports.eliminarTarea = async (req, res) => {
 exports.actualizarTarea = async (req, res) => {
   try {
     const tareaData = req.body;
-    const tareaProcesada = await tareaService.actualizarTarea(tareaData);
+    const tareaProcesada = await servicioTarea.actualizarTarea(tareaData);
 
     return res.status(201).json({
       status: "success",
@@ -72,7 +76,7 @@ exports.actualizarTarea = async (req, res) => {
 exports.actualizarTareaCompletada = async (req, res) => {
   try {
     const { idTarea, completada } = req.body;
-    const tareaActualizada = await tareaService.actualizarTareaCompletada(idTarea, completada);
+    const tareaActualizada = await servicioTarea.actualizarTareaCompletada(idTarea, completada);
 
     return res.status(201).json({
       status: "success",
@@ -92,7 +96,8 @@ exports.actualizarTareaCompletada = async (req, res) => {
 exports.consultarTareasPorIdUsuario = async (req, res) => {
   try {
     const { idUsuario } = req.body;
-    const { tareasPendientes, tareasCompletadas } = await tareaService.consultarTareasPorIdUsuario(idUsuario);
+    const { tareasPendientes, tareasCompletadas } = await  servicioTarea.obtenerTareasPorIdUsuario(idUsuario);
+
 
     return res.status(200).json({
       status: "success",

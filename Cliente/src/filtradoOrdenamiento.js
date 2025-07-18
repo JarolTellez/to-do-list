@@ -22,10 +22,12 @@ export class FiltradoOrdenamiento {
   }
 
   ordenar(tareas) {
-
+    console.log("RECIEN LLEGADAS: ", tareas);
       let resultadoTareas = this.filtro
       ? tareas.filter((tarea) => this.filtro.cumple(tarea))
       : [...tareas];
+      
+      console.log(" FILTRO APLICADO: ", resultadoTareas);
 
    
     if (this.estrategiasOrdenamiento.length > 0) {

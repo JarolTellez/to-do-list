@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   async function actualizarEstadisticasYRender() {
     const stats = await obtenerEstadisticas();
     actualizarEstadisticasDOM(stats);
+    console.log("TAREAS PENDIENTES", tareasPendientes);
     rendersTareas.renderizarTareas(
       campoTareas, 
       tareasPendientes,

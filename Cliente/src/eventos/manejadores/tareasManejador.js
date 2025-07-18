@@ -18,6 +18,7 @@ export async function actualizarListaTareas() {
   );
   tareasCompletadas = todasTareas.tareasCompletadas;
   tareasPendientes = todasTareas.tareasPendientes;
+  
 }
 
 export async function obtenerEstadisticas() {
@@ -32,7 +33,7 @@ export async function obtenerEstadisticas() {
 export async function manejarAgregarTarea(tareaData) {
   try {
     const nuevaTarea = await agregarTarea(tareaData);
-    tareasPendientes.push(nuevaTarea.data[0]);
+    tareasPendientes.push(nuevaTarea);
     return nuevaTarea;
   } catch (error) {
     handleError(error);

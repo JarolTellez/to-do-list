@@ -1,5 +1,5 @@
-import {Tarea} from "../modelos/tareaModelo";
-import {mapApiToEtiqueta} from "../mappers/etiquetaMapper";
+import {Tarea} from "../modelos/tareaModelo.js";
+import {mapApiToEtiqueta} from "../mappers/etiquetaMapper.js";
 
 export function mapApiToTarea(apiDatos){
     return new Tarea(

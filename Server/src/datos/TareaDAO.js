@@ -1,8 +1,14 @@
 const ConexionBD = require("../utils/conexionBD");
 const { logError } = require('../utils/logger');
 
+
 class TareaDAO {
-  static async agregarTarea(tarea) {
+    constructor(tareaMapper) {
+    this.tareaMapper = tareaMapper;
+  }
+
+
+   async agregarTarea(tarea) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
@@ -33,7 +39,7 @@ class TareaDAO {
     }
   }
 
-  static async actualizarTarea(tarea) {
+  async actualizarTarea(tarea) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
@@ -63,7 +69,7 @@ class TareaDAO {
     }
   }
 
-  static async actualizarTareaCompletada(idTarea,completada) {
+  async actualizarTareaCompletada(idTarea,completada) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
     try {
@@ -86,7 +92,7 @@ class TareaDAO {
     }
   }
 
-  static async eliminarTarea(idTarea) {
+   async eliminarTarea(idTarea) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
@@ -106,7 +112,7 @@ class TareaDAO {
     }
   }
 
-  static async consultarTodasTareas() {
+   async consultarTodasTareas() {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
@@ -124,7 +130,7 @@ class TareaDAO {
     }
   }
 
-  static async consultarTareaPorNombre(nombreTarea) {
+   async consultarTareaPorNombre(nombreTarea) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
@@ -144,7 +150,7 @@ class TareaDAO {
     }
   }
  
-  static async consultarTareaPorId(idTarea) {
+ async consultarTareaPorId(idTarea) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
@@ -164,7 +170,7 @@ class TareaDAO {
     }
   }
 
-  static async consultarTareasPorIdTarea(idTarea) {
+  async consultarTareasPorIdTarea(idTarea) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
   
@@ -216,7 +222,7 @@ GROUP BY
     }
 }
 
-static async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
+ async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
   const conexionBD = ConexionBD.getInstance();
   const connection = await conexionBD.conectar();
 
@@ -237,7 +243,7 @@ static async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
 }
 
 //Consulta las tareas pendientes del usuario, es decir las que no estan marcadas como completadas
-static async consultarTareasPorIdUsuario(idUsuario) {
+ async consultarTareasPorIdUsuario(idUsuario) {
   const conexionBD = ConexionBD.getInstance();
   const connection = await conexionBD.conectar();
 
@@ -252,6 +258,7 @@ static async consultarTareasPorIdUsuario(idUsuario) {
       t.ultima_actualizacion AS tarea_ultima_actualizacion,
       t.completada AS tarea_completada,
       t.prioridad AS tarea_prioridad,
+      t.id_usuario AS tarea_id_usuario,
       GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
       GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
       GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
@@ -269,12 +276,19 @@ GROUP BY
 `,
       [idUsuario]
     );
-    
-    return tareas;
+   
+   
+   const tareasMappeadas= tareas.map((tarea) => {
+   
+    return this.tareaMapper.tareaEtiquetasDbJoinToDominio(tarea);
+   });
+
+   // return tareas;
+   return tareasMappeadas;
   } catch (error) {
     logError('Error al consultar tarea por idTarea e idUsuario:', error);
     // Lanzar una excepción personalizada
-    throw new Error('Error al consultar la tarea' + error.message);
+    throw new Error('Error al consultar la tarea: ' + error.message);
   } finally {
     if(connection){
     connection.release();
@@ -283,7 +297,7 @@ GROUP BY
 }
 
 //Consulta todas las tareas del usuario tanto las que estan completadas como las que no
-static async consultarTareasCompletadasUsuario(idUsuario) {
+ async consultarTareasCompletadasUsuario(idUsuario) {
   const conexionBD = ConexionBD.getInstance();
   const connection = await conexionBD.conectar();
   try {
@@ -296,6 +310,7 @@ static async consultarTareasCompletadasUsuario(idUsuario) {
       t.ultima_actualizacion AS tarea_ultima_actualizacion,
       t.completada AS tarea_completada,
       t.prioridad AS tarea_prioridad,
+      t.id_usuario AS tarea_id_usuario,
       GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
       GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
       GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
@@ -311,7 +326,12 @@ WHERE
 GROUP BY 
       t.id_tarea;
 `, [idUsuario]);
-    return tareas;
+const tareasMappeadas= tareas.map((tarea) => {
+   
+    return this.tareaMapper.tareaEtiquetasDbJoinToDominio(tarea);
+   });
+   // return tareas;
+   return tareasMappeadas;
   } catch (error) {
     logError('Error al consultar todas las tareas:', error);
   

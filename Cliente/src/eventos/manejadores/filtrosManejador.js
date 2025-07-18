@@ -27,6 +27,7 @@ let tareasRenderizadasActuales;
 let tareasConFiltroPrioridadActuales;
 
 const ordenador = new FiltradoOrdenamiento();
+//ordenador.setFiltro(new TareaPendienteEspecificacion());
 
 export function botonPendientesChecked(seleccionado) {
   tareasPendientesButton.checked =
@@ -52,6 +53,7 @@ export function botonPendientesChecked(seleccionado) {
 }
 
 export async function actualizarListas() {
+ 
   let mensaje = null;
   let mensajeFlotante = "No hay tareas para aplicar filtros";
 
@@ -100,7 +102,8 @@ export async function actualizarListas() {
   const tareasAProcesar = tareasCompletadasButton.checked
     ? tareasCompletadas
     : tareasPendientes;
-
+    console.log("TAREAS A PROCESAR: ", tareasAProcesar);
+/////////////////////////////////////////////////////////////////////////////////
   tareasRenderizadasActuales = ordenador.ordenar(tareasAProcesar);
 
   if (tareasRenderizadasActuales.length === 0 && filtroAdicional) {
@@ -109,6 +112,7 @@ export async function actualizarListas() {
       : "No hay tareas próximas";
   }
 
+  console.log("TAREAS DESDE ACTUALIZAR LISTAS: ", tareasRenderizadasActuales);
   rendersTareas.renderizarTareas(
     campoTareas,
     tareasRenderizadasActuales,
