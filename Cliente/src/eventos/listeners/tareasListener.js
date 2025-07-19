@@ -208,6 +208,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   async function actualizarTareaListener() {
     const tareaActualizar = construirObjetoTareaActualizar();
+    console.log("objeto:", tareaActualizar);
     
     const tareaActualizada = await manejarActualizarTarea(tareaActualizar);
     await actualizarEstadisticasYRender();
@@ -242,7 +243,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const valorPrioridad = prioridad ? prioridad.value : null;
     const fechaProgramadaValue = fechaProgramadaTarea.value ? fechaProgramadaTarea.value : null;
     const fechaProgramadaProcesada = fechaProgramadaValue ? fechaProgramadaValue.replace('T', ' ') + ':00' : null;
-
+ console.log("ACTUALIZAR ETIQUETAS", etiquetasParaActualizar, etiquetasSeleccionadas);
     return {
       idTarea: tituloTarea.getAttribute("data-id"),
       nombre: tituloTarea.value,
@@ -262,6 +263,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       etiquetasSeleccionadas.push(element);
     });
     etiquetasParaActualizar = [...etiquetasSeleccionadas];
+   
   }
 
   function limpiarCampos() {

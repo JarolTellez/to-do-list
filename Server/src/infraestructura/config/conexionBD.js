@@ -36,7 +36,7 @@ class ConexionBD {
     }
   }
 
-  static getInstance() {
+  static getInstancia() {
     if (!ConexionBD.instance) {
       ConexionBD.instance = new ConexionBD();
     }

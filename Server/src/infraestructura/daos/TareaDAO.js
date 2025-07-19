@@ -1,16 +1,17 @@
-const ConexionBD = require("../utils/conexionBD");
-const { logError } = require('../utils/logger');
+//const ConexionBD = require("../utils/conexionBD");
+const { logError } = require('../../utils/logger');
 
 
 class TareaDAO {
-    constructor(tareaMapper) {
+    constructor(tareaMapper, conexionBD) {
     this.tareaMapper = tareaMapper;
+    this.conexionBD = conexionBD;
   }
 
 
    async agregarTarea(tarea) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+    //const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [tareaAgregada] = await connection.query(
@@ -40,8 +41,8 @@ class TareaDAO {
   }
 
   async actualizarTarea(tarea) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+    //const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
      const [resultado]= await connection.query(
@@ -70,8 +71,8 @@ class TareaDAO {
   }
 
   async actualizarTareaCompletada(idTarea,completada) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+  //  const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
     try {
      const [resultado]= await connection.query(
         "UPDATE tareas SET completada = ? WHERE id_tarea = ?",
@@ -93,8 +94,8 @@ class TareaDAO {
   }
 
    async eliminarTarea(idTarea) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const resultado= await connection.query(
@@ -113,8 +114,8 @@ class TareaDAO {
   }
 
    async consultarTodasTareas() {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [tareas] = await connection.query("SELECT * FROM tareas");
@@ -131,8 +132,8 @@ class TareaDAO {
   }
 
    async consultarTareaPorNombre(nombreTarea) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+    //const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [tarea] = await connection.query(
@@ -151,8 +152,8 @@ class TareaDAO {
   }
  
  async consultarTareaPorId(idTarea) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+    //const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [tarea] = await connection.query(
@@ -171,8 +172,8 @@ class TareaDAO {
   }
 
   async consultarTareasPorIdTarea(idTarea) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+    //const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
   
     try {
       console.log("Consultando tarea con id:", idTarea); // Imprime el idTarea
@@ -223,8 +224,8 @@ GROUP BY
 }
 
  async consultarTareaPorIdTareaUsuario(idTarea,idUsuario) {
-  const conexionBD = ConexionBD.getInstance();
-  const connection = await conexionBD.conectar();
+ // const conexionBD = ConexionBD.getInstance();
+  const connection = await this.conexionBD.conectar();
 
   try {
     const [tarea] = await connection.query(
@@ -244,42 +245,73 @@ GROUP BY
 
 //Consulta las tareas pendientes del usuario, es decir las que no estan marcadas como completadas
  async consultarTareasPorIdUsuario(idUsuario) {
-  const conexionBD = ConexionBD.getInstance();
-  const connection = await conexionBD.conectar();
+  //const conexionBD = ConexionBD.getInstance();
+  const connection = await this.conexionBD.conectar();
 
   try {
     const [tareas] = await connection.query(
-      `SELECT 
-      t.id_tarea AS tarea_id,
-      t.nombre AS tarea_nombre,
-      t.descripcion AS tarea_descripcion,
-      t.fecha_programada AS tarea_fecha_programada,
-      t.fecha_creacion AS tarea_fecha_creacion,
-      t.ultima_actualizacion AS tarea_ultima_actualizacion,
-      t.completada AS tarea_completada,
-      t.prioridad AS tarea_prioridad,
-      t.id_usuario AS tarea_id_usuario,
-      GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
-      GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
-      GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
-      GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta) AS etiquetas_usuarios
+//       `SELECT 
+//       t.id_tarea AS tarea_id,
+//       t.nombre AS tarea_nombre,
+//       t.descripcion AS tarea_descripcion,
+//       t.fecha_programada AS tarea_fecha_programada,
+//       t.fecha_creacion AS tarea_fecha_creacion,
+//       t.ultima_actualizacion AS tarea_ultima_actualizacion,
+//       t.completada AS tarea_completada,
+//       t.prioridad AS tarea_prioridad,
+//       t.id_usuario AS tarea_id_usuario,
+//       GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
+//       GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
+//       GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
+//       GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta) AS etiquetas_usuarios
+// FROM 
+//       tareas t
+// LEFT JOIN 
+//       tarea_etiqueta te ON t.id_tarea = te.id_tarea
+// LEFT JOIN 
+//       etiquetas e ON te.id_etiqueta = e.id_etiqueta
+// WHERE 
+//       t.id_usuario = ? AND t.completada = 0
+// GROUP BY 
+//       t.id_tarea;`
+`SELECT 
+  t.id_tarea AS tarea_id,
+  t.nombre AS tarea_nombre,
+  t.descripcion AS tarea_descripcion,
+  t.fecha_programada AS tarea_fecha_programada,
+  t.fecha_creacion AS tarea_fecha_creacion,
+  t.ultima_actualizacion AS tarea_ultima_actualizacion,
+  t.completada AS tarea_completada,
+  t.prioridad AS tarea_prioridad,
+  t.id_usuario AS tarea_id_usuario,
+
+  GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
+  GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
+  GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
+  GROUP_CONCAT(e.descripcion ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
+  GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
+
 FROM 
-      tareas t
+  tareas t
 LEFT JOIN 
-      tarea_etiqueta te ON t.id_tarea = te.id_tarea
+  tarea_etiqueta te ON t.id_tarea = te.id_tarea
 LEFT JOIN 
-      etiquetas e ON te.id_etiqueta = e.id_etiqueta
+  etiquetas e ON te.id_etiqueta = e.id_etiqueta
+
 WHERE 
-      t.id_usuario = ? AND t.completada = 0
+  t.id_usuario = ? AND t.completada = 0
+
 GROUP BY 
-      t.id_tarea;
-`,
+  t.id_tarea;
+`
+ 
+,
       [idUsuario]
     );
    
-   
+ 
    const tareasMappeadas= tareas.map((tarea) => {
-   
+
     return this.tareaMapper.tareaEtiquetasDbJoinToDominio(tarea);
    });
 
@@ -298,34 +330,66 @@ GROUP BY
 
 //Consulta todas las tareas del usuario tanto las que estan completadas como las que no
  async consultarTareasCompletadasUsuario(idUsuario) {
-  const conexionBD = ConexionBD.getInstance();
-  const connection = await conexionBD.conectar();
+ // const conexionBD = ConexionBD.getInstance();
+  const connection = await this.conexionBD.conectar();
   try {
-    const [tareas] = await connection.query( `SELECT 
-      t.id_tarea AS tarea_id,
-      t.nombre AS tarea_nombre,
-      t.descripcion AS tarea_descripcion,
-      t.fecha_programada AS tarea_fecha_programada,
-      t.fecha_creacion AS tarea_fecha_creacion,
-      t.ultima_actualizacion AS tarea_ultima_actualizacion,
-      t.completada AS tarea_completada,
-      t.prioridad AS tarea_prioridad,
-      t.id_usuario AS tarea_id_usuario,
-      GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
-      GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
-      GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
-      GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta) AS etiquetas_usuarios
+    const [tareas] = await connection.query( 
+//       `SELECT 
+//       t.id_tarea AS tarea_id,
+//       t.nombre AS tarea_nombre,
+//       t.descripcion AS tarea_descripcion,
+//       t.fecha_programada AS tarea_fecha_programada,
+//       t.fecha_creacion AS tarea_fecha_creacion,
+//       t.ultima_actualizacion AS tarea_ultima_actualizacion,
+//       t.completada AS tarea_completada,
+//       t.prioridad AS tarea_prioridad,
+//       t.id_usuario AS tarea_id_usuario,
+//       GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
+//       GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
+//       GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
+//       GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta) AS etiquetas_usuarios
+// FROM 
+//       tareas t
+// LEFT JOIN 
+//       tarea_etiqueta te ON t.id_tarea = te.id_tarea
+// LEFT JOIN 
+//       etiquetas e ON te.id_etiqueta = e.id_etiqueta
+// WHERE 
+//       t.id_usuario = ? AND t.completada = 1
+// GROUP BY 
+//       t.id_tarea;
+// `
+`SELECT 
+  t.id_tarea AS tarea_id,
+  t.nombre AS tarea_nombre,
+  t.descripcion AS tarea_descripcion,
+  t.fecha_programada AS tarea_fecha_programada,
+  t.fecha_creacion AS tarea_fecha_creacion,
+  t.ultima_actualizacion AS tarea_ultima_actualizacion,
+  t.completada AS tarea_completada,
+  t.prioridad AS tarea_prioridad,
+  t.id_usuario AS tarea_id_usuario,
+
+  GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
+  GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
+  GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
+  GROUP_CONCAT(e.descripcion ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
+  GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
+
 FROM 
-      tareas t
+  tareas t
 LEFT JOIN 
-      tarea_etiqueta te ON t.id_tarea = te.id_tarea
+  tarea_etiqueta te ON t.id_tarea = te.id_tarea
 LEFT JOIN 
-      etiquetas e ON te.id_etiqueta = e.id_etiqueta
+  etiquetas e ON te.id_etiqueta = e.id_etiqueta
+
 WHERE 
-      t.id_usuario = ? AND t.completada = 1
+  t.id_usuario = ? AND t.completada = 1
+
 GROUP BY 
-      t.id_tarea;
-`, [idUsuario]);
+  t.id_tarea;
+`
+, [idUsuario]);
 const tareasMappeadas= tareas.map((tarea) => {
    
     return this.tareaMapper.tareaEtiquetasDbJoinToDominio(tarea);

@@ -1,10 +1,12 @@
 export class Etiqueta {
-  constructor(idEtiqueta = null, idTareaEtiqueta=null, idUsuario, nombreEtiqueta) {
+  constructor(idEtiqueta = null, nombreEtiqueta, descripcion, existente = false, eliminar=false, idUsuario, idTareaEtiqueta=null,) {
     this.idEtiqueta = idEtiqueta;
-    this.idTareaEtiqueta = idTareaEtiqueta;
+    this.nombreEtiqueta=nombreEtiqueta
+    this.descripcion = descripcion;
+    this.existente = existente;
+    this.eliminar = eliminar;
     this.idUsuario = idUsuario;
-    this.nombreEtiqueta = nombreEtiqueta;
-  
+    this.idTareaEtiqueta = idTareaEtiqueta;
   }
 
   validar() {

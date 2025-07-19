@@ -1,17 +1,22 @@
-const ConexionBD = require("../utils/conexionBD");
+// const ConexionBD = require("../utils/conexionBD");
 
 class TareaEtiquetaDAO {
-  static async agregarTareaEtiqueta(tareaEtiqueta) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   constructor(tareaEtiquetaMapper, conexionBD) {
+    this.tareaEtiquetaMapper = tareaEtiquetaMapper;
+    this.conexionBD = conexionBD;
+  }
+
+   async agregarTareaEtiqueta(idTarea, idEtiqueta) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
     try {
       const [nuevaTareaEtiqueta] = await connection.query(
         "INSERT INTO tarea_etiqueta (id_tarea,id_etiqueta) VALUES (?,?)",
-        [tareaEtiqueta.idTarea, tareaEtiqueta.idEtiqueta]
+        [idTarea, idEtiqueta]
       );
-      tareaEtiqueta.idTareaEtiqueta = nuevaTareaEtiqueta.insertId;
+      const idTareaEtiqueta = nuevaTareaEtiqueta.insertId;
 
-      return tareaEtiqueta;
+      return idTareaEtiqueta;
     } catch (error) {
       console.log("Error al agregar tarea etiqueta: ", error);
       throw error;
@@ -20,7 +25,7 @@ class TareaEtiquetaDAO {
     }
   }
 
-  static async actualizarTareaEtiqueta(tareaEtiqueta) {
+   async actualizarTareaEtiqueta(tareaEtiqueta) {
     const conexionBD = ConexionBD.getInstance();
     const connection = await conexionBD.conectar();
 
@@ -43,9 +48,9 @@ class TareaEtiquetaDAO {
     }
   }
 
-  static async eliminarTareaEtiqueta(idTareaEtiqueta) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async eliminarTareaEtiqueta(idTareaEtiqueta) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [resultado] = await connection.query(
@@ -61,9 +66,9 @@ class TareaEtiquetaDAO {
     }
   }
 
-  static async eliminarTareaEtiquetaPorIdTarea(idTarea) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async eliminarTareaEtiquetaPorIdTarea(idTarea) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [resultado] = await connection.query(
@@ -80,9 +85,9 @@ class TareaEtiquetaDAO {
     }
   }
 
-  static async consultarTodasTareasEtiquetas() {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async consultarTodasTareasEtiquetas() {
+    //const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [tareasEtiquetas] = await connection.query(
@@ -97,9 +102,9 @@ class TareaEtiquetaDAO {
     }
   }
 
-  static async consultarTareaEtiquetaPorIdTarea(idTarea) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async consultarTareaEtiquetaPorIdTarea(idTarea) {
+    //const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [tareasEtiquetas] = await connection.query(

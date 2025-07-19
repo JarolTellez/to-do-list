@@ -31,13 +31,20 @@ class Etiqueta {
   constructor(
     idEtiqueta = null,
     nombreEtiqueta,
+    descripcion,
+    existente = true,
+    eliminar = false,
     idUsuario,
-    idTareaEtiqueta
+    idTareaEtiqueta = null, 
   ) {
     this.idEtiqueta = idEtiqueta;
     this.nombreEtiqueta = nombreEtiqueta;
+    this.descripcion = descripcion;
+    this.existente = existente;
+    this.eliminar = eliminar;
     this.idUsuario = idUsuario;
     this.idTareaEtiqueta = idTareaEtiqueta;
+
     
     this.validar();
   }
