@@ -1,13 +1,17 @@
 const bcrypt = require("bcryptjs");
-const JwtAuth = require('../utils/jwtAuth');
-const usuarioDAO = require("../datos/UsuarioDAO");
-const RefreshTokensDAO = require("../datos/refreshTokensDAO");
-const Usuario = require("../dominio/Usuario");
-const RefreshToken = require ("../dominio/refreshToken");
+const JwtAuth = require('../../infraestructura/config/jwtAuth');
+const usuarioDAO = require("../../infraestructura/daos/UsuarioDAO");
+const RefreshTokensDAO = require("../../infraestructura/daos/refreshTokensDAO");
+const Usuario = require("../../dominio/entidades/Usuario");
+const RefreshToken = require ("../../dominio/entidades/refreshToken");
 
-class UsuarioService {
-  static async registrarUsuario({ nombreUsuario, correo, contrasena }) {
-    const existe = await usuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
+class ServicioUsuario{
+   constructor(usuarioDAO) {
+    this.usuarioDAO = usuarioDAO;
+   }
+
+   async registrarUsuario({ nombreUsuario, correo, contrasena }) {
+    const existe = await this.usuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
     if (existe) {
       const error = new Error("El usuario ya existe");
       error.statusCode = 409;
@@ -17,13 +21,13 @@ class UsuarioService {
     const contrasenaEncriptada = await bcrypt.hash(contrasena, 10);
     const usuario = new Usuario(null, nombreUsuario, correo, contrasenaEncriptada);
     usuario.validar();
-    const usuarioAgregado = await usuarioDAO.agregarUsuario(usuario);
+    const usuarioAgregado = await this.usuarioDAO.agregarUsuario(usuario);
     console.log("Usuario agregado:", usuarioAgregado);
     return usuarioAgregado;
   }
 
-  static async loginUsuario({ nombreUsuario, contrasena }) {
-    const usuarioEncontrado = await usuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
+   async loginUsuario( nombreUsuario, contrasena ) {
+    const usuarioEncontrado = await this.usuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
 
     if (!usuarioEncontrado) {
       const error = new Error("Usuario no encontrado");
@@ -72,4 +76,4 @@ class UsuarioService {
   }
 }
 
-module.exports = UsuarioService;
+module.exports = ServicioUsuario;

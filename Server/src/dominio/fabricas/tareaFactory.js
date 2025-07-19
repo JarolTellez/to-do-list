@@ -1,5 +1,5 @@
-const Tarea = require("../dominio/Tarea");
-const Etiqueta = require("../dominio/Etiqueta");
+const Tarea = require("../entidades/Tarea");
+const Etiqueta = require("../entidades/Etiqueta");
 
 class TareaFactory{
 

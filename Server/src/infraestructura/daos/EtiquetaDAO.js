@@ -1,15 +1,22 @@
-const ConexionBD = require("../utils/conexionBD");
+//const ConexionBD = require("../utils/conexionBD");
 
 class EtiquetaDAO {
-  static async agregarEtiqueta(etiqueta) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+
+   constructor(etiquetaMapper, conexionBD) {
+    this.etiquetaMapper = etiquetaMapper;
+    this.conexionBD = conexionBD;
+  }
+
+   async agregarEtiqueta(etiqueta) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       const [result] = await connection.query(
         "INSERT INTO etiquetas (nombre,id_usuario) VALUES(?,?)",
         [etiqueta.nombreEtiqueta, etiqueta.idUsuario]
       );
+
       etiqueta.idEtiqueta = result.insertId;
       return etiqueta;
     } catch (error) {
@@ -22,10 +29,10 @@ class EtiquetaDAO {
     }
   }
 
-  static async actualizarEtiqueta(etiqueta) {
-    const conexionBD = ConexionBD.getInstance();
+   async actualizarEtiqueta(etiqueta) {
+  //  const conexionBD = ConexionBD.getInstance();
 
-    const connection = await conexionBD.conectar();
+    const connection = await this.conexionBD.conectar();
     try {
       await connection.query("UPDATE etiquetas SET nombre = ?", [
         etiqueta.nombre,
@@ -39,9 +46,9 @@ class EtiquetaDAO {
     }
   }
 
-  static async eliminarEtiqueta(idEtiqueta) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async eliminarEtiqueta(idEtiqueta) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       await connection.query("DELETE FROM etiquetas WHERE id_etiqueta = ?", [
@@ -55,10 +62,10 @@ class EtiquetaDAO {
     }
   }
 
-  static async consultarTodasEtiquetas() {
-    const conexionBD = ConexionBD.getInstance();
+   async consultarTodasEtiquetas() {
+    //const conexionBD = ConexionBD.getInstance();
 
-    const connection = await conexionBD.conectar();
+    const connection = await this.conexionBD.conectar();
     try {
       const [etiquetas] = await connection.query("SELECT * FROM etiquetas");
       return etiquetas;
@@ -70,16 +77,17 @@ class EtiquetaDAO {
     }
   }
 
-  static async consultarEtiquetaPorNombreIdUsuario(nombreEtiqueta, idUsuario) {
-    const conexionBD = ConexionBD.getInstance();
+   async consultarEtiquetaPorNombreIdUsuario(nombreEtiqueta, idUsuario) {
+   // const conexionBD = ConexionBD.getInstance();
 
-    const connection = await conexionBD.conectar();
+    const connection = await this.conexionBD.conectar();
     try {
       const [etiqueta] = await connection.query(
         "SELECT * FROM etiquetas WHERE nombre = ? AND id_usuario = ?",
         [nombreEtiqueta, idUsuario]
       );
       console.log("SE ENCONTRO4: ", etiqueta[0]);
+      this.etiquetaMapper.db
       return etiqueta[0];
     } catch (error) {
       console.log("Error al consultar etiqueta por nombre: ", error);
@@ -89,10 +97,10 @@ class EtiquetaDAO {
     }
   }
 
-  static async consultarEtiquetaPorId(idEtiqueta) {
-    const conexionBD = ConexionBD.getInstance();
+   async consultarEtiquetaPorId(idEtiqueta) {
+   // const conexionBD = ConexionBD.getInstance();
 
-    const connection = await conexionBD.conectar();
+    const connection = await this.conexionBD.conectar();
     try {
       const [etiqueta] = await connection.query(
         "SELECT * FROM etiquetas WHERE id_etiqueta = ?",
@@ -107,10 +115,10 @@ class EtiquetaDAO {
     }
   }
 
-  static async consultarEtiquetaPorIdUsuario(idUsuario) {
-    const conexionBD = ConexionBD.getInstance();
+   async consultarEtiquetaPorIdUsuario(idUsuario) {
+    //const conexionBD = ConexionBD.getInstance();
 
-    const connection = await conexionBD.conectar();
+    const connection = await this.conexionBD.conectar();
     try {
       const [etiquetas] = await connection.query(
         "SELECT * FROM etiquetas WHERE id_usuario = ?",

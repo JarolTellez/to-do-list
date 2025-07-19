@@ -1,9 +1,16 @@
-const ConexionBD = require("../utils/conexionBD");
+const ConexionBD = require("../config/conexionBD");
 
 class UsuarioDAO {
-  static async agregarUsuario(usuario) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+
+   constructor(usuarioMapper, conexionBD) {
+    this.usuarioMapper = usuarioMapper;
+    this.conexionBD = conexionBD;
+  }
+
+  
+   async agregarUsuario(usuario) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
     try {
       const [resultado] = await connection.query(
         "INSERT INTO usuarios (nombre_usuario, correo, contrasena, rol) VALUES (?, ?, ?, ?)",
@@ -19,9 +26,9 @@ class UsuarioDAO {
     }
   }
 
-  static async actualizarUsuario(usuario) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async actualizarUsuario(usuario) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
     try {
       await connection.query(
         "UPDATE usuarios SET nombre_usuario = ?, correo = ?, contrasena = ? WHERE id_usuario = ?",
@@ -41,9 +48,9 @@ class UsuarioDAO {
     }
   }
 
-  static async eliminarUsuario(idUsuario) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async eliminarUsuario(idUsuario) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
     try {
       await connection.query("DELETE FROM usuarios WHERE id_usuario = ?", [
         idUsuario,
@@ -56,9 +63,9 @@ class UsuarioDAO {
     }
   }
 
-  static async consultarTodosUsuario() {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async consultarTodosUsuario() {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
     try {
       const [rows] = await connection.query("SELECT * FROM usuarios");
       return rows;
@@ -70,9 +77,9 @@ class UsuarioDAO {
     }
   }
 
-  static async consultarUsuarioPorId(idUsuario) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async consultarUsuarioPorId(idUsuario) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
     try {
       const [rows] = await connection.query(
         "SELECT * FROM usuarios WHERE id_usuario = ?",
@@ -87,9 +94,9 @@ class UsuarioDAO {
     }
   }
 
-  static async consultarUsuarioPorNombre(nombreUsuario) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+   async consultarUsuarioPorNombre(nombreUsuario) {
+   // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
     try {
       const [rows] = await connection.query(
         "SELECT * FROM usuarios WHERE nombre_usuario = ?",
@@ -105,9 +112,9 @@ class UsuarioDAO {
   }
 
 
-static async consultarUsuarioPorNombreContrasena(nombreUsuario,contrasena) {
-  const conexionBD = ConexionBD.getInstance();
-  const connection = await conexionBD.conectar();
+ async consultarUsuarioPorNombreContrasena(nombreUsuario,contrasena) {
+  //const conexionBD = ConexionBD.getInstance();
+  const connection = await this.conexionBD.conectar();
   try {
     const [rows] = await connection.query(
       "SELECT * FROM usuarios WHERE nombre_usuario = ? AND contrasena = ?",
