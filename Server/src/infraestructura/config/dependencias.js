@@ -37,6 +37,7 @@ const EtiquetaDAO = require('../daos/EtiquetaDAO');
 const UsuarioDAO = require('../daos/UsuarioDAO');
 const TareaEtiquetaDAO = require("../daos/TareaEtiquetaDAO");
 const ServicioTarea = require('../../aplicacion/servicios/servicioTarea');
+const ServicioTareaEtiqueta = require("../../aplicacion/servicios/servicioTareaEtiqueta");
 const ServicioEtiqueta = require('../../aplicacion/servicios/servicioEtiqueta');
 const ServicioUsuario = require('../../aplicacion/servicios/servicioUsuario');
 const TareaFactory = require("../../dominio/fabricas/tareaFactory");
@@ -69,7 +70,8 @@ const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD);
 
 // Servicios
 const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
-const servicioTarea = new ServicioTarea(tareaDAO, tareaEtiquetaDAO, servicioEtiqueta);
+const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
+const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta);
 const servicioUsuario = new ServicioUsuario(usuarioDAO);
 
 // Controladores

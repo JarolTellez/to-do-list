@@ -57,7 +57,7 @@ class TareaDAO {
         ]
       );
 
-      console.log("desde dao",resultado);
+      //console.log("desde dao",resultado);
       return tarea;
     } catch (error) {
       logError('Error al actualizar una tarea:', error);
@@ -187,6 +187,7 @@ class TareaDAO {
     t.fecha_creacion AS tarea_fecha_creacion,
     t.ultima_actualizacion AS tarea_ultima_actualizacion,
     t.completada AS tarea_completada,
+    t.id_usuario AS tarea_id_usuario,  
     t.prioridad AS tarea_prioridad,
     GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
     GROUP_CONCAT(e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
@@ -210,8 +211,14 @@ GROUP BY
       if (tareas.length === 0) {
           console.log("No se encontraron tareas para el id proporcionado.");
       }
+      console.log("TAREAS CONSULTADAS DAO: ", tareas);
+      const tareasMappeadas= tareas.map((tarea) => {
+   
+    return this.tareaMapper.tareaEtiquetasDbJoinToDominio(tarea);
+   });
       
-      return tareas;
+      console.log("TAREA DESDE CONSULTAR TAREA POR IR DAO: ", tareasMappeadas);
+      return tareasMappeadas;
     } catch (error) {
       logError('Error al consultar tarea por idTarea:', error);
       // Lanzar una excepción personalizada

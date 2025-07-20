@@ -75,8 +75,11 @@ class Etiqueta {
     return {
       idEtiqueta: this.idEtiqueta,
       nombreEtiqueta: this.nombreEtiqueta,
+      descripcion: this.descripcion,
+      existente: this.existente,
+      eliminar: this.eliminar,
       idUsuario: this.idUsuario,
-      idTareaEtiqueta: this.idTareaEtiqueta
+      idTareaEtiqueta: this.idTareaEtiqueta,
     };
   }
 }

@@ -6,7 +6,12 @@ class TareaFactory{
      crear(tarea){
       
    
-    const procesarFecha = (fecha) => fecha ? new Date(fecha) : null;
+  //  const procesarFecha = (fecha) => fecha ? new Date(fecha) : null;
+const procesarFecha = (fecha) => {
+  if (!fecha) return null;
+  const d = new Date(fecha);
+  return isNaN(d.getTime()) ? null : d;
+};
 
 
     const nuevaTarea = new Tarea(
@@ -35,7 +40,12 @@ class TareaFactory{
     // };
   
     
-    const procesarFecha = (fecha) => fecha ? new Date(fecha) : null;
+    //const procesarFecha = (fecha) => fecha ? new Date(fecha) : null;
+      const procesarFecha = (fecha) => {
+    if (!fecha) return null;
+    const d = new Date(fecha);
+    return isNaN(d.getTime()) ? null : d;
+  };
 
     // const etiquetas = parametros.etiquetas.map(etiquetaData => {
     //   return new Etiqueta(

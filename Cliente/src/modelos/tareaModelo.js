@@ -50,4 +50,18 @@ export class Tarea {
       throw errores;
     }
   }
+
+    toJSON() {
+    return {
+      idTarea: this.idTarea,
+      nombre: this.nombre,
+      descripcion: this.descripcion,
+      fechaProgramada: this.fechaProgramada,
+      fechaUltimaActualizacion: this.fechaUltimaActualizacion,
+      completada: this.completada,
+      idUsuario: this.idUsuario,
+      prioridad: this.prioridad,
+      etiquetas: this.etiquetas,
+    };
+  }
 }

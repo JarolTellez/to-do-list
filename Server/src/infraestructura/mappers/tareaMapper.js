@@ -23,7 +23,7 @@ class TareaMapper {
       completada: tareaRequest.completada || false,
       idUsuario: tareaRequest.idUsuario,
       prioridad: tareaRequest.prioridad || null,
-      etiquetas // ← ya mapeadas como entidades
+      etiquetas //  ya mapeadas como entidades de dominio
     });
     } catch (error) {
       throw new Error("Mapeo fallido: " + error.message);

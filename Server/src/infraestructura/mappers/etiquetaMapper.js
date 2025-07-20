@@ -14,13 +14,26 @@ class EtiquetaMapper{
         return new Etiqueta(Id,nombre, descripcion, true, false, etiquetaIdUsuario, tareaEtiquetaId);
     }
 
-    requestToDominio(etiquetaRequest) {
+  //   requestToDominio(etiquetaRequest) {
+  //   return new Etiqueta(
+  //     etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
+  //     etiquetaRequest.nombreEtiqueta, 
+  //     etiquetaRequest.descripcion || null,
+  //     true,      
+  //     false,   
+  //     etiquetaRequest.idUsuario || etiquetaRequest.id_usuario,
+  //     etiquetaRequest.idTareaEtiqueta || null
+  //   );
+  
+  // }
+
+   requestToDominio(etiquetaRequest) {
     return new Etiqueta(
       etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
-      etiquetaRequest.nombre, 
+      etiquetaRequest.nombreEtiqueta, 
       etiquetaRequest.descripcion || null,
-      true,      
-      false,   
+      etiquetaRequest.existente,      
+      etiquetaRequest.eliminar,   
       etiquetaRequest.idUsuario || etiquetaRequest.id_usuario,
       etiquetaRequest.idTareaEtiqueta || null
     );
