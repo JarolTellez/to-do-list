@@ -16,6 +16,8 @@ export async function actualizarListaTareas() {
   const todasTareas = await consultarTareasUsuario(
     sessionStorage.getItem("idUsuario")
   );
+
+  console.log(" DESDE MENEJADOR: ", todasTareas);
   tareasCompletadas = todasTareas.tareasCompletadas;
   tareasPendientes = todasTareas.tareasPendientes;
   

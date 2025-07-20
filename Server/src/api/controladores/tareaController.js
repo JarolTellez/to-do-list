@@ -174,9 +174,12 @@ class TareaController {
   async actualizarTarea(req, res) {
     try {
      // const tarea = req.body;
-        const tarea = this.tareaMapper.requestToDominio(req.body);
+        const tareaMappeada = this.tareaMapper.requestToDominio(req.body);
+        console.log("RECIBA CONTROLLER: ", req.body);
+           console.log("RECIBida MAPEADA: ", tareaMappeada);
+
       //const tarea = this.tareaMapper.requestToDominio(req.body);
-      const tareaProcesada = await this.servicioTarea.actualizarTarea(tarea);
+      const tareaProcesada = await this.servicioTarea.actualizarTarea(tareaMappeada);
 
       return res.status(200).json({
         status: "success",

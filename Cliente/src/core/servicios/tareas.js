@@ -2,7 +2,7 @@ import {mapApiToTarea} from "../../mappers/tareaMapper.js";
 
 export async function agregarTarea(tareaNueva) {
   const urlTarea = "http://localhost:3000/tarea/";
-
+console.log("TAREA QUE SE MANDARA  AGUARDAR: ",tareaNueva);
   try {
     const response = await fetch(urlTarea, {
       method: "POST",
@@ -51,8 +51,20 @@ export async function consultarTareasUsuario(idUsuario){
 
     const respuesta=await response.json();
     if(response.ok){
-      console.log("DATA",respuesta.data.tareasPendientes);
-      return respuesta.data;
+      console.log("DATA RECIBIDA pendientes",respuesta.data.tareasPendientes);
+        
+      // const tareasPendientes=mapApiToTarea(respuesta.data.tareasPendientes);
+      const tareasPendientes = respuesta.data.tareasPendientes.map((tarea) => 
+  mapApiToTarea(tarea)
+);
+   
+      console.log("PENDIENTES MAPEADAS: ", tareasPendientes);
+       //  const tareasCompletadas=mapApiToTarea(respuesta.data.tareasPendientes);
+         const tareasCompletadas = respuesta.data.tareasCompletadas.map((tarea) => 
+  mapApiToTarea(tarea)
+);
+    //  return respuesta.data;
+    return {tareasPendientes, tareasCompletadas};
     }else {
       throw new Error(respuesta.mensaje);
     }
@@ -103,6 +115,7 @@ export async function actualizarTarea(tareaActualizada){
 
     const respuesta= await response.json();
 
+    console.log("DATOS RECIBIDOS DE LA API: ", respuesta.data);
     if(response.ok){
       return respuesta.data;
     }else{

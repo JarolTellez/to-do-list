@@ -5,8 +5,9 @@ const Etiqueta = require("../../dominio/entidades/Etiqueta");
 
 
 class ServicioEtiqueta{
-  constructor(etiquetaDAO){
+  constructor(etiquetaDAO, etiquetaMapper){
     this.etiquetaDAO = etiquetaDAO;
+    
   }
   // async agregarEtiquetas(etiquetas, idTarea, idUsuario) {
   //   try {
@@ -38,6 +39,15 @@ class ServicioEtiqueta{
   //   }
   // }
 
+    // async agregarTareaEtiqueta(idTarea, idEtiqueta) {
+  //   try {
+  //     return await tareaEtiquetaDAO.agregarTareaEtiqueta(idTarea, idEtiqueta);
+  //   } catch (error) {
+  //     console.log("Error al agregar la TareaEtiqueta: ", error);
+  //     throw error;
+  //   }
+  // }
+  
   async agregarEtiqueta(etiqueta) {
     try {
       const existe = await this.etiquetaDAO.consultarEtiquetaPorNombreIdUsuario(
@@ -56,42 +66,35 @@ class ServicioEtiqueta{
     }
   }
 
-  // async agregarTareaEtiqueta(idTarea, idEtiqueta) {
+
+
+  async consultarEtiquetasPorIdUsuario(idUsuario) {
+    return await etiquetaDAO.consultarEtiquetaPorIdUsuario(idUsuario);
+  }
+
+  // async eliminarEtiquetas(etiquetas) {
   //   try {
-  //     return await tareaEtiquetaDAO.agregarTareaEtiqueta(idTarea, idEtiqueta);
+  //     for (const etiqueta of etiquetas) {
+  //       await  this.tareaEtiquetaDAO.eliminarTareaEtiqueta(etiqueta.idTareaEtiqueta);
+  //     }
   //   } catch (error) {
-  //     console.log("Error al agregar la TareaEtiqueta: ", error);
+  //     console.error("Error al eliminar tareaEtiqueta: ", error);
   //     throw error;
   //   }
   // }
 
-  async consultarEtiquetasPorIdUsuario(idUsuario) {
-    return await this.etiquetaDAO.consultarEtiquetaPorIdUsuario(idUsuario);
-  }
-
-  async eliminarEtiquetas(etiquetas) {
-    try {
-      for (const etiqueta of etiquetas) {
-        await  tareaEtiquetaDAO.eliminarTareaEtiqueta(etiqueta.idTareaEtiqueta);
-      }
-    } catch (error) {
-      console.error("Error al eliminar tareaEtiqueta: ", error);
-      throw error;
-    }
-  }
-
-  async eliminarEtiquetasPorIdTarea(idTarea) {
-    try {
-      const etiquetas = await tareaEtiquetaDAO.consultarTareaEtiquetaPorIdTarea(idTarea);
-      if (etiquetas && etiquetas.length > 0) {
-        return await tareaEtiquetaDAO.eliminarTareaEtiquetaPorIdTarea(idTarea);
-      }
-      return 0;
-    } catch (error) {
-      console.error("Error al eliminar tareaEtiqueta: ", error);
-      throw error;
-    }
-  }
+  // async eliminarEtiquetasPorIdTarea(idTarea) {
+  //   try {
+  //     const etiquetas = await tareaEtiquetaDAO.consultarTareaEtiquetaPorIdTarea(idTarea);
+  //     if (etiquetas && etiquetas.length > 0) {
+  //       return await tareaEtiquetaDAO.eliminarTareaEtiquetaPorIdTarea(idTarea);
+  //     }
+  //     return 0;
+  //   } catch (error) {
+  //     console.error("Error al eliminar tareaEtiqueta: ", error);
+  //     throw error;
+  //   }
+  // }
 
   async obtenerEtiquetaPorNombre(nombreEtiqueta) {
     try {

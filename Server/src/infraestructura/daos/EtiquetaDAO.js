@@ -124,7 +124,9 @@ class EtiquetaDAO {
         "SELECT * FROM etiquetas WHERE id_usuario = ?",
         [idUsuario]
       );
-      return etiquetas;
+      const tareasMapeadas= etiquetas.map(etiqueta => this.etiquetaMapper.dbToDominio(etiqueta));
+     // return etiquetas;
+     return tareasMapeadas;
     } catch (error) {
       console.error("Error al consultar las etiquetas por idUsuario: ", error);
       throw new Error(

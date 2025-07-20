@@ -13,6 +13,8 @@ import { rendersTareas } from "../../presentacion/componentes/tareaRender.js";
 import { rendersMensajes } from "../../presentacion/componentes/mensajesRender.js";
 import { etiquetasSeleccionadas, componentesEtiquetas } from "../../presentacion/componentes/etiquetaRender.js";
 import { botonPendientesChecked, actualizarListas } from "../manejadores/filtrosManejador.js";
+import { Tarea } from "../../modelos/tareaModelo.js";
+import {mapInputToTarea} from "../../mappers/tareaMapper.js";
 
 document.addEventListener("DOMContentLoaded", async function () {
   const tituloTarea = document.querySelector(".tituloTarea");
@@ -147,18 +149,38 @@ document.addEventListener("DOMContentLoaded", async function () {
     cancelar();
   }
 
+  // async function mostrarDetalleTarea(event) {
+  //   const tareaElemento = event.target.closest(".principalTarea");
+  //   const idBuscado = tareaElemento.id.replace("tarea-", "");
+  //   event.stopPropagation();
+    
+  //   const tareaDetalle = tareasPendientes.find(t => t.idTarea == idBuscado);
+  //   if (!tareaDetalle) return;
+    
+  //   configurarModalParaActualizar();
+  //   rendersTareas.mostrarModalDetalleTarea(modal, tareaDetalle);
+  //   etiquetasParaActualizar = [...etiquetasSeleccionadas];
+  // }
   async function mostrarDetalleTarea(event) {
-    const tareaElemento = event.target.closest(".principalTarea");
-    const idBuscado = tareaElemento.id.replace("tarea-", "");
-    event.stopPropagation();
-    
-    const tareaDetalle = tareasPendientes.find(t => t.idTarea == idBuscado);
-    if (!tareaDetalle) return;
-    
-    configurarModalParaActualizar();
-    rendersTareas.mostrarModalDetalleTarea(modal, tareaDetalle);
-    etiquetasParaActualizar = [...etiquetasSeleccionadas];
+  const tareaElemento = event.target.closest(".principalTarea");
+  const idBuscado = tareaElemento.id.replace("tarea-", "");
+  event.stopPropagation();
+  
+  const tareaDetalle = tareasPendientes.find(t => t.idTarea == idBuscado);
+  if (!tareaDetalle) return;
+  
+  // Limpiar y cargar las etiquetas existentes
+  etiquetasSeleccionadas.length = 0;
+  if (tareaDetalle.etiquetas && tareaDetalle.etiquetas.length > 0) {
+    tareaDetalle.etiquetas.forEach(etiqueta => {
+      etiquetasSeleccionadas.push(etiqueta);
+    });
   }
+  
+  configurarModalParaActualizar();
+  rendersTareas.mostrarModalDetalleTarea(modal, tareaDetalle);
+  componentesEtiquetas.renderizarEtiquetas(listaEtiquetas); // Asegurar que se rendericen
+}
 
   function configurarModalParaActualizar() {
     if (!btnAgregarModal.classList.contains("actualizarModal")) {
@@ -208,9 +230,10 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   async function actualizarTareaListener() {
     const tareaActualizar = construirObjetoTareaActualizar();
-    console.log("objeto:", tareaActualizar);
     
+    console.log("TAREA A ACTUALIZAR DESDE LISTENER: ", tareaActualizar);
     const tareaActualizada = await manejarActualizarTarea(tareaActualizar);
+    console.log("DESDE LISTENER YA PROCESADA: ", tareaActualizada);
     await actualizarEstadisticasYRender();
     
     actualizarEtiquetasSeleccionadas(tareaActualizada);
@@ -238,26 +261,50 @@ document.addEventListener("DOMContentLoaded", async function () {
     };
   }
 
-  function construirObjetoTareaActualizar() {
-    const prioridad = document.querySelector('input[name="prioridad"]:checked');
-    const valorPrioridad = prioridad ? prioridad.value : null;
-    const fechaProgramadaValue = fechaProgramadaTarea.value ? fechaProgramadaTarea.value : null;
-    const fechaProgramadaProcesada = fechaProgramadaValue ? fechaProgramadaValue.replace('T', ' ') + ':00' : null;
- console.log("ACTUALIZAR ETIQUETAS", etiquetasParaActualizar, etiquetasSeleccionadas);
-    return {
-      idTarea: tituloTarea.getAttribute("data-id"),
-      nombre: tituloTarea.value,
-      descripcion: descripcionTarea.value,
-      fechaProgramada: fechaProgramadaProcesada,
-      fechaUltimaActualizacion: convertirADatetimeMysql(new Date()),
-      idUsuario: sessionStorage.getItem("idUsuario"),
-      prioridad: valorPrioridad,
-      etiquetasAnteriores: etiquetasParaActualizar,
-      etiquetasNuevas: etiquetasSeleccionadas,
-    };
-  }
+//   function construirObjetoTareaActualizar() {
+//     const prioridad = document.querySelector('input[name="prioridad"]:checked');
+//     const valorPrioridad = prioridad ? prioridad.value : null;
+//     const fechaProgramadaValue = fechaProgramadaTarea.value ? fechaProgramadaTarea.value : null;
+//     const fechaProgramadaProcesada = fechaProgramadaValue ? fechaProgramadaValue.replace('T', ' ') + ':00' : null;
+//  //console.log("ACTUALIZAR ETIQUETAS", etiquetasParaActualizar, etiquetasSeleccionadas);
+      
+//     return {
+//       idTarea: tituloTarea.getAttribute("data-id"),
+//       nombre: tituloTarea.value,
+//       descripcion: descripcionTarea.value,
+//       fechaProgramada: fechaProgramadaProcesada,
+//       fechaUltimaActualizacion: convertirADatetimeMysql(new Date()),
+//       idUsuario: sessionStorage.getItem("idUsuario"),
+//       prioridad: valorPrioridad,
+//       etiquetasAnteriores: etiquetasParaActualizar,
+//       etiquetasNuevas: etiquetasSeleccionadas,
+//     };
+
+
+//   }
+function construirObjetoTareaActualizar() {
+  console.log("ETIQUETAS SELECCIONADAS DESDE TAREA LISTENER: ", etiquetasSeleccionadas);
+  const prioridad = document.querySelector('input[name="prioridad"]:checked');
+  const valorPrioridad = prioridad ? prioridad.value : null;
+  const fechaProgramadaValue = fechaProgramadaTarea.value || null;
+  const fechaProgramadaProcesada = fechaProgramadaValue
+    ? fechaProgramadaValue.replace("T", " ") + ":00"
+    : null;
+
+  return {
+    idTarea: tituloTarea.getAttribute("data-id"),
+    nombre: tituloTarea.value,
+    descripcion: descripcionTarea.value,
+    fechaProgramada: fechaProgramadaProcesada,
+    fechaUltimaActualizacion: convertirADatetimeMysql(new Date()),
+    idUsuario: sessionStorage.getItem("idUsuario"),
+    prioridad: valorPrioridad,
+    etiquetas: [...etiquetasSeleccionadas] // Copia de las etiquetas actuales
+  };
+}
 
   function actualizarEtiquetasSeleccionadas(tareaActualizada) {
+  
     etiquetasSeleccionadas.length = 0;
     tareaActualizada.etiquetas.forEach(element => {
       etiquetasSeleccionadas.push(element);
@@ -274,6 +321,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   function cancelar() {
     limpiarCampos();
+    // formTarea.reset();
     btnAgregarModal.classList.remove("actualizarModal");
     modal.style.display = "none";
   }

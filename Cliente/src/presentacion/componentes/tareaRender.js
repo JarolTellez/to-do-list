@@ -1,4 +1,5 @@
 import { componentesEtiquetas } from "../componentes/etiquetaRender.js";
+import { formatearFechaRender } from "../../core/utils/formatearFecha.js";
 //let timeoutId = null; 
 export const rendersTareas = {
   renderizarTareas(componenteTareas, listaTareas, limpiar,mensaje) {
@@ -21,7 +22,7 @@ export const rendersTareas = {
          <div class="contenedorTarea" value="${tareaElemento.idTarea}">
           <h3 class="scrollTituloDescripcion">${tareaElemento.nombre}</h3>
            <p class="fechaActualizada"> 
-           ${tareaElemento.fechaProgramada?`<span class='calendario'>📅</span>`+tareaElemento.fechaProgramada.replace(/:\d{2}\s/, ' '):""}</p>
+         ${tareaElemento.fechaProgramada?`<span class='calendario'>📅</span>`+ formatearFechaRender(tareaElemento.fechaProgramada):""}</p>
            ${`<p class="scrollTituloDescripcion descripcionRender ${
              !tareaElemento.descripcion ? "hidden" : "" } textTarea">
      ${tareaElemento.descripcion || ""}
@@ -89,6 +90,7 @@ export const rendersTareas = {
   },
 
   actualizarRenderTarea(componenteTareas, tareaActualizada) {
+    console.log("TAREA ACTUALIZAAAAA",tareaActualizada.idTarea)
     // Encuentra el contenedor de la tarea por ID
     const tareaDiv = componenteTareas.querySelector(
       `#tarea-${tareaActualizada.idTarea}`
@@ -173,6 +175,7 @@ export const rendersTareas = {
   },
 
   mostrarModalDetalleTarea(modalDetalle, tarea) {
+    console.log("EJECUTANDOSE RENDER MODAL DETALLE TAREA")
     const inputTituloDetalle = modalDetalle.querySelector(".tituloTarea");
     const descripcionDetalle = modalDetalle.querySelector(".descripcionTarea");
     const fechaInput = modalDetalle.querySelector("#fechaInputModal");
