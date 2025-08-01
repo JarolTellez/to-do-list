@@ -271,7 +271,7 @@ async actualizarTarea(tarea) {
 
   async agregarTareaEtiqueta(idTarea, idEtiqueta) {
     try {
-      return await this.tareaEtiquetaDAO.agregarTareaEtiqueta(idTarea, idEtiqueta);
+      return await this.servicioTareaEtiqueta.guardarTareaEtiqueta(idTarea, idEtiqueta);
     } catch (error) {
       console.log("Error al agregar la TareaEtiqueta: ", error);
       throw error;
