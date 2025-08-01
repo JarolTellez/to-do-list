@@ -69,7 +69,7 @@ class ServicioEtiqueta{
 
 
   async consultarEtiquetasPorIdUsuario(idUsuario) {
-    return await etiquetaDAO.consultarEtiquetaPorIdUsuario(idUsuario);
+    return await this.etiquetaDAO.consultarEtiquetaPorIdUsuario(idUsuario);
   }
 
   // async eliminarEtiquetas(etiquetas) {
