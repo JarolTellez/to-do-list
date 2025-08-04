@@ -91,40 +91,86 @@ class ServicioTarea {
   //  // return this.procesarTareasConEtiquetas(tareaConEtiquetas)[0];
   // //  return tareaAgregada;
   // }
-async agregarTarea(tarea) {
+// async agregarTarea(tarea) {
+//   console.log("TAREA A GAREGAR: ", tarea);
   
 
-  const tareaAgregada = await this.tareaDAO.agregarTarea(tarea);
+//   const tareaAgregada = await this.tareaDAO.agregarTarea(tarea);
 
-  if (tarea.etiquetas && tarea.etiquetas.length > 0) {
-    for (const etiqueta of tarea.etiquetas) {
-      let idEtiqueta;
+//   if (tarea.etiquetas && tarea.etiquetas.length > 0) {
+//     for (const etiqueta of tarea.etiquetas) {
+//       let idEtiqueta;
 
-      if (etiqueta.idEtiqueta) {
-        // Ya viene con ID
-        idEtiqueta = etiqueta.idEtiqueta;
-      } else {
-        // Crear objeto Etiqueta y dejar que el servicio maneje si ya existe o no
-        const etiquetaNueva = new Etiqueta(
-          null,
-          etiqueta.nombre,
-          etiqueta.descripcion,
-          false,
-          false,
-          tarea.idUsuario,
-          null
-        );
+//       if (etiqueta.idEtiqueta) {
+//         // Ya viene con ID
+//         idEtiqueta = etiqueta.idEtiqueta;
+//       } else {
+//         // Crear objeto Etiqueta y dejar que el servicio maneje si ya existe o no, idEtiqueta y idTareaEtiqueta 
+//         const etiquetaNueva = new Etiqueta(
+//           etiqueta.idEtiqueta,
+//           etiqueta.nombreEtiqueta,
+//           etiqueta.descripcion,
+//           etiqueta.existente,
+//           etiqueta.eliminar,
+//           tarea.idUsuario,
+//           etiqueta.idTareaEtiqueta
+//         );
 
-        const etiquetaGuardada = await this.servicioEtiqueta.agregarEtiqueta(etiquetaNueva);
-        idEtiqueta = etiquetaGuardada.idEtiqueta;
+//         const etiquetaGuardada = await this.servicioEtiqueta.agregarEtiqueta(etiquetaNueva);
+//         idEtiqueta = etiquetaGuardada.idEtiqueta;
+//       }
+
+//        try {
+//       return await this.servicioTareaEtiqueta.guardarTareaEtiqueta(idTarea, idEtiqueta);
+//     } catch (error) {
+//       console.log("Error al agregar la TareaEtiqueta: ", error);
+//       throw error;
+//     }
+//     }
+//   }
+
+//   return tareaAgregada;
+// }
+async agregarTarea(tarea) {
+
+  try {
+    const tareaAgregada = await this.tareaDAO.agregarTarea(tarea);
+
+    if (Array.isArray(tarea.etiquetas)) {
+      for (const etiqueta of tarea.etiquetas) {
+          console.log("AGREGAR: ", etiqueta.nombreEtiqueta);
+        let idEtiqueta;
+
+        if (etiqueta.idEtiqueta) {
+          idEtiqueta = etiqueta.idEtiqueta;
+        } else {
+             const nuevaEtiqueta = new Etiqueta({
+            nombreEtiqueta: etiqueta.nombreEtiqueta,
+            descripcion: etiqueta.descripcion,
+            existente: etiqueta.existente,
+            eliminar: etiqueta.eliminar,
+            idUsuario: tarea.idUsuario
+          });
+         
+
+         
+
+          const etiquetaGuardada = await this.servicioEtiqueta.agregarEtiqueta(nuevaEtiqueta);
+          idEtiqueta = etiquetaGuardada.idEtiqueta;
+        }
+
+        await this.servicioTareaEtiqueta.guardarTareaEtiqueta(tareaAgregada.idTarea, idEtiqueta);
       }
-
-      await this.agregarTareaEtiqueta(tareaAgregada.idTarea, idEtiqueta);
     }
-  }
 
-  return tareaAgregada;
+    return tareaAgregada;
+
+  } catch (error) {
+    console.error("Error al agregar tarea:", error);
+    throw new Error("No se pudo agregar la tarea");
+  }
 }
+
 // async actualizarTarea(tarea) {
 //   console.log("ACTUALIZAR TAREA: ", tarea);
 
@@ -235,15 +281,14 @@ async actualizarTarea(tarea) {
 
     // 2.2 Crear nueva etiqueta si no existe
     if (!etiqueta.existente) {
-      const nuevaEtiqueta = new Etiqueta(
-        null,
-        etiqueta.nombreEtiqueta,
-        etiqueta.descripcion,
-        false,
-        false,
-        etiqueta.idUsuario,
-        null
-      );
+       const nuevaEtiqueta = new Etiqueta({
+            nombreEtiqueta: etiqueta.nombreEtiqueta,
+            descripcion: etiqueta.descripcion,
+            existente: etiqueta.existente,
+            eliminar: etiqueta.eliminar,
+            idUsuario: tarea.idUsuario
+          });
+         
 
       const etiquetaCreada = await this.servicioEtiqueta.agregarEtiqueta(nuevaEtiqueta);
 
@@ -269,14 +314,14 @@ async actualizarTarea(tarea) {
 
 
 
-  async agregarTareaEtiqueta(idTarea, idEtiqueta) {
-    try {
-      return await this.servicioTareaEtiqueta.guardarTareaEtiqueta(idTarea, idEtiqueta);
-    } catch (error) {
-      console.log("Error al agregar la TareaEtiqueta: ", error);
-      throw error;
-    }
-  }
+  // async agregarTareaEtiqueta(idTarea, idEtiqueta) {
+  //   try {
+  //     return await this.servicioTareaEtiqueta.guardarTareaEtiqueta(idTarea, idEtiqueta);
+  //   } catch (error) {
+  //     console.log("Error al agregar la TareaEtiqueta: ", error);
+  //     throw error;
+  //   }
+  // }
 
   async eliminarTarea(idTarea, idUsuario) {
     const tareaExistente = await this.tareaDAO.consultarTareaPorIdTareaUsuario(idTarea, idUsuario);

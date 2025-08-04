@@ -28,15 +28,15 @@
 
 
 class Etiqueta {
-  constructor(
+  constructor({
     idEtiqueta = null,
     nombreEtiqueta,
     descripcion,
-    existente = true,
+    existente = false,
     eliminar = false,
     idUsuario,
     idTareaEtiqueta = null, 
-  ) {
+  }) {
     this.idEtiqueta = idEtiqueta;
     this.nombreEtiqueta = nombreEtiqueta;
     this.descripcion = descripcion;
@@ -44,6 +44,7 @@ class Etiqueta {
     this.eliminar = eliminar;
     this.idUsuario = idUsuario;
     this.idTareaEtiqueta = idTareaEtiqueta;
+
 
     
     this.validar();
@@ -53,14 +54,10 @@ class Etiqueta {
     const errores = [];
     
     // Validación más robusta pero con los mismos campos
-    if (typeof this.nombreEtiqueta !== 'string' || this.nombreEtiqueta.trim() === '') {
+    if ( this.nombreEtiqueta.trim() === '') {
       errores.push({ campo: 'nombreEtiqueta', mensaje: 'El nombre de la etiqueta es obligatorio y debe ser texto' });
     } else if (this.nombreEtiqueta.length > 30) {
       errores.push({ campo: 'nombreEtiqueta', mensaje: 'El nombre no puede exceder 30 caracteres' });
-    }
-    
-    if (!this.idUsuario) {
-      errores.push({ campo: 'idUsuario', mensaje: "Falta el id del usuario en la etiqueta" });
     }
     
     if (errores.length > 0) {

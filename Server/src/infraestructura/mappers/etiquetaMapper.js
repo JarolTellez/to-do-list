@@ -1,18 +1,33 @@
 const Etiqueta = require("../../dominio/entidades/Etiqueta");
 
 class EtiquetaMapper{
-    dbToDominio(etiqueta){
-        const {id_etiqueta, nombre, descripcion, id_usuario}= etiqueta;
+   dbToDominio(etiqueta) {
+  const { id_etiqueta, nombre, descripcion, id_usuario } = etiqueta;
 
-        return new Etiqueta(id_etiqueta, nombre, descripcion, true, false, id_usuario,null);
+  return new Etiqueta({
+    idEtiqueta: id_etiqueta,
+    nombreEtiqueta: nombre,
+    descripcion,
+    existente: true,
+    eliminar: false,
+    idUsuario: id_usuario,
+    idTareaEtiqueta: null
+  });
+}
 
-    }
 
-   dbConsultaJoinToDominio(Id,nombre,descripcion, etiquetaIdUsuario, tareaEtiquetaId){
-        
-        console.log("TIENE ID USUARIO: ",etiquetaIdUsuario );
-        return new Etiqueta(Id,nombre, descripcion, true, false, etiquetaIdUsuario, tareaEtiquetaId);
-    }
+  dbConsultaJoinToDominio(Id, nombre, descripcion, etiquetaIdUsuario, tareaEtiquetaId) {
+  console.log("TIENE ID USUARIO: ", etiquetaIdUsuario);
+  return new Etiqueta({
+    idEtiqueta: Id,
+    nombreEtiqueta: nombre,
+    descripcion: descripcion,
+    existente: true,
+    eliminar: false,
+    idUsuario: etiquetaIdUsuario,
+    idTareaEtiqueta: tareaEtiquetaId
+  });
+}
 
   //   requestToDominio(etiquetaRequest) {
   //   return new Etiqueta(
@@ -28,15 +43,15 @@ class EtiquetaMapper{
   // }
 
    requestToDominio(etiquetaRequest) {
-    return new Etiqueta(
-      etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
-      etiquetaRequest.nombreEtiqueta, 
-      etiquetaRequest.descripcion || null,
-      etiquetaRequest.existente,      
-      etiquetaRequest.eliminar,   
-      etiquetaRequest.idUsuario || etiquetaRequest.id_usuario,
-      etiquetaRequest.idTareaEtiqueta || null
-    );
+    return new Etiqueta({
+      idEtiqueta: etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
+      nombreEtiqueta: etiquetaRequest.nombreEtiqueta, 
+      desripcion: etiquetaRequest.descripcion || null,
+      existente: etiquetaRequest.existente,      
+      eliminar: etiquetaRequest.eliminar,   
+      idUsuario: etiquetaRequest.idUsuario || etiquetaRequest.id_usuario,
+      idTareaEtiqueta: etiquetaRequest.idTareaEtiqueta || null
+   });
   
   }
 }
