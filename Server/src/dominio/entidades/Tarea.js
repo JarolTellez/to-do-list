@@ -47,7 +47,7 @@
 
 
 class Tarea{
-    constructor(idTarea=null,nombre,descripcion,fechaProgramada=null,fechaCreacion=null,fechaUltimaActualizacion=null,completada=false,idUsuario,prioridad=null, etiquetas=[]){
+    constructor({idTarea=null,nombre,descripcion,fechaProgramada=null,fechaCreacion=null,fechaUltimaActualizacion=null,completada=false,idUsuario,prioridad=null, etiquetas=[]}){
         this.idTarea=idTarea;
         this.nombre=nombre;
         this.descripcion=descripcion;
