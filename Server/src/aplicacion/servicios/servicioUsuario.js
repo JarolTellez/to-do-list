@@ -49,15 +49,15 @@ class ServicioUsuario{
     const fechaCreacion = new Date();
     const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
-    const refreshTokenEntidad = new RefreshToken(
-      null,
-      usuarioEncontrado.id_usuario,
-      refreshToken,
-      fechaCreacion,
-      fechaExpiracion,
-      false
-    );
-
+    const refreshTokenEntidad = new RefreshToken({
+      idRefreshToken: null,
+      idUsuario: usuarioEncontrado.id_usuario,
+      token: refreshToken,
+      fechaCreacion: fechaCreacion,
+      fechaExpiracion: fechaExpiracion,
+      revocado: false
+   });
+// HABILOTAR DESPUES
     //await RefreshTokensDAO.guardarRefreshToken(refreshTokenEntidad);
 
     const usuarioRespuesta = {

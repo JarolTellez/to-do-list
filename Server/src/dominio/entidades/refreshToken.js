@@ -1,5 +1,5 @@
 class RefreshToken{
-    constructor(idRefreshToken=null, idUsuario, token, fechaCreacion, fechaExpiracion, revocado ){
+    constructor({idRefreshToken=null, idUsuario, token, fechaCreacion, fechaExpiracion, revocado }){
         this.idRefreshToken=idRefreshToken;
         this.idUsuario=idUsuario;
         this.token=token;

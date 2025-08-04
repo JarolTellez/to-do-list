@@ -1,7 +1,7 @@
 const { error } = require("winston");
 
 class Usuario{
-    constructor(idUsuario=null, nombreUsuario, correo, contrasena, rol="usuario") {
+    constructor({idUsuario=null, nombreUsuario, correo, contrasena, rol="usuario"}) {
         this.idUsuario = idUsuario;
         this.nombreUsuario = nombreUsuario;
         this.correo = correo;
