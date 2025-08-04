@@ -49,7 +49,7 @@ class TareaMapper {
     }
   }
 
-   tareaEtiquetasDbJoinToDominio(tarea){
+   tareaConEtiquetasDbToDominio(tarea){
     //  return tareas.map((tarea) => {
      
      const etiquetasIds = tarea.etiquetas_ids ? tarea.etiquetas_ids.split(",") : [];

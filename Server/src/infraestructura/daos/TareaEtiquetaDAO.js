@@ -26,8 +26,8 @@ class TareaEtiquetaDAO {
   }
 
    async actualizarTareaEtiqueta(tareaEtiqueta) {
-    const conexionBD = ConexionBD.getInstance();
-    const connection = await conexionBD.conectar();
+    // const conexionBD = ConexionBD.getInstance();
+    const connection = await this.conexionBD.conectar();
 
     try {
       await connection.query(

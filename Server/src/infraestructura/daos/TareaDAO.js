@@ -214,7 +214,7 @@ GROUP BY
       console.log("TAREAS CONSULTADAS DAO: ", tareas);
       const tareasMappeadas= tareas.map((tarea) => {
    
-    return this.tareaMapper.tareaEtiquetasDbJoinToDominio(tarea);
+    return this.tareaMapper.tareaConEtiquetasDbToDominio(tarea);
    });
       
       console.log("TAREA DESDE CONSULTAR TAREA POR IR DAO: ", tareasMappeadas);
@@ -319,7 +319,7 @@ GROUP BY
  
    const tareasMappeadas= tareas.map((tarea) => {
 
-    return this.tareaMapper.tareaEtiquetasDbJoinToDominio(tarea);
+    return this.tareaMapper.tareaConEtiquetasDbToDominio(tarea);
    });
 
    // return tareas;
@@ -399,7 +399,7 @@ GROUP BY
 , [idUsuario]);
 const tareasMappeadas= tareas.map((tarea) => {
    
-    return this.tareaMapper.tareaEtiquetasDbJoinToDominio(tarea);
+    return this.tareaMapper.tareaConEtiquetasDbToDominio(tarea);
    });
    // return tareas;
    return tareasMappeadas;
