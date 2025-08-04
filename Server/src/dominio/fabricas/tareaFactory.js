@@ -14,18 +14,18 @@ const procesarFecha = (fecha) => {
 };
 
 
-    const nuevaTarea = new Tarea(
-      tarea.idTarea || null,
-      tarea.nombre,
-      tarea.descripcion || null,
-      procesarFecha(tarea.fechaProgramada),
-      procesarFecha(tarea.fechaCreacion) || new Date(),
-      procesarFecha(tarea.fechaUltimaActualizacion) || new Date(),
-      tarea.completada,
-      tarea.idUsuario,
-      tarea.prioridad || null,
-      tarea.etiquetas
-    );
+    const nuevaTarea = new Tarea({
+      idTarea: tarea.idTarea || null,
+      nombre: tarea.nombre,
+      descripcion: tarea.descripcion || null,
+      fechaProgramada: procesarFecha(tarea.fechaProgramada),
+      fechaCreacion: procesarFecha(tarea.fechaCreacion) || new Date(),
+      fechaUltimaActualizacion: procesarFecha(tarea.fechaUltimaActualizacion) || new Date(),
+      completada: tarea.completada,
+      idUsuario: tarea.idUsuario,
+      prioridad: tarea.prioridad || null,
+      etiquetas: tarea.etiquetas
+     });
 
     nuevaTarea.validar();
     return nuevaTarea;
@@ -56,18 +56,18 @@ const procesarFecha = (fecha) => {
     //   );
     // });
 
-    const nuevaTarea = new Tarea(
-      tarea.tarea_id || null,
-      tarea.tarea_nombre,
-      tarea.tarea_descripcion || null,
-      procesarFecha(tarea.tarea_fecha_programada),
-      procesarFecha(tarea.tarea_fecha_creacion) || new Date(),
-      procesarFecha(tarea.tarea_ultima_actualizacion) || new Date(),
-      tarea.tarea_completada,
-      tarea.tarea_id_usuario,
-      tarea.tarea_prioridad || null,
+    const nuevaTarea = new Tarea({
+      idTarea: tarea.tarea_id || null,
+      nombre: tarea.tarea_nombre,
+      descripcion: tarea.tarea_descripcion || null,
+      fechaProgramada: procesarFecha(tarea.tarea_fecha_programada),
+      fechaCreacion: procesarFecha(tarea.tarea_fecha_creacion) || new Date(),
+      fechaUltimaActualizacion: procesarFecha(tarea.tarea_ultima_actualizacion) || new Date(),
+      completada: tarea.tarea_completada,
+      idUsuario: tarea.tarea_id_usuario,
+      prioridad: tarea.tarea_prioridad || null,
       etiquetas
-    );
+     });
 
       
 

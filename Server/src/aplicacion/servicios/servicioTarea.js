@@ -436,18 +436,18 @@ async actualizarTarea(tarea) {
         idTareaEtiqueta: tarea_etiqueta_ids[index]
       }));
 
-      const nuevaTarea = new Tarea(
-        tarea.tarea_id,
-        tarea.tarea_nombre,
-        tarea.tarea_descripcion || "",
-        tarea.tarea_fecha_programada ? new Date(tarea.tarea_fecha_programada).toLocaleString() : null,
-        tarea.tarea_fecha_creacion ? new Date(tarea.tarea_fecha_creacion).toLocaleString() : new Date(),
-        tarea.tarea_ultima_actualizacion ? new Date(tarea.tarea_ultima_actualizacion).toLocaleString() : new Date(),
-        tarea.tarea_completada || false,
-        tarea.etiquetas_usuarios ? tarea.etiquetas_usuarios.split(",")[0] : null,
-        tarea.tarea_prioridad
-      );
-
+      const nuevaTarea = new Tarea({
+       idTarea: tarea.tarea_id,
+       nombre: tarea.tarea_nombre,
+       descripcion: tarea.tarea_descripcion || "",
+       fechaProgramada: tarea.tarea_fecha_programada ? new Date(tarea.tarea_fecha_programada).toLocaleString() : null,
+       fechaCreacion: tarea.tarea_fecha_creacion ? new Date(tarea.tarea_fecha_creacion).toLocaleString() : new Date(),
+       fechaUltimaActualizacion: tarea.tarea_ultima_actualizacion ? new Date(tarea.tarea_ultima_actualizacion).toLocaleString() : new Date(),
+       completada: tarea.tarea_completada || false,
+       idUsuario: tarea.etiquetas_usuarios ? tarea.etiquetas_usuarios.split(",")[0] : null,
+       prioridad: tarea.tarea_prioridad
+    });
+    
       nuevaTarea.etiquetas = etiquetas;
       return nuevaTarea;
     });
