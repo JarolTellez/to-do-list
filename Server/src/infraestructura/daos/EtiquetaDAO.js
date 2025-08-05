@@ -1,5 +1,3 @@
-//const ConexionBD = require("../utils/conexionBD");
-
 class EtiquetaDAO {
 
    constructor(etiquetaMapper, conexionBD) {
@@ -8,7 +6,6 @@ class EtiquetaDAO {
   }
 
    async agregarEtiqueta(etiqueta) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
 
     try {
@@ -30,7 +27,6 @@ class EtiquetaDAO {
   }
 
    async actualizarEtiqueta(etiqueta) {
-  //  const conexionBD = ConexionBD.getInstance();
 
     const connection = await this.conexionBD.conectar();
     try {
@@ -47,7 +43,6 @@ class EtiquetaDAO {
   }
 
    async eliminarEtiqueta(idEtiqueta) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
 
     try {
@@ -63,7 +58,6 @@ class EtiquetaDAO {
   }
 
    async consultarTodasEtiquetas() {
-    //const conexionBD = ConexionBD.getInstance();
 
     const connection = await this.conexionBD.conectar();
     try {
@@ -78,7 +72,7 @@ class EtiquetaDAO {
   }
 
    async consultarEtiquetaPorNombreIdUsuario(nombreEtiqueta, idUsuario) {
-   // const conexionBD = ConexionBD.getInstance();
+   
 
     const connection = await this.conexionBD.conectar();
     try {
@@ -98,7 +92,6 @@ class EtiquetaDAO {
   }
 
    async consultarEtiquetaPorId(idEtiqueta) {
-   // const conexionBD = ConexionBD.getInstance();
 
     const connection = await this.conexionBD.conectar();
     try {
@@ -116,7 +109,6 @@ class EtiquetaDAO {
   }
 
    async consultarEtiquetaPorIdUsuario(idUsuario) {
-    //const conexionBD = ConexionBD.getInstance();
 
     const connection = await this.conexionBD.conectar();
     try {

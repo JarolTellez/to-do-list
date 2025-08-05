@@ -7,7 +7,6 @@ class RefreshTokensDAO{
   }
 
      async guardarRefreshToken(refreshToken) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
     try {
       const [nuevoRefreshToken] = await connection.query(

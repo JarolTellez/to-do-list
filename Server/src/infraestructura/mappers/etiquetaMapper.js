@@ -30,18 +30,6 @@ class EtiquetaMapper{
   });
 }
 
-  //   requestToDominio(etiquetaRequest) {
-  //   return new Etiqueta(
-  //     etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
-  //     etiquetaRequest.nombreEtiqueta, 
-  //     etiquetaRequest.descripcion || null,
-  //     true,      
-  //     false,   
-  //     etiquetaRequest.idUsuario || etiquetaRequest.id_usuario,
-  //     etiquetaRequest.idTareaEtiqueta || null
-  //   );
-  
-  // }
 // Mapea etiqueta recibida de los request del cliente a entidad de dominio del backend
    requestToDominio(etiquetaRequest, idUsuario=null) {
     return new this.Etiqueta({

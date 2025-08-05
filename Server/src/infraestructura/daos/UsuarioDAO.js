@@ -9,7 +9,6 @@ class UsuarioDAO {
 
   
    async agregarUsuario(usuario) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
     try {
       const [resultado] = await connection.query(
@@ -27,7 +26,6 @@ class UsuarioDAO {
   }
 
    async actualizarUsuario(usuario) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
     try {
       await connection.query(
@@ -49,7 +47,6 @@ class UsuarioDAO {
   }
 
    async eliminarUsuario(idUsuario) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
     try {
       await connection.query("DELETE FROM usuarios WHERE id_usuario = ?", [
@@ -64,7 +61,6 @@ class UsuarioDAO {
   }
 
    async consultarTodosUsuario() {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
     try {
       const [rows] = await connection.query("SELECT * FROM usuarios");
@@ -78,7 +74,6 @@ class UsuarioDAO {
   }
 
    async consultarUsuarioPorId(idUsuario) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
     try {
       const [rows] = await connection.query(
@@ -95,7 +90,6 @@ class UsuarioDAO {
   }
 
    async consultarUsuarioPorNombre(nombreUsuario) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
     try {
       const [rows] = await connection.query(
@@ -113,7 +107,6 @@ class UsuarioDAO {
 
 
  async consultarUsuarioPorNombreContrasena(nombreUsuario,contrasena) {
-  //const conexionBD = ConexionBD.getInstance();
   const connection = await this.conexionBD.conectar();
   try {
     const [rows] = await connection.query(
