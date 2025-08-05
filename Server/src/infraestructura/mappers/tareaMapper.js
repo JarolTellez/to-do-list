@@ -5,7 +5,6 @@ class TareaMapper {
   }
 
   requestToDominio(tareaRequest) {
-    //console.log("EEEEEL HECHICERROOOOOOOOOOOO: ", tareaRequest.etiquetas);
     try {
       // Si la Etiqueta existente mandara el objeto etiqueta aue ya contiene el idUsuario y si no mandara el ob
       //objeto etiqueta y el idUsuario contenido en la tarea para que se cree con ese idUsuario la etiqueta 
@@ -76,10 +75,7 @@ class TareaMapper {
       : [];
 
     const etiquetas = etiquetasIds.map((id, index) => {
-      // idEtiqueta: id,
-      // nombre: etiquetas_nombres[index],
-      // idUsuario: etiquetas_usuarios[index],
-      // idTareaEtiqueta: tarea_etiqueta_ids[index]
+  
 
       return this.etiquetaMapper.bdConsultaJoinToDominio(
         id,
@@ -90,32 +86,11 @@ class TareaMapper {
       );
     });
 
-    //EtiquetaMapper.dbToDomain(etiquetasIds,etiquetasNombres,etiquetasUsuarios,tareaEtiquetaIds)
 
     const nuevaTarea = this.tareaFactory.crearDesdeExistente(tarea, etiquetas);
-
-    //  nuevaTarea.etiquetas = etiquetas;
     return nuevaTarea;
   }
 
-  //   static toRespuesta(tarea) {
-  //     return {
-  //       idTarea: tarea.idTarea,
-  //       nombre: tarea.nombre,
-  //       descripcion: tarea.descripcion,
-  //       fechaProgramada: tarea.fechaProgramada?.toISOString() || null,
-  //       fechaCreacion: tarea.fechaCreacion.toISOString(),
-  //       fechaUltimaActualizacion: tarea.fechaUltimaActualizacion.toISOString(),
-  //       completada: tarea.completada,
-  //       idUsuario: tarea.idUsuario,
-  //       prioridad: tarea.prioridad,
-  //       etiquetas: tarea.etiquetas.map((e) => ({
-  //         idEtiqueta: e.idEtiqueta,
-  //         nombreEtiqueta: e.nombreEtiqueta,
-  //         idUsuario: e.idUsuario,
-  //       })),
-  //     };
-  //   }
 }
 
 module.exports = TareaMapper;

@@ -68,7 +68,6 @@ class TareaEtiquetaDAO {
 
   //Elimina todas las relaciones de TareaEtiqueta por idTareapara eliminar todas las etiquetas de una tarea
    async eliminarTareaEtiquetasPorIdTarea(idTarea) {
-   // const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
 
     try {
@@ -87,7 +86,6 @@ class TareaEtiquetaDAO {
   }
 
    async consultarTodasTareasEtiquetas() {
-    //const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
 
     try {
@@ -104,7 +102,6 @@ class TareaEtiquetaDAO {
   }
 
    async consultarTareaEtiquetaPorIdTarea(idTarea) {
-    //const conexionBD = ConexionBD.getInstance();
     const connection = await this.conexionBD.conectar();
 
     console.log("SE CONSULTO");
