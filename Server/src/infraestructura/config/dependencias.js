@@ -31,7 +31,11 @@
 //   etiquetaDAO,
 //   tareaMapper
 // };
-
+const Usuario = require("../../dominio/entidades/Usuario");
+const Etiqueta = require("../../dominio/entidades/Etiqueta");
+const Tarea = require("../../dominio/entidades/Tarea");
+const RefreshToken = require("../../dominio/entidades/RefreshToken");
+const TareaEtiqueta = require("../../dominio/entidades/TareaEtiqueta");
 const TareaDAO = require('../daos/TareaDAO');
 const EtiquetaDAO = require('../daos/EtiquetaDAO');
 const UsuarioDAO = require('../daos/UsuarioDAO');
@@ -52,11 +56,11 @@ const ConexionBD = require("../config/conexionBD");
 
 
 // Mappers y Factories
-const tareaFactory = new TareaFactory();
-const etiquetaMapper = new EtiquetaMapper();
-const usuarioMapper = new UsuarioMapper();
+const tareaFactory = new TareaFactory(Tarea);
+const etiquetaMapper = new EtiquetaMapper(Etiqueta);
+const usuarioMapper = new UsuarioMapper(Usuario);
 const tareaMapper = new TareaMapper(tareaFactory, etiquetaMapper);
-const tareaEtiquetaMapper = new TareaEtiquetaMapper();
+const tareaEtiquetaMapper = new TareaEtiquetaMapper(TareaEtiqueta);
 
 const conexionBD = ConexionBD.getInstancia();
 // DAOs con sus dependencias

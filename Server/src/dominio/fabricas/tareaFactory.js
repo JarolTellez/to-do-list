@@ -1,7 +1,10 @@
-const Tarea = require("../entidades/Tarea");
-const Etiqueta = require("../entidades/Etiqueta");
-
 class TareaFactory{
+
+  constructor(Tarea ){
+    this.Tarea = Tarea;
+    
+
+  }
 
      crear(tarea){
       
@@ -14,7 +17,7 @@ const procesarFecha = (fecha) => {
 };
 
 
-    const nuevaTarea = new Tarea({
+    const nuevaTarea = new this.Tarea({
       idTarea: tarea.idTarea || null,
       nombre: tarea.nombre,
       descripcion: tarea.descripcion || null,
@@ -56,7 +59,7 @@ const procesarFecha = (fecha) => {
     //   );
     // });
 
-    const nuevaTarea = new Tarea({
+    const nuevaTarea = new this.Tarea({
       idTarea: tarea.tarea_id || null,
       nombre: tarea.tarea_nombre,
       descripcion: tarea.tarea_descripcion || null,
@@ -74,6 +77,8 @@ const procesarFecha = (fecha) => {
     nuevaTarea.validar();
     return nuevaTarea;
   }
+
+   
 }
 
 

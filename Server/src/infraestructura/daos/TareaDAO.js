@@ -187,12 +187,14 @@ class TareaDAO {
     t.fecha_creacion AS tarea_fecha_creacion,
     t.ultima_actualizacion AS tarea_ultima_actualizacion,
     t.completada AS tarea_completada,
-    t.id_usuario AS tarea_id_usuario,  
     t.prioridad AS tarea_prioridad,
-    GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta) AS tarea_etiqueta_ids,
-    GROUP_CONCAT(e.id_etiqueta ORDER BY te.id_tarea_etiqueta) AS etiquetas_ids,
-    GROUP_CONCAT(e.nombre ORDER BY te.id_tarea_etiqueta) AS etiquetas_nombres,
-    GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta) AS etiquetas_usuarios
+    t.id_usuario AS tarea_id_usuario,  
+  
+      GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
+      GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
+      GROUP_CONCAT(DISTINCT e.nombre ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
+      GROUP_CONCAT(e.descripcion ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
+      GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
 FROM 
     tareas t
 LEFT JOIN 
@@ -214,7 +216,7 @@ GROUP BY
       console.log("TAREAS CONSULTADAS DAO: ", tareas);
       const tareasMappeadas= tareas.map((tarea) => {
    
-    return this.tareaMapper.tareaConEtiquetasDbToDominio(tarea);
+    return this.tareaMapper.tareaConEtiquetasBdToDominio(tarea);
    });
       
       console.log("TAREA DESDE CONSULTAR TAREA POR IR DAO: ", tareasMappeadas);
@@ -251,7 +253,7 @@ GROUP BY
 }
 
 //Consulta las tareas pendientes del usuario, es decir las que no estan marcadas como completadas
- async consultarTareasPorIdUsuario(idUsuario) {
+ async consultarTareasPendientesPorIdUsuario(idUsuario) {
   //const conexionBD = ConexionBD.getInstance();
   const connection = await this.conexionBD.conectar();
 
@@ -319,7 +321,7 @@ GROUP BY
  
    const tareasMappeadas= tareas.map((tarea) => {
 
-    return this.tareaMapper.tareaConEtiquetasDbToDominio(tarea);
+    return this.tareaMapper.tareaConEtiquetasBdToDominio(tarea);
    });
 
    // return tareas;
@@ -399,7 +401,7 @@ GROUP BY
 , [idUsuario]);
 const tareasMappeadas= tareas.map((tarea) => {
    
-    return this.tareaMapper.tareaConEtiquetasDbToDominio(tarea);
+    return this.tareaMapper.tareaConEtiquetasBdToDominio(tarea);
    });
    // return tareas;
    return tareasMappeadas;

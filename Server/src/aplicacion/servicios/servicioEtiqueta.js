@@ -1,9 +1,3 @@
-const etiquetaDAO = require("../../infraestructura/daos/EtiquetaDAO");
-const tareaEtiquetaDAO = require("../../infraestructura/daos/TareaEtiquetaDAO");
-const Etiqueta = require("../../dominio/entidades/Etiqueta");
-
-
-
 class ServicioEtiqueta{
   constructor(etiquetaDAO, etiquetaMapper){
     this.etiquetaDAO = etiquetaDAO;
