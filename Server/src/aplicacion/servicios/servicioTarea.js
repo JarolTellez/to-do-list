@@ -138,24 +138,22 @@ async agregarTarea(tarea) {
 
     if (Array.isArray(tarea.etiquetas)) {
       for (const etiqueta of tarea.etiquetas) {
-          console.log("AGREGAR: ", etiqueta.nombreEtiqueta);
+       //   console.log("AGREGAR: ", etiqueta.nombreEtiqueta);
         let idEtiqueta;
 
         if (etiqueta.idEtiqueta) {
           idEtiqueta = etiqueta.idEtiqueta;
         } else {
-             const nuevaEtiqueta = new Etiqueta({
-            nombreEtiqueta: etiqueta.nombreEtiqueta,
-            descripcion: etiqueta.descripcion,
-            existente: etiqueta.existente,
-            eliminar: etiqueta.eliminar,
-            idUsuario: tarea.idUsuario
-          });
-         
+          //    const nuevaEtiqueta = new Etiqueta({
+          //   nombreEtiqueta: etiqueta.nombreEtiqueta,
+          //   descripcion: etiqueta.descripcion,
+          //   existente: etiqueta.existente,
+          //   eliminar: etiqueta.eliminar,
+          //   idUsuario: tarea.idUsuario
+          // });
 
-         
-
-          const etiquetaGuardada = await this.servicioEtiqueta.agregarEtiqueta(nuevaEtiqueta);
+     //     const etiquetaGuardada = await this.servicioEtiqueta.agregarEtiqueta(nuevaEtiqueta);
+      const etiquetaGuardada = await this.servicioEtiqueta.agregarEtiqueta(etiqueta);
           idEtiqueta = etiquetaGuardada.idEtiqueta;
         }
 
@@ -281,16 +279,16 @@ async actualizarTarea(tarea) {
 
     // 2.2 Crear nueva etiqueta si no existe
     if (!etiqueta.existente) {
-       const nuevaEtiqueta = new Etiqueta({
-            nombreEtiqueta: etiqueta.nombreEtiqueta,
-            descripcion: etiqueta.descripcion,
-            existente: etiqueta.existente,
-            eliminar: etiqueta.eliminar,
-            idUsuario: tarea.idUsuario
-          });
+      //  const nuevaEtiqueta = new Etiqueta({
+      //       nombreEtiqueta: etiqueta.nombreEtiqueta,
+      //       descripcion: etiqueta.descripcion,
+      //       existente: etiqueta.existente,
+      //       eliminar: etiqueta.eliminar,
+      //       idUsuario: tarea.idUsuario
+      //     });
          
 
-      const etiquetaCreada = await this.servicioEtiqueta.agregarEtiqueta(nuevaEtiqueta);
+      const etiquetaCreada = await this.servicioEtiqueta.agregarEtiqueta(etiqueta);
 
       if (etiquetaCreada && etiquetaCreada.idEtiqueta) {
         await this.servicioTareaEtiqueta.guardarTareaEtiqueta(tarea.idTarea, etiquetaCreada.idEtiqueta);

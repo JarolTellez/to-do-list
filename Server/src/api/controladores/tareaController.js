@@ -126,6 +126,7 @@ class TareaController {
     try {
     //  console.log("Datos de tarea recibidos:", req.body);
       const tarea = this.tareaMapper.requestToDominio(req.body);
+      console.log("TAREA QUE SE AGREGARA: ", tarea);
       const tareaProcesada = await this.servicioTarea.agregarTarea(tarea);
 
       return res.status(201).json({
