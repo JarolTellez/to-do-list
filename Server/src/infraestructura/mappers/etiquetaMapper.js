@@ -43,18 +43,20 @@ class EtiquetaMapper{
   
   // }
 // Mapea etiqueta recibida de los request del cliente a entidad de dominio del backend
-   requestToDominio(etiquetaRequest) {
+   requestToDominio(etiquetaRequest, idUsuario=null) {
     return new this.Etiqueta({
       idEtiqueta: etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
       nombreEtiqueta: etiquetaRequest.nombreEtiqueta, 
       desripcion: etiquetaRequest.descripcion || null,
       existente: etiquetaRequest.existente,      
       eliminar: etiquetaRequest.eliminar,   
-      idUsuario: etiquetaRequest.idUsuario || etiquetaRequest.id_usuario,
+      idUsuario: etiquetaRequest.idUsuario || idUsuario,
       idTareaEtiqueta: etiquetaRequest.idTareaEtiqueta || null
    });
   
   }
+
+ 
 }
 
 module.exports = EtiquetaMapper;
