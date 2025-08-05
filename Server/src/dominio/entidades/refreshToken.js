@@ -8,5 +8,9 @@ class RefreshToken{
         this.revocado=revocado;
     }
 
+    validar(){
+        
+    }
+
 }
 module.exports = RefreshToken;

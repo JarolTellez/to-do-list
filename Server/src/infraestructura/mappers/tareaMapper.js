@@ -49,7 +49,7 @@ class TareaMapper {
     }
   }
 
-   tareaConEtiquetasDbToDominio(tarea){
+   tareaConEtiquetasBdToDominio(tarea){
     //  return tareas.map((tarea) => {
      
      const etiquetasIds = tarea.etiquetas_ids ? tarea.etiquetas_ids.split(",") : [];
@@ -66,7 +66,7 @@ const tareaEtiquetaIds = tarea.tarea_etiqueta_ids ? tarea.tarea_etiqueta_ids.spl
         // idUsuario: etiquetas_usuarios[index],
         // idTareaEtiqueta: tarea_etiqueta_ids[index]
  
-         return this.etiquetaMapper.dbConsultaJoinToDominio(
+         return this.etiquetaMapper.bdConsultaJoinToDominio(
                 id,
                 etiquetasNombres[index],
                 etiquetasDescripciones[index],
@@ -82,7 +82,7 @@ const tareaEtiquetaIds = tarea.tarea_etiqueta_ids ? tarea.tarea_etiqueta_ids.spl
       const nuevaTarea = this.tareaFactory.crearDesdeExistente(
         tarea,
         etiquetas
-      
+  
       );
       
 

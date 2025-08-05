@@ -14,9 +14,9 @@ class ServicioTareaEtiqueta {
     }
   }
 
-  async eliminarPorIdTarea(idTarea) {
+  async eliminarTodasPorIdTarea(idTarea) {
     try {
-      const eliminadas = await this.tareaEtiquetaDAO.eliminarTareaEtiquetaPorIdTarea(idTarea);
+      const eliminadas = await this.tareaEtiquetaDAO.eliminarTareaEtiquetasPorIdTarea(idTarea);
       console.log(`Relaciones eliminadas para tarea ${idTarea}: ${eliminadas}`);
       return eliminadas;
     } catch (error) {

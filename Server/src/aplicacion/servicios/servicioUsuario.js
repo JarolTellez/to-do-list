@@ -3,7 +3,7 @@ const JwtAuth = require('../../infraestructura/config/jwtAuth');
 const usuarioDAO = require("../../infraestructura/daos/UsuarioDAO");
 const RefreshTokensDAO = require("../../infraestructura/daos/refreshTokensDAO");
 const Usuario = require("../../dominio/entidades/Usuario");
-const RefreshToken = require ("../../dominio/entidades/refreshToken");
+const RefreshToken = require ("../../dominio/entidades/RefreshToken");
 
 class ServicioUsuario{
    constructor(usuarioDAO) {

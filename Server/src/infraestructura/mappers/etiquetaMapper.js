@@ -1,10 +1,11 @@
-const Etiqueta = require("../../dominio/entidades/Etiqueta");
-
 class EtiquetaMapper{
-   dbToDominio(etiqueta) {
+  constructor(Etiqueta){
+    this.Etiqueta=Etiqueta;
+  }
+   bdToDominio(etiqueta) {
   const { id_etiqueta, nombre, descripcion, id_usuario } = etiqueta;
 
-  return new Etiqueta({
+  return new this.Etiqueta({
     idEtiqueta: id_etiqueta,
     nombreEtiqueta: nombre,
     descripcion,
@@ -16,9 +17,9 @@ class EtiquetaMapper{
 }
 
 
-  dbConsultaJoinToDominio(Id, nombre, descripcion, etiquetaIdUsuario, tareaEtiquetaId) {
+  bdConsultaJoinToDominio(Id, nombre, descripcion, etiquetaIdUsuario, tareaEtiquetaId) {
   console.log("TIENE ID USUARIO: ", etiquetaIdUsuario);
-  return new Etiqueta({
+  return new this.Etiqueta({
     idEtiqueta: Id,
     nombreEtiqueta: nombre,
     descripcion: descripcion,
@@ -41,9 +42,9 @@ class EtiquetaMapper{
   //   );
   
   // }
-
+// Mapea etiqueta recibida de los request del cliente a entidad de dominio del backend
    requestToDominio(etiquetaRequest) {
-    return new Etiqueta({
+    return new this.Etiqueta({
       idEtiqueta: etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
       nombreEtiqueta: etiquetaRequest.nombreEtiqueta, 
       desripcion: etiquetaRequest.descripcion || null,
