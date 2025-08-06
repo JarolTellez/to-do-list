@@ -1,17 +1,16 @@
 const bcrypt = require("bcryptjs");
-const JwtAuth = require('../../infraestructura/config/jwtAuth');
-const usuarioDAO = require("../../infraestructura/daos/UsuarioDAO");
-const RefreshTokensDAO = require("../../infraestructura/daos/refreshTokensDAO");
-const Usuario = require("../../dominio/entidades/Usuario");
-const RefreshToken = require ("../../dominio/entidades/RefreshToken");
 
 class ServicioUsuario{
-   constructor(usuarioDAO) {
-    this.usuarioDAO = usuarioDAO;
+   constructor(Usuario, RefreshToken, UsuarioDAO, JwtAuth) {
+    this.Usuario = Usuario;
+    this.RefreshToken = RefreshToken;
+    this.UsuarioDAO = UsuarioDAO;
+    this.JwtAuth = JwtAuth;
+
    }
 
    async registrarUsuario({ nombreUsuario, correo, contrasena }) {
-    const existe = await this.usuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
+    const existe = await this.UsuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
     if (existe) {
       const error = new Error("El usuario ya existe");
       error.statusCode = 409;
@@ -19,15 +18,15 @@ class ServicioUsuario{
     }
 
     const contrasenaEncriptada = await bcrypt.hash(contrasena, 10);
-    const usuario = new Usuario(null, nombreUsuario, correo, contrasenaEncriptada);
+    const usuario = new this.Usuario(null, nombreUsuario, correo, contrasenaEncriptada);
     usuario.validar();
-    const usuarioAgregado = await this.usuarioDAO.agregarUsuario(usuario);
+    const usuarioAgregado = await this.UsuarioDAO.agregarUsuario(usuario);
     console.log("Usuario agregado:", usuarioAgregado);
     return usuarioAgregado;
   }
 
    async loginUsuario( nombreUsuario, contrasena ) {
-    const usuarioEncontrado = await this.usuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
+    const usuarioEncontrado = await this.UsuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
 
     if (!usuarioEncontrado) {
       const error = new Error("Usuario no encontrado");
@@ -43,13 +42,13 @@ class ServicioUsuario{
       throw error;
     }
 
-    const tokenAcceso = JwtAuth.generarTokenAcceso(usuarioEncontrado.id_usuario, usuarioEncontrado.rol);
-    const refreshToken= JwtAuth.generarRefreshToken(usuarioEncontrado.id_usuario);
+    const tokenAcceso = this.JwtAuth.generarTokenAcceso(usuarioEncontrado.id_usuario, usuarioEncontrado.rol);
+    const refreshToken= this.JwtAuth.generarRefreshToken(usuarioEncontrado.id_usuario);
 
     const fechaCreacion = new Date();
     const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
-    const refreshTokenEntidad = new RefreshToken({
+    const refreshTokenEntidad = new this.RefreshToken({
       idRefreshToken: null,
       idUsuario: usuarioEncontrado.id_usuario,
       token: refreshToken,
