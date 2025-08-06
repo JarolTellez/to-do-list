@@ -1,36 +1,3 @@
-// const TareaDAO = require('../datos/TareaDAO');
-// const EtiquetaDAO = require('../datos/EtiquetaDAO');
-// const ServicioTarea = require('../servicios/servicioTarea');
-// const TareaFactory = require("../factory/tareaFactory");
-// const TareaMapper = require("../mappers/tareaMapper");
-// const EtiquetaMapper = require("../mappers/etiquetaMapper");
-// const TareaController = require("../../api/controladores")
-
-// // mappers y factories
-// const tareaFactory = new TareaFactory();
-// const etiquetaMapper = new EtiquetaMapper();
-// const tareaMapper = new TareaMapper(tareaFactory, etiquetaMapper);
-
-// // DAOs con sus dependencias
-// const tareaDAO = new TareaDAO(tareaMapper);
-// const etiquetaDAO = new EtiquetaDAO(etiquetaMapper); // Asegúrate que EtiquetaDAO acepte el mapper
-
-// // servicios
-// const servicioTarea = new ServicioTarea(tareaDAO, etiquetaDAO);
-
-// // Controladores
-// const tareaController = new TareaController({
-//   servicioTarea,
-//   tareaMapper
-// });
-
-// module.exports = {
-//   tareaController,
-//   servicioTarea,
-//   tareaDAO,
-//   etiquetaDAO,
-//   tareaMapper
-// };
 const Usuario = require("../../dominio/entidades/Usuario");
 const Etiqueta = require("../../dominio/entidades/Etiqueta");
 const Tarea = require("../../dominio/entidades/Tarea");
@@ -40,6 +7,7 @@ const TareaDAO = require('../daos/TareaDAO');
 const EtiquetaDAO = require('../daos/EtiquetaDAO');
 const UsuarioDAO = require('../daos/UsuarioDAO');
 const TareaEtiquetaDAO = require("../daos/TareaEtiquetaDAO");
+const RefreshTokensDAO = require("../../infraestructura/daos/refreshTokensDAO");
 const ServicioTarea = require('../../aplicacion/servicios/servicioTarea');
 const ServicioTareaEtiqueta = require("../../aplicacion/servicios/servicioTareaEtiqueta");
 const ServicioEtiqueta = require('../../aplicacion/servicios/servicioEtiqueta');
@@ -53,6 +21,7 @@ const TareaController = require("../../api/controladores/tareaController");
 const EtiquetaController = require("../../api/controladores/EtiquetaController");
 const UsuarioController = require("../../api/controladores/UsuarioController");
 const ConexionBD = require("../config/conexionBD");
+const JwtAuth = require('../../infraestructura/config/jwtAuth');
 
 
 // Mappers y Factories
@@ -76,7 +45,7 @@ const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD);
 const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta);
-const servicioUsuario = new ServicioUsuario(usuarioDAO);
+const servicioUsuario = new ServicioUsuario(Usuario, RefreshToken, UsuarioDAO, JwtAuth);
 
 // Controladores
 const tareaController = new TareaController({

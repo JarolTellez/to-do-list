@@ -1,5 +1,3 @@
-//const ConexionBD = require("../utils/conexionBD");
-
 class RefreshTokensDAO{
    constructor(refreshTokenMapper, conexionBD) {
     this.refreshTokenMapper = refreshTokenMapper;
