@@ -3,6 +3,7 @@ const Etiqueta = require("../../dominio/entidades/Etiqueta");
 const Tarea = require("../../dominio/entidades/Tarea");
 const RefreshToken = require("../../dominio/entidades/RefreshToken");
 const TareaEtiqueta = require("../../dominio/entidades/TareaEtiqueta");
+const RefreshTokenFabrica = require("../../dominio/fabricas/refreshTokenFabrica");
 const TareaDAO = require('../daos/TareaDAO');
 const EtiquetaDAO = require('../daos/EtiquetaDAO');
 const UsuarioDAO = require('../daos/UsuarioDAO');
@@ -26,6 +27,7 @@ const JwtAuth = require('../../infraestructura/config/jwtAuth');
 
 // Mappers y Factories
 const tareaFactory = new TareaFactory(Tarea);
+const refreshTokenFabrica = new RefreshTokenFabrica(RefreshToken);
 const etiquetaMapper = new EtiquetaMapper(Etiqueta);
 const usuarioMapper = new UsuarioMapper(Usuario);
 const tareaMapper = new TareaMapper(tareaFactory, etiquetaMapper);
@@ -45,7 +47,7 @@ const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD);
 const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta);
-const servicioUsuario = new ServicioUsuario(Usuario, RefreshToken, usuarioDAO, JwtAuth);
+const servicioUsuario = new ServicioUsuario(Usuario, refreshTokenFabrica, usuarioDAO, JwtAuth);
 
 // Controladores
 const tareaController = new TareaController({

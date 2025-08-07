@@ -1,9 +1,9 @@
 const bcrypt = require("bcryptjs");
 
 class ServicioUsuario{
-   constructor(Usuario, RefreshToken, UsuarioDAO, JwtAuth) {
+   constructor(Usuario, RefreshTokenFabrica, UsuarioDAO, JwtAuth) {
     this.Usuario = Usuario;
-    this.RefreshToken = RefreshToken;
+    this.RefreshTokenFabrica = RefreshTokenFabrica;
     this.UsuarioDAO = UsuarioDAO;
     this.JwtAuth = JwtAuth;
 
@@ -46,17 +46,18 @@ class ServicioUsuario{
     const tokenAcceso = this.JwtAuth.generarTokenAcceso(usuarioEncontrado.id_usuario, usuarioEncontrado.rol);
     const refreshToken= this.JwtAuth.generarRefreshToken(usuarioEncontrado.id_usuario);
 
-    const fechaCreacion = new Date();
-    const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+  //   const fechaCreacion = new Date();
+  //   const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
-    const refreshTokenEntidad = new this.RefreshToken({
-      idRefreshToken: null,
-      idUsuario: usuarioEncontrado.id_usuario,
-      token: refreshToken,
-      fechaCreacion: fechaCreacion,
-      fechaExpiracion: fechaExpiracion,
-      revocado: false
-   });
+  //   const refreshTokenEntidad = new this.RefreshToken({
+  //     idRefreshToken: null,
+  //     idUsuario: usuarioEncontrado.id_usuario,
+  //     token: refreshToken,
+  //     fechaCreacion: fechaCreacion,
+  //     fechaExpiracion: fechaExpiracion,
+  //     revocado: false
+  //  });
+  this.RefreshTokenFabrica.crear(usuarioEncontrado.id_usuario, refreshToken);
 // HABILOTAR DESPUES
     //await RefreshTokensDAO.guardarRefreshToken(refreshTokenEntidad);
 
