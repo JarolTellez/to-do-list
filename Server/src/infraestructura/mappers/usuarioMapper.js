@@ -4,6 +4,18 @@ class UsuarioMapper{
         this.Usuario = Usuario;
     }
 
+    requestToDominio(usuarioRequest){
+        return new this.Usuario({
+             idUsuario: usuarioRequest.idUsuario,
+            nombreUsuario: usuarioRequest.nombreUsuario,
+            correo: usuarioRequest.correo,
+            contrasena: usuarioRequest.contrasena,
+            rol: usuarioRequest.rol,
+
+        });
+
+    }
+
     bdToDominio(usuarioBD){
         return new this.Usuario({
             idUsuario: usuarioBD.id_usuario,

@@ -9,16 +9,17 @@ class ServicioUsuario{
 
    }
 
-   async registrarUsuario({ nombreUsuario, correo, contrasena }) {
-    const existe = await this.UsuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
+   async registrarUsuario(usuario) {
+    const existe = await this.UsuarioDAO.consultarUsuarioPorNombre(usuario.nombreUsuario);
     if (existe) {
       const error = new Error("El usuario ya existe");
       error.statusCode = 409;
       throw error;
     }
 
-    const contrasenaEncriptada = await bcrypt.hash(contrasena, 10);
-    const usuario = new this.Usuario(null, nombreUsuario, correo, contrasenaEncriptada);
+    const contrasenaEncriptada = await bcrypt.hash(usuario.contrasena, 10);
+    usuario.contrasena=contrasenaEncriptada;
+    // const usuario = new this.Usuario(null, nombreUsuario, correo, contrasenaEncriptada);
     usuario.validar();
     const usuarioAgregado = await this.UsuarioDAO.agregarUsuario(usuario);
     console.log("Usuario agregado:", usuarioAgregado);
