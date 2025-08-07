@@ -7,7 +7,7 @@ const TareaDAO = require('../daos/TareaDAO');
 const EtiquetaDAO = require('../daos/EtiquetaDAO');
 const UsuarioDAO = require('../daos/UsuarioDAO');
 const TareaEtiquetaDAO = require("../daos/TareaEtiquetaDAO");
-const RefreshTokensDAO = require("../../infraestructura/daos/refreshTokensDAO");
+const RefreshTokensDAO = require("../../infraestructura/daos/refreshTokenDAO");
 const ServicioTarea = require('../../aplicacion/servicios/servicioTarea');
 const ServicioTareaEtiqueta = require("../../aplicacion/servicios/servicioTareaEtiqueta");
 const ServicioEtiqueta = require('../../aplicacion/servicios/servicioEtiqueta');
@@ -45,7 +45,7 @@ const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD);
 const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta);
-const servicioUsuario = new ServicioUsuario(Usuario, RefreshToken, UsuarioDAO, JwtAuth);
+const servicioUsuario = new ServicioUsuario(Usuario, RefreshToken, usuarioDAO, JwtAuth);
 
 // Controladores
 const tareaController = new TareaController({

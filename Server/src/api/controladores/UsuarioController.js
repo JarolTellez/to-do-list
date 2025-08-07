@@ -6,8 +6,8 @@ class UsuarioController {
 
   async agregarUsuario(req, res) {
     try {
-      const usuarioDTO = this.usuarioMapper.toDTO(req.body);
-      const usuarioAgregado = await this.servicioUsuario.registrarUsuario(usuarioDTO);
+      const usuario = this.usuarioMapper.requestToDominio(req.body);
+      const usuarioAgregado = await this.servicioUsuario.registrarUsuario(usuario);
       
       return res.status(201).json({
         status: "success",
