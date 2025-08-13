@@ -1,7 +1,9 @@
 class UsuarioMapper{
     
-    constructor(Usuario){
+    constructor(Usuario, UsuarioRespuestaDTO){
         this.Usuario = Usuario;
+        this.UsuarioRespuestaDTO = UsuarioRespuestaDTO;
+
     }
 
     requestToDominio(usuarioRequest){
@@ -23,6 +25,16 @@ class UsuarioMapper{
             correo: usuarioBD.correo,
             contrasena: usuarioBD.contrasena,
             rol: usuarioBD.rol,
+        });
+
+    }
+
+    dominioToRespuestaDTO(usuarioDominio){
+        return new this.UsuarioRespuestaDTO({
+            idUsuario: usuarioDominio.idUsuario,
+            nombreUsuario: usuarioDominio.nombreUsuario,
+            correo: usuarioDominio.correo,
+            rol: usuarioDominio.rol
         });
 
     }

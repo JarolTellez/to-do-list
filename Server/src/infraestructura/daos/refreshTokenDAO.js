@@ -1,10 +1,10 @@
-class RefreshTokensDAO{
+class RefreshTokenDAO{
    constructor(refreshTokenMapper, conexionBD) {
     this.refreshTokenMapper = refreshTokenMapper;
     this.conexionBD = conexionBD;
   }
 
-     async guardarRefreshToken(refreshToken) {
+    async guardarRefreshToken(refreshToken) {
     const connection = await this.conexionBD.conectar();
     try {
       const [nuevoRefreshToken] = await connection.query(
@@ -23,4 +23,4 @@ class RefreshTokensDAO{
   }
 }
 
-module.exports= RefreshTokensDAO;
+module.exports= RefreshTokenDAO;
