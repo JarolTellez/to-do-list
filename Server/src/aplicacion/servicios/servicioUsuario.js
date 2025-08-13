@@ -1,9 +1,10 @@
 const bcrypt = require("bcryptjs");
 
 class ServicioUsuario{
-   constructor(Usuario, RefreshTokenFabrica, UsuarioDAO, JwtAuth) {
+   constructor(Usuario, RefreshTokenFabrica,servicioRefreshToken, UsuarioDAO, JwtAuth) {
     this.Usuario = Usuario;
     this.RefreshTokenFabrica = RefreshTokenFabrica;
+    this.servicioRefreshToken = servicioRefreshToken;
     this.UsuarioDAO = UsuarioDAO;
     this.JwtAuth = JwtAuth;
 
@@ -27,6 +28,7 @@ class ServicioUsuario{
   }
 
    async loginUsuario( nombreUsuario, contrasena ) {
+    //Se buscar el usuario por nombreUsuario 
     const usuarioEncontrado = await this.UsuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
 
     if (!usuarioEncontrado) {
@@ -34,7 +36,7 @@ class ServicioUsuario{
       error.statusCode = 404;
       throw error;
     }
-
+    // Se valida que la contrasena enviada en la peticion y la consultada de la bd coincidan
     const esValida = await bcrypt.compare(contrasena.trim(), usuarioEncontrado.contrasena);
 
     if (!esValida) {
@@ -57,19 +59,21 @@ class ServicioUsuario{
   //     fechaExpiracion: fechaExpiracion,
   //     revocado: false
   //  });
-  this.RefreshTokenFabrica.crear(usuarioEncontrado.id_usuario, refreshToken);
-// HABILOTAR DESPUES
-    //await RefreshTokensDAO.guardarRefreshToken(refreshTokenEntidad);
+  const entidadRefreshToken=this.RefreshTokenFabrica.crear(usuarioEncontrado.id_usuario, refreshToken);
 
-    const usuarioRespuesta = {
-      idUsuario: usuarioEncontrado.id_usuario,
-      nombreUsuario: usuarioEncontrado.nombre_usuario,
-      correo: usuarioEncontrado.correo,
-      rol: usuarioEncontrado.rol
-    };
+    await this.servicioRefreshToken.registrarRefreshToken(entidadRefreshToken);
+
+    // const usuarioRespuesta = {
+    //   idUsuario: usuarioEncontrado.id_usuario,
+    //   nombreUsuario: usuarioEncontrado.nombre_usuario,
+    //   correo: usuarioEncontrado.correo,
+    //   rol: usuarioEncontrado.rol
+    // };
+    const usuarioRespuesta = this;
 
     return {
-      usuario: usuarioRespuesta,
+   //   usuario: usuarioRespuesta,
+      usuario: usuarioEncontrado,
       tokenAcceso,
       refreshToken,
       expiraEn: 900 // 15 minutos en segundos

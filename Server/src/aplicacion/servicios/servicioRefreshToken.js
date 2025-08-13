@@ -4,7 +4,11 @@ class ServicioRefreshToken{
 
     }
 
-    registrarRefreshToken(){
-        
+    async registrarRefreshToken(refreshToken){
+      
+      return await this.RefreshTokenDAO.guardarRefreshToken(refreshToken);
+
     }
 }
+
+module.exports = ServicioRefreshToken;
