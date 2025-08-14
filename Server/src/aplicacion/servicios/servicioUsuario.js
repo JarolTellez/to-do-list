@@ -1,12 +1,13 @@
 const bcrypt = require("bcryptjs");
 
 class ServicioUsuario{
-   constructor(Usuario, RefreshTokenFabrica,servicioRefreshToken, UsuarioDAO, JwtAuth) {
+   constructor(Usuario, RefreshTokenFabrica,servicioRefreshToken, UsuarioDAO, JwtAuth, bcrypt) {
     this.Usuario = Usuario;
     this.RefreshTokenFabrica = RefreshTokenFabrica;
     this.servicioRefreshToken = servicioRefreshToken;
     this.UsuarioDAO = UsuarioDAO;
     this.JwtAuth = JwtAuth;
+    this.bcrypt = bcrypt;
 
    }
 
@@ -18,7 +19,7 @@ class ServicioUsuario{
       throw error;
     }
 
-    const contrasenaEncriptada = await bcrypt.hash(usuario.contrasena, 10);
+    const contrasenaEncriptada = await this.bcrypt.hash(usuario.contrasena, 10);
     usuario.contrasena=contrasenaEncriptada;
     // const usuario = new this.Usuario(null, nombreUsuario, correo, contrasenaEncriptada);
     usuario.validar();
@@ -45,7 +46,6 @@ class ServicioUsuario{
     await this.servicioRefreshToken.registrarRefreshToken(entidadRefreshToken);
 
     return {
-   //   usuario: usuarioRespuesta,
       usuario: usuarioEncontrado,
       tokenAcceso,
       refreshToken,

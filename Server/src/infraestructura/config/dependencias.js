@@ -26,6 +26,7 @@ const UsuarioController = require("../../api/controladores/UsuarioController");
 const ConexionBD = require("../config/conexionBD");
 const JwtAuth = require('../../infraestructura/config/jwtAuth');
 const UsuarioRespuestaDTO = require("../../aplicacion/dtos/respuestas_dto/usuarioRespuestaDTO");
+const bcrypt = require("bcryptjs");
 
 
 // Mappers y Factories
@@ -42,7 +43,7 @@ const conexionBD = ConexionBD.getInstancia();
 const tareaDAO = new TareaDAO(tareaMapper, conexionBD );
 const tareaEtiquetaDAO = new TareaEtiquetaDAO(tareaEtiquetaMapper, conexionBD);
 const etiquetaDAO = new EtiquetaDAO(etiquetaMapper, conexionBD);
-const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD);
+const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD, bcrypt);
 const refreshTokenDAO = new RefreshTokenDAO(refreshTokenMapper, conexionBD);
 
 
@@ -53,7 +54,7 @@ const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta);
 const servicioRefreshToken = new ServicioRefreshToken(refreshTokenDAO);
-const servicioUsuario = new ServicioUsuario(Usuario, refreshTokenFabrica, servicioRefreshToken, usuarioDAO, JwtAuth);
+const servicioUsuario = new ServicioUsuario(Usuario, refreshTokenFabrica, servicioRefreshToken, usuarioDAO, JwtAuth, bcrypt);
 
 // Controladores
 const tareaController = new TareaController({
