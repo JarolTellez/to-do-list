@@ -47,8 +47,6 @@ const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD, bcrypt);
 const refreshTokenDAO = new RefreshTokenDAO(refreshTokenMapper, conexionBD);
 
 
-
-
 // Servicios
 const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
