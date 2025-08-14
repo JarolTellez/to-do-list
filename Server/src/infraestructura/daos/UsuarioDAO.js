@@ -96,8 +96,12 @@ class UsuarioDAO {
         "SELECT * FROM usuarios WHERE nombre_usuario = ?",
         [nombreUsuario]
       );
-    const usuarioDominio =  this.usuarioMapper.bdToDominio(rows[0]);
-    return usuarioDominio;
+    if (!rows || rows.length === 0) {
+        return null; 
+    }
+
+    return this.usuarioMapper.bdToDominio(rows[0]);
+
       // return rows[0];
     } catch (error) {
       console.error("Error al consultar usuario por nombre", error);
