@@ -21,6 +21,22 @@ class RefreshTokenDAO{
       connection.release();
     }
   }
+
+  async revocarRefreshTokensIdUsuario(idUsuario){
+    const connection = await this.conexionBD.conectar();
+    try {
+      const [nuevoRefreshToken] = await connection.query(
+        "DELETE FROM refresh_tokens WHERE id_usuario = ?",
+        [idUsuario]
+      );
+    } catch (error) {
+      console.log("Error al eliminar refresh token: ", error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+
+  }
 }
 
 module.exports= RefreshTokenDAO;
