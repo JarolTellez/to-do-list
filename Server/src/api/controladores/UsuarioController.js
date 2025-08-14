@@ -8,10 +8,11 @@ class UsuarioController {
     try {
       const usuario = this.usuarioMapper.requestToDominio(req.body);
       const usuarioAgregado = await this.servicioUsuario.registrarUsuario(usuario);
+      const usuarioRespuesta = this.usuarioMapper.dominioToRespuestaDTO(usuarioAgregado);
       
       return res.status(201).json({
         status: "success",
-        data: usuarioAgregado
+        data: usuarioRespuesta
       });
     } catch (error) {
       console.error("Error al agregar usuario:", error);
