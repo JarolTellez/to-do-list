@@ -1,12 +1,9 @@
-const ConexionBD = require("../config/conexionBD");
-const bcrypt = require("bcryptjs");
-
-
 class UsuarioDAO {
 
-   constructor(usuarioMapper, conexionBD) {
+   constructor(usuarioMapper, conexionBD, bcrypt) {
     this.usuarioMapper = usuarioMapper;
     this.conexionBD = conexionBD;
+    this.bcrypt = bcrypt;
   }
 
   
@@ -133,7 +130,7 @@ class UsuarioDAO {
       if (!rows || rows.length === 0) return null;
       
       const usuarioBD = rows[0];
-      const isValid = await bcrypt.compare(contrasena.trim(), usuarioBD.contrasena);
+      const isValid = await this.bcrypt.compare(contrasena.trim(), usuarioBD.contrasena);
       return isValid ? this.usuarioMapper.bdToDominio(usuarioBD) : null;
     } catch (error) {
       console.error("Error al consultar usuario", error);
