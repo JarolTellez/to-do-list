@@ -29,47 +29,20 @@ class ServicioUsuario{
 
    async loginUsuario( nombreUsuario, contrasena ) {
     //Se buscar el usuario por nombreUsuario 
-    const usuarioEncontrado = await this.UsuarioDAO.consultarUsuarioPorNombre(nombreUsuario);
+    const usuarioEncontrado = await this.UsuarioDAO.consultarUsuarioPorNombreContrasena(nombreUsuario, contrasena);
 
     if (!usuarioEncontrado) {
       const error = new Error("Usuario no encontrado");
       error.statusCode = 404;
       throw error;
     }
-    // Se valida que la contrasena enviada en la peticion y la consultada de la bd coincidan
-    const esValida = await bcrypt.compare(contrasena.trim(), usuarioEncontrado.contrasena);
 
-    if (!esValida) {
-      const error = new Error("Credenciales inválidas");
-      error.statusCode = 401;
-      throw error;
-    }
+    const tokenAcceso = this.JwtAuth.generarTokenAcceso(usuarioEncontrado.idUsuario, usuarioEncontrado.rol);
+    const refreshToken= this.JwtAuth.generarRefreshToken(usuarioEncontrado.idUsuario);
 
-    const tokenAcceso = this.JwtAuth.generarTokenAcceso(usuarioEncontrado.id_usuario, usuarioEncontrado.rol);
-    const refreshToken= this.JwtAuth.generarRefreshToken(usuarioEncontrado.id_usuario);
-
-  //   const fechaCreacion = new Date();
-  //   const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
-
-  //   const refreshTokenEntidad = new this.RefreshToken({
-  //     idRefreshToken: null,
-  //     idUsuario: usuarioEncontrado.id_usuario,
-  //     token: refreshToken,
-  //     fechaCreacion: fechaCreacion,
-  //     fechaExpiracion: fechaExpiracion,
-  //     revocado: false
-  //  });
-  const entidadRefreshToken=this.RefreshTokenFabrica.crear(usuarioEncontrado.id_usuario, refreshToken);
+  const entidadRefreshToken=this.RefreshTokenFabrica.crear(usuarioEncontrado.idUsuario, refreshToken);
 
     await this.servicioRefreshToken.registrarRefreshToken(entidadRefreshToken);
-
-    // const usuarioRespuesta = {
-    //   idUsuario: usuarioEncontrado.id_usuario,
-    //   nombreUsuario: usuarioEncontrado.nombre_usuario,
-    //   correo: usuarioEncontrado.correo,
-    //   rol: usuarioEncontrado.rol
-    // };
-    const usuarioRespuesta = this;
 
     return {
    //   usuario: usuarioRespuesta,

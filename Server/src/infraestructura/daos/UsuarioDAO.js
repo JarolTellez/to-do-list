@@ -1,4 +1,6 @@
 const ConexionBD = require("../config/conexionBD");
+const bcrypt = require("bcryptjs");
+
 
 class UsuarioDAO {
 
@@ -60,18 +62,24 @@ class UsuarioDAO {
     }
   }
 
-   async consultarTodosUsuario() {
-    const connection = await this.conexionBD.conectar();
-    try {
-      const [rows] = await connection.query("SELECT * FROM usuarios");
-      return rows;
-    } catch (error) {
-      console.error("Error al consultar todos los usuarios", error);
-      throw error;
-    } finally {
-      connection.release();
+ async consultarTodosUsuario() {
+  const connection = await this.conexionBD.conectar();
+  try {
+    const [rows] = await connection.query("SELECT * FROM usuarios");
+
+    if (!rows || rows.length === 0) {
+      return []; 
     }
+
+    return rows.map(row => this.usuarioMapper.bdToDominio(row));
+  } catch (error) {
+    console.error("Error al consultar todos los usuarios", error);
+    throw error;
+  } finally {
+    connection.release();
   }
+}
+
 
    async consultarUsuarioPorId(idUsuario) {
     const connection = await this.conexionBD.conectar();
@@ -80,7 +88,11 @@ class UsuarioDAO {
         "SELECT * FROM usuarios WHERE id_usuario = ?",
         [idUsuario]
       );
-      return rows[0];
+      if (!rows || rows.length === 0) {
+        return null; 
+    }
+
+    return this.usuarioMapper.bdToDominio(rows[0]);
     } catch (error) {
       console.error("Error al consultar usuario por id", error);
       throw error;
@@ -102,7 +114,6 @@ class UsuarioDAO {
 
     return this.usuarioMapper.bdToDominio(rows[0]);
 
-      // return rows[0];
     } catch (error) {
       console.error("Error al consultar usuario por nombre", error);
       throw error;
@@ -112,21 +123,25 @@ class UsuarioDAO {
   }
 
 
- async consultarUsuarioPorNombreContrasena(nombreUsuario,contrasena) {
-  const connection = await this.conexionBD.conectar();
-  try {
-    const [rows] = await connection.query(
-      "SELECT * FROM usuarios WHERE nombre_usuario = ? AND contrasena = ?",
-      [nombreUsuario,contrasena]
-    );
-    return rows[0];
-  } catch (error) {
-    console.error("Error al consultar usuario por nombre y contrasena", error);
-    throw error;
-  } finally {
-    connection.release();
+ async consultarUsuarioPorNombreContrasena(nombreUsuario, contrasena) {
+    const connection = await this.conexionBD.conectar();
+    try {
+      const [rows] = await connection.query(
+        "SELECT * FROM usuarios WHERE nombre_usuario = ?",
+        [nombreUsuario]
+      );
+      if (!rows || rows.length === 0) return null;
+      
+      const usuarioBD = rows[0];
+      const isValid = await bcrypt.compare(contrasena.trim(), usuarioBD.contrasena);
+      return isValid ? this.usuarioMapper.bdToDominio(usuarioBD) : null;
+    } catch (error) {
+      console.error("Error al consultar usuario", error);
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
-}
 }
 
 module.exports=UsuarioDAO;
