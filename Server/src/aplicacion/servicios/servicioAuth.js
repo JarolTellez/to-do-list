@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 
-class ServicioUsuario{
+class ServicioAuth{
    constructor(Usuario, RefreshTokenFabrica,servicioRefreshToken, UsuarioDAO, JwtAuth, bcrypt) {
     this.Usuario = Usuario;
     this.RefreshTokenFabrica = RefreshTokenFabrica;
@@ -54,4 +54,4 @@ class ServicioUsuario{
   }
 }
 
-module.exports = ServicioUsuario;
+module.exports = ServicioAuth;

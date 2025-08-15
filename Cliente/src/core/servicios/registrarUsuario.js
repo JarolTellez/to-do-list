@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
       contrasena: inputContrasenaUsuario.value,
     };
 
-    const urlUsuario = "http://localhost:3000/usuario/";
+    const urlUsuario = "http://localhost:3000/auth/";
 
     try {
       const response = await fetch(urlUsuario, {

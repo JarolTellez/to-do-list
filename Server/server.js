@@ -24,7 +24,7 @@ const express = require('express');
 const { 
   tareaController, 
   etiquetaController,
-  usuarioController 
+  authController,
 } = require('./src/infraestructura/config/dependencias');
 const app = express();
 const cors = require('cors');
@@ -35,11 +35,11 @@ app.use(cors());
 app.use(express.json());
 
 // Configuración de rutas
-const routerUsuario = require('./src/api/rutas/usuarioRutas')(usuarioController);
+const routerAuth = require('./src/api/rutas/authRutas')(authController);
 const routerTarea = require('./src/api/rutas/tareaRutas')(tareaController);
 const routerEtiqueta = require('./src/api/rutas/etiquetaRutas')(etiquetaController);
 
-app.use('/usuario', routerUsuario);
+app.use('/auth', routerAuth);
 app.use('/tarea', routerTarea);
 app.use('/etiqueta', routerEtiqueta);
 

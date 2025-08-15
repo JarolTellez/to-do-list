@@ -12,7 +12,7 @@ const RefreshTokenDAO = require("../../infraestructura/daos/refreshTokenDAO");
 const ServicioTarea = require('../../aplicacion/servicios/servicioTarea');
 const ServicioTareaEtiqueta = require("../../aplicacion/servicios/servicioTareaEtiqueta");
 const ServicioEtiqueta = require('../../aplicacion/servicios/servicioEtiqueta');
-const ServicioUsuario = require('../../aplicacion/servicios/servicioUsuario');
+const ServicioAuth= require('../../aplicacion/servicios/servicioAuth');
 const ServicioRefreshToken = require("../../aplicacion/servicios/servicioRefreshToken");
 const TareaFactory = require("../../dominio/fabricas/tareaFactory");
 const TareaMapper = require("../mappers/tareaMapper");
@@ -22,7 +22,7 @@ const UsuarioMapper = require("../mappers/usuarioMapper");
 const RefreshTokenMapper = require("../mappers/refreshTokenMapper");
 const TareaController = require("../../api/controladores/tareaController");
 const EtiquetaController = require("../../api/controladores/EtiquetaController");
-const UsuarioController = require("../../api/controladores/UsuarioController");
+const AuthController = require("../../api/controladores/authController");
 const ConexionBD = require("../config/conexionBD");
 const JwtAuth = require('../../infraestructura/config/jwtAuth');
 const UsuarioRespuestaDTO = require("../../aplicacion/dtos/respuestas_dto/usuarioRespuestaDTO");
@@ -52,7 +52,7 @@ const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta);
 const servicioRefreshToken = new ServicioRefreshToken(refreshTokenDAO);
-const servicioUsuario = new ServicioUsuario(Usuario, refreshTokenFabrica, servicioRefreshToken, usuarioDAO, JwtAuth, bcrypt);
+const servicioAuth = new ServicioAuth(Usuario, refreshTokenFabrica, servicioRefreshToken, usuarioDAO, JwtAuth, bcrypt);
 
 // Controladores
 const tareaController = new TareaController({
@@ -65,18 +65,18 @@ const etiquetaController = new EtiquetaController({
   etiquetaMapper
 });
 
-const usuarioController = new UsuarioController({
-  servicioUsuario,
+const authController = new AuthController({
+  servicioAuth,
   usuarioMapper
 });
 
 module.exports = {
   tareaController,
   etiquetaController,
-  usuarioController,
+  authController,
   servicioTarea,
   servicioEtiqueta,
-  servicioUsuario,
+  servicioAuth,
   tareaDAO,
   etiquetaDAO,
   usuarioDAO,

@@ -1,6 +1,6 @@
 
 export async function login(nombreUsuario, contrasenaUsuario) {
-    const urlUsuarioLogin = "http://localhost:3000/usuario/login";
+    const urlUsuarioLogin = "http://localhost:3000/auth/login";
   
     try {
       const response = await fetch(urlUsuarioLogin, {
