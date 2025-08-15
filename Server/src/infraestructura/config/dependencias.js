@@ -46,13 +46,14 @@ const etiquetaDAO = new EtiquetaDAO(etiquetaMapper, conexionBD);
 const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD, bcrypt);
 const refreshTokenDAO = new RefreshTokenDAO(refreshTokenMapper, conexionBD);
 
+const jwtAuth = new JwtAuth();
 
 // Servicios
 const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta);
-const servicioRefreshToken = new ServicioRefreshToken(refreshTokenDAO);
-const servicioAuth = new ServicioAuth(Usuario, refreshTokenFabrica, servicioRefreshToken, usuarioDAO, JwtAuth, bcrypt);
+const servicioRefreshToken = new ServicioRefreshToken(refreshTokenDAO,jwtAuth);
+const servicioAuth = new ServicioAuth(Usuario, refreshTokenFabrica, servicioRefreshToken, usuarioDAO, jwtAuth, bcrypt);
 
 // Controladores
 const tareaController = new TareaController({

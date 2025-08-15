@@ -47,6 +47,7 @@ class AuthController {
   async renovarTokenAcceso(req, res) {
     try {
       const { refreshToken } = req.body;
+        const resultado = await this.servicioAuth.loginUsuario(nombreUsuario, contrasena);
      
       return res.status(200).json({
         status: "success",
