@@ -1,12 +1,12 @@
 const bcrypt = require("bcryptjs");
 
 class ServicioAuth{
-   constructor(Usuario, RefreshTokenFabrica,servicioRefreshToken, UsuarioDAO, JwtAuth, bcrypt) {
+   constructor(Usuario, RefreshTokenFabrica,servicioRefreshToken, UsuarioDAO, jwtAuth, bcrypt) {
     this.Usuario = Usuario;
     this.RefreshTokenFabrica = RefreshTokenFabrica;
     this.servicioRefreshToken = servicioRefreshToken;
     this.UsuarioDAO = UsuarioDAO;
-    this.JwtAuth = JwtAuth;
+    this.jwtAuth = jwtAuth;
     this.bcrypt = bcrypt;
 
    }
@@ -38,10 +38,11 @@ class ServicioAuth{
       throw error;
     }
 
-    const tokenAcceso = this.JwtAuth.generarTokenAcceso(usuarioEncontrado.idUsuario, usuarioEncontrado.rol);
-    const refreshToken= this.JwtAuth.generarRefreshToken(usuarioEncontrado.idUsuario);
+    const tokenAcceso = this.jwtAuth.generarTokenAcceso(usuarioEncontrado.idUsuario, usuarioEncontrado.rol);
+    const {refreshToken, hash}= this.jwtAuth.generarRefreshToken(usuarioEncontrado.idUsuario);
 
-  const entidadRefreshToken=this.RefreshTokenFabrica.crear(usuarioEncontrado.idUsuario, refreshToken);
+  const entidadRefreshToken=this.RefreshTokenFabrica.crear(usuarioEncontrado.idUsuario, refreshToken, hash);
+  
 
     await this.servicioRefreshToken.registrarRefreshToken(entidadRefreshToken);
 
@@ -51,6 +52,10 @@ class ServicioAuth{
       refreshToken,
       expiraEn: 900 // 15 minutos en segundos
     };
+  }
+
+  async renovarTokenAcceso(refreshToken){
+
   }
 }
 

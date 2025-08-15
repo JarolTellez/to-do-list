@@ -3,7 +3,7 @@ class RefreshTokenFabrica{
         this.RefreshToken = RefreshToken;
     }
 
-    crear(idUsuario, token) {
+    crear(idUsuario, token, hash) {
     const fechaCreacion = new Date();
     const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
@@ -11,6 +11,7 @@ class RefreshTokenFabrica{
       idRefreshToken: null,
       idUsuario,
       token,
+      hash,
       fechaCreacion,
       fechaExpiracion,
       revocado: false
