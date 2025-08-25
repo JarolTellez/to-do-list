@@ -82,10 +82,10 @@ class JwtAuth {
     );
 
     // Generar hash SHA256 para guardar en DB
-    const hash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
 
     // Devolver ambos: token para cliente y hash para BD
-    return { refreshToken, hash };
+    return { refreshToken, refreshTokenHash };
   }
 
   // Verificar Access Token

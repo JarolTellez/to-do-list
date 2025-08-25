@@ -1,17 +1,19 @@
-class RefreshTokenFabrica{
-    constructor(RefreshToken){
-        this.RefreshToken = RefreshToken;
+class SesionFabrica{
+    constructor(Sesion){
+        this.Sesion = Sesion;
     }
 
-    crear(idUsuario, token, hash) {
+    crear(idUsuario, token, refreshTokenHash, userAgent, ip) {
     const fechaCreacion = new Date();
     const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
-    return new this.RefreshToken({
+    return new this.Sesion({
       idRefreshToken: null,
       idUsuario,
       token,
-      hash,
+      refreshTokenHash,
+      userAgent,
+      ip,
       fechaCreacion,
       fechaExpiracion,
       revocado: false
@@ -19,4 +21,4 @@ class RefreshTokenFabrica{
   }
 }
 
-module.exports = RefreshTokenFabrica;
+module.exports = SesionFabrica;

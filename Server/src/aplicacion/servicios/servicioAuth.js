@@ -1,10 +1,10 @@
 const bcrypt = require("bcryptjs");
 
 class ServicioAuth{
-   constructor(Usuario, RefreshTokenFabrica,servicioRefreshToken, UsuarioDAO, jwtAuth, bcrypt) {
+   constructor(Usuario, SesionFabrica,servicioSesion, UsuarioDAO, jwtAuth, bcrypt) {
     this.Usuario = Usuario;
-    this.RefreshTokenFabrica = RefreshTokenFabrica;
-    this.servicioRefreshToken = servicioRefreshToken;
+    this.SesionFabrica = SesionFabrica;
+    this.servicioSesion = servicioSesion;
     this.UsuarioDAO = UsuarioDAO;
     this.jwtAuth = jwtAuth;
     this.bcrypt = bcrypt;
@@ -28,7 +28,8 @@ class ServicioAuth{
     return usuarioAgregado;
   }
 
-   async loginUsuario( nombreUsuario, contrasena ) {
+   async loginUsuario( nombreUsuario, contrasena, infoSesion ) {
+      const { userAgent, ip } = infoSesion;
     //Se buscar el usuario por nombreUsuario 
     const usuarioEncontrado = await this.UsuarioDAO.consultarUsuarioPorNombreContrasena(nombreUsuario, contrasena);
 
@@ -39,12 +40,12 @@ class ServicioAuth{
     }
 
     const tokenAcceso = this.jwtAuth.generarTokenAcceso(usuarioEncontrado.idUsuario, usuarioEncontrado.rol);
-    const {refreshToken, hash}= this.jwtAuth.generarRefreshToken(usuarioEncontrado.idUsuario);
+    const {refreshToken, refreshTokenHash}= this.jwtAuth.generarRefreshToken(usuarioEncontrado.idUsuario);
 
-  const entidadRefreshToken=this.RefreshTokenFabrica.crear(usuarioEncontrado.idUsuario, refreshToken, hash);
+  const entidadSesion=this.SesionFabrica.crear(usuarioEncontrado.idUsuario, refreshToken, refreshTokenHash, userAgent, ip );
   
 
-    await this.servicioRefreshToken.registrarRefreshToken(entidadRefreshToken);
+    await this.servicioSesion.registrarSesion(entidadSesion);
 
     return {
       usuario: usuarioEncontrado,
