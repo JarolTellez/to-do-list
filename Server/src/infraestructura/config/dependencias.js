@@ -27,6 +27,7 @@ const ConexionBD = require("../config/conexionBD");
 const JwtAuth = require('../../infraestructura/config/jwtAuth');
 const UsuarioRespuestaDTO = require("../../aplicacion/dtos/respuestas_dto/usuarioRespuestaDTO");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 
 // Mappers y Factories
@@ -53,7 +54,7 @@ const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta);
 const servicioSesion = new ServicioSesion(sesionDAO,jwtAuth);
-const servicioAuth = new ServicioAuth(Usuario, sesionFabrica, servicioSesion, usuarioDAO, jwtAuth, bcrypt);
+const servicioAuth = new ServicioAuth(Usuario, sesionFabrica, servicioSesion, usuarioDAO, jwtAuth, bcrypt, crypto);
 
 // Controladores
 const tareaController = new TareaController({

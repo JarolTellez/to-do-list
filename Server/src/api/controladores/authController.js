@@ -27,9 +27,9 @@ class AuthController {
   async loginUsuario(req, res) {
     try {
       const { nombreUsuario, contrasena } = req.body;
-      const userAgent = req.get('User-Agent');
+      const dispositivoInfo = JSON.parse(req.get("Dispositivo-Info") || "{}");
       const ip = req.ip;
-      const resultado = await this.servicioAuth.loginUsuario(nombreUsuario, contrasena, { userAgent, ip });
+      const resultado = await this.servicioAuth.loginUsuario(nombreUsuario, contrasena, dispositivoInfo, ip);
       
       return res.status(200).json({
         status: "success",
