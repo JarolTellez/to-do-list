@@ -29,48 +29,69 @@ class ServicioAuth{
     return usuarioAgregado;
   }
 
-   async loginUsuario( nombreUsuario, contrasena, dispositivoInfo, ip ) {
-    //Se buscar el usuario por nombreUsuario  y contrasena
-    const usuarioEncontrado = await this.UsuarioDAO.consultarUsuarioPorNombreContrasena(nombreUsuario, contrasena);
-     const sesionesActivas = await this.servicioSesion.gestionarLimiteDeSesiones(usuarioEncontrado.idUsuario, this.MAX_SESIONES);
 
-    if (!usuarioEncontrado) {
-      const error = new Error("Usuario no encontrado");
-      error.statusCode = 404;
-      throw error;
-    }
+  async loginUsuario(nombreUsuario, contrasena, dispositivoInfo, ip) {
+  // Verificar el usuario
+  const usuarioEncontrado = await this.UsuarioDAO.consultarUsuarioPorNombreContrasena(
+    nombreUsuario,
+    contrasena
+  );
 
-    const tokenAcceso = this.jwtAuth.generarTokenAcceso(usuarioEncontrado.idUsuario, usuarioEncontrado.rol);
-    const {refreshToken, refreshTokenHash}= this.jwtAuth.generarRefreshToken(usuarioEncontrado.idUsuario);
+  if (!usuarioEncontrado) {
+    const error = new Error("Usuario no encontrado");
+    error.statusCode = 404;
+    throw error;
+  }
 
-      const dispositivo = `
-      ${dispositivoInfo.userAgent}
-      ${dispositivoInfo.screenWidth}
-      ${dispositivoInfo.screenHeight}
-      ${dispositivoInfo.timezone}
-      ${dispositivoInfo.language}
-      ${dispositivoInfo.hardwareConcurrency || 'unknown'}
-      ${usuarioEncontrado.idUsuario}
-      `;
+  await this.servicioSesion.gestionarLimiteDeSesiones(
+    usuarioEncontrado.idUsuario,
+    this.MAX_SESIONES
+  );
+
+ // Generar tokens 
+  const tokenAcceso = this.jwtAuth.generarTokenAcceso(
+    usuarioEncontrado.idUsuario,
+    usuarioEncontrado.rol
+  );
+  
+  const { refreshToken, refreshTokenHash } = this.jwtAuth.generarRefreshToken(
+    usuarioEncontrado.idUsuario
+  );
+
+  // Crear deviceId ya con la validacion de que el usuario existe(codigo arriba)
+  const dispositivo = `
+    ${dispositivoInfo.userAgent}
+    ${dispositivoInfo.screenWidth}
+    ${dispositivoInfo.screenHeight}
+    ${dispositivoInfo.timezone}
+    ${dispositivoInfo.language}
+    ${dispositivoInfo.hardwareConcurrency || "unknown"}
+    ${usuarioEncontrado.idUsuario}
+  `;
 
   const dispositivoId = this.crypto
-    .createHash('sha256')
+    .createHash("sha256")
     .update(dispositivo)
-    .digest('hex');
+    .digest("hex");
 
-  const entidadSesion=this.SesionFabrica.crear(usuarioEncontrado.idUsuario, refreshToken, refreshTokenHash, dispositivoInfo.userAgent, ip, dispositivoId);
-  
- 
+  //Crear y registrar la sesión
+  const entidadSesion = this.SesionFabrica.crear(
+    usuarioEncontrado.idUsuario,
+    refreshTokenHash, 
+    dispositivoInfo.userAgent,
+    ip,
+    dispositivoId
+  );
 
-    await this.servicioSesion.registrarSesion(entidadSesion);
+  await this.servicioSesion.registrarSesion(entidadSesion);
 
-    return {
-      usuario: usuarioEncontrado,
-      tokenAcceso,
-      refreshToken,
-      expiraEn: 900 // 15 minutos en segundos
-    };
-  }
+  return {
+    usuario: usuarioEncontrado,
+    tokenAcceso,
+    refreshToken, 
+    expiraEn: 900,
+  };
+}
 
   async renovarTokenAcceso(refreshToken){
 
