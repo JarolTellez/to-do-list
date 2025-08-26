@@ -3,10 +3,12 @@ export async function login(nombreUsuario, contrasenaUsuario) {
     const urlUsuarioLogin = "http://localhost:3000/auth/login";
   
     try {
+       const dispositivoInfo = getDispositivoInfo();
       const response = await fetch(urlUsuarioLogin, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Dispositivo-Info": JSON.stringify(dispositivoInfo)
         },
         body: JSON.stringify({ nombreUsuario, contrasena: contrasenaUsuario }),
       });
@@ -36,3 +38,16 @@ export async function login(nombreUsuario, contrasenaUsuario) {
      window.location.href = "index.html"; // Redirigir al login si no hay sesión
     }
   }
+
+  function getDispositivoInfo() {
+  return {
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    screenWidth: screen.width,
+    screenHeight: screen.height,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+}
+
+  
+  
