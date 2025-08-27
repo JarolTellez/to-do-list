@@ -11,5 +11,9 @@ module.exports = (authController) => {
   router.route('/renovar-token-acceso')
   .post(authController.renovarTokenAcceso.bind(authController));
 
+    router.route('/renovar-refresh-token')
+  .post(authController.renovarTokenAcceso.bind(authController));
+
+
   return router;
 };
