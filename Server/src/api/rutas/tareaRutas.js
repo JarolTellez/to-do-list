@@ -1,6 +1,7 @@
 const express = require('express');
+const {validarTokenAcceso} = require("../middlewares/validarTokenAcceso");
 
-// Exporta una función que recibe el controlador
+
 module.exports = (tareaController) => {
   const router = express.Router();
 
@@ -8,7 +9,7 @@ module.exports = (tareaController) => {
     .post(tareaController.agregarTarea.bind(tareaController));
 
   router.route('/consultar')
-    .post(tareaController.consultarTareasPorIdUsuario.bind(tareaController));
+    .post(validarTokenAcceso,tareaController.consultarTareasPorIdUsuario.bind(tareaController));
    
   router.route('/gestionar')
     .post(tareaController.eliminarTarea.bind(tareaController))
@@ -19,3 +20,4 @@ module.exports = (tareaController) => {
 
   return router;
 };
+

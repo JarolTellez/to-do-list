@@ -19,57 +19,61 @@ console.log("TAREA QUE SE MANDARA  AGUARDAR: ",tareaNueva);
     
     
     if (!response.ok) {
-      // Si la respuesta no es exitosa, lanzar el error
-      throw data; // data ya contiene el objeto de error del backend
+      throw data; 
     }
 
     // Si la respuesta es exitosa, devolver los datos
-   // return data;
    return tareaAgregada;
   } catch (error) {
    
     console.error("Error al agregar la tarea:", error);
 
-    // Relanzar el error para que pueda ser manejado por otros componentes
     throw error;
    
   }
 }
 
-export async function consultarTareasUsuario(idUsuario){
-  const urlTareasUsuario="http://localhost:3000/tarea/consultar"
+export async function consultarTareasUsuario(idUsuario) {
+  const urlTareasUsuario = "http://localhost:3000/tarea/consultar";
 
   try {
-    const response=await fetch(urlTareasUsuario,{
-      method:"POST",
+    const response = await fetch(urlTareasUsuario, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ idUsuario: idUsuario }),
+      credentials: "include"
+    });
 
-    })
+    //AGREGAR DESPUES
+    // // Manejar error 401 (Token expirado)
+    // if (response.status === 401) {
+    //   try {
+    //     // Intentar refrescar el token
+    //     await refreshToken();
+    //     // Reintentar la consulta
+    //     return consultarTareasUsuario(idUsuario);
+    //   } catch (refreshError) {
+    //     // Redirigir a login si el refresh falla
+    //     window.location.href = '/login';
+    //     throw new Error("Sesión expirada");
+    //   }
+    // }
 
-    const respuesta=await response.json();
-    if(response.ok){
-      console.log("DATA RECIBIDA pendientes",respuesta.data.tareasPendientes);
-        
-      // const tareasPendientes=mapApiToTarea(respuesta.data.tareasPendientes);
-      const tareasPendientes = respuesta.data.tareasPendientes.map((tarea) => 
-  mapApiToTarea(tarea)
-);
-   
-      console.log("PENDIENTES MAPEADAS: ", tareasPendientes);
-       //  const tareasCompletadas=mapApiToTarea(respuesta.data.tareasPendientes);
-         const tareasCompletadas = respuesta.data.tareasCompletadas.map((tarea) => 
-  mapApiToTarea(tarea)
-);
-    //  return respuesta.data;
-    return {tareasPendientes, tareasCompletadas};
-    }else {
-      throw new Error(respuesta.mensaje);
+    const respuesta = await response.json();
+    
+    if (response.ok) {
+      const tareasPendientes = respuesta.data.tareasPendientes.map(mapApiToTarea);
+      const tareasCompletadas = respuesta.data.tareasCompletadas.map(mapApiToTarea);
+      
+      return { tareasPendientes, tareasCompletadas };
+    } else {
+      throw new Error(respuesta.mensaje || "Error del servidor");
     }
   } catch (error) {
-    throw new Error("Error al consultar las tareas: " + error.message);
+    console.error("Error en consultarTareasUsuario:", error);
+    throw error;
   }
 }
 
@@ -82,7 +86,8 @@ export async function actualizarTareaCompletada(idTarea,completada) {
       headers:{
         "Content-Type": "application/json",
       },
-      body:JSON.stringify({idTarea:idTarea,completada:completada})
+      body:JSON.stringify({idTarea:idTarea,completada:completada}),
+      credentials: "include"
     });
 
     const respuesta=await response.json();
@@ -110,7 +115,8 @@ export async function actualizarTarea(tareaActualizada){
       headers:{
         "Content-Type": "application/json",
       },
-      body:JSON.stringify(tareaActualizada)
+      body:JSON.stringify(tareaActualizada),
+      credentials: "include"
     });
 
     const respuesta= await response.json();
@@ -138,7 +144,8 @@ export async function eliminarTarea(idTarea,idUsuario) {
       headers:{
         "Content-Type": "application/json",
       },
-      body:JSON.stringify({idTarea:idTarea,idUsuario:idUsuario})
+      body:JSON.stringify({idTarea:idTarea,idUsuario:idUsuario}),
+      credentials: "include"
     });
 
     const respuesta=await response.json();

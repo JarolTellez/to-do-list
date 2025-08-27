@@ -1,26 +1,6 @@
-// require('dotenv').config();
-// const express = require ('express');
-// const { servicioTarea } = require('./src/infraestructura/config/dependencias');
-// const app = express();
-// const routerUsuario = require('./src/rutas/usuarioRutas');
-// const routerTarea=require("./src/rutas/tareaRutas")(servicioTarea);
-// const routerEtiqueta=require("./src/rutas/etiquetaRutas");
-// const cors = require('cors');
-// const PORT = 3000;
-
-
-// app.use(cors());
-// app.use(express.json());
-// app.use('/usuario',routerUsuario);
-// app.use("/tarea",routerTarea)
-// app.use("/etiqueta",routerEtiqueta);
-// app.listen(PORT, () => {
-//     console.log('Servidor ')
-// })
-
-// server.js
 require('dotenv').config();
 const express = require('express');
+const cookieParser = require('cookie-parser'); 
 const { 
   tareaController, 
   etiquetaController,
@@ -30,9 +10,21 @@ const app = express();
 const cors = require('cors');
 const PORT = 3000;
 
-// Configuración de middlewares
-app.use(cors());
+// Configuración de CORS
+const corsOptions = {
+  origin: ['http://127.0.0.1:5500', 'http://localhost:5500'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Dispositivo-Info']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// Middlewares
+app.use(cookieParser()); 
 app.use(express.json());
+
 
 // Configuración de rutas
 const routerAuth = require('./src/api/rutas/authRutas')(authController);

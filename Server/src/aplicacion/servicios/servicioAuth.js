@@ -87,8 +87,8 @@ class ServicioAuth{
 
   return {
     usuario: usuarioEncontrado,
-    tokenAcceso,
-    refreshToken, 
+   tokenAcceso: tokenAcceso,
+   refreshToken: refreshToken, 
     expiraEn: 900,
   };
 }

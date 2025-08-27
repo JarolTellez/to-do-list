@@ -30,12 +30,37 @@ class AuthController {
       const dispositivoInfo = JSON.parse(req.get("Dispositivo-Info") || "{}");
       const ip = req.ip;
       const resultado = await this.servicioAuth.loginUsuario(nombreUsuario, contrasena, dispositivoInfo, ip);
+      console.log("resultado: ", resultado);
+      // const esProduccion = process.env.NODE_ENV === 'production';
       
-      return res.status(200).json({
-        status: "success",
-        message: "Autenticación exitosa",
-        data: resultado
-      });
+    // Configurar cookies HttpOnly
+    res.cookie('accessToken', resultado.tokenAcceso, {
+      httpOnly: true,
+      // secure: esProduccion,
+     // sameSite: 'strict',
+        secure: false,
+        sameSite: 'lax',
+      maxAge: 15 * 60 * 1000 // 15 minutos
+    });
+
+    res.cookie('refreshToken', resultado.refreshToken, {
+      httpOnly: true,
+     // secure: esProduccion,
+     // sameSite: 'strict',
+        secure: false,
+        sameSite: 'lax',
+      path: 'auth/renovar-refresh-token', // Solo accesible en endpoint de refresh
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Autenticación exitosa",
+      data: {
+        usuario: resultado.usuario,
+        expiraEn: 900
+      }
+    });
     } catch (error) {
       console.error("Error en login:", error);
       const statusCode = error.statusCode || 500;
