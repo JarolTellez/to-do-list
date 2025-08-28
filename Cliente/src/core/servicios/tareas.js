@@ -10,6 +10,7 @@ console.log("TAREA QUE SE MANDARA  AGUARDAR: ",tareaNueva);
         "Content-Type": "application/json",
       },
       body: JSON.stringify(tareaNueva),
+      credentials: "include"
     });
 
     const data = await response.json();

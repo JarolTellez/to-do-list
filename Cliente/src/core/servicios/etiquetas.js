@@ -10,6 +10,7 @@ export async function cargarEtiquetas() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(idUsuario),
+      credentials: "include"
     });
 
     if (!response.ok) {
