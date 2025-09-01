@@ -49,7 +49,7 @@ class ServicioAuth{
   );
 
  // Generar tokens 
-  const tokenAcceso = this.jwtAuth.generarTokenAcceso(
+  const accessToken= this.jwtAuth.generarAccessToken(
     usuarioEncontrado.idUsuario,
     usuarioEncontrado.rol
   );
@@ -80,21 +80,82 @@ class ServicioAuth{
     refreshTokenHash, 
     dispositivoInfo.userAgent,
     ip,
-    dispositivoId
+    dispositivoId,
+    true
   );
 
   await this.servicioSesion.registrarSesion(entidadSesion);
 
   return {
     usuario: usuarioEncontrado,
-   tokenAcceso: tokenAcceso,
+   accessToken: accessToken,
    refreshToken: refreshToken, 
     expiraEn: 900,
   };
 }
 
-  async renovarTokenAcceso(refreshToken){
+  async renovarAccesToken(refreshToken){
 
+    try {
+      if(!refreshToken){
+        throw new Error("Refresh Token no proporcionado")
+      }
+
+      const decodificado= this.jwtAuth.verificarRefreshToken(refreshToken);
+
+      console.log("DECODIFICADO EALEEEEEEEEEEEE:", decodificado)
+;      const usuario = await this.UsuarioDAO.consultarUsuarioPorId(decodificado.idUsuario);
+     // console.log("USUARIO:", usuario,"REFRESH TOKEN", refreshToken);
+
+      if(!usuario){
+          throw new Error("Usuario no encontrado");
+      }
+      
+      const refreshTokenHashRecibido = this.crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+      const sesionValida = await this.servicioSesion.verificarSesionValida(usuario.idUsuario, refreshTokenHashRecibido);
+      if(new Date()> sesionValida.fechaExpiracion){
+        await this.servicioSesion.desactivarSesion(sesionValida.idSesion);
+      }
+
+      const nuevoAccesToken = this.jwtAuth.generarAccessToken(
+    usuario.idUsuario,
+    usuario.rol
+  );
+
+  console.log("ACCES TOKEN: ", nuevoAccesToken, "USUARIO: ",usuario);
+
+  return {
+    accessToken: nuevoAccesToken,
+    usuario: usuario,
+  }
+  
+    } catch (error) {
+     if (error.message === 'Refresh token expirado') {
+            const customError = new Error('Refresh token expirado');
+            customError.statusCode = 401;
+            customError.tipo = 'REFRESH_EXPIRED';
+            throw customError;
+        }
+        
+        if (error.message === 'Refresh token inválido') {
+            const customError = new Error('Refresh token inválido');
+            customError.statusCode = 401;
+            customError.tipo = 'REFRESH_INVALID';
+            throw customError;
+        }
+
+       
+        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+            const customError = new Error('Token inválido');
+            customError.statusCode = 401;
+            customError.tipo = 'TOKEN_INVALID';
+            throw customError;
+        }
+
+        throw error;
+      
+     }
   }
 }
 

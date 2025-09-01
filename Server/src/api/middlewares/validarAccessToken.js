@@ -1,22 +1,21 @@
 const jwt = require('jsonwebtoken');
 
-const validarTokenAcceso = (req, res, next) => {
+const validarAccessToken = (req, res, next) => {
   try {
     console.log('Todas las cookies recibidas:', req.cookies);
     console.log('Headers cookie:', req.headers.cookie);
-    // Verificar que req.cookies existe
-    if (!req.cookies) {
-      console.log("NO COOCKIE");
-      return res.status(401).json({ 
-        status: "error",
-        message: 'Cookies no disponibles' 
-      });
-    }
+    const authorizationHeader = req.headers['authorization'];
 
-    // Obtener token de la cookie
-    const token = req.cookies.accessToken;
+      
+  // Verificar que exista el header y tenga el formato correcto
+  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token requerido' });
+  }
+  
+  //  Extraer solo el token eliminando el 'Barear'
+  const accessToken = authorizationHeader.split(' ')[1]; 
     
-    if (!token) {
+    if (!accessToken) {
       console.log("NO TOKEN");
       return res.status(401).json({ 
         status: "error",
@@ -25,22 +24,18 @@ const validarTokenAcceso = (req, res, next) => {
     }
 
     // Verificar token
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    console.log("USUARIO DECODIFICADO:", decoded);
+    const decodificado = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
     
     // Agregar info del usuario al request
     req.usuario = {
-      id: decoded.id,
-      rol: decoded.rol
+      idUsuario: decodificado.idUsuario,
+      rol: decodificado.rol
     };
 
     // Continuar al controller
     next();
   } catch (error) {
     console.error("Error validando token:", error);
-    
-    // Limpiar cookie inválida
-    res.clearCookie('accessToken');
     
     return res.status(401).json({ 
       status: "error",
@@ -49,4 +44,4 @@ const validarTokenAcceso = (req, res, next) => {
   }
 };
 
-module.exports = { validarTokenAcceso };
+module.exports = { validarAccessToken};

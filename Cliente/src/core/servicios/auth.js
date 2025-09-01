@@ -1,3 +1,4 @@
+import {setAccessToken, getAccessToken} from "../accessTokenEstado.js";
 
 export async function login(nombreUsuario, contrasenaUsuario) {
     const urlUsuarioLogin = "http://localhost:3000/auth/login";
@@ -17,8 +18,11 @@ export async function login(nombreUsuario, contrasenaUsuario) {
       const datos = await response.json();
       console.log("DATOS DEL USUARIO ++++", datos);
       if (response.ok) {
-         sessionStorage.setItem("idUsuario", datos.data.usuario.idUsuario);
+        sessionStorage.setItem("idUsuario", datos.data.usuario.idUsuario);
         sessionStorage.setItem("usuario", JSON.stringify(datos.data.usuario));
+        setAccessToken(datos.data.accessToken);
+         
+
         return true; // Login exitoso
       } else {
         throw new Error(datos.mensaje || "Error al iniciar sesión");
@@ -33,6 +37,28 @@ export async function login(nombreUsuario, contrasenaUsuario) {
     sessionStorage.removeItem("idUsuario");
   }
   
+
+  export async function renovarAccessToken() {
+    const url = "http://localhost:3000/auth/renovar-access-token";
+     try {
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+    });
+    
+    if (!response.ok) {
+      throw new Error("Error al refrescar el access token");
+    }
+     const data = await response.json();
+        
+     
+     return data.data;
+  } catch (error) {
+    console.error("Error renovar access token:", error);
+    throw error;
+  }
+    
+  }
   export function verificarSesion() {
     const idUsuario = sessionStorage.getItem("idUsuario");
     if (!idUsuario) {

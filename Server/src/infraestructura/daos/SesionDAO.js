@@ -1,6 +1,6 @@
 class SesionDAO {
-  constructor(refreshTokenMapper, conexionBD) {
-    this.refreshTokenMapper = refreshTokenMapper;
+  constructor(sesionMapper, conexionBD) {
+    this.sesionMapper = sesionMapper;
     this.conexionBD = conexionBD;
   }
 
@@ -8,8 +8,8 @@ class SesionDAO {
   async guardarSesion(sesion) {
     const connection = await this.conexionBD.conectar();
     try {
-      const [result] = await connection.query(
-        "INSERT INTO sesiones (id_usuario, refresh_token_hash, id_dispositivo, user_agent, ip, fecha_creacion, fecha_expiracion, activo) VALUES (?,?,?,?,?,?,?,?)",
+      const [resultado] = await connection.query(
+        "INSERT INTO sesiones (id_usuario, refresh_token_hash, id_dispositivo, user_agent, ip, fecha_creacion, fecha_expiracion, activa) VALUES (?,?,?,?,?,?,?,?)",
         [
           sesion.idUsuario,
           sesion.refreshTokenHash,
@@ -18,13 +18,14 @@ class SesionDAO {
           sesion.ip,
           sesion.fechaCreacion,
           sesion.fechaExpiracion,
-          sesion.activo
+          sesion.activa
         ]
       );
 
       // Asignar el ID generado
-      sesion.idRefreshToken = result.insertId;
+      sesion.idRefreshToken = resultado.insertId;
 
+      // No mapeo porque ya llega al metodo como dominio
       return sesion;
     } catch (error) {
       console.error(`Error al agregar el refresh token para usuario ${sesion.idUsuario}:`, error);
@@ -38,11 +39,11 @@ class SesionDAO {
   async desactivarSesionPorId(idSesion) {
     const connection = await this.conexionBD.conectar();
     try {
-      const [result] = await connection.query(
-        "UPDATE sesiones SET activo=FALSE WHERE id_sesion = ?",
+      const [resultado] = await connection.query(
+        "UPDATE sesiones SET activa = FALSE WHERE id_sesion = ?",
         [idSesion]
       );
-      console.log(`Sesión ${idSesion} desactivada. Filas afectadas: ${result.affectedRows}`);
+      console.log(`Sesión ${idSesion} desactivada. Filas afectadas: ${resultado.affectedRows}`);
     } catch (error) {
       console.error(`Error al desactivar la sesión ${idSesion}:`, error);
       throw error;
@@ -55,11 +56,11 @@ class SesionDAO {
   async desactivarTodasPorIdUsuario(idUsuario) {
     const connection = await this.conexionBD.conectar();
     try {
-      const [result] = await connection.query(
-        "UPDATE sesiones SET activo=FALSE WHERE id_usuario=?",
+      const [resultado] = await connection.query(
+        "UPDATE sesiones SET activa=FALSE WHERE id_usuario=?",
         [idUsuario]
       );
-      console.log(`Todas las sesiones del usuario ${idUsuario} desactivadas. Filas afectadas: ${result.affectedRows}`);
+      console.log(`Todas las sesiones del usuario ${idUsuario} desactivadas. Filas afectadas: ${resultado.affectedRows}`);
     } catch (error) {
       console.error(`Error al desactivar las sesiones del usuario ${idUsuario}:`, error);
       throw error;
@@ -71,11 +72,11 @@ class SesionDAO {
   async desactivarPorIdUsuarioIdDispositivo(idUsuario, idDispositivo) {
      const connection = await this.conexionBD.conectar();
     try {
-      const [result] = await connection.query(
-        "UPDATE sesiones SET activo = FALSE WHERE id_usuario = ? AND id_dispositivo = ?",
+      const [resultado] = await connection.query(
+        "UPDATE sesiones SET activa = FALSE WHERE id_usuario = ? AND id_dispositivo = ?",
         [idUsuario, idDispositivo]
       );
-      console.log(`La sesion del usuario ${idUsuario} con id de dispositivo ${idDispositivo} ha sido desactivada. Filas afectadas: ${result.affectedRows}`);
+      console.log(`La sesion del usuario ${idUsuario} con id de dispositivo ${idDispositivo} ha sido desactivada. Filas afectadas: ${resultado.affectedRows}`);
     } catch (error) {
       console.error(`Error al desactivar la sesione del usuario ${idUsuario} con id de dispositivo ${idDispositivo}}:`, error);
       throw error;
@@ -86,14 +87,14 @@ class SesionDAO {
   async desactivarSesionMasAntigua(idUsuario) {
   const connection = await this.conexionBD.conectar();
   try {
-    const [result] = await connection.query(`
+    const [resultado] = await connection.query(`
       DELETE FROM sesiones 
       WHERE id_usuario = ? 
       ORDER BY fecha_creacion ASC 
       LIMIT 1
     `, [idUsuario]);
 
-    return result.affectedRows > 0;
+    return resultado.affectedRows > 0;
   } catch (error) {
     console.error('Error al eliminar sesión más antigua:', error);
     throw error;
@@ -101,16 +102,17 @@ class SesionDAO {
     connection.release();
   }
 }
-
+// PONER MAPPERS DE BD A DOMINIO
   // Consultar todas las sesiones de un usuario
   async consultarSesionesPorIdUsuario(idUsuario) {
     const connection = await this.conexionBD.conectar();
     try {
-      const [sesiones] = await connection.query(
+      const [resultados] = await connection.query(
         "SELECT * FROM sesiones WHERE id_usuario = ?",
         [idUsuario]
       );
-      return sesiones;
+      const sesionesDominio = resultados.map(elemento=> this.sesionMapper.bdToDominio(elemento));
+      return sesionesDominio;
     } catch (error) {
       console.error(`Error al consultar sesiones del usuario ${idUsuario}:`, error);
       throw error;
@@ -122,11 +124,12 @@ class SesionDAO {
     async consultarSesionesActivasPorIdUsuario(idUsuario) {
     const connection = await this.conexionBD.conectar();
     try {
-      const [sesiones] = await connection.query(
-        "SELECT * FROM sesiones WHERE id_usuario = ? AND activo = TRUE",
+      const [resultados] = await connection.query(
+        "SELECT * FROM sesiones WHERE id_usuario = ? AND activa = TRUE",
         [idUsuario]
       );
-      return sesiones;
+      const sesionesDominio = resultados.map(elemento=> this.sesionMapper.bdToDominio(elemento));
+      return sesionesDominio;
     } catch (error) {
       console.error(`Error al consultar sesiones del usuario ${idUsuario}:`, error);
       throw error;
@@ -135,15 +138,40 @@ class SesionDAO {
     }
   }
 
+   async consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash) {
+    const connection = await this.conexionBD.conectar();
+    try {
+      const [resultados] = await connection.query(
+        "SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash =?  AND activa = TRUE",
+        [idUsuario, refreshTokenHash]
+      );
+      const sesionesDominio = resultados.map(elemento=> this.sesionMapper.bdToDominio(elemento));
+      return sesionesDominio;
+    } catch (error) {
+      console.error(`Error al consultar sesiones del usuario ${idUsuario} y refresh token Hash ${refreshTokenHash}:`, error);
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
   // Consultar una sesión por refresh token hash
   async consultarSesionPorRefreshTokenHash(refreshTokenHash) {
     const connection = await this.conexionBD.conectar();
     try {
-      const [sesion] = await connection.query(
+      const [resultados] = await connection.query(
         "SELECT * FROM sesiones WHERE refresh_token_hash = ?",
         [refreshTokenHash]
       );
-      return sesion;
+
+        if (resultados.length === 0) {
+            return null; 
+        }
+
+      //Toma solo el primero porque el refreshTokenHash es unico
+        const sesionBD = resultados[0];
+        
+       
+        return this.sesionMapper.bdToDominio(sesionBD);
     } catch (error) {
       console.error(`Error al consultar sesión con refresh token hash ${refreshTokenHash}:`, error);
       throw error;

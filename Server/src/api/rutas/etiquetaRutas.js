@@ -1,10 +1,10 @@
 const express = require('express');
-const {validarTokenAcceso} = require("../middlewares/validarTokenAcceso");
+const {validarAccessToken} = require("../middlewares/validarAccessToken");
 module.exports = (etiquetaController) => {
   const router = express.Router();
 
   router.route('/')
-    .post(validarTokenAcceso,etiquetaController.consultarEtiquetasPorIdUsuario.bind(etiquetaController));
+    .post(validarAccessToken,etiquetaController.consultarEtiquetasPorIdUsuario.bind(etiquetaController));
 
   return router;
 };

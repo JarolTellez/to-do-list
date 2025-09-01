@@ -3,7 +3,7 @@ class SesionFabrica{
         this.Sesion = Sesion;
     }
 
-    crear(idUsuario, refreshTokenHash, userAgent, ip, idDispositivo) {
+    crear(idUsuario, refreshTokenHash, userAgent, ip, idDispositivo, activa) {
     const fechaCreacion = new Date();
     const fechaExpiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
 
@@ -16,7 +16,7 @@ class SesionFabrica{
       ip,
       fechaCreacion,
       fechaExpiracion,
-      activo: true
+      activa: activa
     });
   }
 }
