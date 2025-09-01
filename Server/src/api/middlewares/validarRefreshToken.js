@@ -10,7 +10,7 @@ const validarRefreshToken = (req, res, next) => {
       });
     }
 
-    // Obtener refresh token de la cookie
+    // Obtener refresh guardado en la cookie
     const refreshToken = req.cookies.refreshToken;
     
     if (!refreshToken) {
@@ -21,22 +21,25 @@ const validarRefreshToken = (req, res, next) => {
     }
 
     // Verificar refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const decodificado = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     
     // Agregar info al request
     req.usuario = {
-      id: decoded.id
+      idUsuario: decodificado.idUsuario
     };
-    req.refreshToken = refreshToken; // Para usarlo en el controller
+    req.refreshToken = refreshToken; 
 
     next();
   } catch (error) {
     console.error("Error validando refresh token:", error);
     
-    // Limpiar cookies en caso de error
-    res.clearCookie('refreshToken', { 
-      path: '/auth/renovar-token' // Mismo path que se configuró
-    });
+   // Limpiar la cookie 
+    res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            path: "/"
+        });
     
     return res.status(401).json({ 
       status: "error",
@@ -45,4 +48,4 @@ const validarRefreshToken = (req, res, next) => {
   }
 };
 
-module.exports = { validarTokenAcceso, validarRefreshToken };
+module.exports = { validarAccessToken, validarRefreshToken };

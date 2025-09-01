@@ -26,6 +26,36 @@ class ServicioSesion{
   }
 }
 
+async desactivarSesion(idSesion){
+  if(!idSesion){
+    throw new Error("Falta el idSesion");
+  }
+
+  try {
+ await this.SesionDAO.desactivarSesionPorId(idSesion);
+
+  } catch (error) {
+    
+  }
+}
+
+async verificarSesionValida(idUsuario, refreshTokenHash){
+  if(!idUsuario || !refreshTokenHash){
+    throw new Error("Faltan datos requeridos: IdUsuario o RefreshToken")
+  }
+
+  try {
+    const sesion = await this.SesionDAO.consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash);
+    if(!sesion){
+      throw new Error("Refresh token invalido o sesion no encontrada");
+    }
+    return sesion;
+  } catch (error) {
+    
+  }
+
+}
+
 async gestionarLimiteDeSesiones(idUsuario, maximoSesiones) {
   if (!idUsuario) {
     throw new Error('Faltan datos requeridos: idUsuario');
@@ -50,7 +80,7 @@ async gestionarLimiteDeSesiones(idUsuario, maximoSesiones) {
     throw new Error('Error al gestionar límite de sesiones: ' + error.message);
   }
 }
-     async renovarTokenAcceso(refreshToken){
+async renovarAccessToken(refreshToken){
       
     }
 }

@@ -5,15 +5,15 @@ class SesionMapper{
 
     bdToDominio(sesionBD){
         return new this.Sesion({
-            idRefreshToken: sesionBD.id_refresh_token,
+            idSesion: sesionBD.id_refresh_token,
             idUsuario: sesionBD.id_usuario,
-            token: sesionBD.token||null,
-            refreshTokenHash: sesionBD.refresh_token_ash,
+            refreshTokenHash: sesionBD.refresh_token_hash,
+            idDispositivo: sesionBD.id_dispositivo,
             userAgent: sesionBD.user_agent,
             ip: sesionBD.ip,
             fechaCreacion: sesionBD.fecha_creacion,
             fechaExpiracion: sesionBD.fecha_expiracion,
-            revocado: sesionBD.revocado,
+            activa: sesionBD.activa,
 
         });
     }

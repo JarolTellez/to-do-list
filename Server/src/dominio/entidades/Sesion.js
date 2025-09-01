@@ -1,7 +1,7 @@
 //const { use } = require("react");
 
 class Sesion{
-    constructor({idSesion=null, idUsuario, refreshTokenHash, idDispositivo, userAgent, ip, fechaCreacion, fechaExpiracion, activo }){
+    constructor({idSesion=null, idUsuario, refreshTokenHash, idDispositivo, userAgent, ip, fechaCreacion, fechaExpiracion, activa }){
         this.idSesion=idSesion;
         this.idUsuario=idUsuario;
         this.refreshTokenHash=refreshTokenHash;
@@ -10,7 +10,7 @@ class Sesion{
         this.ip=ip;
         this.fechaCreacion=fechaCreacion;
         this.fechaExpiracion=fechaExpiracion;
-        this.activo=activo;
+        this.activa=activa||true;
     }
 
     validar(){

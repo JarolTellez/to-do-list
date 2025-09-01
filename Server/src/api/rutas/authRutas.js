@@ -1,4 +1,5 @@
 const express = require('express');
+const {pruebas} = require("./pruebas");
 module.exports = (authController) => {
   const router = express.Router();
 
@@ -6,13 +7,13 @@ module.exports = (authController) => {
     .post(authController.agregarUsuario.bind(authController));
 
   router.route('/login')
-    .post(authController.loginUsuario.bind(authController));
+    .post(pruebas,authController.loginUsuario.bind(authController));
   
-  router.route('/renovar-token-acceso')
-  .post(authController.renovarTokenAcceso.bind(authController));
+  router.route('/renovar-access-token')
+  .post(authController.renovarAccessToken.bind(authController));
 
     router.route('/renovar-refresh-token')
-  .post(authController.renovarTokenAcceso.bind(authController));
+  .post(authController.renovarRefreshToken.bind(authController));
 
 
   return router;

@@ -1,27 +1,18 @@
+import{api} from "../utils/apiCliente.js";
+
 export async function cargarEtiquetas() {
-  const urlEtiquetas = "http://localhost:3000/etiqueta/";
-  const idUsuario = { idUsuario: sessionStorage.getItem("idUsuario") };
+  const idUsuario = sessionStorage.getItem("idUsuario");
   console.log("ID USUARIO DESDE TAREAS: ", idUsuario);
 
   try {
-    const response = await fetch(urlEtiquetas, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(idUsuario),
-      credentials: "include"
-    });
+    const response = await api.post("/etiqueta/", { idUsuario });
 
-    if (!response.ok) {
-      throw new Error("No se pudieron cargar las etiquetas");
-    }
-
-    const result = await response.json();
-    return result.data;
+    const etiquetas = response.data;
+    return etiquetas;
+    
   } catch (error) {
-    console.log(error.message);
-    alert("Error al consultar las etiquetas: ", error.message);
+    console.error("Error al cargar etiquetas:", error.message);
+    alert("Error al consultar las etiquetas: " + error.message);
     return [];
   }
 }
