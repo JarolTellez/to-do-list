@@ -57,6 +57,7 @@ async verificarSesionValida(idUsuario, refreshTokenHash) {
         throw error;
     }
 }
+
 async gestionarLimiteDeSesiones(idUsuario, maximoSesiones) {
   if (!idUsuario) {
     throw new Error('Faltan datos requeridos: idUsuario');

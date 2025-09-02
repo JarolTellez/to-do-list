@@ -6,6 +6,7 @@ const {
   etiquetaController,
   authController,
 } = require('./src/infraestructura/config/dependencias');
+const {errorHandler} = require("./src/api/middlewares/errorHandler");
 const app = express();
 const cors = require('cors');
 const PORT = 3000;
@@ -34,6 +35,9 @@ const routerEtiqueta = require('./src/api/rutas/etiquetaRutas')(etiquetaControll
 app.use('/auth', routerAuth);
 app.use('/tarea', routerTarea);
 app.use('/etiqueta', routerEtiqueta);
+
+// Middleware que se ejecuta solo si hay next(error)
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en http://localhost:${PORT}`);

@@ -84,6 +84,7 @@ async loginUsuario(refreshTokenExistente, nombreUsuario, contrasena, dispositivo
                 usuario.idUsuario, 
                 refreshTokenHash
             );
+            console.log("error",sesionValida);
 
             console.log('Refresh token validado exitosamente');
             
