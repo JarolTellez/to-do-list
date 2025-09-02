@@ -5,7 +5,7 @@ class TareaController {
    
   }
 
-  async agregarTarea(req, res) {
+  async agregarTarea(req, res, next) {
     try {
     //  console.log("Datos de tarea recibidos:", req.body);
       const tarea = this.tareaMapper.requestToDominio(req.body);
@@ -18,25 +18,26 @@ class TareaController {
         data: tareaProcesada,
       });
     } catch (error) {
-      if (error.message.startsWith('[')) {
-        const errores = JSON.parse(error.message);
-        return res.status(400).json({
-          status: "error",
-          message: "Errores de validación",
-          error: errores,
-        });
-      }
+      // if (error.message.startsWith('[')) {
+      //   const errores = JSON.parse(error.message);
+      //   return res.status(400).json({
+      //     status: "error",
+      //     message: "Errores de validación",
+      //     error: errores,
+      //   });
+      // }
 
-      console.error("Error en agregarTarea:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Ocurrió un error al intentar guardar la tarea.",
-        error: error.message,
-      });
+      // console.error("Error en agregarTarea:", error);
+      // return res.status(500).json({
+      //   status: "error",
+      //   message: "Ocurrió un error al intentar guardar la tarea.",
+      //   error: error.message,
+      // });
+      next(error);
     }
   }
 
-  async eliminarTarea(req, res) {
+  async eliminarTarea(req, res, next) {
     try {
       const { idTarea, idUsuario } = req.body;
       await this.servicioTarea.eliminarTarea(idTarea, idUsuario);
@@ -46,16 +47,17 @@ class TareaController {
         message: `Tarea con ID ${idTarea} eliminada correctamente.`,
       });
     } catch (error) {
-      console.error("Error en eliminarTarea:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Ocurrió un error al intentar eliminar la tarea.",
-        error: error.message,
-      });
+      // console.error("Error en eliminarTarea:", error);
+      // return res.status(500).json({
+      //   status: "error",
+      //   message: "Ocurrió un error al intentar eliminar la tarea.",
+      //   error: error.message,
+      // });
+      next(error);
     }
   }
 
-  async actualizarTarea(req, res) {
+  async actualizarTarea(req, res, next) {
     try {
      // const tarea = req.body;
         const tareaMappeada = this.tareaMapper.requestToDominio(req.body);
@@ -71,16 +73,17 @@ class TareaController {
         data: tareaProcesada,
       });
     } catch (error) {
-      console.error("Error en actualizarTarea:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Ocurrió un error al intentar actualizar la tarea.",
-        error: error.message,
-      });
+      // console.error("Error en actualizarTarea:", error);
+      // return res.status(500).json({
+      //   status: "error",
+      //   message: "Ocurrió un error al intentar actualizar la tarea.",
+      //   error: error.message,
+      // });
+      next(error);
     }
   }
 
-  async actualizarTareaCompletada(req, res) {
+  async actualizarTareaCompletada(req, res, next) {
     try {
       const { idTarea, completada } = req.body;
       const tareaActualizada = await this.servicioTarea.actualizarTareaCompletada(idTarea, completada);
@@ -91,16 +94,17 @@ class TareaController {
         data: tareaActualizada,
       });
     } catch (error) {
-      console.error("Error en actualizarTareaCompletada:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Ocurrió un error al intentar actualizar el estado de la tarea.",
-        error: error.message,
-      });
+      // console.error("Error en actualizarTareaCompletada:", error);
+      // return res.status(500).json({
+      //   status: "error",
+      //   message: "Ocurrió un error al intentar actualizar el estado de la tarea.",
+      //   error: error.message,
+      // });
+      next(error);
     }
   }
 
-  async consultarTareasPorIdUsuario(req, res) {
+  async consultarTareasPorIdUsuario(req, res, next) {
     try {
       const { idUsuario } = req.body;
       const { tareasPendientes, tareasCompletadas } = await this.servicioTarea.obtenerTareasPorIdUsuario(idUsuario);
@@ -111,12 +115,13 @@ class TareaController {
         data: { tareasPendientes, tareasCompletadas }
       });
     } catch (error) {
-      console.error("Error en consultarTareasPorIdUsuario:", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Ocurrió un error al intentar consultar las tareas.",
-        error: error.message,
-      });
+      // console.error("Error en consultarTareasPorIdUsuario:", error);
+      // return res.status(500).json({
+      //   status: "error",
+      //   message: "Ocurrió un error al intentar consultar las tareas.",
+      //   error: error.message,
+      // });
+      next(error);
     }
   }
 }

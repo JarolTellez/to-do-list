@@ -1,9 +1,8 @@
-// const ConexionBD = require("../utils/conexionBD");
-
 class TareaEtiquetaDAO {
-   constructor(tareaEtiquetaMapper, conexionBD) {
+   constructor(tareaEtiquetaMapper, conexionBD, DatabaseError) {
     this.tareaEtiquetaMapper = tareaEtiquetaMapper;
     this.conexionBD = conexionBD;
+     this.DatabaseError = DatabaseError;
   }
 
    async agregarTareaEtiqueta(idTarea, idEtiqueta) {

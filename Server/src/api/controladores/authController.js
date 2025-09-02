@@ -4,7 +4,7 @@ class AuthController {
     this.usuarioMapper = usuarioMapper;
   }
 
-  async agregarUsuario(req, res) {
+  async agregarUsuario(req, res, next) {
     try {
       const usuario = this.usuarioMapper.requestToDominio(req.body);
       const usuarioAgregado = await this.servicioAuth.registrarUsuario(usuario);
@@ -15,16 +15,16 @@ class AuthController {
         data: usuarioRespuesta
       });
     } catch (error) {
-      console.error("Error al agregar usuario:", error);
-      return res.status(500).json({
-         success: false,
-        message: "Ocurrió un error al intentar registrar el usuario.",
-        error: error.message,
-      });
+      next(error);
+    //   return res.status(500).json({
+    //      success: false,
+    //     message: "Ocurrió un error al intentar registrar el usuario.",
+    //     error: error.message,
+    //   });
     }
   }
 
-    async loginUsuario(req, res) {
+    async loginUsuario(req, res, next) {
     try {
         const { nombreUsuario, contrasena } = req.body;
         const dispositivoInfo = JSON.parse(req.get("Dispositivo-Info") || "{}");
@@ -66,8 +66,8 @@ class AuthController {
         });
 
     } catch (error) {
-        console.error("Error en login:", error.message);
-        const statusCode = error.statusCode || 500;
+        // console.error("Error en login:", error.message);
+        // const statusCode = error.statusCode || 500;
         
         // Limpiar cookies en caso de error
         res.clearCookie('refreshToken', {
@@ -76,15 +76,16 @@ class AuthController {
             sameSite: 'lax',
             path: "/"
         });
+        next(error);
 
-        return res.status(statusCode).json({
-            success: false,
-            message: error.message || "Error interno del servidor"
-        });
+        // return res.status(statusCode).json({
+        //     success: false,
+        //     message: error.message || "Error interno del servidor"
+        // });
     }
 }
 
-async renovarAccessToken(req, res) {
+async renovarAccessToken(req, res, next) {
     try {
         const refreshToken = req.cookies.refreshToken;
 
@@ -122,7 +123,7 @@ async renovarAccessToken(req, res) {
         });
 
     } catch (error) {
-        console.error('Error renovando token:', error.message);
+        // console.error('Error renovando token:', error.message);
 
         res.clearCookie('refreshToken', {
             httpOnly: true,
@@ -130,19 +131,19 @@ async renovarAccessToken(req, res) {
             sameSite: 'lax',
             path: "/"
         });
-
-        const statusCode = error.statusCode || 401;
+        next(error);
+        // const statusCode = error.statusCode || 401;
         
-        return res.status(statusCode).json({
-            success: false,
-            mensaje: error.message || 'Error al renovar token',
-            tipo: error.tipo || 'ERROR_DESCONOCIDO'
-        });
+        // return res.status(statusCode).json({
+        //     success: false,
+        //     mensaje: error.message || 'Error al renovar token',
+        //     tipo: error.tipo || 'ERROR_DESCONOCIDO'
+        // });
     }
 }
 
 
-  async renovarRefreshToken(req, res){
+  async renovarRefreshToken(req, res, next){
 
   }
 

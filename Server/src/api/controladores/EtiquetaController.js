@@ -4,7 +4,7 @@ class EtiquetaController {
     this.etiquetaMapper = etiquetaMapper;
   }
 
-  async consultarEtiquetasPorIdUsuario(req, res) {
+  async consultarEtiquetasPorIdUsuario(req, res, next) {
     const { idUsuario } = req.body;
 
     try {
@@ -23,12 +23,13 @@ class EtiquetaController {
         data: etiquetas,
       });
     } catch (error) {
-      console.log("Error al consultar las etiquetas: ", error);
-      return res.status(500).json({
-        status: "error",
-        message: "Error al consultar las etiquetas.",
-        error: error.message,
-      });
+      // console.log("Error al consultar las etiquetas: ", error);
+      // return res.status(500).json({
+      //   status: "error",
+      //   message: "Error al consultar las etiquetas.",
+      //   error: error.message,
+      // });
+      next(error);
     }
   }
 }

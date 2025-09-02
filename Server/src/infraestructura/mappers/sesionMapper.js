@@ -2,8 +2,11 @@ class SesionMapper{
     constructor(Sesion){
         this.Sesion = Sesion;
     }
-
+// CORREJIR RETURN ERROR
     bdToDominio(sesionBD){
+     if(!sesionBD){
+        return null;
+     }
         return new this.Sesion({
             idSesion: sesionBD.id_sesion,
             idUsuario: sesionBD.id_usuario,

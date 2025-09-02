@@ -29,6 +29,9 @@ const UsuarioRespuestaDTO = require("../../aplicacion/dtos/respuestas_dto/usuari
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
+const {NotFoundError, ValidationError, DatabaseError, AuthenticationError} = require("../../utils/appErrors");
+
+
 
 // Mappers y Factories
 const tareaFactory = new TareaFactory(Tarea);
@@ -41,11 +44,11 @@ const sesionMapper = new SesionMapper(Sesion);
 
 const conexionBD = ConexionBD.getInstancia();
 // DAOs con sus dependencias
-const tareaDAO = new TareaDAO(tareaMapper, conexionBD );
-const tareaEtiquetaDAO = new TareaEtiquetaDAO(tareaEtiquetaMapper, conexionBD);
-const etiquetaDAO = new EtiquetaDAO(etiquetaMapper, conexionBD);
-const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD, bcrypt);
-const sesionDAO = new SesionDAO(sesionMapper, conexionBD);
+const tareaDAO = new TareaDAO(tareaMapper, conexionBD, DatabaseError );
+const tareaEtiquetaDAO = new TareaEtiquetaDAO(tareaEtiquetaMapper, conexionBD, DatabaseError);
+const etiquetaDAO = new EtiquetaDAO(etiquetaMapper, conexionBD, DatabaseError);
+const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD, bcrypt, DatabaseError);
+const sesionDAO = new SesionDAO(sesionMapper, conexionBD, DatabaseError);
 
 const jwtAuth = new JwtAuth();
 

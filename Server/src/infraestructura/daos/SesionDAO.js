@@ -139,22 +139,57 @@ class SesionDAO {
     }
   }
 
-   async consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash) {
+  //  async consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash) {
+  //   const connection = await this.conexionBD.conectar();
+  //   try {
+  //     const [resultados] = await connection.query(
+  //       "SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash =?  AND activa = TRUE",
+  //       [idUsuario, refreshTokenHash]
+  //     );
+  //     console.log("ESTO SE MANDA",resultados[0],"mas", idUsuario, refreshTokenHash);
+  //     if(resultados[0]){
+  //     const sesionDominio = this.sesionMapper.bdToDominio(resultados[0]);
+  //       return sesionDominio;
+  //     }
+  //     return null;
+  //   } catch (error) {
+  //     console.error(`Error al consultar sesiones del usuario ${idUsuario} y refresh token Hash ${refreshTokenHash}:`, error);
+  //     throw error;
+  //   } finally {
+  //     connection.release();
+  //   }
+  // }
+  
+  async consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash) {
     const connection = await this.conexionBD.conectar();
+    
     try {
-      const [resultados] = await connection.query(
-        "SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash =?  AND activa = TRUE",
-        [idUsuario, refreshTokenHash]
-      );
-      const sesionDominio =  this.sesionMapper.bdToDominio(resultados[0]);
-      return sesionDominio;
+        const [resultados] = await connection.query(
+            "SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash = ? AND activa = TRUE",
+            [idUsuario, refreshTokenHash]
+        );
+        if (resultados.length === 0) {
+            return null;
+        }
+
+      
+        const sesionDominio = this.sesionMapper.bdToDominio(resultados[0]);
+        return sesionDominio;
+
     } catch (error) {
-      console.error(`Error al consultar sesiones del usuario ${idUsuario} y refresh token Hash ${refreshTokenHash}:`, error);
-      throw error;
+        console.error('Error al consultar sesiones activas:', {
+            idUsuario,
+            refreshTokenHash: refreshTokenHash?.substring(0, 10) + '...' 
+        }, error);
+        
+        throw new DatabaseError('Error al verificar la sesión');
+        
     } finally {
-      connection.release();
+        if (connection) {
+            connection.release();
+        }
     }
-  }
+}
   // Consultar una sesión por refresh token hash
   async consultarSesionPorRefreshTokenHash(refreshTokenHash) {
     const connection = await this.conexionBD.conectar();

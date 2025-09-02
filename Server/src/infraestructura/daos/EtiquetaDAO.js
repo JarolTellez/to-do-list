@@ -1,8 +1,9 @@
 class EtiquetaDAO {
 
-   constructor(etiquetaMapper, conexionBD) {
+   constructor(etiquetaMapper, conexionBD, DatabaseError) {
     this.etiquetaMapper = etiquetaMapper;
     this.conexionBD = conexionBD;
+     this.DatabaseError = DatabaseError;
   }
 
    async agregarEtiqueta(etiqueta) {

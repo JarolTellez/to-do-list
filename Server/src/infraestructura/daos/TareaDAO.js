@@ -2,9 +2,10 @@ const { logError } = require('../../utils/logger');
 
 
 class TareaDAO {
-    constructor(tareaMapper, conexionBD) {
+    constructor(tareaMapper, conexionBD, DatabaseError) {
     this.tareaMapper = tareaMapper;
     this.conexionBD = conexionBD;
+    this.DatabaseError = DatabaseError;
   }
 
 
@@ -29,8 +30,7 @@ class TareaDAO {
     
       return tarea;
     } catch (error) {
-       logError('Error al agregar una tarea:', error);
-       throw new Error('Error en la base de datos: ' + error.message);
+       throw new this.DatabaseError("No se pudo guardar la tarea");
     } finally {
       if(connection){
       connection.release();
@@ -57,9 +57,7 @@ class TareaDAO {
       //console.log("desde dao",resultado);
       return tarea;
     } catch (error) {
-      logError('Error al actualizar una tarea:', error);
-       // Lanzar una excepción personalizada
-       throw new Error('Error al actualizar la tarea: ' + error.message);
+        throw new this.DatabaseError("No se pudo actualizar la tarea");
     } finally {
       if(connection){
         connection.release();
@@ -80,8 +78,7 @@ class TareaDAO {
     
       return resultado.affectedRows;
     } catch (error) {
-      logError('Error al actualizar una tarea para completar:', error);
-       throw new Error('Error al actualizar la tarea: ' + error.message);
+       throw new this.DatabaseError("No se pudo marcar la tarea como completada");
     } finally {
       if(connection){
       connection.release();
@@ -99,8 +96,7 @@ class TareaDAO {
       );
       return resultado[0].affectedRows;
     } catch (error) {
-      logError('Error al eliminar una tarea:', error);
-      throw new Error('Error al eliminar la tarea: ' + error.message);
+        throw new this.DatabaseError("No se pudo eliminar la tarea");
     } finally {
       if(connection){
       connection.release();
@@ -115,9 +111,7 @@ class TareaDAO {
       const [tareas] = await connection.query("SELECT * FROM tareas");
       return tareas;
     } catch (error) {
-      logError('Error al consultar todas las tareas:', error);
-
-      throw new Error('Error al consultar todas las tareas: ' + error.message);
+        throw new this.DatabaseError("No se pudo consultar todas las tareas");
     } finally {
       if(connection){
       connection.release();
@@ -135,8 +129,7 @@ class TareaDAO {
       );
       return tarea[0];
     } catch (error) {
-      logError('Error al consultar una tarea por nombre:', error);
-       throw new Error('Error al consultar una tarea por nombre: ' + error.message);
+       throw new this.DatabaseError("No se pudo consultar la tarea por nombre");
     } finally {
       if(connection){
       connection.release();
@@ -154,8 +147,7 @@ class TareaDAO {
       );
       return tarea[0];
     } catch (error) {
-      logError('Error al consultar tarea por id:', error);
-      throw new Error('Error al consultar tarea por id: ' + error.message);
+        throw new DatabaseError("No se pudo consultarla tarea por id");
     } finally {
       if(connection){
       connection.release();
@@ -167,7 +159,6 @@ class TareaDAO {
     const connection = await this.conexionBD.conectar();
   
     try {
-      console.log("Consultando tarea con id:", idTarea); // Imprime el idTarea
       
       const [tareas] = await connection.query(
         `SELECT 
@@ -209,13 +200,9 @@ GROUP BY
    
     return this.tareaMapper.tareaConEtiquetasBdToDominio(tarea);
    });
-      
-      console.log("TAREA DESDE CONSULTAR TAREA POR IR DAO: ", tareasMappeadas);
       return tareasMappeadas;
     } catch (error) {
-      logError('Error al consultar tarea por idTarea:', error);
-      // Lanzar una excepción personalizada
-      throw new Error('Error al consultar tarea por idTarea' + error.message);
+        throw new DatabaseError("No se pudo consultar la tarea por idTarea");
     } finally {
       if(connection){
       connection.release();
@@ -233,8 +220,7 @@ GROUP BY
     );
     return tarea[0];
   } catch (error) {
-    logError('Error al consultar tarea por idTarea e idUsuario:', error);
-      throw new Error('Error al consultar la tarea' + error.message);
+      throw new DatabaseError("No se pudo actualizar la tarea por idTareaUsuario");
   } finally {
     if(connection){
     connection.release();
@@ -292,9 +278,7 @@ GROUP BY
    // return tareas;
    return tareasMappeadas;
   } catch (error) {
-    logError('Error al consultar tarea por idTarea e idUsuario:', error);
-    // Lanzar una excepción personalizada
-    throw new Error('Error al consultar la tarea: ' + error.message);
+      throw new DatabaseError("No se pudo consultar las tareas pendientes por idUsuario");
   } finally {
     if(connection){
     connection.release();
@@ -345,9 +329,7 @@ const tareasMappeadas= tareas.map((tarea) => {
    // return tareas;
    return tareasMappeadas;
   } catch (error) {
-    logError('Error al consultar todas las tareas:', error);
-  
-      throw new Error('Error al consultar todas las tareas' + error.message);
+     throw new DatabaseError("No se pudo consultar las tareas completadas por idUsuario");
   } finally {
     if(connection){
     connection.release();

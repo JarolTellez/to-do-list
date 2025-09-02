@@ -1,9 +1,10 @@
 class UsuarioDAO {
 
-   constructor(usuarioMapper, conexionBD, bcrypt) {
+   constructor(usuarioMapper, conexionBD, bcrypt, DatabaseError) {
     this.usuarioMapper = usuarioMapper;
     this.conexionBD = conexionBD;
     this.bcrypt = bcrypt;
+     this.DatabaseError = DatabaseError;
   }
 
   
