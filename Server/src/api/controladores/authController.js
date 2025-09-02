@@ -24,92 +24,123 @@ class AuthController {
     }
   }
 
-  async loginUsuario(req, res) {
+    async loginUsuario(req, res) {
     try {
-      const { nombreUsuario, contrasena } = req.body;
-      const dispositivoInfo = JSON.parse(req.get("Dispositivo-Info") || "{}");
-      const ip = req.ip;
-      const resultado = await this.servicioAuth.loginUsuario(nombreUsuario, contrasena, dispositivoInfo, ip);
-  
+        const { nombreUsuario, contrasena } = req.body;
+        const dispositivoInfo = JSON.parse(req.get("Dispositivo-Info") || "{}");
+        const ip = req.ip;
+        const refreshTokenExistente = req.cookies.refreshToken;
 
-    res.cookie('refreshToken', resultado.refreshToken, {
-      httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-     // path: 'auth/renovar-refresh-token', // Solo accesible en endpoint de refresh
-     path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
-    });
+        console.log('Iniciando login para usuario:', nombreUsuario);
+        
+        const resultado = await this.servicioAuth.loginUsuario(
+            refreshTokenExistente, 
+            nombreUsuario, 
+            contrasena, 
+            dispositivoInfo, 
+            ip
+        );
 
-    return res.status(200).json({
-      status: "success",
-      message: "Autenticación exitosa",
-      data: {
-        usuario: resultado.usuario,
-        accessToken: resultado.accessToken,
-        expiraEn: 900
-      }
-    });
-    } catch (error) {
-      console.error("Error en login:", error);
-      const statusCode = error.statusCode || 500;
-      return res.status(statusCode).json({
-         success: false,
-        message: error.message || "Error interno del servidor"
-      });
-    }
-  }
-    
-  async renovarAccessToken(req, res) {
-    try {
-       const refreshToken = req.cookies.refreshToken;
-       if(!refreshToken){
-             res.clearCookie('refreshToken', {
+        // Solo se establece cookie si se genero un nuevo refresh token
+        if (resultado.refreshToken) {
+            res.cookie('refreshToken', resultado.refreshToken, {
                 httpOnly: true,
                 secure: false,
                 sameSite: 'lax',
-                path: "/"
+                path: "/",
+                maxAge: 7 * 24 * 60 * 60 * 1000
             });
-        return res.status(401).json({
-          success: false,
-          manesaje: "Refresh token no proporcionado"
-        })
-       }
-        const resultado = await this.servicioAuth.renovarAccesToken(refreshToken);
-    
+            console.log('Nuevo refresh token establecido en cookies');
+        } else {
+            console.log('Usando refresh token existente');
+        }
 
-      console.log("AUTH CONTROLLER TERMINADO SOLO FALTA EL RES.STATUS", resultado.usuario);
-           console.log("ACCES TOKEN", resultado.accessToken);
-    
+        return res.status(200).json({
+            status: "success",
+            message: "Autenticación exitosa",
+            data: {
+                usuario: resultado.usuario,
+                accessToken: resultado.accessToken,
+                expiraEn: resultado.expiraEn
+            }
+        });
 
-      return res.status(200).json({
-      success: true,
-      message: "Access token renovado exitosamente",
-      data: {
-        usuario: resultado.usuario,
-        accessToken: resultado.accessToken,
-        expiraEn: 900
-      }
-    });
     } catch (error) {
-       console.error('Error al renovar access token:', error);
-
+        console.error("Error en login:", error.message);
+        const statusCode = error.statusCode || 500;
+        
         // Limpiar cookies en caso de error
-          res.clearCookie('refreshToken', {
+        res.clearCookie('refreshToken', {
             httpOnly: true,
             secure: false,
             sameSite: 'lax',
             path: "/"
         });
 
-
-        const statusCode = error.statusCode || 401;
-        res.status(statusCode).json({
+        return res.status(statusCode).json({
             success: false,
-            mensaje: error.message || 'Error al renovar token'
+            message: error.message || "Error interno del servidor"
         });
     }
-  }
+}
+
+async renovarAccessToken(req, res) {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+
+        if (!refreshToken) {
+            console.log('Renovación fallida: No hay refresh token');
+            res.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: false,
+                sameSite: 'lax',
+                path: "/"
+            });
+
+            return res.status(401).json({
+                success: false,
+                mensaje: "Refresh token no proporcionado",
+                tipo: "NO_REFRESH_TOKEN"
+            });
+        }
+
+        const resultado = await this.servicioAuth.renovarAccesToken(refreshToken);
+        console.log('Token renovado para usuario:', resultado.usuario.idUsuario);
+
+        return res.status(200).json({
+            success: true,
+            message: "Access token renovado exitosamente",
+            data: {
+                usuario: {
+                    id: resultado.usuario.idUsuario,
+                    email: resultado.usuario.email,
+                    rol: resultado.usuario.rol
+                },
+                accessToken: resultado.accessToken,
+                expiraEn: process.env.JWT_ACCESS_EXPIRE_IN || 900
+            }
+        });
+
+    } catch (error) {
+        console.error('Error renovando token:', error.message);
+
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            path: "/"
+        });
+
+        const statusCode = error.statusCode || 401;
+        
+        return res.status(statusCode).json({
+            success: false,
+            mensaje: error.message || 'Error al renovar token',
+            tipo: error.tipo || 'ERROR_DESCONOCIDO'
+        });
+    }
+}
+
 
   async renovarRefreshToken(req, res){
 

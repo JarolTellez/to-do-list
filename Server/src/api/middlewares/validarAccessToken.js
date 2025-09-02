@@ -2,8 +2,6 @@ const jwt = require('jsonwebtoken');
 
 const validarAccessToken = (req, res, next) => {
   try {
-    console.log('Todas las cookies recibidas:', req.cookies);
-    console.log('Headers cookie:', req.headers.cookie);
     const authorizationHeader = req.headers['authorization'];
 
       
