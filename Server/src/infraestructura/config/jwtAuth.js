@@ -24,7 +24,8 @@ class JwtAuth {
 
     // Generar JWT
     const refreshToken = jwt.sign(
-      { idUsuario: idUsuario },
+      { idUsuario: idUsuario
+       },
       process.env.JWT_REFRESH_SECRET,
      { expiresIn: process.env.EXP_REFRESH_TOKEN}
     );
@@ -49,16 +50,16 @@ class JwtAuth {
   }
 
   // Verificar Refresh Token (firma y expiración)
-  verificarRefreshToken(token) {
+verificarRefreshToken(token) {
     try {
-      return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+        return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     } catch (err) {
-      if (err instanceof TokenExpiredError) {
-        throw new Error('Refresh token expirado');
-      }
-      throw new Error('Refresh token inválido');
+        if (err instanceof jwt.TokenExpiredError) {
+            throw new Error('Refresh token expirado');
+        }
+        throw new Error('Refresh token inválido');
     }
-  }
+}
 
   // Decodificar token sin verificar
   decodificarToken(token) {

@@ -39,23 +39,24 @@ async desactivarSesion(idSesion){
   }
 }
 
-async verificarSesionValida(idUsuario, refreshTokenHash){
-  if(!idUsuario || !refreshTokenHash){
-    throw new Error("Faltan datos requeridos: IdUsuario o RefreshToken")
-  }
-
-  try {
-    const sesion = await this.SesionDAO.consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash);
-    if(!sesion){
-      throw new Error("Refresh token invalido o sesion no encontrada");
+async verificarSesionValida(idUsuario, refreshTokenHash) {
+    if (!idUsuario || !refreshTokenHash) {
+        throw new Error("Faltan datos requeridos: IdUsuario o RefreshToken");
     }
-    return sesion;
-  } catch (error) {
-    
-  }
 
+    try {
+        const sesion = await this.SesionDAO.consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash);
+        
+        if (!sesion) {
+            throw new Error("Refresh token inválido o sesión no encontrada");
+        }
+
+        return sesion;
+    } catch (error) {
+        console.error('Error en verificación de sesión:', error.message);
+        throw error;
+    }
 }
-
 async gestionarLimiteDeSesiones(idUsuario, maximoSesiones) {
   if (!idUsuario) {
     throw new Error('Faltan datos requeridos: idUsuario');

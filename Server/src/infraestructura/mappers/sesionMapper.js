@@ -5,7 +5,7 @@ class SesionMapper{
 
     bdToDominio(sesionBD){
         return new this.Sesion({
-            idSesion: sesionBD.id_refresh_token,
+            idSesion: sesionBD.id_sesion,
             idUsuario: sesionBD.id_usuario,
             refreshTokenHash: sesionBD.refresh_token_hash,
             idDispositivo: sesionBD.id_dispositivo,

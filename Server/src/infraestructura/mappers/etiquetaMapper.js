@@ -18,7 +18,7 @@ class EtiquetaMapper{
 
 
   bdConsultaJoinToDominio(Id, nombre, descripcion, etiquetaIdUsuario, tareaEtiquetaId) {
-  console.log("TIENE ID USUARIO: ", etiquetaIdUsuario);
+//  console.log("TIENE ID USUARIO: ", etiquetaIdUsuario);
   return new this.Etiqueta({
     idEtiqueta: Id,
     nombreEtiqueta: nombre,

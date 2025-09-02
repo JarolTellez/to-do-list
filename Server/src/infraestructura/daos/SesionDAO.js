@@ -37,6 +37,7 @@ class SesionDAO {
 
   // Desactivar una sesión por ID de la sesion
   async desactivarSesionPorId(idSesion) {
+    console.log("DESACTIVANDO");
     const connection = await this.conexionBD.conectar();
     try {
       const [resultado] = await connection.query(
@@ -145,8 +146,8 @@ class SesionDAO {
         "SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash =?  AND activa = TRUE",
         [idUsuario, refreshTokenHash]
       );
-      const sesionesDominio = resultados.map(elemento=> this.sesionMapper.bdToDominio(elemento));
-      return sesionesDominio;
+      const sesionDominio =  this.sesionMapper.bdToDominio(resultados[0]);
+      return sesionDominio;
     } catch (error) {
       console.error(`Error al consultar sesiones del usuario ${idUsuario} y refresh token Hash ${refreshTokenHash}:`, error);
       throw error;
