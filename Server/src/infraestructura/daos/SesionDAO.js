@@ -61,7 +61,7 @@ class SesionDAO extends BaseDatabaseHandler{
       if (resultado.affectedRows === 0) {
         throw new this.NotFoundError('La sesión no existe');
       }
-      
+      return resultado.affectedRows
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
       

@@ -58,8 +58,8 @@ const userService = new UserService(usuarioDAO,conexionBD, bcrypt);
 const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO, conexionBD);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO, conexionBD);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD);
-const servicioSesion = new ServicioSesion(sesionDAO,jwtAuth, conexionBD);
-const servicioAuth = new ServicioAuth(Usuario, sesionFabrica, userService, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, DatabaseError, ConflictError);
+const servicioSesion = new ServicioSesion(sesionDAO,jwtAuth, AuthenticationError, conexionBD);
+const servicioAuth = new ServicioAuth(Usuario, sesionFabrica, userService, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, ConflictError,  AuthenticationError);
 
 // Controladores
 const tareaController = new TareaController({
@@ -74,7 +74,8 @@ const etiquetaController = new EtiquetaController({
 
 const authController = new AuthController({
   servicioAuth,
-  usuarioMapper
+  usuarioMapper,
+  AuthenticationError
 });
 
 module.exports = {

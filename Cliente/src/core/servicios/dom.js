@@ -1,5 +1,5 @@
 // dom.js
-import { login, cerrarSesion } from "./auth.js";
+import { login, logout } from "./auth.js";
 
 export function setupLogin() {
   const inputNombreUsuario = document.querySelector("#nombreUsuario");
@@ -7,14 +7,26 @@ export function setupLogin() {
   const btnLogin = document.querySelector("#btnLogin");
 
   if (btnLogin && inputNombreUsuario && inputContrasenaUsuario) {
-    btnLogin.addEventListener("click", async () => {
+    btnLogin.addEventListener("click", async (e) => {
+      e.preventDefault();
       try {
-        const success = await login(inputNombreUsuario.value, inputContrasenaUsuario.value);
+        btnLogin.disabled = true;
+        btnLogin.textContent = "Iniciando sesión";
+        const success = await login(
+          inputNombreUsuario.value,
+          inputContrasenaUsuario.value
+        );
         if (success) {
-          window.location.href = "principal.html"; // Redirigir después del login
+          setTimeout(() => {
+            window.location.href = "principal.html"; // Redirigir despues del login
+          }, 500);
         }
       } catch (error) {
         alert(error.message); // Mostrar mensaje de error
+      } finally {
+        // Restaurar botón siempre
+        btnLogin.disabled = false;
+        btnLogin.textContent = "Iniciar Sesión";
       }
     });
   }
@@ -24,9 +36,24 @@ export function setupLogout() {
   const btnCerrarSesion = document.querySelector("#cerrarSesion");
 
   if (btnCerrarSesion) {
-    btnCerrarSesion.addEventListener("click", () => {
-      cerrarSesion();
-      window.location.href = "index.html"; // Redirigir al login
+    btnCerrarSesion.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        btnCerrarSesion.disabled= true;
+        btnCerrarSesion.textContent="Cerrando sesión";
+       const success= await logout();
+       if(success){
+        setTimeout(()=>{
+        window.location.href = "index.html?logout=success"; // Redirigir al login
+        },500);
+        
+       }
+      } catch (error) {
+        // redirigir pero mostrar mensaje error
+        window.location.href =
+          "index.html?logout=error&message=" +
+          encodeURIComponent(error.message);
+      }
     });
   }
 }
