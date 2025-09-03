@@ -1,7 +1,8 @@
 class AuthController {
-  constructor({ servicioAuth, usuarioMapper }) {
+  constructor({ servicioAuth, usuarioMapper, AuthenticationError }) {
     this.servicioAuth = servicioAuth;
     this.usuarioMapper = usuarioMapper;
+    this.AuthenticationError = AuthenticationError;
   }
 
   async agregarUsuario(req, res, next) {
@@ -84,6 +85,46 @@ class AuthController {
         // });
     }
 }
+
+async logOut(req, res, next) {
+  try {
+    console.log("LLEGOOOOOO");
+    const refreshTokenExistente = req.cookies.refreshToken;
+
+    if (!refreshTokenExistente) {
+      throw new this.AuthenticationError("No hay token de refresh presente");
+    }
+
+  
+    const resultado = await this.servicioAuth.logOutSession(refreshTokenExistente);
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: "/"
+    });
+
+   
+    return res.status(200).json({
+      status: "success",
+      message: "Logout exitoso",
+      data: resultado 
+    });
+
+  } catch (error) {
+    
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      path: "/"
+    });
+    
+    next(error); 
+  }
+}
+
 
 async renovarAccessToken(req, res, next) {
     try {

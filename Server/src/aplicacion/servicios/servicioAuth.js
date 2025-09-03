@@ -13,7 +13,11 @@ class ServicioAuth extends BaseDatabaseHandler {
     jwtAuth,
     bcrypt,
     crypto,
-    NotFoundError
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+   AuthenticationError
+    
   ) {
     super(conexionBD);
     this.Usuario = Usuario;
@@ -26,6 +30,9 @@ class ServicioAuth extends BaseDatabaseHandler {
     this.crypto = crypto;
     this.MAX_SESIONES = parseInt(process.env.MAX_SESIONES_ACTIVAS) || 5;
     this.NotFoundError = NotFoundError;
+    this.ValidationError = ValidationError;
+    this.ConflictError=ConflictError;
+    this.AuthenticationError = AuthenticationError
   }
 
   async registrarUsuario(usuario, externalConn = null) {
@@ -147,12 +154,39 @@ class ServicioAuth extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-  async cerrarSesion(idUsuario, refreshToken, externalConn = null){
-    return this.withTransaction(async(connection)=>{
+async logOutSession(refreshToken, externalConn = null) {
+  let decoded;
+  return this.withTransaction(async (connection) => {
+    try {
+      decoded = this.jwtAuth.verificarRefreshToken(refreshToken);
+    } catch (error) {
+      await this.manejarErrorVerificacionToken(error, refreshToken, connection);
+      throw new this.AuthenticationError("Token de refresh inválido"); 
+    }
 
-    })
+    const refreshTokenHashRecibido = this.crypto
+      .createHash("sha256")
+      .update(refreshToken)
+      .digest("hex");
 
-  }
+    const sesionDesactivada = await this.servicioSesion.deactivateSession(
+      decoded.idUsuario, 
+      refreshTokenHashRecibido, 
+      connection
+    );
+
+    if (!sesionDesactivada) {
+      throw new this.AuthenticationError("Sesión no encontrada o ya expirada");
+    }
+
+    return { 
+      success: true, 
+      message: 'Sesión cerrada exitosamente',
+      usuarioId: decoded.idUsuario 
+    };
+
+  }, externalConn);
+}
 
   async renovarAccesToken(refreshToken, externalConn = null) {
     if (!refreshToken) {
@@ -186,32 +220,13 @@ class ServicioAuth extends BaseDatabaseHandler {
         .createHash("sha256")
         .update(refreshToken)
         .digest("hex");
-      const sesionValida = await this.servicioSesion.verificarSesionValida(
-        usuario.idUsuario,
-        refreshTokenHashRecibido,
-        connection
-      );
-
-      if (!sesionValida) {
-        throw this.crearErrorPersonalizado(
-          "Sesión no válida",
-          401,
-          "INVALID_SESSION"
-        );
-      }
-
-      if (new Date() > new Date(sesionValida.fechaExpiracion)) {
-        await this.servicioSesion.desactivarSesion(
-          sesionValida.idSesion,
+  
+        await this.servicioSesion.deactivateSession(
+          usuario.idUsuario,
+          refreshTokenHashRecibido,
           connection
         );
-        throw this.crearErrorPersonalizado(
-          "Sesión expirada",
-          401,
-          "SESSION_EXPIRED"
-        );
-      }
-
+  
       const nuevoAccessToken = this.jwtAuth.generarAccessToken(
         usuario.idUsuario,
         usuario.rol
@@ -272,18 +287,13 @@ class ServicioAuth extends BaseDatabaseHandler {
           .update(refreshToken)
           .digest("hex");
 
-        const sesion = await this.servicioSesion.verificarSesionValida(
+  
+        await this.servicioSesion.deactivateSession(
           usuario.idUsuario,
           refreshTokenHashRecibido,
           connection
         );
-
-        if (sesion) {
-          await this.servicioSesion.desactivarSesion(
-            sesion.idSesion,
-            connection
-          );
-        }
+  
       }
     }, externalConn);
   }

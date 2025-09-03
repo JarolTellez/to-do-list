@@ -1,10 +1,11 @@
 const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
 class ServicioSesion extends BaseDatabaseHandler {
-  constructor(SesionDAO, JwtAuth, conexionBD) {
+  constructor(SesionDAO, JwtAuth, AuthenticationError, conexionBD) {
     super(conexionBD);
     this.SesionDAO = SesionDAO;
     this.JwtAuth = JwtAuth;
+    this.AuthenticationError = AuthenticationError;
   }
 
   async registrarSesion(sesion, externalConn = null) {
@@ -30,15 +31,32 @@ class ServicioSesion extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-  async desactivarSesion(idSesion, externalConn = null) {
-    if (!idSesion) {
-      throw new Error("Falta el idSesion");
+  async deactivateSession(userId, refreshTokenHash, externalConn = null) {
+    if (!userId || !refreshTokenHash) {
+      throw new Error("Falta el userId o refreshTokenHash");
     }
+    console.log("datos", userId, refreshTokenHash);
     return this.withTransaction(async (connection) => {
-      const result = await this.SesionDAO.desactivarSesionPorId(
-        idSesion,
+      const validateSession = await this.verificarSesionValida(
+        userId,
+        refreshTokenHash,
         connection
       );
+
+
+      console.log("VALIDATE SESSION: ", validateSession);
+      if(!validateSession){
+        return null
+      }
+  
+      if ( new Date() > new Date(validateSession.fechaExpiracion)) {
+         throw new this.AuthenticationError("Sesión ya expirada");
+      }
+      const result = await this.SesionDAO.desactivarSesionPorId(
+        validateSession.idSesion,
+        connection
+      );
+    
       return result;
     }, externalConn);
   }
@@ -60,7 +78,10 @@ class ServicioSesion extends BaseDatabaseHandler {
         );
 
       if (!sesion) {
-        throw new Error("Refresh token inválido o sesión no encontrada");
+        throw new AuthenticationError('Sesión no encontrada o token inválido', {
+        idUsuario,
+        tokenHash: refreshTokenHash.substring(0, 10) + '...' 
+      });
       }
 
       return sesion;
