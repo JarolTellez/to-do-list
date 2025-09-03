@@ -9,6 +9,7 @@ const EtiquetaDAO = require('../daos/EtiquetaDAO');
 const UsuarioDAO = require('../daos/UsuarioDAO');
 const TareaEtiquetaDAO = require("../daos/TareaEtiquetaDAO");
 const SesionDAO = require("../../infraestructura/daos/SesionDAO");
+const UserService = require('../../aplicacion/servicios/userService');
 const ServicioTarea = require('../../aplicacion/servicios/servicioTarea');
 const ServicioTareaEtiqueta = require("../../aplicacion/servicios/servicioTareaEtiqueta");
 const ServicioEtiqueta = require('../../aplicacion/servicios/servicioEtiqueta');
@@ -53,11 +54,12 @@ const sesionDAO = new SesionDAO(sesionMapper, conexionBD, DatabaseError, NotFoun
 const jwtAuth = new JwtAuth();
 
 // Servicios
+const userService = new UserService(usuarioDAO,conexionBD, bcrypt);
 const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO, conexionBD);
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO, conexionBD);
 const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD);
 const servicioSesion = new ServicioSesion(sesionDAO,jwtAuth, conexionBD);
-const servicioAuth = new ServicioAuth(Usuario, sesionFabrica, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, DatabaseError, ConflictError);
+const servicioAuth = new ServicioAuth(Usuario, sesionFabrica, userService, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, DatabaseError, ConflictError);
 
 // Controladores
 const tareaController = new TareaController({
