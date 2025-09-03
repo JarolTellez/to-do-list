@@ -3,11 +3,11 @@ const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 class TareaDAO  extends BaseDatabaseHandler{
   constructor(
-    tareaMapper,
+   { tareaMapper,
     conexionBD,
     DatabaseError,
     NotFoundError,
-    ConflictError
+    ConflictError}
   ) {
     super(conexionBD);
     this.tareaMapper = tareaMapper;

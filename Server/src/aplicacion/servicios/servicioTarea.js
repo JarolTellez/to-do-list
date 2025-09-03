@@ -1,7 +1,7 @@
 const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
 class ServicioTarea extends BaseDatabaseHandler {
-  constructor(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD) {
+  constructor({tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD}) {
     super(conexionBD);
     this.tareaDAO = tareaDAO;
     this.servicioTareaEtiqueta = servicioTareaEtiqueta;

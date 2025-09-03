@@ -45,21 +45,21 @@ const sesionMapper = new SesionMapper(Sesion);
 
 const conexionBD = ConexionBD.getInstancia();
 // DAOs con sus dependencias
-const tareaDAO = new TareaDAO(tareaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError );
-const tareaEtiquetaDAO = new TareaEtiquetaDAO(tareaEtiquetaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError);
-const etiquetaDAO = new EtiquetaDAO(etiquetaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError);
-const usuarioDAO = new UsuarioDAO(usuarioMapper, conexionBD, bcrypt, DatabaseError, NotFoundError, ConflictError);
-const sesionDAO = new SesionDAO(sesionMapper, conexionBD, DatabaseError, NotFoundError, ConflictError);
+const tareaDAO = new TareaDAO({tareaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError} );
+const tareaEtiquetaDAO = new TareaEtiquetaDAO({tareaEtiquetaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError});
+const etiquetaDAO = new EtiquetaDAO({etiquetaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError});
+const usuarioDAO = new UsuarioDAO({usuarioMapper, conexionBD, bcrypt, DatabaseError, NotFoundError, ConflictError});
+const sesionDAO = new SesionDAO({sesionMapper, conexionBD, DatabaseError, NotFoundError, ConflictError});
 
 const jwtAuth = new JwtAuth();
 
 // Servicios
-const userService = new UserService(usuarioDAO,conexionBD, bcrypt);
-const servicioEtiqueta = new ServicioEtiqueta(etiquetaDAO, conexionBD);
-const servicioTareaEtiqueta = new ServicioTareaEtiqueta(tareaEtiquetaDAO, conexionBD);
-const servicioTarea = new ServicioTarea(tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD);
-const servicioSesion = new ServicioSesion(sesionDAO,jwtAuth, AuthenticationError, conexionBD);
-const servicioAuth = new ServicioAuth(Usuario, sesionFabrica, userService, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, ConflictError,  AuthenticationError);
+const userService = new UserService({usuarioDAO,conexionBD, bcrypt});
+const servicioEtiqueta = new ServicioEtiqueta({etiquetaDAO, conexionBD});
+const servicioTareaEtiqueta = new ServicioTareaEtiqueta({tareaEtiquetaDAO, conexionBD});
+const servicioTarea = new ServicioTarea({tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD});
+const servicioSesion = new ServicioSesion({sesionDAO,jwtAuth, AuthenticationError, conexionBD});
+const servicioAuth = new ServicioAuth({Usuario, sesionFabrica, userService, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, ConflictError,  AuthenticationError});
 
 // Controladores
 const tareaController = new TareaController({
