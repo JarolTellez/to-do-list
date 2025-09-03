@@ -1,10 +1,12 @@
 const bcrypt = require("bcryptjs");
 const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
+
 class ServicioAuth extends BaseDatabaseHandler {
   constructor(
     Usuario,
     SesionFabrica,
+    userService,
     servicioSesion,
     conexionBD,
     UsuarioDAO,
@@ -16,6 +18,7 @@ class ServicioAuth extends BaseDatabaseHandler {
     super(conexionBD);
     this.Usuario = Usuario;
     this.SesionFabrica = SesionFabrica;
+    this.userService = userService;
     this.servicioSesion = servicioSesion;
     this.UsuarioDAO = UsuarioDAO;
     this.jwtAuth = jwtAuth;
@@ -27,29 +30,8 @@ class ServicioAuth extends BaseDatabaseHandler {
 
   async registrarUsuario(usuario, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      // Verificar si el usuario ya existe
-      const usuarioExistente = await this.UsuarioDAO.consultarUsuarioPorNombre(
-        usuario.nombreUsuario,
-        connection
-      );
-
-      if (usuarioExistente) {
-        throw new Error("El usuario ya existe");
-      }
-
-   
-      const contrasenaEncriptada = await this.bcrypt.hash(
-        usuario.contrasena,
-        10
-      );
-      usuario.contrasena = contrasenaEncriptada;
-
-      usuario.validar();
-      const usuarioAgregado = await this.UsuarioDAO.agregarUsuario(
-        usuario,
-        connection
-      );
-      return usuarioAgregado;
+     const user= await this.userService.createUser(usuario, connection);
+     return user;
     }, externalConn);
   }
 
@@ -71,22 +53,7 @@ class ServicioAuth extends BaseDatabaseHandler {
         throw error;
       }
 
-      console.log("Verificando credenciales para usuario:", nombreUsuario);
-
-      const usuario = await this.UsuarioDAO.consultarUsuarioPorNombreContrasena(
-        nombreUsuario,
-        contrasena,
-        connection
-      );
-
-      if (!usuario) {
-        console.log("Usuario no encontrado:", nombreUsuario);
-        const error = new Error("Credenciales inválidas");
-        error.statusCode = 401;
-        throw error;
-      }
-
-      console.log("Usuario autenticado:", usuario.idUsuario);
+     const usuario= await this.userService.validateCredentials(nombreUsuario, contrasena, connection);
 
       await this.servicioSesion.gestionarLimiteDeSesiones(
         usuario.idUsuario,
@@ -180,6 +147,13 @@ class ServicioAuth extends BaseDatabaseHandler {
     }, externalConn);
   }
 
+  async cerrarSesion(idUsuario, refreshToken, externalConn = null){
+    return this.withTransaction(async(connection)=>{
+
+    })
+
+  }
+
   async renovarAccesToken(refreshToken, externalConn = null) {
     if (!refreshToken) {
       throw this.crearErrorPersonalizado(
@@ -202,18 +176,12 @@ class ServicioAuth extends BaseDatabaseHandler {
         return;
       }
 
-      const usuario = await this.UsuarioDAO.consultarUsuarioPorId(
+   
+       const usuario = await this.userService.validateUserExistenceById(
         decoded.idUsuario,
         connection
       );
-      if (!usuario) {
-        throw this.crearErrorPersonalizado(
-          "Usuario no encontrado",
-          404,
-          "USER_NOT_FOUND"
-        );
-      }
-
+      
       const refreshTokenHashRecibido = this.crypto
         .createHash("sha256")
         .update(refreshToken)
@@ -293,7 +261,7 @@ class ServicioAuth extends BaseDatabaseHandler {
 
   async limpiarSesionInvalidas(idUsuario, refreshToken, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const usuario = await this.UsuarioDAO.consultarUsuarioPorId(
+      const usuario = await this.userService.validateUserExistenceById(
         idUsuario,
         connection
       );
@@ -320,6 +288,7 @@ class ServicioAuth extends BaseDatabaseHandler {
     }, externalConn);
   }
 
+  //CAMBIAR POR ERRORES PERSONALIZADOS
   crearErrorPersonalizado(mensaje, statusCode, tipo) {
     const error = new Error(mensaje);
     error.statusCode = statusCode;

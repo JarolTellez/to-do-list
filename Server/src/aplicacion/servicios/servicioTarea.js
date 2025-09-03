@@ -33,8 +33,8 @@ class ServicioTarea extends BaseDatabaseHandler {
         }
       }
 
-      // ⚠️ ERROR FORZADO - Esto causará rollback
-    throw new Error("Error simulado para probar transacciones");
+    //   //  forzar rollback
+    // throw new Error("Error simulado para probar transacciones");
     
       return tareaAgregada;
     }, externalConn);
