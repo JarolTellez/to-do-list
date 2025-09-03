@@ -1,7 +1,7 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 class TareaEtiquetaDAO extends BaseDatabaseHandler {
-   constructor(tareaEtiquetaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError) {
+   constructor({tareaEtiquetaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError}) {
     super(conexionBD);
     this.tareaEtiquetaMapper = tareaEtiquetaMapper;
     this.DatabaseError = DatabaseError;

@@ -1,9 +1,9 @@
 const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
 class ServicioSesion extends BaseDatabaseHandler {
-  constructor(SesionDAO, JwtAuth, AuthenticationError, conexionBD) {
+  constructor({sesionDAO, JwtAuth, AuthenticationError, conexionBD}) {
     super(conexionBD);
-    this.SesionDAO = SesionDAO;
+    this.sesionDAO = sesionDAO;
     this.JwtAuth = JwtAuth;
     this.AuthenticationError = AuthenticationError;
   }
@@ -16,13 +16,13 @@ class ServicioSesion extends BaseDatabaseHandler {
     return this.withTransaction(async (connection) => {
       // Desactivar sesiónes existentes del mismo dispositivo
       const resultadoDesactivacion =
-        await this.SesionDAO.desactivarPorIdUsuarioIdDispositivo(
+        await this.sesionDAO.desactivarPorIdUsuarioIdDispositivo(
           sesion.idUsuario,
           sesion.idDispositivo,
           connection
         );
       // Guardar nueva sesión
-      const resultadoSesion = await this.SesionDAO.guardarSesion(
+      const resultadoSesion = await this.sesionDAO.guardarSesion(
         sesion,
         connection
       );
@@ -52,7 +52,7 @@ class ServicioSesion extends BaseDatabaseHandler {
       if ( new Date() > new Date(validateSession.fechaExpiracion)) {
          throw new this.AuthenticationError("Sesión ya expirada");
       }
-      const result = await this.SesionDAO.desactivarSesionPorId(
+      const result = await this.sesionDAO.desactivarSesionPorId(
         validateSession.idSesion,
         connection
       );
@@ -71,14 +71,14 @@ class ServicioSesion extends BaseDatabaseHandler {
     }
     return this.withTransaction(async (connection) => {
       const sesion =
-        await this.SesionDAO.consultarSesionesActivasPorIdUsuarioRTHash(
+        await this.sesionDAO.consultarSesionesActivasPorIdUsuarioRTHash(
           idUsuario,
           refreshTokenHash,
           connection
         );
 
       if (!sesion) {
-        throw new AuthenticationError('Sesión no encontrada o token inválido', {
+        throw new this.AuthenticationError('Sesión no encontrada o token inválido', {
         idUsuario,
         tokenHash: refreshTokenHash.substring(0, 10) + '...' 
       });
@@ -98,13 +98,13 @@ class ServicioSesion extends BaseDatabaseHandler {
     }
     return this.withTransaction(async (connection) => {
       const sesionesActivas =
-        await this.SesionDAO.consultarSesionesActivasPorIdUsuario(
+        await this.sesionDAO.consultarSesionesActivasPorIdUsuario(
           idUsuario,
           connection
         );
 
       if (sesionesActivas >= maximoSesiones) {
-        const eliminada = await this.SesionDAO.desactivarSesionMasAntigua(
+        const eliminada = await this.sesionDAO.desactivarSesionMasAntigua(
           idUsuario,
           connection
         );

@@ -1,7 +1,7 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 class EtiquetaDAO extends BaseDatabaseHandler {
-   constructor(etiquetaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError) {
+   constructor({etiquetaMapper, conexionBD, DatabaseError, NotFoundError, ConflictError}) {
     super(conexionBD);
     this.etiquetaMapper = etiquetaMapper;
     this.DatabaseError = DatabaseError;

@@ -1,7 +1,7 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 class UsuarioDAO extends BaseDatabaseHandler {
-  constructor(usuarioMapper, conexionBD, bcrypt, DatabaseError, NotFoundError, ConflictError) {
+  constructor({usuarioMapper, conexionBD, bcrypt, DatabaseError, NotFoundError, ConflictError}) {
     super(conexionBD);
     this.usuarioMapper = usuarioMapper;
     this.bcrypt = bcrypt;

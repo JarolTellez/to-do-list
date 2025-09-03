@@ -2,7 +2,7 @@ const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 
 class SesionDAO extends BaseDatabaseHandler{
-  constructor(sesionMapper, conexionBD, DatabaseError, NotFoundError, ConflictError) {
+  constructor({sesionMapper, conexionBD, DatabaseError, NotFoundError, ConflictError}) {
     super(conexionBD);
     this.sesionMapper = sesionMapper;
     this.DatabaseError = DatabaseError;

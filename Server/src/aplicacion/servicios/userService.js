@@ -1,16 +1,16 @@
 const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
 class UserService extends BaseDatabaseHandler {
-  constructor(UsuarioDAO, conexionBD, bcrypt) {
+  constructor({usuarioDAO, conexionBD, bcrypt}) {
     super(conexionBD);
-    this.UsuarioDAO = UsuarioDAO;
+    this.usuarioDAO = usuarioDAO;
     this.bcrypt = bcrypt;
   }
 
   async createUser(user, externalConn = null) {
     return this.withTransaction(async (connection) => {
       // Verificar si el usuario ya existe
-      const existingUser = await this.UsuarioDAO.consultarUsuarioPorNombre(
+      const existingUser = await this.usuarioDAO.consultarUsuarioPorNombre(
         user.nombreUsuario,
         connection
       );
@@ -23,7 +23,7 @@ class UserService extends BaseDatabaseHandler {
       user.contrasena = encryptedpassword;
 
       user.validar();
-      const addedUser = await this.UsuarioDAO.agregarUsuario(user, connection);
+      const addedUser = await this.usuarioDAO.agregarUsuario(user, connection);
       return addedUser;
     }, externalConn);
   }
@@ -32,7 +32,7 @@ class UserService extends BaseDatabaseHandler {
     return this.withTransaction(async (connection) => {
       console.log("Verificando credenciales para usuario:", userName);
 
-      const user = await this.UsuarioDAO.consultarUsuarioPorNombreContrasena(
+      const user = await this.usuarioDAO.consultarUsuarioPorNombreContrasena(
         userName,
         password,
         connection
@@ -52,7 +52,7 @@ class UserService extends BaseDatabaseHandler {
 
   async validateUserExistenceById(userId, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const user = await this.UsuarioDAO.consultarUsuarioPorId(
+      const user = await this.usuarioDAO.consultarUsuarioPorId(
         userId,
         connection
       );

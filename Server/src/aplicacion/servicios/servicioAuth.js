@@ -3,13 +3,13 @@ const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHa
 
 
 class ServicioAuth extends BaseDatabaseHandler {
-  constructor(
+  constructor({
     Usuario,
-    SesionFabrica,
+    sesionFabrica,
     userService,
     servicioSesion,
     conexionBD,
-    UsuarioDAO,
+    usuarioDAO,
     jwtAuth,
     bcrypt,
     crypto,
@@ -17,14 +17,15 @@ class ServicioAuth extends BaseDatabaseHandler {
     ValidationError,
     ConflictError,
    AuthenticationError
+  }
     
   ) {
     super(conexionBD);
     this.Usuario = Usuario;
-    this.SesionFabrica = SesionFabrica;
+    this.sesionFabrica = sesionFabrica;
     this.userService = userService;
     this.servicioSesion = servicioSesion;
-    this.UsuarioDAO = UsuarioDAO;
+    this.usuarioDAO = usuarioDAO;
     this.jwtAuth = jwtAuth;
     this.bcrypt = bcrypt;
     this.crypto = crypto;
@@ -132,7 +133,7 @@ class ServicioAuth extends BaseDatabaseHandler {
           .update(dispositivo)
           .digest("hex");
 
-        const entidadSesion = this.SesionFabrica.crear(
+        const entidadSesion = this.sesionFabrica.crear(
           usuario.idUsuario,
           refreshTokenHash,
           dispositivoInfo.userAgent || "Unknown",
