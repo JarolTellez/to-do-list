@@ -2,60 +2,52 @@ const {
   NotFoundError,          
   ValidationError,        
   DatabaseError,          
-  AuthenticationError     
+  AuthenticationError,
+  AppError     
 } = require('../../utils/appErrors');  
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const errorHandler = (error, req, res, next) => {
-      
-    console.error('=== ERROR LOG ===');
-    console.error('Timestamp:', new Date().toISOString());
-    console.error('Error:', error.message);
-    console.error('Stack:', error.stack);
-    console.error('=================');
+  console.error('=== ERROR LOG ===');
+  console.error('Timestamp:', new Date().toISOString());
+  console.error('Path:', req.path);
+  console.error('Method:', req.method);
+  console.error('Error Name:', error.name);
+  console.error('Error Message:', error.message);
+  console.error('Error Code:', error.errorCode || 'No especificado');
+  console.error('Stack:', error.stack);
+  console.error('=================');
 
-    if (error instanceof NotFoundError) {
-        return res.status(404).json({
-            success: false,
-            error: error.message,      
-            code: error.name,        
-            status: 404               
-        });
-    }
+ 
+  if (!(error instanceof AppError)) {
+    error = new DatabaseError(
+      isProduction ? 'Error interno del servidor' : error.message,
+      isProduction ? null : { originalError: error.message }
+    );
+  }
 
-    if (error instanceof ValidationError) {
-        return res.status(400).json({
-            success: false,
-            error: error.message,      
-            code: error.name,          
-            status: 400
-        });
-    }
+  // Determinar el mensaje de error para producción
+  const errorMessage = isProduction && error.statusCode >= 500 
+    ? 'Error interno del servidor' 
+    : error.message;
 
-    if (error instanceof DatabaseError) {
-        return res.status(500).json({
-            success: false,
-            error: error.message,      
-            code: error.name,          
-            status: 500
-        });
-    }
+  // Respuesta base
+  const response = {
+    success: false,
+    error: errorMessage,
+    code: error.errorCode || error.name,
+    status: error.statusCode,
+    timestamp: new Date().toISOString()
+  };
 
-    if (error instanceof AuthenticationError) {
-        return res.status(401).json({
-            success: false, 
-            error: error.message,      
-            code: error.name,          
-            status: 401
-        });
-    }
+  // Agregar detalles solo en desarrollo y si existen
+  if (!isProduction && error.details) {
+    response.details = error.details;
+  }
 
-    // Error generico
-    return res.status(500).json({
-        success: false,
-        error: "Error interno del servidor",  
-        code: "InternalServerError",          
-        status: 500
-    });
+
+  res.status(error.statusCode).json(response);
 }
 
-module.exports = { errorHandler };  
+module.exports = { errorHandler };

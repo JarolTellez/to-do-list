@@ -1,37 +1,49 @@
-class ServicioEtiqueta {
-  constructor(etiquetaDAO, etiquetaMapper) {
+const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
+
+class ServicioEtiqueta extends BaseDatabaseHandler {
+  constructor(etiquetaDAO, conexionBD) {
+    super(conexionBD);
     this.etiquetaDAO = etiquetaDAO;
   }
 
-  async agregarEtiqueta(etiqueta) {
-    try {
+  async agregarEtiqueta(etiqueta, externalConn = null) {
+    return this.withTransaction(async (connection) => {
       const existe = await this.etiquetaDAO.consultarEtiquetaPorNombreIdUsuario(
         etiqueta.nombreEtiqueta,
-        etiqueta.idUsuario
+        etiqueta.idUsuario,
+        connection
       );
 
       if (existe) {
         return existe;
       }
 
-      return await this.etiquetaDAO.agregarEtiqueta(etiqueta);
-    } catch (error) {
-      console.log("Error al agregar la etiqueta: ", error);
-      throw error;
-    }
+      const etiquetaResultado = await this.etiquetaDAO.agregarEtiqueta(
+        etiqueta,
+        connection
+      );
+      return etiquetaResultado;
+    }, externalConn);
   }
 
-  async consultarEtiquetasPorIdUsuario(idUsuario) {
-    return await this.etiquetaDAO.consultarEtiquetaPorIdUsuario(idUsuario);
+  async consultarEtiquetasPorIdUsuario(idUsuario, externalConn = null) {
+    return this.withTransaction(async (connection) => {
+      const etiquetas = await this.etiquetaDAO.consultarEtiquetasPorIdUsuario(
+        idUsuario,
+        connection
+      );
+      return etiquetas;
+    }, externalConn);
   }
 
-  async obtenerEtiquetaPorNombre(nombreEtiqueta) {
-    try {
-      return await this.etiquetaDAO.consultarEtiquetaPorNombre(nombreEtiqueta);
-    } catch (error) {
-      console.error("Error al obtener la etiqueta por nombre: ", error);
-      throw error;
-    }
+  async obtenerEtiquetaPorNombre(nombreEtiqueta, externalConn = null) {
+    return this.withTransaction(async (connection) => {
+      const etiqueta = await this.etiquetaDAO.consultarEtiquetasPorNombre(
+        nombreEtiqueta,
+        connection
+      );
+      return etiqueta;
+    }, externalConn);
   }
 }
 

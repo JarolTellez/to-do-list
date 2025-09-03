@@ -1,14 +1,20 @@
-class SesionDAO {
-  constructor(sesionMapper, conexionBD) {
+const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
+
+
+class SesionDAO extends BaseDatabaseHandler{
+  constructor(sesionMapper, conexionBD, DatabaseError, NotFoundError, ConflictError) {
+    super(conexionBD);
     this.sesionMapper = sesionMapper;
-    this.conexionBD = conexionBD;
+    this.DatabaseError = DatabaseError;
+    this.NotFoundError = NotFoundError;
+    this.ConflictError = ConflictError;
   }
 
   // Guardar una nueva sesión
-  async guardarSesion(sesion) {
-    const connection = await this.conexionBD.conectar();
+  async guardarSesion(sesion, externalConn = null) {
+    const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [resultado] = await connection.query(
+      const [resultado] = await connection.execute(
         "INSERT INTO sesiones (id_usuario, refresh_token_hash, id_dispositivo, user_agent, ip, fecha_creacion, fecha_expiracion, activa) VALUES (?,?,?,?,?,?,?,?)",
         [
           sesion.idUsuario,
@@ -25,194 +31,213 @@ class SesionDAO {
       // Asignar el ID generado
       sesion.idRefreshToken = resultado.insertId;
 
-      // No mapeo porque ya llega al metodo como dominio
       return sesion;
     } catch (error) {
-      console.error(`Error al agregar el refresh token para usuario ${sesion.idUsuario}:`, error);
-      throw error;
+      if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+        throw new this.ConflictError(
+          'Ya existe una sesión activa para este dispositivo',
+          { idDispositivo: sesion.idDispositivo, idUsuario: sesion.idUsuario }
+        );
+      }
+      
+      throw new this.DatabaseError(
+        'No se pudo guardar la sesión',
+        { originalError: error.message, code: error.code }
+      );
     } finally {
-      connection.release();
+      await this.releaseConnection(connection, isExternal);
     }
   }
 
   // Desactivar una sesión por ID de la sesion
-  async desactivarSesionPorId(idSesion) {
-    console.log("DESACTIVANDO");
-    const connection = await this.conexionBD.conectar();
+  async desactivarSesionPorId(idSesion, externalConn = null) {
+     const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [resultado] = await connection.query(
+      const [resultado] = await connection.execute(
         "UPDATE sesiones SET activa = FALSE WHERE id_sesion = ?",
         [idSesion]
       );
-      console.log(`Sesión ${idSesion} desactivada. Filas afectadas: ${resultado.affectedRows}`);
+      
+      if (resultado.affectedRows === 0) {
+        throw new this.NotFoundError('La sesión no existe');
+      }
+      
     } catch (error) {
-      console.error(`Error al desactivar la sesión ${idSesion}:`, error);
-      throw error;
+      if (error instanceof this.NotFoundError) throw error;
+      
+      throw new this.DatabaseError(
+        'No se pudo desactivar la sesión',
+        { originalError: error.message, code: error.code }
+      );
     } finally {
-      connection.release();
+      await this.releaseConnection(connection, isExternal);
     }
   }
 
   // Desactivar todas las sesiones de un usuario
-  async desactivarTodasPorIdUsuario(idUsuario) {
-    const connection = await this.conexionBD.conectar();
+  async desactivarTodasPorIdUsuario(idUsuario, externalConn = null) {
+     const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [resultado] = await connection.query(
+      const [resultado] = await connection.execute(
         "UPDATE sesiones SET activa=FALSE WHERE id_usuario=?",
         [idUsuario]
       );
-      console.log(`Todas las sesiones del usuario ${idUsuario} desactivadas. Filas afectadas: ${resultado.affectedRows}`);
+     
     } catch (error) {
-      console.error(`Error al desactivar las sesiones del usuario ${idUsuario}:`, error);
-      throw error;
+      throw new this.DatabaseError(
+        'No se pudo desactivar todas las sesiones del usuario',
+        { originalError: error.message, code: error.code }
+      );
     } finally {
-      connection.release();
+      await this.releaseConnection(connection, isExternal);
     }
   }
 
-  async desactivarPorIdUsuarioIdDispositivo(idUsuario, idDispositivo) {
-     const connection = await this.conexionBD.conectar();
+  async desactivarPorIdUsuarioIdDispositivo(idUsuario, idDispositivo, externalConn = null) {
+     const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [resultado] = await connection.query(
+      const [resultado] = await connection.execute(
         "UPDATE sesiones SET activa = FALSE WHERE id_usuario = ? AND id_dispositivo = ?",
         [idUsuario, idDispositivo]
       );
-      console.log(`La sesion del usuario ${idUsuario} con id de dispositivo ${idDispositivo} ha sido desactivada. Filas afectadas: ${resultado.affectedRows}`);
+      
+        if (resultado.affectedRows === 0) {
+      return { desactivadas: 0, mensaje: 'No habia sesiones para desactivar' };
+    }
+    
+    return { desactivadas: resultado.affectedRows, mensaje: 'Sesion desactivada' };
+      
     } catch (error) {
-      console.error(`Error al desactivar la sesione del usuario ${idUsuario} con id de dispositivo ${idDispositivo}}:`, error);
-      throw error;
+      if (error instanceof this.NotFoundError) throw error;
+      
+      throw new this.DatabaseError(
+        'No se pudo desactivar la sesión del dispositivo',
+        { originalError: error.message, code: error.code }
+      );
     } finally {
-      connection.release();
+      await this.releaseConnection(connection, isExternal);
     }
   }
-  async desactivarSesionMasAntigua(idUsuario) {
-  const connection = await this.conexionBD.conectar();
-  try {
-    const [resultado] = await connection.query(`
-      DELETE FROM sesiones 
-      WHERE id_usuario = ? 
-      ORDER BY fecha_creacion ASC 
-      LIMIT 1
-    `, [idUsuario]);
 
-    return resultado.affectedRows > 0;
-  } catch (error) {
-    console.error('Error al eliminar sesión más antigua:', error);
-    throw error;
-  } finally {
-    connection.release();
-  }
-}
-// PONER MAPPERS DE BD A DOMINIO
-  // Consultar todas las sesiones de un usuario
-  async consultarSesionesPorIdUsuario(idUsuario) {
-    const connection = await this.conexionBD.conectar();
+  async desactivarSesionMasAntigua(idUsuario, externalConn = null) {
+  const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [resultados] = await connection.query(
+      const [resultado] = await connection.execute(`
+        DELETE FROM sesiones 
+        WHERE id_usuario = ? 
+        ORDER BY fecha_creacion ASC 
+        LIMIT 1
+      `, [idUsuario]);
+
+      if (resultado.affectedRows === 0) {
+        throw new this.NotFoundError('No se encontraron sesiones para este usuario');
+      }
+
+      return resultado.affectedRows > 0;
+    } catch (error) {
+      if (error instanceof this.NotFoundError) throw error;
+      
+      throw new this.DatabaseError(
+        'No se pudo eliminar la sesión más antigua del usuario',
+        { originalError: error.message, code: error.code }
+      );
+    } finally {
+      await this.releaseConnection(connection, isExternal);
+    }
+  }
+
+  // Consultar todas las sesiones de un usuario
+  async consultarSesionesPorIdUsuario(idUsuario, externalConn = null) {
+     const {connection, isExternal} = await this.getConnection(externalConn);
+    try {
+      const [resultados] = await connection.execute(
         "SELECT * FROM sesiones WHERE id_usuario = ?",
         [idUsuario]
       );
-      const sesionesDominio = resultados.map(elemento=> this.sesionMapper.bdToDominio(elemento));
+      
+      const sesionesDominio = resultados.map(elemento => this.sesionMapper.bdToDominio(elemento));
       return sesionesDominio;
     } catch (error) {
-      console.error(`Error al consultar sesiones del usuario ${idUsuario}:`, error);
-      throw error;
+      throw new this.DatabaseError(
+        'No se pudo consultar las sesiones del usuario',
+        { originalError: error.message, code: error.code }
+      );
     } finally {
-      connection.release();
+      await this.releaseConnection(connection, isExternal);
     }
   }
 
-    async consultarSesionesActivasPorIdUsuario(idUsuario) {
-    const connection = await this.conexionBD.conectar();
+  async consultarSesionesActivasPorIdUsuario(idUsuario, externalConn = null) {
+    const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [resultados] = await connection.query(
+      const [resultados] = await connection.execute(
         "SELECT * FROM sesiones WHERE id_usuario = ? AND activa = TRUE",
         [idUsuario]
       );
-      const sesionesDominio = resultados.map(elemento=> this.sesionMapper.bdToDominio(elemento));
+      
+      const sesionesDominio = resultados.map(elemento => this.sesionMapper.bdToDominio(elemento));
       return sesionesDominio;
     } catch (error) {
-      console.error(`Error al consultar sesiones del usuario ${idUsuario}:`, error);
-      throw error;
+      throw new this.DatabaseError(
+        'No se pudo consultar las sesiones activas del usuario',
+        { originalError: error.message, code: error.code }
+      );
     } finally {
-      connection.release();
+      await this.releaseConnection(connection, isExternal);
     }
   }
 
-  //  async consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash) {
-  //   const connection = await this.conexionBD.conectar();
-  //   try {
-  //     const [resultados] = await connection.query(
-  //       "SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash =?  AND activa = TRUE",
-  //       [idUsuario, refreshTokenHash]
-  //     );
-  //     console.log("ESTO SE MANDA",resultados[0],"mas", idUsuario, refreshTokenHash);
-  //     if(resultados[0]){
-  //     const sesionDominio = this.sesionMapper.bdToDominio(resultados[0]);
-  //       return sesionDominio;
-  //     }
-  //     return null;
-  //   } catch (error) {
-  //     console.error(`Error al consultar sesiones del usuario ${idUsuario} y refresh token Hash ${refreshTokenHash}:`, error);
-  //     throw error;
-  //   } finally {
-  //     connection.release();
-  //   }
-  // }
-  
-  async consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash) {
-    const connection = await this.conexionBD.conectar();
+  async consultarSesionesActivasPorIdUsuarioRTHash(idUsuario, refreshTokenHash, externalConn = null) {
+  const {connection, isExternal} = await this.getConnection(externalConn);
     
     try {
-        const [resultados] = await connection.query(
-            "SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash = ? AND activa = TRUE",
-            [idUsuario, refreshTokenHash]
-        );
-        if (resultados.length === 0) {
-            return null;
-        }
-
+      const [resultados] = await connection.execute(
+        "SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash = ? AND activa = TRUE",
+        [idUsuario, refreshTokenHash]
+      );
       
-        const sesionDominio = this.sesionMapper.bdToDominio(resultados[0]);
-        return sesionDominio;
+      if (resultados.length === 0) {
+        return null;
+      }
+
+      const sesionDominio = this.sesionMapper.bdToDominio(resultados[0]);
+      return sesionDominio;
 
     } catch (error) {
-        console.error('Error al consultar sesiones activas:', {
-            idUsuario,
-            refreshTokenHash: refreshTokenHash?.substring(0, 10) + '...' 
-        }, error);
-        
-        throw new DatabaseError('Error al verificar la sesión');
-        
+      throw new this.DatabaseError(
+        'No se pudo consultar la sesión activa',
+        { originalError: error.message, code: error.code }
+      );
     } finally {
-        if (connection) {
-            connection.release();
-        }
+      if (connection) {
+        await this.releaseConnection(connection, isExternal);
+      }
     }
-}
+  }
+
   // Consultar una sesión por refresh token hash
-  async consultarSesionPorRefreshTokenHash(refreshTokenHash) {
-    const connection = await this.conexionBD.conectar();
+  async consultarSesionPorRefreshTokenHash(refreshTokenHash, externalConn = null) {
+     const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [resultados] = await connection.query(
+      const [resultados] = await connection.execute(
         "SELECT * FROM sesiones WHERE refresh_token_hash = ?",
         [refreshTokenHash]
       );
 
-        if (resultados.length === 0) {
-            return null; 
-        }
+      if (resultados.length === 0) {
+        return null; 
+      }
 
-      //Toma solo el primero porque el refreshTokenHash es unico
-        const sesionBD = resultados[0];
-        
-       
-        return this.sesionMapper.bdToDominio(sesionBD);
+      const sesionBD = resultados[0];
+      return this.sesionMapper.bdToDominio(sesionBD);
+      
     } catch (error) {
-      console.error(`Error al consultar sesión con refresh token hash ${refreshTokenHash}:`, error);
-      throw error;
+      throw new this.DatabaseError(
+        'No se pudo consultar la sesión por token de refresco',
+        { originalError: error.message, code: error.code }
+      );
     } finally {
-      connection.release();
+      await this.releaseConnection(connection, isExternal);
     }
   }
 }
