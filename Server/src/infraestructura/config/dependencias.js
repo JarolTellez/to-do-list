@@ -30,9 +30,13 @@ const UsuarioRespuestaDTO = require("../../aplicacion/dtos/respuestas_dto/usuari
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
+const validateRequired = require("../../utils/validators")
+
 const {NotFoundError, ValidationError, DatabaseError, AuthenticationError, ConflictError} = require("../../utils/appErrors");
 
 
+//validator
+const validateRequiredObj = validateRequired(ValidationError);
 
 // Mappers y Factories
 const tareaFactory = new TareaFactory(Tarea);
@@ -54,12 +58,12 @@ const sesionDAO = new SesionDAO({sesionMapper, conexionBD, DatabaseError, NotFou
 const jwtAuth = new JwtAuth();
 
 // Servicios
-const userService = new UserService({usuarioDAO,conexionBD, bcrypt});
+const userService = new UserService({usuarioDAO,conexionBD, bcrypt, ConflictError, ValidationError});
 const servicioEtiqueta = new ServicioEtiqueta({etiquetaDAO, conexionBD});
 const servicioTareaEtiqueta = new ServicioTareaEtiqueta({tareaEtiquetaDAO, conexionBD});
 const servicioTarea = new ServicioTarea({tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD});
 const servicioSesion = new ServicioSesion({sesionDAO,jwtAuth, AuthenticationError, conexionBD});
-const servicioAuth = new ServicioAuth({Usuario, sesionFabrica, userService, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, ConflictError,  AuthenticationError});
+const servicioAuth = new ServicioAuth({Usuario, sesionFabrica, userService, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, ConflictError,  AuthenticationError, validateRequired: validateRequiredObj});
 
 // Controladores
 const tareaController = new TareaController({
