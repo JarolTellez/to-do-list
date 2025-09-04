@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
 const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
-
 class ServicioAuth extends BaseDatabaseHandler {
   constructor({
     Usuario,
@@ -17,10 +16,8 @@ class ServicioAuth extends BaseDatabaseHandler {
     ValidationError,
     ConflictError,
     AuthenticationError,
-    validateRequired
-  }
-    
-  ) {
+    validateRequired,
+  }) {
     super(conexionBD);
     this.Usuario = Usuario;
     this.sesionFabrica = sesionFabrica;
@@ -33,15 +30,16 @@ class ServicioAuth extends BaseDatabaseHandler {
     this.MAX_SESIONES = parseInt(process.env.MAX_SESIONES_ACTIVAS) || 5;
     this.NotFoundError = NotFoundError;
     this.ValidationError = ValidationError;
-    this.ConflictError=ConflictError;
-    this.AuthenticationError = AuthenticationError
-    this.validateRequired=validateRequired;
+    this.ConflictError = ConflictError;
+    this.AuthenticationError = AuthenticationError;
+    this.validateRequired = validateRequired;
   }
 
   async registrarUsuario(usuario, externalConn = null) {
+    this.validateRequired(["usuario"], { usuario });
     return this.withTransaction(async (connection) => {
-     const user= await this.userService.createUser(usuario, connection);
-     return user;
+      const user = await this.userService.createUser(usuario, connection);
+      return user;
     }, externalConn);
   }
 
@@ -54,10 +52,16 @@ class ServicioAuth extends BaseDatabaseHandler {
     ip,
     externalConn = null
   ) {
+    this.validateRequired(["nombreUsuario", "contrasena"], {
+      nombreUsuario,
+      contrasena,
+    });
     return this.withTransaction(async (connection) => {
-      this.validateRequired(["nombreUsuario", "contrasena"],{nombreUsuario, contrasena});
-
-     const usuario= await this.userService.validateCredentials(nombreUsuario, contrasena, connection);
+      const usuario = await this.userService.validateCredentials(
+        nombreUsuario,
+        contrasena,
+        connection
+      );
 
       await this.servicioSesion.gestionarLimiteDeSesiones(
         usuario.idUsuario,
@@ -151,48 +155,48 @@ class ServicioAuth extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-async logOutSession(refreshToken, externalConn = null) {
-  let decoded;
-  return this.withTransaction(async (connection) => {
-    try {
-      decoded = this.jwtAuth.verificarRefreshToken(refreshToken);
-    } catch (error) {
-      await this.manejarErrorVerificacionToken(error, refreshToken, connection);
-      throw new this.AuthenticationError("Token de refresh inválido"); 
-    }
+  async logOutSession(refreshToken, externalConn = null) {
+    this.validateRequired(["refreshToken"], { refreshToken });
+    let decoded;
+    return this.withTransaction(async (connection) => {
+      try {
+        decoded = this.jwtAuth.verificarRefreshToken(refreshToken);
+      } catch (error) {
+        await this.manejarErrorVerificacionToken(
+          error,
+          refreshToken,
+          connection
+        );
+        throw new this.AuthenticationError("Token de refresh inválido");
+      }
 
-    const refreshTokenHashRecibido = this.crypto
-      .createHash("sha256")
-      .update(refreshToken)
-      .digest("hex");
+      const refreshTokenHashRecibido = this.crypto
+        .createHash("sha256")
+        .update(refreshToken)
+        .digest("hex");
 
-    const sesionDesactivada = await this.servicioSesion.deactivateSession(
-      decoded.idUsuario, 
-      refreshTokenHashRecibido, 
-      connection
-    );
+      const sesionDesactivada = await this.servicioSesion.deactivateSession(
+        decoded.idUsuario,
+        refreshTokenHashRecibido,
+        connection
+      );
 
-    if (!sesionDesactivada) {
-      throw new this.AuthenticationError("Sesión no encontrada o ya expirada");
-    }
+      if (!sesionDesactivada) {
+        throw new this.AuthenticationError(
+          "Sesión no encontrada o ya expirada"
+        );
+      }
 
-    return { 
-      success: true, 
-      message: 'Sesión cerrada exitosamente',
-      usuarioId: decoded.idUsuario 
-    };
-
-  }, externalConn);
-}
+      return {
+        success: true,
+        message: "Sesión cerrada exitosamente",
+        usuarioId: decoded.idUsuario,
+      };
+    }, externalConn);
+  }
 
   async renovarAccesToken(refreshToken, externalConn = null) {
-    if (!refreshToken) {
-      throw this.crearErrorPersonalizado(
-        "Refresh Token no proporcionado",
-        400,
-        "REFRESH_MISSING"
-      );
-    }
+    this.validateRequired(["refreshToken"], { refreshToken });
     let decoded;
 
     return this.withTransaction(async (connection) => {
@@ -207,23 +211,22 @@ async logOutSession(refreshToken, externalConn = null) {
         return;
       }
 
-   
-       const usuario = await this.userService.validateUserExistenceById(
+      const usuario = await this.userService.validateUserExistenceById(
         decoded.idUsuario,
         connection
       );
-      
+
       const refreshTokenHashRecibido = this.crypto
         .createHash("sha256")
         .update(refreshToken)
         .digest("hex");
-  
-        await this.servicioSesion.deactivateSession(
-          usuario.idUsuario,
-          refreshTokenHashRecibido,
-          connection
-        );
-  
+
+      await this.servicioSesion.deactivateSession(
+        usuario.idUsuario,
+        refreshTokenHashRecibido,
+        connection
+      );
+
       const nuevoAccessToken = this.jwtAuth.generarAccessToken(
         usuario.idUsuario,
         usuario.rol
@@ -241,8 +244,8 @@ async logOutSession(refreshToken, externalConn = null) {
     externalConn = null
   ) {
     try {
+      this.validateRequired(["refreshToken"], {refreshToken});
       const decoded = this.jwtAuth.decodificarToken(refreshToken);
-
       await this.limpiarSesionInvalidas(
         decoded.idUsuario,
         refreshToken,
@@ -252,26 +255,27 @@ async logOutSession(refreshToken, externalConn = null) {
       console.error("Error al limpiar sesión inválida:", cleanupError);
     }
 
-    if (error.message === "Refresh token expirado") {
-      throw this.crearErrorPersonalizado(
-        "Refresh token expirado",
-        401,
-        "REFRESH_EXPIRED"
-      );
-    }
+    // if (error.message === "Refresh token expirado") {
+    //   throw this.crearErrorPersonalizado(
+    //     "Refresh token expirado",
+    //     401,
+    //     "REFRESH_EXPIRED"
+    //   );
+    // }
 
-    if (error.message === "Refresh token inválido") {
-      throw this.crearErrorPersonalizado(
-        "Refresh token inválido",
-        401,
-        "REFRESH_INVALID"
-      );
-    }
+    // if (error.message === "Refresh token inválido") {
+    //   throw this.crearErrorPersonalizado(
+    //     "Refresh token inválido",
+    //     401,
+    //     "REFRESH_INVALID"
+    //   );
+    // }
 
-    throw this.crearErrorPersonalizado("Token inválido", 401, "TOKEN_INVALID");
+    // throw this.crearErrorPersonalizado("Token inválido", 401, "TOKEN_INVALID");
   }
 
   async limpiarSesionInvalidas(idUsuario, refreshToken, externalConn = null) {
+    this.validateRequired(["userId","refreshToken"],{idUsuario, refreshToken});
     return this.withTransaction(async (connection) => {
       const usuario = await this.userService.validateUserExistenceById(
         idUsuario,
@@ -284,24 +288,15 @@ async logOutSession(refreshToken, externalConn = null) {
           .update(refreshToken)
           .digest("hex");
 
-  
         await this.servicioSesion.deactivateSession(
           usuario.idUsuario,
           refreshTokenHashRecibido,
           connection
         );
-  
       }
     }, externalConn);
   }
 
-  //CAMBIAR POR ERRORES PERSONALIZADOS
-  crearErrorPersonalizado(mensaje, statusCode, tipo) {
-    const error = new Error(mensaje);
-    error.statusCode = statusCode;
-    error.tipo = tipo;
-    return error;
-  }
 }
 
 module.exports = ServicioAuth;
