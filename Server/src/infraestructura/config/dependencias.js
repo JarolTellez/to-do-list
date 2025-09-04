@@ -58,11 +58,11 @@ const sesionDAO = new SesionDAO({sesionMapper, conexionBD, DatabaseError, NotFou
 const jwtAuth = new JwtAuth();
 
 // Servicios
-const userService = new UserService({usuarioDAO,conexionBD, bcrypt, ConflictError, ValidationError});
-const servicioEtiqueta = new ServicioEtiqueta({etiquetaDAO, conexionBD});
-const servicioTareaEtiqueta = new ServicioTareaEtiqueta({tareaEtiquetaDAO, conexionBD});
-const servicioTarea = new ServicioTarea({tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD});
-const servicioSesion = new ServicioSesion({sesionDAO,jwtAuth, AuthenticationError, conexionBD});
+const userService = new UserService({usuarioDAO,conexionBD, bcrypt, ConflictError, ValidationError, validateRequired: validateRequiredObj});
+const servicioEtiqueta = new ServicioEtiqueta({etiquetaDAO, conexionBD, validateRequired: validateRequiredObj});
+const servicioTareaEtiqueta = new ServicioTareaEtiqueta({tareaEtiquetaDAO, conexionBD, validateRequired: validateRequiredObj});
+const servicioTarea = new ServicioTarea({tareaDAO, servicioEtiqueta, servicioTareaEtiqueta, conexionBD, validateRequired: validateRequiredObj});
+const servicioSesion = new ServicioSesion({sesionDAO,jwtAuth, AuthenticationError, conexionBD, validateRequired: validateRequiredObj});
 const servicioAuth = new ServicioAuth({Usuario, sesionFabrica, userService, servicioSesion, conexionBD, usuarioDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, ConflictError,  AuthenticationError, validateRequired: validateRequiredObj});
 
 // Controladores
