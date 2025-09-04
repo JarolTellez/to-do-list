@@ -9,7 +9,7 @@ class ServicioEtiqueta extends BaseDatabaseHandler {
   async agregarEtiqueta(etiqueta, externalConn = null) {
     return this.withTransaction(async (connection) => {
       const existe = await this.etiquetaDAO.consultarEtiquetaPorNombreIdUsuario(
-        etiqueta.nombreEtiqueta,
+        etiqueta.nombre,
         etiqueta.idUsuario,
         connection
       );
@@ -36,10 +36,10 @@ class ServicioEtiqueta extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-  async obtenerEtiquetaPorNombre(nombreEtiqueta, externalConn = null) {
+  async obtenerEtiquetaPorNombre(nombre, externalConn = null) {
     return this.withTransaction(async (connection) => {
       const etiqueta = await this.etiquetaDAO.consultarEtiquetasPorNombre(
-        nombreEtiqueta,
+        nombre,
         connection
       );
       return etiqueta;
