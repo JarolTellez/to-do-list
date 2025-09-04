@@ -1,7 +1,7 @@
 class Etiqueta {
   constructor({
     idEtiqueta = null,
-    nombreEtiqueta,
+    nombre,
     descripcion,
     existente = false,
     eliminar = false,
@@ -9,7 +9,7 @@ class Etiqueta {
     idTareaEtiqueta = null, 
   }) {
     this.idEtiqueta = idEtiqueta;
-    this.nombreEtiqueta = nombreEtiqueta;
+    this.nombre = nombre;
     this.descripcion = descripcion;
     this.existente = existente;
     this.eliminar = eliminar;
@@ -25,9 +25,9 @@ class Etiqueta {
     const errores = [];
     
     // Validación más robusta pero con los mismos campos
-    if ( this.nombreEtiqueta.trim() === '') {
+    if ( this.nombre.trim() === '') {
       errores.push({ campo: 'nombreEtiqueta', mensaje: 'El nombre de la etiqueta es obligatorio y debe ser texto' });
-    } else if (this.nombreEtiqueta.length > 30) {
+    } else if (this.nombre.length > 30) {
       errores.push({ campo: 'nombreEtiqueta', mensaje: 'El nombre no puede exceder 30 caracteres' });
     }
     
@@ -42,7 +42,7 @@ class Etiqueta {
   toJSON() {
     return {
       idEtiqueta: this.idEtiqueta,
-      nombreEtiqueta: this.nombreEtiqueta,
+      nombre: this.nombre,
       descripcion: this.descripcion,
       existente: this.existente,
       eliminar: this.eliminar,

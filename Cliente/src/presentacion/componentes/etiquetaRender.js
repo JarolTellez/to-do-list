@@ -172,15 +172,15 @@ export const componentesEtiquetas = {
           li.setAttribute("data-id", etiqueta.idEtiqueta);
         }
 
-        li.textContent = etiqueta.nombreEtiqueta;
+        li.textContent = etiqueta.nombre;
 
         const botonEliminar = document.createElement("span");
         botonEliminar.textContent = " x";
         botonEliminar.className = "btnEliminarEtiqueta";
 
         botonEliminar.addEventListener("click", () => {
-          console.log(`\nEliminando etiqueta: "${etiqueta.nombreEtiqueta}"`);
-          this.eliminar(etiqueta.nombreEtiqueta);
+          console.log(`\nEliminando etiqueta: "${etiqueta.nombre}"`);
+          this.eliminar(etiqueta.nombre);
           this.renderizarEtiquetas(listaEtiquetas);
         });
 
@@ -192,7 +192,7 @@ export const componentesEtiquetas = {
 
   eliminar(nombreEtiqueta) {
     const indice = etiquetasSeleccionadas.findIndex(
-      (etiqueta) => etiqueta.nombreEtiqueta === nombreEtiqueta
+      (etiqueta) => etiqueta.nombre === nombreEtiqueta
     );
 
     if (indice !== -1) {
@@ -225,16 +225,16 @@ export const componentesEtiquetas = {
 
       const etiquetasFiltradas = etiquetasConsultadas.filter(
         (etiqueta) =>
-          etiqueta.nombreEtiqueta.toLowerCase().includes(query.toLowerCase()) &&
+          etiqueta.nombre.toLowerCase().includes(query.toLowerCase()) &&
           !etiquetasSeleccionadas.find(
-            (el) => el.nombreEtiqueta === etiqueta.nombreEtiqueta && !el.eliminar
+            (el) => el.nombre === etiqueta.nombre && !el.eliminar
           )
       );
 
       if (etiquetasFiltradas.length > 0) {
         etiquetasFiltradas.forEach((etiqueta) => {
           const li = document.createElement("li");
-          li.textContent = etiqueta.nombreEtiqueta;
+          li.textContent = etiqueta.nombre;
           li.setAttribute("data-id", etiqueta.idEtiqueta);
 
           li.addEventListener("click", () => {
@@ -263,15 +263,15 @@ export const componentesEtiquetas = {
 
     etiquetasParaAgregar.forEach((el) => {
       const existente = etiquetasSeleccionadas.find(
-        (e) => e.nombreEtiqueta === el.nombreEtiqueta
+        (e) => e.nombre === el.nombre
       );
 
       if (existente) {
         existente.eliminar = false;
-        console.log(`Restaurada etiqueta: "${el.nombreEtiqueta}"`);
+        console.log(`Restaurada etiqueta: "${el.nombre}"`);
       } else {
         etiquetasSeleccionadas.push(el);
-        console.log(`Agregada nueva etiqueta: "${el.nombreEtiqueta}"`);
+        console.log(`Agregada nueva etiqueta: "${el.nombre}"`);
       }
     });
 
@@ -285,11 +285,11 @@ export const componentesEtiquetas = {
 
   buscarCoincidencias(etiquetaTexto) {
     const etiquetaRegistrada = etiquetas.find(
-      (el) => el.nombreEtiqueta.toLowerCase() === etiquetaTexto.toLowerCase()
+      (el) => el.nombre.toLowerCase() === etiquetaTexto.toLowerCase()
     );
 
     const yaSeleccionada = etiquetasSeleccionadas.find(
-      (el) => el.nombreEtiqueta.toLowerCase() === etiquetaTexto.toLowerCase() && !el.eliminar
+      (el) => el.nombre.toLowerCase() === etiquetaTexto.toLowerCase() && !el.eliminar
     );
 
     if (yaSeleccionada) {
@@ -305,7 +305,7 @@ export const componentesEtiquetas = {
     const nuevaEtiqueta = etiquetaRegistrada
       ? new Etiqueta(
           etiquetaRegistrada.idEtiqueta,
-          etiquetaRegistrada.nombreEtiqueta,
+          etiquetaRegistrada.nombre,
           etiquetaRegistrada.descripcion,
           true, // existente
           false,

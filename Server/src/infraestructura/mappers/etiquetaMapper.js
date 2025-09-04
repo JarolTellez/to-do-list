@@ -7,7 +7,7 @@ class EtiquetaMapper{
 
   return new this.Etiqueta({
     idEtiqueta: id_etiqueta,
-    nombreEtiqueta: nombre,
+    nombre: nombre,
     descripcion,
     existente: true,
     eliminar: false,
@@ -21,7 +21,7 @@ class EtiquetaMapper{
 //  console.log("TIENE ID USUARIO: ", etiquetaIdUsuario);
   return new this.Etiqueta({
     idEtiqueta: Id,
-    nombreEtiqueta: nombre,
+    nombre: nombre,
     descripcion: descripcion,
     existente: true,
     eliminar: false,
@@ -34,7 +34,7 @@ class EtiquetaMapper{
    requestToDominio(etiquetaRequest, idUsuario=null) {
     return new this.Etiqueta({
       idEtiqueta: etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
-      nombreEtiqueta: etiquetaRequest.nombreEtiqueta, 
+      nombre: etiquetaRequest.nombre, 
       desripcion: etiquetaRequest.descripcion || null,
       existente: etiquetaRequest.existente,      
       eliminar: etiquetaRequest.eliminar,   

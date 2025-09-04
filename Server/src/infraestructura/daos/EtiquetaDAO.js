@@ -15,7 +15,7 @@ class EtiquetaDAO extends BaseDatabaseHandler {
     try {
       const [result] = await connection.execute(
         "INSERT INTO etiquetas (nombre, id_usuario) VALUES(?, ?)",
-        [etiqueta.nombreEtiqueta, etiqueta.idUsuario]
+        [etiqueta.nombre, etiqueta.idUsuario]
       );
 
       etiqueta.idEtiqueta = result.insertId;
@@ -25,7 +25,7 @@ class EtiquetaDAO extends BaseDatabaseHandler {
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         throw new this.ConflictError(
           'Ya existe una etiqueta con ese nombre para este usuario',
-          { nombre: etiqueta.nombreEtiqueta, idUsuario: etiqueta.idUsuario }
+          { nombre: etiqueta.nombre, idUsuario: etiqueta.idUsuario }
         );
       }
       
