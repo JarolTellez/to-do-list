@@ -16,7 +16,8 @@ class ServicioAuth extends BaseDatabaseHandler {
     NotFoundError,
     ValidationError,
     ConflictError,
-   AuthenticationError
+    AuthenticationError,
+    validateRequired
   }
     
   ) {
@@ -34,6 +35,7 @@ class ServicioAuth extends BaseDatabaseHandler {
     this.ValidationError = ValidationError;
     this.ConflictError=ConflictError;
     this.AuthenticationError = AuthenticationError
+    this.validateRequired=validateRequired;
   }
 
   async registrarUsuario(usuario, externalConn = null) {
@@ -53,13 +55,7 @@ class ServicioAuth extends BaseDatabaseHandler {
     externalConn = null
   ) {
     return this.withTransaction(async (connection) => {
-      if (!nombreUsuario || !contrasena) {
-        const error = new Error(
-          "Nombre de usuario y contraseña son requeridos"
-        );
-        error.statusCode = 400;
-        throw error;
-      }
+      this.validateRequired(["nombreUsuario", "contrasena"],{nombreUsuario, contrasena});
 
      const usuario= await this.userService.validateCredentials(nombreUsuario, contrasena, connection);
 

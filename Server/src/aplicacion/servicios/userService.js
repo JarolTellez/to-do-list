@@ -1,28 +1,20 @@
 const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
 class UserService extends BaseDatabaseHandler {
-  constructor({usuarioDAO, conexionBD, bcrypt}) {
+  constructor({ usuarioDAO, conexionBD, bcrypt, ConflictError, ValidationError }) {
     super(conexionBD);
     this.usuarioDAO = usuarioDAO;
     this.bcrypt = bcrypt;
+    this.ConflictError = ConflictError;
+    this.ValidationError = ValidationError;
   }
 
   async createUser(user, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      // Verificar si el usuario ya existe
-      const existingUser = await this.usuarioDAO.consultarUsuarioPorNombre(
-        user.nombreUsuario,
-        connection
-      );
-
-      if (existingUser) {
-        throw new Error("El usuario ya existe");
-      }
-
+      user.validar();
       const encryptedpassword = await this.bcrypt.hash(user.contrasena, 10);
       user.contrasena = encryptedpassword;
 
-      user.validar();
       const addedUser = await this.usuarioDAO.agregarUsuario(user, connection);
       return addedUser;
     }, externalConn);
@@ -30,22 +22,12 @@ class UserService extends BaseDatabaseHandler {
 
   async validateCredentials(userName, password, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      console.log("Verificando credenciales para usuario:", userName);
-
       const user = await this.usuarioDAO.consultarUsuarioPorNombreContrasena(
         userName,
         password,
         connection
       );
 
-      if (!user) {
-        console.log("Usuario no encontrado:", userName);
-        const error = new Error("Credenciales inválidas");
-        error.statusCode = 401;
-        throw error;
-      }
-
-      console.log("Usuario autenticado:", user.idUsuario);
       return user;
     }, externalConn);
   }
@@ -56,24 +38,9 @@ class UserService extends BaseDatabaseHandler {
         userId,
         connection
       );
-      if (!user) {
-        throw this.crearErrorPersonalizado(
-          "Usuario no encontrado",
-          404,
-          "USER_NOT_FOUND"
-        );
-      }
 
       return user;
     }, externalConn);
-  }
-
-    //CAMBIAR POR ERRORES PERSONALIZADOS
-  crearErrorPersonalizado(mensaje, statusCode, tipo) {
-    const error = new Error(mensaje);
-    error.statusCode = statusCode;
-    error.tipo = tipo;
-    return error;
   }
 }
 
