@@ -2,10 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser'); 
 const { 
-  tareaController, 
-  etiquetaController,
+  taskController, 
+  tagController,
   authController,
-} = require('./src/infraestructura/config/dependencias');
+} = require('./src/infraestructura/config/dependencies');
 const {errorHandler} = require("./src/api/middlewares/errorHandler");
 const app = express();
 const cors = require('cors');
@@ -28,9 +28,9 @@ app.use(express.json());
 
 
 // Configuración de rutas
-const routerAuth = require('./src/api/rutas/authRutas')(authController);
-const routerTarea = require('./src/api/rutas/tareaRutas')(tareaController);
-const routerEtiqueta = require('./src/api/rutas/etiquetaRutas')(etiquetaController);
+const routerAuth = require('./src/api/rutas/authRoutes')(authController);
+const routerTarea = require('./src/api/rutas/taskRoutes')(taskController);
+const routerEtiqueta = require('./src/api/rutas/tagRoutes')(tagController);
 
 app.use('/auth', routerAuth);
 app.use('/tarea', routerTarea);

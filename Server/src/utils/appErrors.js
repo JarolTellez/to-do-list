@@ -1,4 +1,4 @@
-const { error } = require("winston");
+const { error } = require('winston');
 
 class AppError extends Error {
     constructor(message, statusCode, details=null) {

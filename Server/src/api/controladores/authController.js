@@ -1,15 +1,15 @@
 class AuthController {
-  constructor({ servicioAuth, usuarioMapper, AuthenticationError }) {
-    this.servicioAuth = servicioAuth;
-    this.usuarioMapper = usuarioMapper;
+  constructor({ authService, userMapper, AuthenticationError }) {
+    this.authService = authService;
+    this.userMapper = userMapper;
     this.AuthenticationError = AuthenticationError;
   }
 
   async agregarUsuario(req, res, next) {
     try {
-      const usuario = this.usuarioMapper.requestToDominio(req.body);
-      const usuarioAgregado = await this.servicioAuth.registrarUsuario(usuario);
-      const usuarioRespuesta = this.usuarioMapper.dominioToRespuestaDTO(usuarioAgregado);
+      const usuario = this.userMapper.requestToDominio(req.body);
+      const usuarioAgregado = await this.authService.registrarUsuario(usuario);
+      const usuarioRespuesta = this.userMapper.dominioToRespuestaDTO(usuarioAgregado);
       
       return res.status(201).json({
          success: true,
@@ -19,7 +19,7 @@ class AuthController {
       next(error);
     //   return res.status(500).json({
     //      success: false,
-    //     message: "Ocurrió un error al intentar registrar el usuario.",
+    //     message: 'Ocurrió un error al intentar registrar el usuario.',
     //     error: error.message,
     //   });
     }
@@ -28,13 +28,13 @@ class AuthController {
     async loginUsuario(req, res, next) {
     try {
         const { nombreUsuario, contrasena } = req.body;
-        const dispositivoInfo = JSON.parse(req.get("Dispositivo-Info") || "{}");
+        const dispositivoInfo = JSON.parse(req.get('Dispositivo-Info') || '{}');
         const ip = req.ip;
         const refreshTokenExistente = req.cookies.refreshToken;
 
         console.log('Iniciando login para usuario:', nombreUsuario);
         
-        const resultado = await this.servicioAuth.loginUsuario(
+        const resultado = await this.authService.loginUsuario(
             refreshTokenExistente, 
             nombreUsuario, 
             contrasena, 
@@ -48,7 +48,7 @@ class AuthController {
                 httpOnly: true,
                 secure: false,
                 sameSite: 'lax',
-                path: "/",
+                path: '/',
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
             console.log('Nuevo refresh token establecido en cookies');
@@ -57,8 +57,8 @@ class AuthController {
         }
 
         return res.status(200).json({
-            status: "success",
-            message: "Autenticación exitosa",
+            status: 'success',
+            message: 'Autenticación exitosa',
             data: {
                 usuario: resultado.usuario,
                 accessToken: resultado.accessToken,
@@ -67,7 +67,7 @@ class AuthController {
         });
 
     } catch (error) {
-        // console.error("Error en login:", error.message);
+        // console.error('Error en login:', error.message);
         // const statusCode = error.statusCode || 500;
         
         // Limpiar cookies en caso de error
@@ -75,50 +75,50 @@ class AuthController {
             httpOnly: true,
             secure: false,
             sameSite: 'lax',
-            path: "/"
+            path: '/'
         });
         next(error);
 
         // return res.status(statusCode).json({
         //     success: false,
-        //     message: error.message || "Error interno del servidor"
+        //     message: error.message || 'Error interno del servidor'
         // });
     }
 }
 
 async logOut(req, res, next) {
   try {
-    console.log("LLEGOOOOOO");
+    console.log('LLEGOOOOOO');
     const refreshTokenExistente = req.cookies.refreshToken;
 
     if (!refreshTokenExistente) {
-      throw new this.AuthenticationError("No hay token de refresh presente");
+      throw new this.AuthenticationError('No hay token de refresh presente');
     }
 
   
-    const resultado = await this.servicioAuth.logOutSession(refreshTokenExistente);
+    const resultado = await this.authService.logOutSession(refreshTokenExistente);
 
-    res.clearCookie("refreshToken", {
+    res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
-      path: "/"
+      path: '/'
     });
 
    
     return res.status(200).json({
-      status: "success",
-      message: "Logout exitoso",
+      status: 'success',
+      message: 'Logout exitoso',
       data: resultado 
     });
 
   } catch (error) {
     
-    res.clearCookie("refreshToken", {
+    res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: false,
-      sameSite: "lax",
-      path: "/"
+      sameSite: 'lax',
+      path: '/'
     });
     
     next(error); 
@@ -136,22 +136,22 @@ async renovarAccessToken(req, res, next) {
                 httpOnly: true,
                 secure: false,
                 sameSite: 'lax',
-                path: "/"
+                path: '/'
             });
 
             return res.status(401).json({
                 success: false,
-                mensaje: "Refresh token no proporcionado",
-                tipo: "NO_REFRESH_TOKEN"
+                mensaje: 'Refresh token no proporcionado',
+                tipo: 'NO_REFRESH_TOKEN'
             });
         }
 
-        const resultado = await this.servicioAuth.renovarAccesToken(refreshToken);
+        const resultado = await this.authService.renovarAccesToken(refreshToken);
         console.log('Token renovado para usuario:', resultado.usuario.idUsuario);
 
         return res.status(200).json({
             success: true,
-            message: "Access token renovado exitosamente",
+            message: 'Access token renovado exitosamente',
             data: {
                 usuario: {
                     id: resultado.usuario.idUsuario,
@@ -170,7 +170,7 @@ async renovarAccessToken(req, res, next) {
             httpOnly: true,
             secure: false,
             sameSite: 'lax',
-            path: "/"
+            path: '/'
         });
         next(error);
         // const statusCode = error.statusCode || 401;

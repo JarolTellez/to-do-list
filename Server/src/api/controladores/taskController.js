@@ -1,0 +1,129 @@
+class TaskController {
+  constructor({ taskService, taskMapper }) {
+    this.taskService = taskService;
+    this.taskMapper = taskMapper;
+   
+  }
+
+  async agregarTarea(req, res, next) {
+    try {
+    //  console.log('Datos de tarea recibidos:', req.body);
+      const tarea = this.taskMapper.requestToDominio(req.body);
+      console.log('TAREA QUE SE AGREGARA: ', tarea);
+      const tareaProcesada = await this.taskService.agregarTarea(tarea);
+
+      return res.status(201).json({
+        status: 'success',
+        message: `Tarea agregada: ${tareaProcesada}`,
+        data: tareaProcesada,
+      });
+    } catch (error) {
+      // if (error.message.startsWith('[')) {
+      //   const errores = JSON.parse(error.message);
+      //   return res.status(400).json({
+      //     status: 'error',
+      //     message: 'Errores de validación',
+      //     error: errores,
+      //   });
+      // }
+
+      // console.error('Error en agregarTarea:', error);
+      // return res.status(500).json({
+      //   status: 'error',
+      //   message: 'Ocurrió un error al intentar guardar la tarea.',
+      //   error: error.message,
+      // });
+      next(error);
+    }
+  }
+
+  async eliminarTarea(req, res, next) {
+    try {
+      const { idTarea, idUsuario } = req.body;
+      await this.taskService.eliminarTarea(idTarea, idUsuario);
+
+      return res.status(200).json({
+        status: 'success',
+        message: `Tarea con ID ${idTarea} eliminada correctamente.`,
+      });
+    } catch (error) {
+      // console.error('Error en eliminarTarea:', error);
+      // return res.status(500).json({
+      //   status: 'error',
+      //   message: 'Ocurrió un error al intentar eliminar la tarea.',
+      //   error: error.message,
+      // });
+      next(error);
+    }
+  }
+
+  async actualizarTarea(req, res, next) {
+    try {
+     // const tarea = req.body;
+        const tareaMappeada = this.taskMapper.requestToDominio(req.body);
+        console.log('RECIBA CONTROLLER: ', req.body);
+           console.log('RECIBida MAPEADA: ', tareaMappeada);
+
+      //const tarea = this.taskMapper.requestToDominio(req.body);
+      const tareaProcesada = await this.taskService.actualizarTarea(tareaMappeada);
+
+      return res.status(200).json({
+        status: 'success',
+        message: `Tarea actualizada: ${tareaProcesada}`,
+        data: tareaProcesada,
+      });
+    } catch (error) {
+      // console.error('Error en actualizarTarea:', error);
+      // return res.status(500).json({
+      //   status: 'error',
+      //   message: 'Ocurrió un error al intentar actualizar la tarea.',
+      //   error: error.message,
+      // });
+      next(error);
+    }
+  }
+
+  async actualizarTareaCompletada(req, res, next) {
+    try {
+      const { idTarea, completada } = req.body;
+      const tareaActualizada = await this.taskService.actualizarTareaCompletada(idTarea, completada);
+
+      return res.status(200).json({
+        status: 'success',
+        message: `Estado de tarea actualizado: ${tareaActualizada}`,
+        data: tareaActualizada,
+      });
+    } catch (error) {
+      // console.error('Error en actualizarTareaCompletada:', error);
+      // return res.status(500).json({
+      //   status: 'error',
+      //   message: 'Ocurrió un error al intentar actualizar el estado de la tarea.',
+      //   error: error.message,
+      // });
+      next(error);
+    }
+  }
+
+  async consultarTareasPorIdUsuario(req, res, next) {
+    try {
+      const { idUsuario } = req.body;
+      const { tareasPendientes, tareasCompletadas } = await this.taskService.obtenerTareasPorIdUsuario(idUsuario);
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Tareas consultadas exitosamente',
+        data: { tareasPendientes, tareasCompletadas }
+      });
+    } catch (error) {
+      // console.error('Error en consultarTareasPorIdUsuario:', error);
+      // return res.status(500).json({
+      //   status: 'error',
+      //   message: 'Ocurrió un error al intentar consultar las tareas.',
+      //   error: error.message,
+      // });
+      next(error);
+    }
+  }
+}
+
+module.exports = TaskController;

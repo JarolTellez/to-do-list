@@ -1,11 +1,11 @@
 class BaseDatabaseHandler {
-  constructor(conexionBD) {
-    this.conexionBD = conexionBD;
+  constructor(connectionDB) {
+    this.connectionDB = connectionDB;
   }
 
   async getConnection(externalConn) {
     if (externalConn) return { connection: externalConn, isExternal: true };
-    const connection = await this.conexionBD.conectar();
+    const connection = await this.connectionDB.conectar();
     return { connection, isExternal: false };
   }
 
