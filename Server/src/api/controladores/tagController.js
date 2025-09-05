@@ -1,0 +1,37 @@
+class TagController {
+  constructor({ tagService, tagMapper }) {
+    this.tagService = tagService;
+    this.tagMapper = tagMapper;
+  }
+
+  async consultarEtiquetasPorIdUsuario(req, res, next) {
+    const { idUsuario } = req.body;
+
+    try {
+      const etiquetas = await this.tagService.consultarEtiquetasPorIdUsuario(idUsuario);
+
+      if (!etiquetas || etiquetas.length === 0) {
+        return res.status(200).json({
+          status: 'success',
+          message: 'No se encontraron etiquetas para este usuario.',
+          data: [],
+        });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        data: etiquetas,
+      });
+    } catch (error) {
+      // console.log('Error al consultar las etiquetas: ', error);
+      // return res.status(500).json({
+      //   status: 'error',
+      //   message: 'Error al consultar las etiquetas.',
+      //   error: error.message,
+      // });
+      next(error);
+    }
+  }
+}
+
+module.exports = TagController;
