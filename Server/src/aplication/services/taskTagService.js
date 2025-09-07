@@ -1,4 +1,4 @@
-const BaseDatabaseHandler = require('../../infraestructura/config/BaseDatabaseHandler');
+const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class TaskTagService extends BaseDatabaseHandler {
   constructor({taskTagDAO, connectionDB}) {

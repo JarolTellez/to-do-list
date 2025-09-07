@@ -1,5 +1,5 @@
 
-const BaseDatabaseHandler = require('../../infraestructura/config/BaseDatabaseHandler');
+const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class UserService extends BaseDatabaseHandler {
   constructor({ userDAO, connectionDB, bcrypt, ConflictError, ValidationError }) {

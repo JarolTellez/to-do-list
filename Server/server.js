@@ -5,7 +5,7 @@ const {
   taskController, 
   tagController,
   authController,
-} = require('./src/infraestructura/config/dependencies');
+} = require('./src/infrastructure/config/dependencies');
 const {errorHandler} = require("./src/api/middlewares/errorHandler");
 const app = express();
 const cors = require('cors');
@@ -28,9 +28,9 @@ app.use(express.json());
 
 
 // Configuración de rutas
-const authRouter = require('./src/api/rutas/authRoutes')(authController);
-const taskRouter = require('./src/api/rutas/taskRoutes')(taskController);
-const tagRouter = require('./src/api/rutas/tagRoutes')(tagController);
+const authRouter = require('./src/api/routes/authRoutes')(authController);
+const taskRouter = require('./src/api/routes/taskRoutes')(taskController);
+const tagRouter = require('./src/api/routes/tagRoutes')(tagController);
 
 app.use('/auth', authRouter);
 app.use('/tarea', taskRouter);

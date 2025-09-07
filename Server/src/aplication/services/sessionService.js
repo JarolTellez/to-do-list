@@ -1,4 +1,4 @@
-const BaseDatabaseHandler = require('../../infraestructura/config/BaseDatabaseHandler');
+const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class SessionService extends BaseDatabaseHandler {
   constructor({sessionDAO, JwtAuth, AuthenticationError, connectionDB}) {
