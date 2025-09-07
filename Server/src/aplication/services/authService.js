@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
+const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHandler");
 
 class AuthService extends BaseDatabaseHandler {
   constructor({
