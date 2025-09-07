@@ -1,4 +1,4 @@
-const BaseDatabaseHandler = require('../config/BaseDatabaseHandler');
+const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
 
 class UserDAO extends BaseDatabaseHandler {
   constructor({userMapper, connectionDB, bcrypt, DatabaseError, NotFoundError, ConflictError}) {
@@ -14,7 +14,7 @@ class UserDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'INSERT INTO usuarios (nombre_usuario, email, password, rol) VALUES (?, ?, ?, ?)',
+        'INSERT INTO users (user_name, email, password, rol) VALUES (?, ?, ?, ?)',
         [user.userName, user.email, user.password, user.rol]
       );
       user.id = result.insertId;
@@ -44,7 +44,7 @@ class UserDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'UPDATE usuarios SET nombre_usuario = ?, email = ?, password = ? WHERE id_usuario = ?',
+        'UPDATE users SET user_name = ?, email = ?, password = ? WHERE id = ?',
         [user.userName, user.email, user.password, user.id]
       );
 
@@ -79,7 +79,7 @@ class UserDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.query(
-        'DELETE FROM usuarios WHERE id_usuario = ?',
+        'DELETE FROM users WHERE id = ?',
         [id]
       );
 
@@ -108,8 +108,8 @@ class UserDAO extends BaseDatabaseHandler {
   async findAll(externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const [rows] = await connection.execute('SELECT * FROM usuarios');
-      return rows.length > 0 ? rows.map((r) => this.userMapper.bdToDominio(r)) : [];
+      const [rows] = await connection.execute('SELECT * FROM users');
+      return rows.length > 0 ? rows.map((r) => this.userMapper.dbToDomain(r)) : [];
     } catch (error) {
       throw new this.DatabaseError('No se pudo consultar los usuarios', {
         originalError: error.message,
@@ -124,13 +124,13 @@ class UserDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM usuarios WHERE id_usuario = ?',
+        'SELECT * FROM users WHERE id = ?',
         [id]
       );
       if (!rows || rows.length === 0) {
         throw new this.NotFoundError('Usuario no encontrado');
       }
-      return this.userMapper.bdToDominio(rows[0]);
+      return this.userMapper.dbToDomain(rows[0]);
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
       throw new this.DatabaseError('No se pudo consultar el user', {
@@ -146,7 +146,7 @@ async findByName(userName, externalConn = null) {
   const { connection, isExternal } = await this.getConnection(externalConn);
   try {
     const [rows] = await connection.execute(
-      'SELECT * FROM usuarios WHERE nombre_usuario = ?',
+      'SELECT * FROM users WHERE user_name = ?',
       [userName]
     );
     
@@ -155,7 +155,7 @@ async findByName(userName, externalConn = null) {
       return null;
     }
     
-    return this.userMapper.bdToDominio(rows[0]);
+    return this.userMapper.dbToDomain(rows[0]);
     
   } catch (error) {
     throw new this.DatabaseError('No se pudo consultar el user por nombre', {
@@ -171,13 +171,13 @@ async findByName(userName, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM usuarios WHERE email = ?',
+        'SELECT * FROM users WHERE email = ?',
         [email]
       );
       if (!rows || rows.length === 0) {
         throw new this.NotFoundError('Usuario no encontrado');
       }
-      return this.userMapper.bdToDominio(rows[0]);
+      return this.userMapper.dbToDomain(rows[0]);
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
       throw new this.DatabaseError('No se pudo consultar el user por email', {
@@ -189,36 +189,75 @@ async findByName(userName, externalConn = null) {
     }
   }
 
+  // async findByNameAndPassword(userName, password, externalConn = null) {
+  //   const { connection, isExternal } = await this.getConnection(externalConn);
+  //   try {
+  //     const [rows] = await connection.execute(
+  //       'SELECT * FROM usuarios WHERE nombre_usuario = ?',
+  //       [userName]
+  //     );
+  //     if (!rows || rows.length === 0) {
+  //       throw new this.NotFoundError('Credenciales inválidas');
+  //     }
+
+  //     const dbUser = rows[0];
+  //     const isValid = await this.bcrypt.compare(password.trim(), dbUser.password);
+
+  //     if (!isValid) {
+  //       throw new this.ConflictError('Credenciales inválidas');
+  //     }
+  //     return this.userMapper.dbToDomain(dbUser);
+  //   } catch (error) {
+  //     if (error instanceof this.NotFoundError || error instanceof this.ConflictError) {
+  //       throw error;
+  //     }
+  //     throw new this.DatabaseError('No se pudo verificar las credenciales', {
+  //       originalError: error.message,
+  //       code: error.code,
+  //     });
+  //   } finally {
+  //     await this.releaseConnection(connection, isExternal);
+  //   }
+  // }
+
   async findByNameAndPassword(userName, password, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const [rows] = await connection.execute(
-        'SELECT * FROM usuarios WHERE nombre_usuario = ?',
-        [userName]
-      );
-      if (!rows || rows.length === 0) {
-        throw new this.NotFoundError('Credenciales inválidas');
-      }
+        const [rows] = await connection.execute(
+            'SELECT * FROM users WHERE user_name = ?',
+            [userName]
+        );
 
-      const usuarioBD = rows[0];
-      const isValid = await this.bcrypt.compare(password.trim(), usuarioBD.password);
+        if (!rows || rows.length === 0) {
+            throw new this.NotFoundError('Credenciales inválidas');
+        }
 
-      if (!isValid) {
-        throw new this.ConflictError('Credenciales inválidas');
-      }
-      return this.userMapper.bdToDominio(usuarioBD);
+        const usuarioBD = rows[0];
+        const isValid = await this.bcrypt.compare(password.trim(), usuarioBD.password);
+
+        if (!isValid) {
+            throw new this.ConflictError('Credenciales inválidas');
+        }
+
+        return this.userMapper.dbToDomain(usuarioBD);
+
     } catch (error) {
-      if (error instanceof this.NotFoundError || error instanceof this.ConflictError) {
-        throw error;
-      }
-      throw new this.DatabaseError('No se pudo verificar las credenciales', {
-        originalError: error.message,
-        code: error.code,
-      });
+        // Propaga errores conocidos
+        if (error instanceof this.NotFoundError || error instanceof this.ConflictError) {
+            throw error;
+        }
+
+        // Para errores de BD, muestra más detalles
+        throw new this.DatabaseError('Error de autenticación', {
+            originalError: error.message,
+            code: error.code,
+            sqlState: error.sqlState,
+            errno: error.errno
+        });
     } finally {
-      await this.releaseConnection(connection, isExternal);
+        await this.releaseConnection(connection, isExternal);
     }
-  }
+}
 }
 
 

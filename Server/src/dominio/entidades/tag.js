@@ -18,23 +18,23 @@ class Tag {
 
 
     
-    this.validar();
+    this.validate();
   }
 
-  validar() {
-    const errores = [];
+  validate() {
+    const errors = [];
     
     // Validación más robusta pero con los mismos campos
     if ( this.name.trim() === '') {
-      errores.push({ campo: 'nombreEtiqueta', mensaje: 'El name de la etiqueta es obligatorio y debe ser texto' });
+      errors.push({ field: 'nombreEtiqueta', message: 'El name de la etiqueta es obligatorio y debe ser texto' });
     } else if (this.name.length > 30) {
-      errores.push({ campo: 'nombreEtiqueta', mensaje: 'El name no puede exceder 30 caracteres' });
+      errors.push({ field: 'nombreEtiqueta', message: 'El name no puede exceder 30 caracteres' });
     }
     
-    if (errores.length > 0) {
+    if (errors.length > 0) {
       throw new Error(JSON.stringify({
         tipoError: 'VALIDACION_ETIQUETA',
-        errores
+        errors
       }));
     }
   }

@@ -216,8 +216,8 @@ button:hover {
   flex-grow: 1;
 }
 
-.tituloTarea,
-.descripcionTarea,
+.nameTask,
+.taskDescription,
 .etiquetasTarea,
 input {
   width: 95%;
@@ -227,7 +227,7 @@ input {
   margin-bottom: 10px;
 }
 
-.descripcionTarea {
+.taskDescription {
   resize: vertical;
 }
 
@@ -269,7 +269,7 @@ input {
 }
 
 /* Estilo del campo de entrada de etiquetas */
-#contenedorInput {
+#inputContainer {
   flex-grow: 1;
   border: none;
   outline: none;
@@ -279,7 +279,7 @@ input {
 }
 
 /* Estilos para la lista desplegable de sugerencias */
-#consultadas {
+#consulted {
   position: absolute;
   top: 100%;
   left: 0;
@@ -296,16 +296,16 @@ input {
   display: none;
 }
 
-#consultadas li {
+#consulted li {
   padding: 10px;
   cursor: pointer;
 }
 
-#consultadas li:hover {
+#consulted li:hover {
   background-color: #f0f0f0;
 }
 
-#consultadas.active {
+#consulted.active {
   display: block;
 }
 

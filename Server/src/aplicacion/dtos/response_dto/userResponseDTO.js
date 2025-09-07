@@ -1,6 +1,6 @@
 class UserResponseDTO{
-    constructor({userId, userName, email, rol}){
-        this.userId = userId;
+    constructor({id, userName, email, rol}){
+        this.id = id;
         this.userName = userName;
         this.email = email;
         this.rol = rol;

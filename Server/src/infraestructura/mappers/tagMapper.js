@@ -2,44 +2,44 @@ class TagMapper{
   constructor(Tag){
     this.Tag=Tag;
   }
-   bdToDominio(etiqueta) {
-  const { id_etiqueta, nombre, descripcion, id_usuario } = etiqueta;
+   dbToDomain(tag) {
+  const { id, name, description, user_id } = tag;
 
   return new this.Tag({
-    idEtiqueta: id_etiqueta,
-    nombre: nombre,
-    descripcion,
-    existente: true,
-    eliminar: false,
-    idUsuario: id_usuario,
-    idTareaEtiqueta: null
+    id: id,
+    name: name,
+    descripcion: description,
+    exists: true,
+    toDelete: false,
+    userId: user_id,
+    taskTagId: null
   });
 }
 
 
-  bdConsultaJoinToDominio(Id, nombre, descripcion, etiquetaIdUsuario, tareaEtiquetaId) {
-//  console.log('TIENE ID USUARIO: ', etiquetaIdUsuario);
+  dbJoinToDomain(Id, name, description, tagUserId, taskTagId) {
+//  console.log('TIENE ID USUARIO: ', tagUserId);
   return new this.Tag({
     idEtiqueta: Id,
-    nombre: nombre,
-    descripcion: descripcion,
-    existente: true,
-    eliminar: false,
-    idUsuario: etiquetaIdUsuario,
-    idTareaEtiqueta: tareaEtiquetaId
+    name: name,
+    description: description,
+    exists: true,
+    toDelete: false,
+    userId: tagUserId,
+    taskTagId: taskTagId
   });
 }
 
-// Mapea etiqueta recibida de los request del cliente a entidad de dominio del backend
-   requestToDominio(etiquetaRequest, idUsuario=null) {
+// Mapea tag recibida de los request del cliente a entidad de dominio del backend
+   requestToDomain(tagRequest, userId=null) {
     return new this.Tag({
-      idEtiqueta: etiquetaRequest.idEtiqueta || etiquetaRequest.id_etiqueta|| null ,
-      nombre: etiquetaRequest.nombre, 
-      desripcion: etiquetaRequest.descripcion || null,
-      existente: etiquetaRequest.existente,      
-      eliminar: etiquetaRequest.eliminar,   
-      idUsuario: etiquetaRequest.idUsuario || idUsuario,
-      idTareaEtiqueta: etiquetaRequest.idTareaEtiqueta || null
+      id: tagRequest.id || tagRequest.id|| null ,
+      name: tagRequest.name, 
+      description: tagRequest.description || null,
+      exists: tagRequest.exists,    
+      toDelete: tagRequest.toDelete,   
+      userId: tagRequest.userId || userId,
+      taskTagId: tagRequest.taskTagId || null
    });
   
   }

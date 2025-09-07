@@ -1,174 +1,143 @@
-const BaseDatabaseHandler = require('../../infraestructura/config/BaseDatabaseHandler');
+const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
 class TaskService extends BaseDatabaseHandler {
-  constructor({tagDAO, tagService, taskTagService, connectionDB}) {
+  constructor({ taskDAO, tagService, taskTagService, connectionDB }) {
     super(connectionDB);
-    this.tagDAO = tagDAO;
+    this.taskDAO = taskDAO;
     this.taskTagService = taskTagService;
     this.tagService = tagService;
   }
 
-  async agregarTarea(tarea, externalConn = null) {
+  async createTask(task, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const tareaAgregada = await this.tagDAO.agregarTarea(tarea, connection);
+      const newTask = await this.taskDAO.create(task, connection);
 
-      if (Array.isArray(tarea.etiquetas)) {
-        for (const etiqueta of tarea.etiquetas) {
-          //   console.log('AGREGAR: ', etiqueta.nombreEtiqueta);
-          let idEtiqueta;
+      if (Array.isArray(task.tags)) {
+        for (const tag of task.tags) {
+          //   console.log('AGREGAR: ', tag.nombreEtiqueta);
+          let tagId;
 
-          if (etiqueta.idEtiqueta) {
-            idEtiqueta = etiqueta.idEtiqueta;
+          if (tag.id) {
+            tagId = tag.id;
           } else {
-            const etiquetaGuardada =
-              await this.tagService.agregarEtiqueta(etiqueta, connection);
-            idEtiqueta = etiquetaGuardada.idEtiqueta;
+            const savedTag = await this.tagService.createTag(tag, connection);
+            tagId = savedTag.id;
           }
 
-          await this.taskTagService.guardarTareaEtiqueta(
-            tareaAgregada.idTarea,
-            idEtiqueta,
+          await this.taskTagService.createTaskTag(
+            newTask.id,
+            tagId,
             connection
           );
         }
       }
 
-    //   //  forzar rollback
-    // throw new Error('Error simulado para probar transacciones');
-    
-      return tareaAgregada;
+      //   //  forzar rollback
+      // throw new Error('Error simulado para probar transacciones');
+
+      return newTask;
     }, externalConn);
   }
 
-  async actualizarTarea(tarea, externalConn = null) {
+  async updateTask(task, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const tareaExistente = await this.tagDAO.consultarTareaPorId(
-        tarea.idTarea,
-        connection
-      );
-      if (!tareaExistente) {
-        throw new Error(`No se encontró la tarea con el id: ${tarea.idTarea}.`);
+      const existingTask = await this.taskDAO.findById(task.id, connection);
+      if (!existingTask) {
+        throw new Error(`No se encontró la task con el id: ${task.id}.`);
       }
 
-      // Actualizar información principal de la tarea
-      await this.tagDAO.actualizarTarea(tarea, connection);
+      // Actualizar información principal de la task
+      await this.taskDAO.update(task, connection);
 
-      // Procesar etiquetas
-      for (const etiqueta of tarea.etiquetas) {
-        console.log('ETIQUETA EN SERVICIO TAREA: ', etiqueta);
-
+      // Procesar tags
+      for (const tag of task.tags) {
         //Eliminar relación si es necesario
-        if (etiqueta.eliminar === true && etiqueta.idTareaEtiqueta) {
-          console.log('ENTRO A ELIMINAR ETIQUETA');
-          await this.taskTagService.eliminarPorIdTareaEtiqueta(
-            etiqueta.idTareaEtiqueta,
-            connection
-          );
+        if (tag.toDelete === true && tag.taskTagId) {
+          await this.taskTagService.deleteById(tag.taskTagId, connection);
           continue;
         }
 
-        //Crear nueva etiqueta si no existe
-        if (!etiqueta.existente) {
-          const etiquetaCreada = await this.tagService.agregarEtiqueta(
-            etiqueta,
-            connection
-          );
+        //Crear nueva tag si no existe
+        if (!tag.exists) {
+          const createdTag = await this.tagService.createTag(tag, connection);
 
-          if (etiquetaCreada && etiquetaCreada.idEtiqueta) {
-            await this.taskTagService.guardarTareaEtiqueta(
-              tarea.idTarea,
-              etiquetaCreada.idEtiqueta,
+          if (createdTag && createdTag.id) {
+            await this.taskTagService.createTaskTag(
+              task.id,
+              createdTag.id,
               connection
             );
           } else {
-            throw new Error(
-              'No se pudo obtener el id de la nueva etiqueta creada.'
-            );
+            throw new Error("No se pudo obtener el id de la nueva tag creada.");
           }
-        } else if (!etiqueta.idTareaEtiqueta) {
-          // Si la etiqueta ya existe pero no está relacionada, se crea la relación
-          await this.taskTagService.guardarTareaEtiqueta(
-            tarea.idTarea,
-            etiqueta.idEtiqueta,
-            connection
-          );
+        } else if (!tag.taskTagId) {
+          // Si la tag ya existe pero no está relacionada, se crea la relación
+          await this.taskTagService.createTaskTag(task.id, tag.id, connection);
         }
       }
 
-      //  Consultar y retornar tarea actualizada
-      const tareaActualizadaConsulta =
-        await this.tagDAO.consultarTareasPorIdTarea(
-          tarea.idTarea,
-          connection
-        );
-      console.log('TAREA FINAL ACTUALIZAR: ', tareaActualizadaConsulta);
-      return tareaActualizadaConsulta;
+      //  Consultar y retornar task actualizada
+      const taskResult = await this.taskDAO.findById(task.id, connection);
+      console.log("TAREA FINAL ACTUALIZAR: ", taskResult);
+      return taskResult;
     }, externalConn);
   }
 
-  async eliminarTarea(idTarea, idUsuario, externalConn = null) {
-      return this.withTransaction(async (connection) => {
-      const tareaExistente =
-        await this.tagDAO.consultarTareaPorIdTareaUsuario(
-          idTarea,
-          idUsuario,
-          connection
-        );
-
-      if (!tareaExistente) {
-        throw new Error(`No se encontró la tarea con id ${idTarea}`);
-      }
-
-      await this.taskTagService.eliminarTodasPorIdTarea(idTarea, connection);
-      const eliminada = await this.tagDAO.eliminarTarea(idTarea, connection);
-
-      if (eliminada <= 0) {
-        throw new Error('No se pudo eliminar la tarea');
-      }
-
-      },externalConn);
-  }
-
-  async actualizarTareaCompletada(idTarea, completada, externalConn = null) {
-       return this.withTransaction(async (connection) => {
-      const tareaExistente = await this.tagDAO.consultarTareaPorId(
-        idTarea,
+  async deleteTask(taskId, userId, externalConn = null) {
+    return this.withTransaction(async (connection) => {
+      const existingTask = await this.taskDAO.findByIdAndUserId(
+        taskId,
+        userId,
         connection
       );
-      if (!tareaExistente) {
-        throw new Error(`No se encontró la tarea con el id: ${idTarea}.`);
+
+      if (!existingTask) {
+        throw new Error(`No se encontró la task con id ${taskId}`);
       }
 
-      const respuesta = await this.tagDAO.actualizarTareaCompletada(
-        idTarea,
+      await this.taskTagService.deleteAllByTaskId(taskId, connection);
+      const deletedTask = await this.taskDAO.delete(taskId, connection);
+
+      if (deletedTask <= 0) {
+        throw new Error("No se pudo eliminar la task");
+      }
+    }, externalConn);
+  }
+
+  async completeTask(taskId, completada, externalConn = null) {
+    return this.withTransaction(async (connection) => {
+      const existingTask = await this.taskDAO.findById(taskId, connection);
+      if (!existingTask) {
+        throw new Error(`No se encontró la task con el id: ${taskId}.`);
+      }
+
+      const result = await this.taskDAO.updateCompleted(
+        taskId,
         completada,
         connection
       );
-      if (respuesta <= 0) {
-        throw new Error('No se pudo actualizar la tarea');
+      if (result <= 0) {
+        throw new Error("No se pudo actualizar la tarea");
       }
 
-      const tareaActualizada = await this.tagDAO.consultarTareaPorId(idTarea, connection);
- 
-      return tareaActualizada;
+      const updatedTask = await this.taskDAO.findById(taskId, connection);
+
+      return updatedTask;
     }, externalConn);
   }
 
-  async obtenerTareasPorIdUsuario(idUsuario, externalConn = null) {
-       return this.withTransaction(async (connection) => {
-      const tareasPendientes =
-        await this.tagDAO.consultarTareasPendientesPorIdUsuario(
-          idUsuario,
-          connection
-        );
-      const tareasCompletadas =
-        await this.tagDAO.consultarTareasCompletadasUsuario(
-          idUsuario,
-          connection
-        );
+  async getAllTasksByUserId(userId, externalConn = null) {
+    return this.withTransaction(async (connection) => {
+      const pendingTasks = await this.taskDAO.findPendingByUserId(
+        userId,
+        connection
+      );
+      const completedTasks = await this.taskDAO.findCompletedByUserId(
+        userId,
+        connection
+      );
 
-   
-      return { tareasPendientes, tareasCompletadas };
+      return { pendingTasks, completedTasks };
     }, externalConn);
   }
 }

@@ -13,7 +13,7 @@ class Session{
         this.isActive=isActive||true;
     }
 
-    validar(){
+    validate(){
         
     }
 

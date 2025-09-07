@@ -12,52 +12,52 @@ class Task{
         this.tags = tags;
     }
 
-  validar() {
-    const errores = [];
+  validate() {
+    const errors = [];
   
     // Validación mejorada pero con los mismos campos
     if (typeof this.name !== 'string' || this.name.trim() === '') {
-      errores.push({ campo: 'name', mensaje: 'El name es obligatorio y debe ser texto' });
+      errors.push({ field: 'name', message: 'El nombre es obligatorio y debe ser texto' });
     } else if (this.name.length > 50) {
-      errores.push({ campo: 'name', mensaje: 'El título no puede exceder los 50 caracteres' });
+      errors.push({ field: 'name', message: 'El título no puede exceder los 50 caracteres' });
     }
     
     if (typeof this.description !== 'string' && this.description !== undefined && this.description !== null) {
-      errores.push({ campo: 'description', mensaje: 'La descripción debe ser texto' });
+      errors.push({ field: 'description', message: 'La descripción debe ser texto' });
     } else if (this.description && this.description.length > 255) {
-      errores.push({ campo: 'description', mensaje: 'La descripción no puede exceder los 255 caracteres' });
+      errors.push({ field: 'description', message: 'La descripción no puede exceder los 255 caracteres' });
     }
     
     
-    if (errores.length > 0) {
+    if (errors.length > 0) {
       throw new Error(JSON.stringify({
         tipoError: 'VALIDACION_TAREA',
-        errores
+        errors
       }));
     }
   }
   
   // Métodos para manejar tags (sin modificar atributos)
-  agregarEtiqueta(etiqueta) {
-    if (!(etiqueta instanceof Etiqueta)) {
-      throw new Error('Debe proporcionar una instancia de Etiqueta');
+  addTag(tag) {
+    if (!(tag instanceof Etiqueta)) {
+      throw new Error('Debe proporcionar una instancia de etiqueta');
     }
-    if (etiqueta.userId !== this.userId) {
+    if (tag.userId !== this.userId) {
       throw new Error('La etiqueta no pertenece al mismo usuario');
     }
-    if (!this.tags.some(e => e.idEtiqueta === etiqueta.idEtiqueta)) {
-      this.tags.push(etiqueta);
+    if (!this.tags.some(e => e.id === tag.id)) {
+      this.tags.push(tag);
       this.lastUpdateDate = new Date();
     }
   }
   
-  eliminarEtiqueta(idEtiqueta) {
-    this.tags = this.tags.filter(e => e.idEtiqueta !== idEtiqueta);
+  deleteTag(id) {
+    this.tags = this.tags.filter(e => e.id !== id);
     this.lastUpdateDate = new Date();
   }
   
-  tieneEtiqueta(idEtiqueta) {
-    return this.tags.some(e => e.idEtiqueta === idEtiqueta);
+  hasTag(id) {
+    return this.tags.some(e => e.id === id);
   }
   
   toJSON() {

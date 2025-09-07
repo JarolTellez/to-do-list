@@ -6,32 +6,31 @@ class UserMapper{
 
     }
 
-    requestToDominio(userRequest){
+    requestToDomain(userRequest){
         return new this.User({
-             userId: userRequest.userId,
+            id: userRequest.id,
             userName: userRequest.userName,
             email: userRequest.email,
             password: userRequest.password,
             rol: userRequest.rol,
-
         });
 
     }
 
-    bdToDominio(usuarioBD){
+    dbToDomain(dbUser){
         return new this.User({
-            userId: usuarioBD.id_usuario,
-            userName: usuarioBD.nombre_usuario,
-            email: usuarioBD.email,
-            password: usuarioBD.password,
-            rol: usuarioBD.rol,
+            id: dbUser.id,
+            userName: dbUser.user_name,
+            email: dbUser.email,
+            password: dbUser.password,
+            rol: dbUser.rol,
         });
 
     }
 
     dominioToRespuestaDTO(usuarioDominio){
         return new this.UserResponseDTO({
-            userId: usuarioDominio.userId,
+            id: usuarioDominio.id,
             userName: usuarioDominio.userName,
             email: usuarioDominio.email,
             rol: usuarioDominio.rol

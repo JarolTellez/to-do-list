@@ -16,13 +16,13 @@ class SessionService extends BaseDatabaseHandler {
     return this.withTransaction(async (connection) => {
       // Desactivar sesiónes existentes del mismo dispositivo
       const deactivationResponse =
-        await this.sessionDAO.desactivarPorIdUsuarioIdDispositivo(
+        await this.sessionDAO.deactivateByUserIdAndDeviceId(
           session.userId,
           session.deviceId,
           connection
         );
       // Guardar nueva sesión
-      const sessionResponse = await this.sessionDAO.guardarSesion(
+      const sessionResponse = await this.sessionDAO.create(
         session,
         connection
       );
@@ -35,16 +35,14 @@ class SessionService extends BaseDatabaseHandler {
     if (!userId || !refreshTokenHash) {
       throw new Error('Falta el userId o refreshTokenHash');
     }
-    console.log('datos', userId, refreshTokenHash);
+   
     return this.withTransaction(async (connection) => {
-      const validateSession = await this.verificarSesionValida(
+      const validateSession = await this.verifyValidSession(
         userId,
         refreshTokenHash,
         connection
       );
 
-
-      console.log('VALIDATE SESSION: ', validateSession);
       if(!validateSession){
         return null
       }
@@ -52,8 +50,8 @@ class SessionService extends BaseDatabaseHandler {
       if ( new Date() > new Date(validateSession.fechaExpiracion)) {
          throw new this.AuthenticationError('Sesión ya expirada');
       }
-      const result = await this.sessionDAO.desactivarSesionPorId(
-        validateSession.idSesion,
+      const result = await this.sessionDAO.deactivateById(
+        validateSession.id,
         connection
       );
     
@@ -61,7 +59,7 @@ class SessionService extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-  async verificarSesionValida(
+  async verifyValidSession(
     userId,
     refreshTokenHash,
     externalConn = null
@@ -70,25 +68,24 @@ class SessionService extends BaseDatabaseHandler {
       throw new Error('Faltan datos requeridos: IdUsuario o RefreshToken');
     }
     return this.withTransaction(async (connection) => {
-      const session =
-        await this.sessionDAO.consultarSesionesActivasPorIdUsuarioRTHash(
+      const session = await this.sessionDAO.findAllActivesSessionsByUserIdAndRtHash(
           userId,
           refreshTokenHash,
           connection
         );
 
-      if (!session) {
-        throw new this.AuthenticationError('Sesión no encontrada o token inválido', {
-        userId,
-        tokenHash: refreshTokenHash.substring(0, 10) + '...' 
-      });
-      }
+      // if (!session) {
+      //   throw new this.AuthenticationError('Sesión no encontrada o token inválido', {
+      //   userId,
+      //   tokenHash: refreshTokenHash.substring(0, 10) + '...' 
+      // });
+      // }
 
       return session;
     }, externalConn);
   }
 
-  async gestionarLimiteDeSesiones(
+  async manageSessionLimit(
     userId,
     maximoSesiones,
     externalConn = null
@@ -97,30 +94,30 @@ class SessionService extends BaseDatabaseHandler {
       throw new Error('Faltan datos requeridos: userId');
     }
     return this.withTransaction(async (connection) => {
-      const sesionesActivas =
-        await this.sessionDAO.consultarSesionesActivasPorIdUsuario(
+      const activeSessions =
+        await this.sessionDAO.findAllActiveSessionsByUserId(
           userId,
           connection
         );
 
-      if (sesionesActivas >= maximoSesiones) {
-        const eliminada = await this.sessionDAO.desactivarSesionMasAntigua(
+      if (activeSessions >= maximoSesiones) {
+        const deactivated = await this.sessionDAO.deactivateOldestByUserId(
           userId,
           connection
         );
 
-        if (!eliminada) {
+        if (!deactivated) {
           throw new Error('No se pudo liberar espacio de sesiones');
         }
 
-        return { eliminada: true, mensaje: 'Sesión más antigua eliminada' };
+        return { deactivated: true, message: 'Sesión más antigua deactivated' };
       }
 
-      return { eliminada: false, mensaje: 'Dentro del límite' };
+      return { deactivated: false, message: 'Dentro del límite' };
     }, externalConn);
   }
 
-  async renovarAccessToken(refreshToken) {}
+  async refreshAccessToken(refreshToken) {}
 }
 
 module.exports = SessionService;

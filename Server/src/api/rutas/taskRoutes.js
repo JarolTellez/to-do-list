@@ -2,21 +2,21 @@ const express = require('express');
 const {validateAccessToken} = require('../middlewares/validateAccessToken');
 
 
-module.exports = (tareaController) => {
+module.exports = (taskController) => {
   const router = express.Router();
 
   router.route('/')
-    .post(validateAccessToken,tareaController.agregarTarea.bind(tareaController));
+    .post(validateAccessToken,taskController.createTask.bind(taskController));
 
   router.route('/consultar')
-    .post(validateAccessToken,tareaController.consultarTareasPorIdUsuario.bind(tareaController));
+    .post(validateAccessToken,taskController.findAllTasksByUserId.bind(taskController));
    
   router.route('/gestionar')
-    .post(validateAccessToken,tareaController.eliminarTarea.bind(tareaController))
-    .patch(validateAccessToken,tareaController.actualizarTareaCompletada.bind(tareaController));
+    .post(validateAccessToken,taskController.deleteTask.bind(taskController))
+    .patch(validateAccessToken,taskController.completeTask.bind(taskController));
 
   router.route('/actualizar')
-    .patch(validateAccessToken,tareaController.actualizarTarea.bind(tareaController));
+    .patch(validateAccessToken,taskController.updateTask.bind(taskController));
 
   return router;
 };

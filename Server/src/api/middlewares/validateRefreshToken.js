@@ -21,11 +21,11 @@ const validateRefreshToken = (req, res, next) => {
     }
 
     // Verificar refresh token
-    const decodificado = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     
     // Agregar info al request
-    req.usuario = {
-      idUsuario: decodificado.idUsuario
+    req.user = {
+      userId: decoded.userId
     };
     req.refreshToken = refreshToken; 
 
@@ -48,4 +48,4 @@ const validateRefreshToken = (req, res, next) => {
   }
 };
 
-module.exports = { validarAccessToken, validateRefreshToken };
+module.exports = {validateRefreshToken };

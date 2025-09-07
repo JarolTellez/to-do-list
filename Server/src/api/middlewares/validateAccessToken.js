@@ -22,12 +22,12 @@ const validateAccessToken = (req, res, next) => {
     }
 
     // Verificar token
-    const decodificado = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
+    const decoded = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
     
     // Agregar info del usuario al request
     req.usuario = {
-      idUsuario: decodificado.idUsuario,
-      rol: decodificado.rol
+      userId: decoded.userId,
+      rol: decoded.rol
     };
 
     // Continuar al controller

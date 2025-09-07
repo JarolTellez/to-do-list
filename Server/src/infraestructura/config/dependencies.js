@@ -8,7 +8,7 @@ const TaskDAO = require('../../infraestructura/daos/taskDAO');
 const TagDAO = require('../../infraestructura/daos/tagDAO');
 const UserDAO = require('../../infraestructura/daos/userDAO');
 const TaskTagDAO = require('../../infraestructura/daos/taskTagDAO');
-const SessionDAO = require('../../infraestructura/daos/SessionDAO');
+const SessionDAO = require('../../infraestructura/daos/sessionDAO');
 const UserService = require('../../aplicacion/servicios/userService');
 const TaskService = require('../../aplicacion/servicios/taskService');
 const TaskTagService = require('../../aplicacion/servicios/taskTagService');
@@ -47,7 +47,7 @@ const taskMapper = new TaskMapper(taskFactory, tagMapper);
 const taskTagMapper = new TaskTagMapper(TaskTag);
 const sessionMapper = new SessionMapper(Session);
 
-const connectionDB = ConnectionDB.getInstancia();
+const connectionDB = ConnectionDB.getInstance();
 // DAOs con sus dependencias
 const taskDAO = new TaskDAO({taskMapper, connectionDB, DatabaseError, NotFoundError, ConflictError} );
 const taskTagDAO = new TaskTagDAO({taskTagMapper, connectionDB, DatabaseError, NotFoundError, ConflictError});

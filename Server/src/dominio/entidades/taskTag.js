@@ -5,19 +5,19 @@ class TaskTag{
         this.tagId = tagId;
       }
 
-      validar(){
-        const errores=[];
+      validate(){
+        const errors=[];
 
         if(!this.taskId){
-          errores.push({ campo: 'taskId', mensaje: 'La etiqueta debe asigarnse a una tarea (IdTarea)' });
+          errors.push({ field: 'taskId', message: 'La etiqueta debe asigarnse a una tarea (IdTarea)' });
         }
 
         if(!this.tagId){
-          errores.push({ campo: 'tagId', mensaje: 'Falta el id de la etiqueta' });
+          errors.push({ field: 'tagId', message: 'Falta el id de la etiqueta' });
         }
 
-        if (errores.length > 0) {
-          throw new Error(JSON.stringify(errores)); // Lanzar errores como JSON
+        if (errors.length > 0) {
+          throw new Error(JSON.stringify(errors)); // Lanzar errors como JSON
         }
       }
 }
