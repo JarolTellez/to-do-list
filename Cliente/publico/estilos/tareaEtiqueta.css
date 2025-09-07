@@ -222,14 +222,14 @@
   font-weight: bold;
 }*/
 
-.prioridad-barra {
+.priority-bar {
   height: 20px;
   border-radius: 5px;
   margin-bottom: 5px;
   position: relative;
 }
 
-.prioridad-numero {
+.priority-number {
   position: absolute;
   right: 5px;
   top: 2px;
@@ -237,12 +237,12 @@
   font-weight: bold;
 }
 
-.prioridad-container {
+.priority-container {
   align-items: center;
   margin-top: -5px;
 }
 
-.prioridad-text {
+.priority-text {
   color: black;
   margin: 0px;
 }

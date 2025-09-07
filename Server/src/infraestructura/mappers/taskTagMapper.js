@@ -4,11 +4,11 @@ class TaskTagMapper{
         this.TaskTag = TaskTag;
     }
     
-  bdToDominio(tareaEtiquetaBD){
+  dbToDomain(tareaEtiquetaBD){
     return new this.TaskTag({
-        idTareaEtiqueta: tareaEtiquetaBD.id_tarea_etiqueta,
-        idTarea: tareaEtiquetaBD.id_tarea,
-        idEtiqueta: tareaEtiquetaBD.id_etiqueta,
+        id: tareaEtiquetaBD.id,
+        taskId: tareaEtiquetaBD.task_id,
+        tagId: tareaEtiquetaBD.tag_id,
     });
         
     

@@ -13,7 +13,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [taskTagResponse] = await connection.execute(
-        'INSERT INTO tarea_etiqueta (id_tarea, id_etiqueta) VALUES (?, ?)',
+        'INSERT INTO task_tag (task_id, tag_id) VALUES (?, ?)',
         [taskId, tagId]
       );
       const id = taskTagResponse.insertId;
@@ -47,7 +47,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
     try {
       const [result] = await connection.execute(
-        'UPDATE tarea_etiqueta SET id_tarea = ?, id_etiqueta = ? WHERE id_tarea_etiqueta = ?',
+        'UPDATE task_tag SET task_id = ?, tag_id = ? WHERE id = ?',
         [
           taskTag.taskId,
           taskTag.tagId,
@@ -84,7 +84,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
     try {
       const [result] = await connection.execute(
-        'DELETE FROM tarea_etiqueta WHERE id_tarea_etiqueta = ?',
+        'DELETE FROM task_tag WHERE id = ?',
         [id]
       );
       
@@ -111,7 +111,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
     try {
       const [result] = await connection.query(
-        'DELETE FROM tarea_etiqueta WHERE id_tarea = ?',
+        'DELETE FROM task_tag WHERE task_id = ?',
         [taskId]
       );
 
@@ -131,7 +131,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
     try {
       const [rows] = await connection.query(
-        'SELECT * FROM tarea_etiqueta'
+        'SELECT * FROM task_tag'
       );
       return rows;
     } catch (error) {
@@ -149,7 +149,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM tarea_etiqueta WHERE id_tarea = ?',
+        'SELECT * FROM task_tag WHERE task_id = ?',
         [taskId]
       );
       return rows;
@@ -169,7 +169,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM tarea_etiqueta WHERE id_tarea = ? AND id_etiqueta = ?',
+        'SELECT * FROM task_tag WHERE task_id = ? AND tag_id = ?',
         [taskId, tagId]
       );
       

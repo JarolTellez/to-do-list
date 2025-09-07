@@ -2,21 +2,21 @@ class SessionMapper{
     constructor(Session){
         this.Session = Session;
     }
-// CORREJIR RETURN ERROR
-    bdToDominio(sesionBD){
+// CORREGIR RETURN ERROR
+    dbToDomain(sesionBD){
      if(!sesionBD){
         return null;
      }
         return new this.Session({
-            idSesion: sesionBD.id_sesion,
-            idUsuario: sesionBD.id_usuario,
+            id: sesionBD.id,
+            userId: sesionBD.user_id,
             refreshTokenHash: sesionBD.refresh_token_hash,
-            idDispositivo: sesionBD.id_dispositivo,
+            deviceId: sesionBD.device_id,
             userAgent: sesionBD.user_agent,
             ip: sesionBD.ip,
-            fechaCreacion: sesionBD.fecha_creacion,
-            fechaExpiracion: sesionBD.fecha_expiracion,
-            activa: sesionBD.activa,
+            createdAt: sesionBD.created_at,
+            expiresAt: sesionBD.expires_at,
+            isActive: sesionBD.is_active,
 
         });
     }

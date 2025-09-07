@@ -1,5 +1,5 @@
-const bcrypt = require('bcryptjs');
-const BaseDatabaseHandler = require('../../infraestructura/config/BaseDatabaseHandler');
+const bcrypt = require("bcryptjs");
+const BaseDatabaseHandler = require("../../infraestructura/config/BaseDatabaseHandler");
 
 class AuthService extends BaseDatabaseHandler {
   constructor({
@@ -35,11 +35,11 @@ class AuthService extends BaseDatabaseHandler {
     this.validateRequired = validateRequired;
   }
 
-  async registrarUsuario(user, externalConn = null) {
-    this.validateRequired(['user'], { user });
+  async createUser(user, externalConn = null) {
+    this.validateRequired(["user"], { user });
     return this.withTransaction(async (connection) => {
-      const user = await this.userService.createUser(user, connection);
-      return user;
+      const newUser = await this.userService.createUser(user, connection);
+      return newUser;
     }, externalConn);
   }
 
@@ -52,7 +52,7 @@ class AuthService extends BaseDatabaseHandler {
     ip,
     externalConn = null
   ) {
-    this.validateRequired(['userName', 'password'], {
+    this.validateRequired(["userName", "password"], {
       userName,
       password,
     });
@@ -63,8 +63,8 @@ class AuthService extends BaseDatabaseHandler {
         connection
       );
 
-      await this.sessionService.gestionarLimiteDeSesiones(
-        user.idUsuario,
+      await this.sessionService.manageSessionLimit(
+        user.id,
         this.MAX_SESIONES,
         connection
       );
@@ -73,77 +73,67 @@ class AuthService extends BaseDatabaseHandler {
       let refreshTokenHash = null;
 
       if (existingRefreshToken) {
-        console.log('Validando refresh token existente');
-
         try {
-          const decodificado = this.jwtAuth.verificarRefreshToken(
-            existingRefreshToken
-          );
+          const decodificado =
+            this.jwtAuth.verifyRefreshToken(existingRefreshToken);
 
-          if (decodificado.idUsuario !== user.idUsuario) {
-            console.log('Refresh token no corresponde al user');
-            throw new Error('Token inválido');
+          if (decodificado.userId !== user.id) {
+            throw new Error("Token inválido");
           }
 
-          refreshTokenHash = this.jwtAuth.generarHash(existingRefreshToken);
-          const sesionValida = await this.sessionService.verificarSesionValida(
-            user.idUsuario,
+          refreshTokenHash = this.jwtAuth.createHash(existingRefreshToken);
+          const sesionValida = await this.sessionService.verifyValidSession(
+            user.id,
             refreshTokenHash,
             connection
           );
 
           if (!sesionValida) {
-            throw new Error('Sesión no válida en BD');
+            throw new Error("Sesión no válida en BD");
           }
 
-          console.log('Refresh token validado exitosamente');
           refreshTokenFinal = existingRefreshToken;
         } catch (error) {
-          console.log('Refresh token inválido:', error.message);
           existingRefreshToken = null;
         }
       }
 
-      const accessToken = this.jwtAuth.generarAccessToken(
-        user.idUsuario,
-        user.rol
-      );
+      const accessToken = this.jwtAuth.createAccessToken(user.id, user.rol);
 
       if (!existingRefreshToken) {
-        console.log('Generando nuevo refresh token');
 
         const { refreshToken, refreshTokenHash: newHash } =
-          this.jwtAuth.generarRefreshToken(user.idUsuario);
+          this.jwtAuth.createRefreshToken(user.id);
 
         refreshTokenFinal = refreshToken;
         refreshTokenHash = newHash;
 
         const dispositivo = `
-        ${deviceInfo.userAgent || 'Unknown'}
-        ${deviceInfo.screenWidth || 'Unknown'}
-        ${deviceInfo.screenHeight || 'Unknown'}
-        ${deviceInfo.timezone || 'Unknown'}
-        ${deviceInfo.language || 'Unknown'}
-        ${deviceInfo.hardwareConcurrency || 'Unknown'}
-        ${user.idUsuario}
+        ${deviceInfo.userAgent || "Unknown"}
+        ${deviceInfo.screenWidth || "Unknown"}
+        ${deviceInfo.screenHeight || "Unknown"}
+        ${deviceInfo.timezone || "Unknown"}
+        ${deviceInfo.language || "Unknown"}
+        ${deviceInfo.hardwareConcurrency || "Unknown"}
+        ${user.id}
       `;
 
-        const dispositivoId = this.crypto
-          .createHash('sha256')
+        const deviceId = this.crypto
+          .createHash("sha256")
           .update(dispositivo)
-          .digest('hex');
+          .digest("hex");
 
         const entidadSesion = this.sessionFactory.crear(
-          user.idUsuario,
+          user.id,
           refreshTokenHash,
-          deviceInfo.userAgent || 'Unknown',
+          deviceInfo.userAgent || "Unknown",
           ip,
-          dispositivoId,
+          deviceId,
           true
         );
 
-        await this.sessionService.registrarSesion(entidadSesion, connection);
-        console.log('Nueva sesión registrada');
+        await this.sessionService.createSession(entidadSesion, connection);
+        console.log("Nueva sesión registrada");
       }
 
       return {
@@ -155,55 +145,55 @@ class AuthService extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-  async logOutSession(refreshToken, externalConn = null) {
-    this.validateRequired(['refreshToken'], { refreshToken });
+  async logOutUser(refreshToken, externalConn = null) {
+    this.validateRequired(["refreshToken"], { refreshToken });
     let decoded;
     return this.withTransaction(async (connection) => {
       try {
-        decoded = this.jwtAuth.verificarRefreshToken(refreshToken);
+        decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       } catch (error) {
-        await this.manejarErrorVerificacionToken(
+        await this.manageVerificationTokenError(
           error,
           refreshToken,
           connection
         );
-        throw new this.AuthenticationError('Token de refresh inválido');
+        throw new this.AuthenticationError("Token de refresh inválido");
       }
 
       const refreshTokenHashRecibido = this.crypto
-        .createHash('sha256')
+        .createHash("sha256")
         .update(refreshToken)
-        .digest('hex');
+        .digest("hex");
 
-      const sesionDesactivada = await this.sessionService.deactivateSession(
-        decoded.idUsuario,
+      const deactivatedSession = await this.sessionService.deactivateSession(
+        decoded.userId,
         refreshTokenHashRecibido,
         connection
       );
 
-      if (!sesionDesactivada) {
+      if (!deactivatedSession) {
         throw new this.AuthenticationError(
-          'Sesión no encontrada o ya expirada'
+          "Sesión no encontrada o ya expirada"
         );
       }
 
       return {
         success: true,
-        message: 'Sesión cerrada exitosamente',
-        usuarioId: decoded.idUsuario,
+        message: "Sesión cerrada exitosamente",
+        usuarioId: decoded.userId,
       };
     }, externalConn);
   }
 
-  async renovarAccesToken(refreshToken, externalConn = null) {
-    this.validateRequired(['refreshToken'], { refreshToken });
+  async refreshAccessToken(refreshToken, externalConn = null) {
+    this.validateRequired(["refreshToken"], { refreshToken });
     let decoded;
 
     return this.withTransaction(async (connection) => {
       try {
-        decoded = this.jwtAuth.verificarRefreshToken(refreshToken);
+        decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       } catch (error) {
-        await this.manejarErrorVerificacionToken(
+        await this.manageVerificationTokenError(
           error,
           refreshToken,
           connection
@@ -212,23 +202,23 @@ class AuthService extends BaseDatabaseHandler {
       }
 
       const user = await this.userService.validateUserExistenceById(
-        decoded.idUsuario,
+        decoded.userId,
         connection
       );
 
       const refreshTokenHashRecibido = this.crypto
-        .createHash('sha256')
+        .createHash("sha256")
         .update(refreshToken)
-        .digest('hex');
+        .digest("hex");
 
       await this.sessionService.deactivateSession(
-        user.idUsuario,
+        user.id,
         refreshTokenHashRecibido,
         connection
       );
 
-      const nuevoAccessToken = this.jwtAuth.generarAccessToken(
-        user.idUsuario,
+      const nuevoAccessToken = this.jwtAuth.createAccessToken(
+        user.id,
         user.rol
       );
       return {
@@ -238,21 +228,13 @@ class AuthService extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-  async manejarErrorVerificacionToken(
-    error,
-    refreshToken,
-    externalConn = null
-  ) {
+  async manageVerificationTokenError(error, refreshToken, externalConn = null) {
     try {
-      this.validateRequired(['refreshToken'], {refreshToken});
-      const decoded = this.jwtAuth.decodificarToken(refreshToken);
-      await this.limpiarSesionInvalidas(
-        decoded.idUsuario,
-        refreshToken,
-        externalConn
-      );
+      this.validateRequired(["refreshToken"], { refreshToken });
+      const decoded = this.jwtAuth.decodeToken(refreshToken);
+      await this.deactivateSession(decoded.userId, refreshToken, externalConn);
     } catch (cleanupError) {
-      console.error('Error al limpiar sesión inválida:', cleanupError);
+      console.error("Error al limpiar sesión inválida:", cleanupError);
     }
 
     // if (error.message === 'Refresh token expirado') {
@@ -274,8 +256,11 @@ class AuthService extends BaseDatabaseHandler {
     // throw this.crearErrorPersonalizado('Token inválido', 401, 'TOKEN_INVALID');
   }
 
-  async limpiarSesionInvalidas(idUsuario, refreshToken, externalConn = null) {
-    this.validateRequired(['userId','refreshToken'],{idUsuario, refreshToken});
+  async deactivateSession(idUsuario, refreshToken, externalConn = null) {
+    this.validateRequired(["userId", "refreshToken"], {
+      idUsuario,
+      refreshToken,
+    });
     return this.withTransaction(async (connection) => {
       const user = await this.userService.validateUserExistenceById(
         idUsuario,
@@ -284,19 +269,18 @@ class AuthService extends BaseDatabaseHandler {
 
       if (user) {
         const refreshTokenHashRecibido = this.crypto
-          .createHash('sha256')
+          .createHash("sha256")
           .update(refreshToken)
-          .digest('hex');
+          .digest("hex");
 
         await this.sessionService.deactivateSession(
-          user.idUsuario,
+          user.id,
           refreshTokenHashRecibido,
           connection
         );
       }
     }, externalConn);
   }
-
 }
 
 module.exports = AuthService;

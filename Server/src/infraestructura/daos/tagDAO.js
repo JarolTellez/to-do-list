@@ -14,18 +14,18 @@ class TagDAO extends BaseDatabaseHandler {
 
     try {
       const [result] = await connection.execute(
-        'INSERT INTO etiquetas (name, id_usuario) VALUES(?, ?)',
+        'INSERT INTO tags (name, user_id) VALUES(?, ?)',
         [tag.name, tag.userId]
       );
-
-      tag.idE = result.insertId;
+// AGREGAR MAPEO
+      tag.id = result.insertId;
       return tag;
     } catch (error) {
       // Error específico para duplicados
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         throw new this.ConflictError(
           'Ya existe una etiqueta con ese name para este usuario',
-          { name: tag.name, idUsuario: tag.idUsuario }
+          { name: tag.name, userId: tag.idUsuario }
         );
       }
       
@@ -42,7 +42,7 @@ class TagDAO extends BaseDatabaseHandler {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'UPDATE etiquetas SET name = ? WHERE id_etiqueta = ?', 
+        'UPDATE tags SET name = ? WHERE id = ?', 
         [tag.name, tag.id]
       );
       
@@ -74,7 +74,7 @@ class TagDAO extends BaseDatabaseHandler {
 
     try {
       const [result] = await connection.execute(
-        'DELETE FROM etiquetas WHERE id_etiqueta = ?', 
+        'DELETE FROM tags WHERE id = ?', 
         [id]
       );
       
@@ -105,11 +105,11 @@ class TagDAO extends BaseDatabaseHandler {
    async findAll(externalConn = null) {
    const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [rows] = await connection.query('SELECT * FROM etiquetas');
+      const [rows] = await connection.query('SELECT * FROM tags');
       return rows;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar todas las etiquetas',
+        'No se pudo consultar todas las tags',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -121,7 +121,7 @@ class TagDAO extends BaseDatabaseHandler {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.query(
-        'SELECT * FROM etiquetas WHERE name = ? AND id_usuario = ?',
+        'SELECT * FROM tags WHERE name = ? AND user_id = ?',
         [name, userId]
       );
       
@@ -140,7 +140,7 @@ class TagDAO extends BaseDatabaseHandler {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM etiquetas WHERE id_etiqueta = ?',
+        'SELECT * FROM tags WHERE id = ?',
         [id]
       );
       
@@ -164,21 +164,27 @@ class TagDAO extends BaseDatabaseHandler {
    async findAllByUserId(idUsuario, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [etiquetas] = await connection.query(
-        'SELECT * FROM etiquetas WHERE id_usuario = ?',
+      const [tags] = await connection.query(
+        'SELECT * FROM tags WHERE user_id= ?',
         [idUsuario]
       );
       
-      const tareasMapeadas = etiquetas.map(tag => this.tagMapper.bdToDominio(tag));
+      const tareasMapeadas = tags.map(tag => this.tagMapper.dbToDomain(tag));
       return tareasMapeadas;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar las etiquetas del usuario',
+        'No se pudo consultar las tags del usuario',
         { originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
     }
+  }
+
+
+// DESAROLLAR DESPUES, NO ES PRIORIDAD
+  findByName(name){
+
   }
 }
 

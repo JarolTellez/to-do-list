@@ -4,27 +4,27 @@ const { TokenExpiredError } = jwt;
 
 class JwtAuth {
 
-  generarAccessToken(idUsuario, rol = 'usuario') {
+  createAccessToken(userId, rol = 'user') {
     if (!process.env.JWT_ACCESS_SECRET) {
       throw new Error('JWT_ACCESS_SECRET no configurado');
     }
 
     return jwt.sign(
-      { idUsuario: idUsuario, rol },
+      { userId: userId, rol },
       process.env.JWT_ACCESS_SECRET,
      { expiresIn: process.env.EXP_ACCESS_TOKEN }
     );
   }
 
   // Genera Refresh Token + Hash
-  generarRefreshToken(idUsuario) {
+  createRefreshToken(userId) {
     if (!process.env.JWT_REFRESH_SECRET) {
       throw new Error('JWT_REFRESH_SECRET no configurado');
     }
 
     // Generar JWT
     const refreshToken = jwt.sign(
-      { idUsuario: idUsuario
+      { userId: userId
        },
       process.env.JWT_REFRESH_SECRET,
      { expiresIn: process.env.EXP_REFRESH_TOKEN}
@@ -38,7 +38,7 @@ class JwtAuth {
   }
 
   // Verificar Access Token
-  verificarAccessToken(token) {
+  verifyAccessToken(token) {
     try {
       return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
     } catch (err) {
@@ -50,7 +50,7 @@ class JwtAuth {
   }
 
   // Verificar Refresh Token (firma y expiración)
-verificarRefreshToken(token) {
+verifyRefreshToken(token) {
     try {
         return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     } catch (err) {
@@ -62,12 +62,12 @@ verificarRefreshToken(token) {
 }
 
   // Decodificar token sin verificar
-  decodificarToken(token) {
+  decodeToken(token) {
     return jwt.decode(token);
   }
 
   // Generar hash de un token
-  generarHash(token) {
+  createHash(token) {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 }

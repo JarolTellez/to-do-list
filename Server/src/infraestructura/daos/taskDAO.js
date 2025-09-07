@@ -21,11 +21,11 @@ class TaskDAO  extends BaseDatabaseHandler{
 
     try {
       const [result] = await connection.execute(
-        'INSERT INTO tareas (name,description,fecha_programada,fecha_creacion,ultima_actualizacion,isCompleted,id_usuario,priority) VALUES(?,?,?,?,?,?,?,?)',
+        'INSERT INTO tasks (name,description,scheduled_date,created_at,last_update_date,is_completed,user_id,priority) VALUES(?,?,?,?,?,?,?,?)',
         [
           rows.name,
           rows.description,
-          rows.scheduleDate,
+          rows.scheduledDate,
           rows.createdAt,
           rows.lastUpdateDate,
           rows.isCompleted,
@@ -43,7 +43,7 @@ class TaskDAO  extends BaseDatabaseHandler{
           { name: rows.name, userId: rows.userId }
         );
       }
-      throw new this.DatabaseError('No se pudo guardar la rows', {
+      throw new this.DatabaseError('No se pudo guardar la tarea', {
         originalError: error.message,
         code: error.code,
       });
@@ -54,27 +54,28 @@ class TaskDAO  extends BaseDatabaseHandler{
     }
   }
 
-  async update(rows, externalConn = null) {
+  async update(task, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
 
     try {
       const [result] = await connection.execute(
-        'UPDATE tareas SET name = ?, description = ?, fecha_programada = ?, ultima_actualizacion = ?, priority = ? WHERE id_tarea=?',
+        'UPDATE tasks SET name = ?, description = ?, scheduled_date = ?, last_update_date = ?, priority = ? WHERE id=?',
         [
-          rows.name,
-          rows.description,
-          rows.scheduleDate,
-          rows.lastUpdateDate,
-          rows.priority,
-          rows.id,
+          task.name,
+          task.description,
+          task.scheduledDate,
+          task.lastUpdateDate,
+          task.priority,
+          task.id,
         ]
       );
 
       if (result.affectedRows === 0) {
         throw new this.NotFoundError('La rows no existe');
       }
-      return rows;
+      return task;
     } catch (error) {
+    
       if (error instanceof this.NotFoundError) throw error;
 
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
@@ -95,7 +96,7 @@ class TaskDAO  extends BaseDatabaseHandler{
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'UPDATE tareas SET isCompleted = ? WHERE id_tarea = ?',
+        'UPDATE tasks SET is_completed = ? WHERE id = ?',
         [isCompleted, id]
       );
       if (result.affectedRows === 0) {
@@ -107,7 +108,7 @@ class TaskDAO  extends BaseDatabaseHandler{
       if (error instanceof this.NotFoundError) throw error;
 
       throw new this.DatabaseError(
-        'No se pudo marcar la rows como isCompleted',
+        'No se pudo marcar la rows como is_completed',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -122,7 +123,7 @@ class TaskDAO  extends BaseDatabaseHandler{
 
     try {
       const result = await connection.execute(
-        'DELETE FROM tareas WHERE id_tarea = ?',
+        'DELETE FROM tasks WHERE id = ?',
         [id]
       );
       if (result.affectedRows === 0) {
@@ -135,7 +136,7 @@ class TaskDAO  extends BaseDatabaseHandler{
 
       if (error.code === 'ER_ROW_IS_REFERENCED' || error.errno === 1451) {
         throw new this.ConflictError(
-          'No se puede eliminar la rows porque tiene etiquetas asociadas',
+          'No se puede eliminar la rows porque tiene  asociadas',
           { id }
         );
       }
@@ -154,10 +155,10 @@ class TaskDAO  extends BaseDatabaseHandler{
   async findAll(externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [rows] = await connection.query('SELECT * FROM tareas');
+      const [rows] = await connection.query('SELECT * FROM tasks');
       return rows;
     } catch (error) {
-      throw new this.DatabaseError('No se pudo consultar todas las tareas', {
+      throw new this.DatabaseError('No se pudo consultar todas las tasks', {
         originalError: error.message,
         code: error.code,
       });
@@ -173,7 +174,7 @@ class TaskDAO  extends BaseDatabaseHandler{
 
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM tareas WHERE name = ?',
+        'SELECT * FROM tasks WHERE name = ?',
         [nombre]
       );
 
@@ -199,7 +200,7 @@ class TaskDAO  extends BaseDatabaseHandler{
   //    const {connection, isExternal} = await this.getConnection(externalConn);
   //   try {
   //     const [rows] = await connection.execute(
-  //       'SELECT * FROM tareas WHERE id_tarea = ?',
+  //       'SELECT * FROM tasks WHERE id = ?',
   //       [id]
   //     );
 
@@ -226,32 +227,58 @@ class TaskDAO  extends BaseDatabaseHandler{
 
     try {
       const [rows] = await connection.execute(
-        `SELECT 
-    t.id_tarea AS tarea_id,
+//         `SELECT 
+//     t.id AS tarea_id,
+//     t.name AS tarea_nombre,
+//     t.description AS tarea_descripcion,
+//     t.scheduled_date AS tarea_fecha_programada,
+//     t.created_at AS tarea_fecha_creacion,
+//     t.last_update_date AS tarea_ultima_actualizacion,
+//     t.isCompleted AS tarea_completada,
+//     t.priority AS tarea_prioridad,
+//     t.user_id AS tarea_id_usuario,  
+  
+//       GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
+//       GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
+//       GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
+//       GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
+//       GROUP_CONCAT(e.user_id ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
+// FROM 
+//     tasks t
+// LEFT JOIN 
+//     task_tag te ON t.id = te.task_id
+// LEFT JOIN 
+//     tags e ON te.tag_id = e.id
+// WHERE 
+//     t.id = ?
+// GROUP BY 
+//     t.id`,
+`SELECT 
+    t.id AS tarea_id,
     t.name AS tarea_nombre,
     t.description AS tarea_descripcion,
-    t.fecha_programada AS tarea_fecha_programada,
-    t.fecha_creacion AS tarea_fecha_creacion,
-    t.ultima_actualizacion AS tarea_ultima_actualizacion,
-    t.isCompleted AS tarea_completada,
-    t.priority AS tarea_prioridad,
-    t.id_usuario AS tarea_id_usuario,  
+    t.scheduled_date AS tarea_fecha_programada,
+    t.created_at AS tarea_fecha_creacion,
+    t.last_update_date AS tarea_ultima_actualizacion,
+    t.is_completed AS tarea_completada, 
+    t.user_id AS tarea_id_usuario,  
+    t.priority AS tarea_prioridad, 
   
-      GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
-      GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
-      GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
-      GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
-      GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
+    GROUP_CONCAT(DISTINCT te.id ORDER BY te.id SEPARATOR ',') AS tarea_etiqueta_ids,  
+    GROUP_CONCAT(DISTINCT e.id ORDER BY te.id SEPARATOR ',') AS etiquetas_ids,         
+    GROUP_CONCAT(DISTINCT e.name ORDER BY te.id SEPARATOR ',') AS etiquetas_nombres,
+    GROUP_CONCAT(e.description ORDER BY te.id SEPARATOR ',') AS etiquetas_descripciones,
+    GROUP_CONCAT(e.user_id ORDER BY te.id SEPARATOR ',') AS etiquetas_usuarios
 FROM 
-    tareas t
+    tasks t
 LEFT JOIN 
-    tarea_etiqueta te ON t.id_tarea = te.id_tarea
+    task_tag te ON t.id = te.task_id 
 LEFT JOIN 
-    etiquetas e ON te.id_etiqueta = e.id_etiqueta
+    tags e ON te.tag_id = e.id        
 WHERE 
-    t.id_tarea = ?
+    t.id = ?
 GROUP BY 
-    t.id_tarea`,
+    t.id;`,
         [id]
       );
 
@@ -268,7 +295,7 @@ GROUP BY
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
 
-      throw new this.DatabaseError('No se pudo consultar la rows por id', {
+      throw new this.DatabaseError('No se pudo consultar la consulta por id', {
         originalError: error.message,
         code: error.code,
       });
@@ -284,7 +311,7 @@ GROUP BY
 
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM tareas WHERE id_tarea = ? AND id_usuario = ?',
+        'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
         [id, userId]
       );
 
@@ -307,43 +334,70 @@ GROUP BY
     }
   }
 
-  //Consulta las tareas pendientes del usuario, es decir las que no estan marcadas como completadas
+  //Consulta las tasks pendientes del usuario, es decir las que no estan marcadas como completadas
   async findPendingByUserId(userId, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
 
     try {
       const [rows] = await connection.execute(
-        `SELECT 
-  t.id_tarea AS tarea_id,
-  t.name AS tarea_nombre,
-  t.description AS tarea_descripcion,
-  t.fecha_programada AS tarea_fecha_programada,
-  t.fecha_creacion AS tarea_fecha_creacion,
-  t.ultima_actualizacion AS tarea_ultima_actualizacion,
-  t.isCompleted AS tarea_completada,
-  t.priority AS tarea_prioridad,
-  t.id_usuario AS tarea_id_usuario,
+//         `SELECT 
+//   t.id AS tarea_id,
+//   t.name AS tarea_nombre,
+//   t.description AS tarea_descripcion,
+//   t.scheduled_date AS tarea_fecha_programada,
+//   t.created_at AS tarea_fecha_creacion,
+//   t.last_update_date AS tarea_ultima_actualizacion,
+//   t.isCompleted AS tarea_completada,
+//   t.priority AS tarea_prioridad,
+//   t.user_id AS tarea_id_usuario,
 
-  GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
-  GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
-  GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
-  GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
-  GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
+//   GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
+//   GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
+//   GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
+//   GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
+//   GROUP_CONCAT(e.user_id ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
+
+// FROM 
+//   tasks t
+// LEFT JOIN 
+//   task_tag te ON t.id = te.id
+// LEFT JOIN 
+//    e ON te.id_etiqueta = e.id_etiqueta
+
+// WHERE 
+//   t.user_id = ? AND t.isCompleted = 0
+
+// GROUP BY 
+//   t.id;
+// `,
+        `SELECT 
+    t.id AS tarea_id,
+    t.name AS tarea_nombre,
+    t.description AS tarea_descripcion,
+    t.scheduled_date AS tarea_fecha_programada,
+    t.created_at AS tarea_fecha_creacion,
+    t.last_update_date AS tarea_ultima_actualizacion,
+    t.is_completed AS tarea_completada,
+    t.user_id AS tarea_id_usuario,
+    t.priority AS tarea_prioridad,
+    
+
+    GROUP_CONCAT(DISTINCT te.id ORDER BY te.id SEPARATOR ',') AS tarea_etiqueta_ids,
+    GROUP_CONCAT(DISTINCT e.id ORDER BY te.id SEPARATOR ',') AS etiquetas_ids,
+    GROUP_CONCAT(DISTINCT e.name ORDER BY te.id SEPARATOR ',') AS etiquetas_nombres,
+    GROUP_CONCAT(e.description ORDER BY te.id SEPARATOR ',') AS etiquetas_descripciones,
+    GROUP_CONCAT(e.user_id ORDER BY te.id SEPARATOR ',') AS etiquetas_usuarios
 
 FROM 
-  tareas t
+    tasks t
 LEFT JOIN 
-  tarea_etiqueta te ON t.id_tarea = te.id_tarea
+    task_tag te ON t.id = te.task_id 
 LEFT JOIN 
-  etiquetas e ON te.id_etiqueta = e.id_etiqueta
-
+    tags e ON te.tag_id = e.id         
 WHERE 
-  t.id_usuario = ? AND t.isCompleted = 0
-
+    t.user_id = ? AND t.is_completed = 0
 GROUP BY 
-  t.id_tarea;
-`,
-
+    t.id;`,
         [userId]
       );
 
@@ -359,11 +413,11 @@ GROUP BY
       }
       });
 
-      // return tareas;
+      // return tasks;
       return mappedTasks;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar las tareas pendientes',
+        'No se pudo consultar las tasks pendientes',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -373,41 +427,71 @@ GROUP BY
     }
   }
 
-  //Consulta todas las tareas del usuario tanto las que estan completadas como las que no
+  //Consulta todas las tasks del usuario tanto las que estan completadas como las que no
   async findCompletedByUserId(userId, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.execute(
-        `SELECT 
-  t.id_tarea AS tarea_id,
-  t.name AS tarea_nombre,
-  t.description AS tarea_descripcion,
-  t.fecha_programada AS tarea_fecha_programada,
-  t.fecha_creacion AS tarea_fecha_creacion,
-  t.ultima_actualizacion AS tarea_ultima_actualizacion,
-  t.isCompleted AS tarea_completada,
-  t.priority AS tarea_prioridad,
-  t.id_usuario AS tarea_id_usuario,
+//         `SELECT 
+//   t.id AS tarea_id,
+//   t.name AS tarea_nombre,
+//   t.description AS tarea_descripcion,
+//   t.scheduled_date AS tarea_fecha_programada,
+//   t.created_at AS tarea_fecha_creacion,
+//   t.last_update_date AS tarea_ultima_actualizacion,
+//   t.isCompleted AS tarea_completada,
+//   t.priority AS tarea_prioridad,
+//   t.user_id AS tarea_id_usuario,
 
-  GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
-  GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
-  GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
-  GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
-  GROUP_CONCAT(e.id_usuario ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
+//   GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
+//   GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
+//   GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
+//   GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
+//   GROUP_CONCAT(e.user_id ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
+
+// FROM 
+//   tasks t
+// LEFT JOIN 
+//   task_tag te ON t.id = te.id
+// LEFT JOIN 
+//    e ON te.id_etiqueta = e.id_etiqueta
+
+// WHERE 
+//   t.user_id = ? AND t.isCompleted = 1
+
+// GROUP BY 
+//   t.id;
+// `,
+`SELECT 
+    t.id AS tarea_id,
+    t.name AS tarea_nombre,
+    t.description AS tarea_descripcion,
+    t.scheduled_date AS tarea_fecha_programada,
+    t.created_at AS tarea_fecha_creacion,
+    t.last_update_date AS tarea_ultima_actualizacion,
+    t.is_completed AS tarea_completada,
+    t.user_id AS tarea_id_usuario,
+    t.priority AS tarea_prioridad,
+    
+
+    GROUP_CONCAT(DISTINCT te.id ORDER BY te.id SEPARATOR ',') AS tarea_etiqueta_ids,
+    GROUP_CONCAT(DISTINCT e.id ORDER BY te.id SEPARATOR ',') AS etiquetas_ids,
+    GROUP_CONCAT(DISTINCT e.name ORDER BY te.id SEPARATOR ',') AS etiquetas_nombres,
+    GROUP_CONCAT(e.description ORDER BY te.id SEPARATOR ',') AS etiquetas_descripciones,
+    GROUP_CONCAT(e.user_id ORDER BY te.id SEPARATOR ',') AS etiquetas_usuarios
 
 FROM 
-  tareas t
+    tasks t
 LEFT JOIN 
-  tarea_etiqueta te ON t.id_tarea = te.id_tarea
+    task_tag te ON t.id = te.task_id 
 LEFT JOIN 
-  etiquetas e ON te.id_etiqueta = e.id_etiqueta
+    tags e ON te.tag_id = e.id         
 
 WHERE 
-  t.id_usuario = ? AND t.isCompleted = 1
+    t.user_id = ? AND t.is_completed = 1
 
 GROUP BY 
-  t.id_tarea;
-`,
+    t.id`,
         [userId]
       );
 
@@ -426,7 +510,7 @@ GROUP BY
       return mappedTasks;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar las tareas completadas',
+        'No se pudo consultar las tasks completadas',
         { originalError: error.message, code: error.code }
       );
     } finally {

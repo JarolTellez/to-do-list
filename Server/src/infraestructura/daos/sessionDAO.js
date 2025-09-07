@@ -1,4 +1,3 @@
-const { use } = require('react');
 const BaseDatabaseHandler = require('../config/BaseDatabaseHandler');
 
 
@@ -12,13 +11,13 @@ class SessionDAO extends BaseDatabaseHandler{
   }
 
   // Guardar una nueva sesión
-  async save(session, externalConn = null) {
+  async create(session, externalConn = null) {
     const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'INSERT INTO sesiones (id_usuario, refresh_token_hash, id_dispositivo, user_agent, ip, fecha_creacion, fecha_expiracion, isActive) VALUES (?,?,?,?,?,?,?,?)',
+        'INSERT INTO sessions (user_id, refresh_token_hash, device_id, user_agent, ip, created_at, expires_at, is_active) VALUES (?,?,?,?,?,?,?,?)',
         [
-          session.id,
+          session.userId,
           session.refreshTokenHash,
           session.deviceId,
           session.userAgent,
@@ -51,11 +50,11 @@ class SessionDAO extends BaseDatabaseHandler{
   }
 
   // Desactivar una sesión por ID de la session
-  async deactivateSessionById(id, externalConn = null) {
+  async deactivateById(id, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'UPDATE sesiones SET isActive = FALSE WHERE id_sesion = ?',
+        'UPDATE sessions SET is_active = FALSE WHERE id = ?',
         [id]
       );
       
@@ -75,18 +74,18 @@ class SessionDAO extends BaseDatabaseHandler{
     }
   }
 
-  // Desactivar todas las sesiones de un usuario
+  // Desactivar todas las sessions de un usuario
   async deactivateByUserId(userId, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'UPDATE sesiones SET isActive=FALSE WHERE id_usuario=?',
+        'UPDATE sessions SET is_active=FALSE WHERE user_id=?',
         [userId]
       );
      return result;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo desactivar todas las sesiones del usuario',
+        'No se pudo desactivar todas las sessions del usuario',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -98,15 +97,15 @@ class SessionDAO extends BaseDatabaseHandler{
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'UPDATE sesiones SET isActive = FALSE WHERE id_usuario = ? AND id_dispositivo = ?',
+        'UPDATE sessions SET is_active = FALSE WHERE user_id = ? AND device_id = ?',
         [userId, deviceId]
       );
       
         if (result.affectedRows === 0) {
-      return { desactivadas: 0, mensaje: 'No habia sesiones para desactivar' };
+      return { desactivadas: 0, message: 'No habia sessions para desactivar' };
     }
     
-    return { deactivated: result.affectedRows, mensaje: 'Sesion desactivada' };
+    return { deactivated: result.affectedRows, message: 'Sesion desactivada' };
       
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
@@ -124,14 +123,14 @@ class SessionDAO extends BaseDatabaseHandler{
   const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(`
-        DELETE FROM sesiones 
-        WHERE id_usuario = ? 
-        ORDER BY fecha_creacion ASC 
+        DELETE FROM sessions 
+        WHERE user_id = ? 
+        ORDER BY created_at ASC 
         LIMIT 1
       `, [userId]);
 
       if (result.affectedRows === 0) {
-        throw new this.NotFoundError('No se encontraron sesiones para este usuario');
+        throw new this.NotFoundError('No se encontraron sessions para este usuario');
       }
 
       return result.affectedRows > 0;
@@ -147,20 +146,20 @@ class SessionDAO extends BaseDatabaseHandler{
     }
   }
 
-  // Consultar todas las sesiones de un usuario
+  // Consultar todas las sessions de un usuario
   async findAllByUserId(userId, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'SELECT * FROM sesiones WHERE id_usuario = ?',
+        'SELECT * FROM sessions WHERE user_id = ?',
         [userId]
       );
       
-      const mappedSessions = result.map(elemento => this.sessionMapper.bdToDominio(elemento));
+      const mappedSessions = result.map(elemento => this.sessionMapper.dbToDomain(elemento));
       return mappedSessions;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar las sesiones del usuario',
+        'No se pudo consultar las sessions del usuario',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -172,15 +171,15 @@ class SessionDAO extends BaseDatabaseHandler{
     const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'SELECT * FROM sesiones WHERE id_usuario = ? AND isActive = TRUE',
+        'SELECT * FROM sessions WHERE user_id = ? AND is_active = TRUE',
         [userId]
       );
       
-      const mappedSessions = result.map(elemento => this.sessionMapper.bdToDominio(elemento));
+      const mappedSessions = result.map(elemento => this.sessionMapper.dbToDomain(elemento));
       return mappedSessions;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar las sesiones activas del usuario',
+        'No se pudo consultar las sessions activas del usuario',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -193,7 +192,7 @@ class SessionDAO extends BaseDatabaseHandler{
     
     try {
       const [result] = await connection.execute(
-        'SELECT * FROM sesiones WHERE id_usuario = ? AND refresh_token_hash = ? AND isActive = TRUE',
+        'SELECT * FROM sessions WHERE user_id = ? AND refresh_token_hash = ? AND is_active = TRUE',
         [userId, refreshTokenHash]
       );
       
@@ -201,12 +200,12 @@ class SessionDAO extends BaseDatabaseHandler{
         return null;
       }
 
-      const mappedSessions = this.sessionMapper.bdToDominio(result[0]);
+      const mappedSessions = this.sessionMapper.dbToDomain(result[0]);
       return mappedSessions;
 
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar la sesión isActive',
+        'No se pudo consultar la sesión is_active',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -221,7 +220,7 @@ class SessionDAO extends BaseDatabaseHandler{
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'SELECT * FROM sesiones WHERE refresh_token_hash = ?',
+        'SELECT * FROM sessions WHERE refresh_token_hash = ?',
         [refreshTokenHash]
       );
 
@@ -229,7 +228,7 @@ class SessionDAO extends BaseDatabaseHandler{
         return null; 
       }
 
-      const mappedSession = this.sessionMapper.bdToDominio(result[0]);
+      const mappedSession = this.sessionMapper.dbToDomain(result[0]);
       return mappedSession;
       
     } catch (error) {

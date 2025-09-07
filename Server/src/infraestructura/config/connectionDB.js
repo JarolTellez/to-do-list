@@ -21,12 +21,12 @@ class ConnectionDB {
   }
 
 
-  async conectar() {
+  async connect() {
     return this.pool.getConnection();
   }
 
  
-  async cerrarPool() {
+  async closePool() {
     try {
       await this.pool.end();
       console.log('Pool de conexiones cerrado');
@@ -36,7 +36,7 @@ class ConnectionDB {
     }
   }
 
-  static getInstancia() {
+  static getInstance() {
     if (!ConnectionDB.instance) {
       ConnectionDB.instance = new ConnectionDB();
     }

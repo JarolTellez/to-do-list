@@ -5,7 +5,7 @@ class BaseDatabaseHandler {
 
   async getConnection(externalConn) {
     if (externalConn) return { connection: externalConn, isExternal: true };
-    const connection = await this.connectionDB.conectar();
+    const connection = await this.connectionDB.connect();
     return { connection, isExternal: false };
   }
 

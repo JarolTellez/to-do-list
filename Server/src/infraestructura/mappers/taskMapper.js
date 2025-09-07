@@ -4,91 +4,91 @@ class TaskMapper {
     this.tagMapper = tagMapper;
   }
 
-  requestToDominio(tareaRequest) {
+  requestToDomain(taskRequest) {
     try {
-      // Si la Etiqueta existente mandara el objeto etiqueta aue ya contiene el idUsuario y si no mandara el ob
-      //objeto etiqueta y el idUsuario contenido en la tarea para que se cree con ese idUsuario la etiqueta 
-      const etiquetas = (tareaRequest.etiquetas || []).map((etiqueta) => {
-        if (etiqueta.idUsuario) {
-          return this.tagMapper.requestToDominio(etiqueta);
+      // Si la Etiqueta existente mandara el objeto tags aue ya contiene el userId y si no mandara el ob
+      //objeto tags y el userId contenido en la task para que se cree con ese userId la tags 
+      const tags = (taskRequest.tags || []).map((tags) => {
+        if (tags.userId) {
+          return this.tagMapper.requestToDomain(tags);
         } else {
-          return this.tagMapper.requestToDominio(
-            etiqueta,
-            tareaRequest.idUsuario
+          return this.tagMapper.requestToDomain(
+            tags,
+            taskRequest.userId
           );
         }
       });
 
-      return this.taskFactory.crear({
-        idTarea: tareaRequest.idTarea || null,
-        nombre: tareaRequest.nombre,
-        descripcion: tareaRequest.descripcion || null,
-        fechaProgramada: tareaRequest.fechaProgramada || null,
-        fechaCreacion: tareaRequest.fechaCreacion || null,
-        fechaUltimaActualizacion: tareaRequest.fechaUltimaActualizacion || null,
-        completada: tareaRequest.completada || false,
-        idUsuario: tareaRequest.idUsuario,
-        prioridad: tareaRequest.prioridad || null,
-        etiquetas, //  ya mapeadas como entidades de dominio
+      return this.taskFactory.createNewTask({
+        id: taskRequest.id || null,
+        name: taskRequest.name,
+        description: taskRequest.description || null,
+        scheduledDate: taskRequest.scheduledDate || null,
+        createdAt: taskRequest.createdAt || null,
+        lastUpdateDate: taskRequest.lastUpdateDate || null,
+        isCompleted: taskRequest.isCompleted || false,
+        userId: taskRequest.userId,
+        priority: taskRequest.priority || null,
+        tags, //  ya mapeadas como entidades de dominio
       });
     } catch (error) {
       throw new Error('Mapeo fallido: ' + error.message);
     }
   }
 
-  requestActualizarToDominio(tareaRequest) {
+  updateRequestToDominio(taskRequest) {
     try {
-      return this.taskFactory.crear({
-        idTarea: tareaRequest.idTarea || null,
-        nombre: tareaRequest.nombre,
-        descripcion: tareaRequest.descripcion || null,
-        fechaProgramada: tareaRequest.fechaProgramada || null,
-        fechaCreacion: tareaRequest.fechaCreacion || null,
-        fechaUltimaActualizacion: tareaRequest.fechaUltimaActualizacion || null,
-        completada: tareaRequest.completada || false,
-        idUsuario: tareaRequest.idUsuario,
-        prioridad: tareaRequest.prioridad || null,
-        etiquetas: tareaRequest.etiquetas || [],
+      return this.taskFactory.createNew({
+        id: taskRequest.id || null,
+        name: taskRequest.name,
+        description: taskRequest.description || null,
+        scheduledDate: taskRequest.scheduledDate || null,
+        createdAt: taskRequest.createdAt || null,
+        lastUpdateDate: taskRequest.lastUpdateDate || null,
+        isCompleted: taskRequest.isCompleted || false,
+        userId: taskRequest.userId,
+        priority: taskRequest.priority || null,
+        tags: taskRequest.tags || [],
       });
     } catch (error) {
       throw new Error('Mapeo fallido: ' + error.message);
     }
   }
 
-  taskWithTagsDbToDomain(tarea) {
-    //  return tareas.map((tarea) => {
+  taskWithTagsDbToDomain(task) {
+    //  return tareas.map((task) => {
 
-    const etiquetasIds = tarea.etiquetas_ids
-      ? tarea.etiquetas_ids.split(',')
+    const tagsIds = task.etiquetas_ids
+      ? task.etiquetas_ids.split(',')
       : [];
-    const etiquetasNombres = tarea.etiquetas_nombres
-      ? tarea.etiquetas_nombres.split(',')
+    const tagsNames = task.etiquetas_nombres
+      ? task.etiquetas_nombres.split(',')
       : [];
-    const etiquetasDescripciones = tarea.etiquetas_descripciones
-      ? tarea.etiquetas_descripciones.split(',')
+    const tagsDescriptions = task.etiquetas_descripciones
+      ? task.etiquetas_descripciones.split(',')
       : [];
-    const etiquetasUsuarios = tarea.etiquetas_usuarios
-      ? tarea.etiquetas_usuarios.split(',')
+    const userTags = task.etiquetas_usuarios
+      ? task.etiquetas_usuarios.split(',')
       : [];
-    const tareaEtiquetaIds = tarea.tarea_etiqueta_ids
-      ? tarea.tarea_etiqueta_ids.split(',')
+    const taskTagIds = task.tarea_etiqueta_ids
+      ? task.tarea_etiqueta_ids.split(',')
       : [];
 
-    const etiquetas = etiquetasIds.map((id, index) => {
+    const tags = tagsIds.map((id, index) => {
   
 
-      return this.tagMapper.bdConsultaJoinToDominio(
+      return this.tagMapper.dbJoinToDomain(
         id,
-        etiquetasNombres[index],
-        etiquetasDescripciones[index],
-        etiquetasUsuarios[index],
-        tareaEtiquetaIds[index]
+        tagsNames[index],
+        tagsDescriptions[index],
+        userTags[index],
+        taskTagIds[index]
       );
     });
 
 
-    const nuevaTarea = this.taskFactory.crearDesdeExistente(tarea, etiquetas);
-    return nuevaTarea;
+    const newTask = this.taskFactory.createFromExistingTask(task, tags);
+    return newTask;
   }
 
 }

@@ -28,13 +28,13 @@ app.use(express.json());
 
 
 // Configuración de rutas
-const routerAuth = require('./src/api/rutas/authRoutes')(authController);
-const routerTarea = require('./src/api/rutas/taskRoutes')(taskController);
-const routerEtiqueta = require('./src/api/rutas/tagRoutes')(tagController);
+const authRouter = require('./src/api/rutas/authRoutes')(authController);
+const taskRouter = require('./src/api/rutas/taskRoutes')(taskController);
+const tagRouter = require('./src/api/rutas/tagRoutes')(tagController);
 
-app.use('/auth', routerAuth);
-app.use('/tarea', routerTarea);
-app.use('/etiqueta', routerEtiqueta);
+app.use('/auth', authRouter);
+app.use('/tarea', taskRouter);
+app.use('/etiqueta', tagRouter);
 
 // Middleware que se ejecuta solo si hay next(error)
 app.use(errorHandler);

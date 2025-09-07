@@ -2,55 +2,57 @@ class TaskFactory {
   constructor(Task) {
     this.Task = Task;
   }
+// REFACTOR el metodo paseAndValidateDate hacer un metodo aparte o ponerlo en utils***
+  createNewTask(task) {
+    //  const parseAndValidateDate = (fecha) => fecha ? new Date(fecha) : null;
+   const parseAndValidateDate = (date) => {
+  if (!date) return null;
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? null : d;
+};
 
-  crear(tarea) {
-    //  const procesarFecha = (fecha) => fecha ? new Date(fecha) : null;
-    const procesarFecha = (fecha) => {
-      if (!fecha) return null;
-      const d = new Date(fecha);
-      return isNaN(d.getTime()) ? null : d;
-    };
-
-    const nuevaTarea = new this.Task({
-      idTarea: tarea.idTarea || null,
-      nombre: tarea.nombre,
-      descripcion: tarea.descripcion || null,
-      fechaProgramada: procesarFecha(tarea.fechaProgramada),
-      fechaCreacion: procesarFecha(tarea.fechaCreacion) || new Date(),
-      fechaUltimaActualizacion:
-        procesarFecha(tarea.fechaUltimaActualizacion) || new Date(),
-      completada: tarea.completada,
-      idUsuario: tarea.idUsuario,
-      prioridad: tarea.prioridad || null,
-      etiquetas: tarea.etiquetas,
+    const newTask = new this.Task({
+      id: task.id || null,
+      name: task.name,
+      description: task.description || null,
+      scheduledDate: parseAndValidateDate(task.scheduledDate),
+      createdAt: parseAndValidateDate(task.createdAt) || new Date(),
+      lastUpdateDate:
+        parseAndValidateDate(task.lastUpdateDate) || new Date(),
+      isCompleted: task.isCompleted,
+      userId: task.userId,
+      priority: task.priority || null,
+      tags: task.tags,
     });
 
-    nuevaTarea.validar();
-    return nuevaTarea;
+    newTask.validate();
+    return newTask;
   }
-  crearDesdeExistente(tarea, etiquetas) {
-    const procesarFecha = (fecha) => {
-      if (!fecha) return null;
-      const d = new Date(fecha);
-      return isNaN(d.getTime()) ? null : d;
-    };
 
-    const nuevaTarea = new this.Task({
-      idTarea: tarea.tarea_id || null,
-      nombre: tarea.tarea_nombre,
-      descripcion: tarea.tarea_descripcion || null,
-      fechaProgramada: procesarFecha(tarea.tarea_fecha_programada),
-      fechaCreacion: procesarFecha(tarea.tarea_fecha_creacion) || new Date(),
-      fechaUltimaActualizacion:
-        procesarFecha(tarea.tarea_ultima_actualizacion) || new Date(),
-      completada: tarea.tarea_completada,
-      idUsuario: tarea.tarea_id_usuario,
-      prioridad: tarea.tarea_prioridad || null,
-      etiquetas,
+  createFromExistingTask(task, tags) {
+     const parseAndValidateDate = (date) => {
+  if (!date) return null;
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+// estos names son los establecidos en la consulta del DAO, MODIFICAR***
+    const newTask = new this.Task({
+      id: task.tarea_id || null,
+      name: task.tarea_nombre,
+      description: task.tarea_descripcion || null,
+      scheduledDate: parseAndValidateDate(task.tarea_fecha_programada),
+      createdAt: parseAndValidateDate(task.tarea_fecha_creacion) || new Date(),
+      lastUpdateDate:
+        parseAndValidateDate(task.tarea_ultima_actualizacion) || new Date(),
+      isCompleted: task.tarea_completada,
+      userId: task.tarea_id_usuario,
+      priority: task.tarea_prioridad || null,
+      tags,
     });
 
-    nuevaTarea.validar();
-    return nuevaTarea;
+    newTask.validate();
+    return newTask;
   }
 }
 

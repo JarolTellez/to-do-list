@@ -3,11 +3,11 @@ const { pruebas } = require('./pruebas');
 module.exports = (authController) => {
   const router = express.Router();
 
-  router.route('/').post(authController.agregarUsuario.bind(authController));
+  router.route('/').post(authController.registerUser.bind(authController));
 
   router
     .route('/login')
-    .post(pruebas, authController.loginUsuario.bind(authController));
+    .post(pruebas, authController.login.bind(authController));
 
   router
     .route('/logout')
@@ -15,11 +15,11 @@ module.exports = (authController) => {
 
   router
     .route('/renovar-access-token')
-    .post(authController.renovarAccessToken.bind(authController));
+    .post(authController.refreshAccessToken.bind(authController));
 
   router
     .route('/renovar-refresh-token')
-    .post(authController.renovarRefreshToken.bind(authController));
+    .post(authController.refreshRefreshToken.bind(authController));
 
   return router;
 };

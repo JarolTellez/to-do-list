@@ -4,16 +4,16 @@ class AuthController {
     this.userMapper = userMapper;
     this.AuthenticationError = AuthenticationError;
   }
-
-  async agregarUsuario(req, res, next) {
+// CAMBIAR A QUE CONVIERTA A UN DTO DE REQUEST- CONTROLLER NO MAPEARA A DOMINIO DE ESO SE ENCARGARAN LOS SERVICIOS
+  async registerUser(req, res, next) {
     try {
-      const usuario = this.userMapper.requestToDominio(req.body);
-      const usuarioAgregado = await this.authService.registrarUsuario(usuario);
-      const usuarioRespuesta = this.userMapper.dominioToRespuestaDTO(usuarioAgregado);
+      const user = this.userMapper.requestToDomain(req.body);
+      const addedUser = await this.authService.createUser(user);
+      const responseUser = this.userMapper.dominioToRespuestaDTO(addedUser);
       
       return res.status(201).json({
          success: true,
-        data: usuarioRespuesta
+        data: responseUser
       });
     } catch (error) {
       next(error);
@@ -25,26 +25,24 @@ class AuthController {
     }
   }
 
-    async loginUsuario(req, res, next) {
+    async login(req, res, next) {
     try {
-        const { nombreUsuario, contrasena } = req.body;
-        const dispositivoInfo = JSON.parse(req.get('Dispositivo-Info') || '{}');
+        const { userName, password } = req.body;
+        const deviceInfo = JSON.parse(req.get('Dispositivo-Info') || '{}');
         const ip = req.ip;
         const refreshTokenExistente = req.cookies.refreshToken;
-
-        console.log('Iniciando login para usuario:', nombreUsuario);
         
-        const resultado = await this.authService.loginUsuario(
+        const result = await this.authService.loginUser(
             refreshTokenExistente, 
-            nombreUsuario, 
-            contrasena, 
-            dispositivoInfo, 
+            userName, 
+            password, 
+            deviceInfo, 
             ip
         );
 
         // Solo se establece cookie si se genero un nuevo refresh token
-        if (resultado.refreshToken) {
-            res.cookie('refreshToken', resultado.refreshToken, {
+        if (result.refreshToken) {
+            res.cookie('refreshToken', result.refreshToken, {
                 httpOnly: true,
                 secure: false,
                 sameSite: 'lax',
@@ -60,9 +58,9 @@ class AuthController {
             status: 'success',
             message: 'Autenticación exitosa',
             data: {
-                usuario: resultado.usuario,
-                accessToken: resultado.accessToken,
-                expiraEn: resultado.expiraEn
+                user: result.user,
+                accessToken: result.accessToken,
+                expiraEn: result.expiraEn
             }
         });
 
@@ -96,7 +94,7 @@ async logOut(req, res, next) {
     }
 
   
-    const resultado = await this.authService.logOutSession(refreshTokenExistente);
+    const result = await this.authService.logOutSession(refreshTokenExistente);
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
@@ -109,7 +107,7 @@ async logOut(req, res, next) {
     return res.status(200).json({
       status: 'success',
       message: 'Logout exitoso',
-      data: resultado 
+      data: result 
     });
 
   } catch (error) {
@@ -126,7 +124,7 @@ async logOut(req, res, next) {
 }
 
 
-async renovarAccessToken(req, res, next) {
+async refreshAccessToken(req, res, next) {
     try {
         const refreshToken = req.cookies.refreshToken;
 
@@ -141,24 +139,25 @@ async renovarAccessToken(req, res, next) {
 
             return res.status(401).json({
                 success: false,
-                mensaje: 'Refresh token no proporcionado',
+                message: 'Refresh token no proporcionado',
                 tipo: 'NO_REFRESH_TOKEN'
             });
         }
-
-        const resultado = await this.authService.renovarAccesToken(refreshToken);
-        console.log('Token renovado para usuario:', resultado.usuario.idUsuario);
+console.log("RESFRESH TOKEN: ", refreshToken);
+        const result = await this.authService.refreshAccessToken(refreshToken);
+        console.log("RESULTADO: ", result);
+        console.log('Token renovado para user:', result.user.id);
 
         return res.status(200).json({
             success: true,
             message: 'Access token renovado exitosamente',
             data: {
-                usuario: {
-                    id: resultado.usuario.idUsuario,
-                    email: resultado.usuario.email,
-                    rol: resultado.usuario.rol
+                user: {
+                    id: result.user.id,
+                    email: result.user.email,
+                    rol: result.user.rol
                 },
-                accessToken: resultado.accessToken,
+                accessToken: result.accessToken,
                 expiraEn: process.env.JWT_ACCESS_EXPIRE_IN || 900
             }
         });
@@ -177,14 +176,14 @@ async renovarAccessToken(req, res, next) {
         
         // return res.status(statusCode).json({
         //     success: false,
-        //     mensaje: error.message || 'Error al renovar token',
+        //     message: error.message || 'Error al renovar token',
         //     tipo: error.tipo || 'ERROR_DESCONOCIDO'
         // });
     }
 }
 
 
-  async renovarRefreshToken(req, res, next){
+  async refreshRefreshToken(req, res, next){
 
   }
 

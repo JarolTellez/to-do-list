@@ -6,43 +6,43 @@ class TagService extends BaseDatabaseHandler {
     this.tagDAO = tagDAO;
   }
 
-  async agregarEtiqueta(etiqueta, externalConn = null) {
+  async createTag(tag, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const existe = await this.tagDAO.consultarEtiquetaPorNombreIdUsuario(
-        etiqueta.nombre,
-        etiqueta.idUsuario,
+      const tagResult = await this.tagDAO.findByNameAndUserId(
+        tag.name,
+        tag.userId,
         connection
       );
 
-      if (existe) {
-        return existe;
+      if (tagResult) {
+        return tagResult;
       }
 
-      const etiquetaResultado = await this.tagDAO.agregarEtiqueta(
-        etiqueta,
+      const createdTag = await this.tagDAO.create(
+        tag,
         connection
       );
-      return etiquetaResultado;
+      return createdTag;
     }, externalConn);
   }
 
-  async consultarEtiquetasPorIdUsuario(idUsuario, externalConn = null) {
+  async getAllTagsByUserId(userId, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const etiquetas = await this.tagDAO.consultarEtiquetasPorIdUsuario(
-        idUsuario,
+      const tagsResult = await this.tagDAO.findAllByUserId(
+        userId,
         connection
       );
-      return etiquetas;
+      return tagsResult;
     }, externalConn);
   }
 
-  async obtenerEtiquetaPorNombre(nombre, externalConn = null) {
+  async getTagByName(name, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const etiqueta = await this.tagDAO.consultarEtiquetasPorNombre(
-        nombre,
+      const tag = await this.tagDAO.findByName(
+        name,
         connection
       );
-      return etiqueta;
+      return tag;
     }, externalConn);
   }
 }

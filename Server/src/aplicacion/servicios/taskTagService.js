@@ -6,35 +6,35 @@ class TaskTagService extends BaseDatabaseHandler {
     this.taskTagDAO = taskTagDAO;
   }
 
-  async guardarTareaEtiqueta(idTarea, idEtiqueta, externalConn = null) {
+  async createTaskTag(taskId, tagId, externalConn = null) {
       return this.withTransaction(async (connection) => {
-      const idRelacion = await this.taskTagDAO.agregarTareaEtiqueta(idTarea, idEtiqueta, connection);
-      console.log(`Relación agregada: Tarea ${idTarea} ↔ Etiqueta ${idEtiqueta}`);
+      const relationId = await this.taskTagDAO.create(taskId, tagId, connection);
+      console.log(`Relación agregada: Tarea ${taskId} ↔ Etiqueta ${tagId}`);
         
-      return idRelacion;
+      return relationId;
          },externalConn);
   }
 
-  async eliminarTodasPorIdTarea(idTarea, externalConn = null) {
+  async deleteAllByTaskId(taskId, externalConn = null) {
     
        return this.withTransaction(async (connection) => {
-      const eliminadas = await this.taskTagDAO.eliminarTareaEtiquetasPorIdTarea(idTarea, connection);
-      console.log(`Relaciones eliminadas para tarea ${idTarea}: ${eliminadas}`);
-      return eliminadas;
+      const deleted = await this.taskTagDAO.deleteByTaskId(taskId, connection);
+      console.log(`Relaciones eliminadas para tarea ${taskId}: ${deleted}`);
+      return deleted;
     }, externalConn);
   }
 
-  async obtenerPorIdTarea(idTarea, externalConn=null) {
+  async getAllByTaskId(taskId, externalConn=null) {
        return this.withTransaction(async (connection) => {
-      const tarea = await this.taskTagDAO.consultarTareaEtiquetaPorIdTarea(idTarea, connection);
+      const tarea = await this.taskTagDAO.findByTaskId(taskId, connection);
     
        return tarea;
     },externalConn);
   }
 
-  async eliminarPorIdTareaEtiqueta(idTareaEtiqueta, externalConn = null) {
+  async deleteById(idTareaEtiqueta, externalConn = null) {
       return this.withTransaction(async (connection) => {
-      const result = await this.taskTagDAO.eliminarTareaEtiqueta(idTareaEtiqueta, connection);
+      const result = await this.taskTagDAO.delete(idTareaEtiqueta, connection);
       return result;
     },externalConn);
   }

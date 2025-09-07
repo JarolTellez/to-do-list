@@ -1,3 +1,4 @@
+
 const BaseDatabaseHandler = require('../../infraestructura/config/BaseDatabaseHandler');
 
 class UserService extends BaseDatabaseHandler {
@@ -11,18 +12,18 @@ class UserService extends BaseDatabaseHandler {
 
   async createUser(user, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      user.validar();
-      const encryptedpassword = await this.bcrypt.hash(user.contrasena, 10);
-      user.contrasena = encryptedpassword;
+      user.validate();
+      const encryptedpassword = await this.bcrypt.hash(user.password, 10);
+      user.password = encryptedpassword;
 
-      const addedUser = await this.userDAO.agregarUsuario(user, connection);
+      const addedUser = await this.userDAO.create(user, connection);
       return addedUser;
     }, externalConn);
   }
 
   async validateCredentials(userName, password, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const user = await this.userDAO.consultarUsuarioPorNombreContrasena(
+      const user = await this.userDAO.findByNameAndPassword(
         userName,
         password,
         connection
@@ -34,7 +35,7 @@ class UserService extends BaseDatabaseHandler {
 
   async validateUserExistenceById(userId, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const user = await this.userDAO.consultarUsuarioPorId(
+      const user = await this.userDAO.findById(
         userId,
         connection
       );
