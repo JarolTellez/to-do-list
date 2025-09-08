@@ -1,11 +1,12 @@
 const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class SessionService extends BaseDatabaseHandler {
-  constructor({sessionDAO, JwtAuth, AuthenticationError, connectionDB}) {
+  constructor({sessionDAO, JwtAuth, AuthenticationError, connectionDB, NotFoundError}) {
     super(connectionDB);
     this.sessionDAO = sessionDAO;
     this.JwtAuth = JwtAuth;
     this.AuthenticationError = AuthenticationError;
+    this.NotFoundError=NotFoundError;
   }
 
   async createSession(session, externalConn = null) {

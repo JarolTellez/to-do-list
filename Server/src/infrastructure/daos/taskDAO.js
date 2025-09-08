@@ -6,13 +6,11 @@ class TaskDAO extends BaseDatabaseHandler {
     taskMapper,
     connectionDB,
     DatabaseError,
-    NotFoundError,
     ConflictError,
   }) {
     super(connectionDB);
     this.taskMapper = taskMapper;
     this.DatabaseError = DatabaseError;
-    this.NotFoundError = NotFoundError;
     this.ConflictError = ConflictError;
   }
 
@@ -73,15 +71,8 @@ class TaskDAO extends BaseDatabaseHandler {
           task.id,
         ]
       );
-
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId: task.id, name: task.name },
-        });
-      }
       return task;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
 
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw new this.ConflictError("Ya existe una rows con ese name");
@@ -104,14 +95,9 @@ class TaskDAO extends BaseDatabaseHandler {
         "UPDATE tasks SET is_completed = ? WHERE id = ?",
         [isCompleted, id]
       );
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError("La rows no existe");
-      }
 
-      return result.affectedRows;
+      return result.affectedRows>0;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
-
       throw new this.DatabaseError(
         "Error a marcar como completada la tarea en la base de datos",
         {
@@ -135,15 +121,9 @@ class TaskDAO extends BaseDatabaseHandler {
         "DELETE FROM tasks WHERE id = ?",
         [id]
       );
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError("Etiqueta no encontrada", {
-          attemptedData: { taskId: id },
-        });
-      }
 
-      return result[0].affectedRows;
+      return result.affectedRows>0;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
 
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
         throw new this.ConflictError(
@@ -164,68 +144,37 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findAll(externalConn = null) {
-    const { connection, isExternal } = await this.getConnection(externalConn);
-    try {
-      const [rows] = await connection.query("SELECT * FROM tasks");
-      return rows;
-    } catch (error) {
-      throw new this.DatabaseError(
-        "Error al consultar todas las tareas en la base de datos",
-        { originalError: error.message, code: error.code }
-      );
-    } finally {
-      if (connection) {
-        await this.releaseConnection(this.connectionDB, isExternal);
-      }
-    }
-  }
+  // async findAll(externalConn = null) {
+  //   const { connection, isExternal } = await this.getConnection(externalConn);
+  //   try {
+  //     const [rows] = await connection.query("SELECT * FROM tasks");
+  //     return rows;
+  //   } catch (error) {
+  //     throw new this.DatabaseError(
+  //       "Error al consultar todas las tareas en la base de datos",
+  //       { originalError: error.message, code: error.code }
+  //     );
+  //   } finally {
+  //     if (connection) {
+  //       await this.releaseConnection(this.connectionDB, isExternal);
+  //     }
+  //   }
+  // }
 
-  async findByName(name, externalConn = null) {
-    const { connection, isExternal } = await this.getConnection(externalConn);
+  // async findByName(name, externalConn = null) {
+  //   const { connection, isExternal } = await this.getConnection(externalConn);
 
-    try {
-      const [rows] = await connection.execute(
-        "SELECT * FROM tasks WHERE name = ?",
-        [name]
-      );
-
-      if (!rows[0]) {
-        throw new this.NotFoundError("Tarea no encontrada",
-        {attemptedData:{name}});
-      }
-      return rows[0];
-    } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
-
-      throw new this.DatabaseError("Error al consultar la tarea en la base de datos", {
-        attemptedData:{name},
-        originalError: error.message,
-        code: error.code,
-      });
-    } finally {
-      if (connection) {
-        await this.releaseConnection(connection, isExternal);
-      }
-    }
-  }
-
-  // async findById(id, externalConn = null) {
-  //    const {connection, isExternal} = await this.getConnection(externalConn);
   //   try {
   //     const [rows] = await connection.execute(
-  //       'SELECT * FROM tasks WHERE id = ?',
-  //       [id]
+  //       "SELECT * FROM tasks WHERE name = ?",
+  //       [name]
   //     );
 
-  //     if (!rows[0]) {
-  //       throw new this.NotFoundError('Tarea no encontrada');
-  //     }
   //     return rows[0];
   //   } catch (error) {
-  //     if (error instanceof this.NotFoundError) throw error;
 
-  //     throw new this.DatabaseError('No se pudo consultar la rows por id', {
+  //     throw new this.DatabaseError("Error al consultar la tarea en la base de datos", {
+  //       attemptedData:{name},
   //       originalError: error.message,
   //       code: error.code,
   //     });
@@ -241,32 +190,6 @@ class TaskDAO extends BaseDatabaseHandler {
 
     try {
       const [rows] = await connection.execute(
-        //         `SELECT
-        //     t.id AS tarea_id,
-        //     t.name AS tarea_nombre,
-        //     t.description AS tarea_descripcion,
-        //     t.scheduled_date AS tarea_fecha_programada,
-        //     t.created_at AS tarea_fecha_creacion,
-        //     t.last_update_date AS tarea_ultima_actualizacion,
-        //     t.isCompleted AS tarea_completada,
-        //     t.priority AS tarea_prioridad,
-        //     t.user_id AS tarea_id_usuario,
-
-        //       GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
-        //       GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
-        //       GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
-        //       GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
-        //       GROUP_CONCAT(e.user_id ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
-        // FROM
-        //     tasks t
-        // LEFT JOIN
-        //     task_tag te ON t.id = te.task_id
-        // LEFT JOIN
-        //     tags e ON te.tag_id = e.id
-        // WHERE
-        //     t.id = ?
-        // GROUP BY
-        //     t.id`,
         `SELECT 
     t.id AS tarea_id,
     t.name AS tarea_nombre,
@@ -296,19 +219,12 @@ GROUP BY
         [id]
       );
 
-      if (rows.length === 0) {
-        throw new this.NotFoundError(
-          "Tarea no encontrada",{taskId:id}
-        );
-      }
 
       const mappedTasks = rows.map((row) => {
         return this.taskMapper.taskWithTagsDbToDomain(row);
       });
       return mappedTasks;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
-
       throw new this.DatabaseError("No se pudo consultar la consulta por id", {
         attemptedData:{taskId: id},
         originalError: error.message,
@@ -330,13 +246,8 @@ GROUP BY
         [id, userId]
       );
 
-      if (!rows[0]) {
-        throw new this.NotFoundError("Tarea no encontrada", {attemptedData:{taskId:id,userId}});
-      }
-
       return rows[0];
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
 
       throw new this.DatabaseError(
         "Error al consultar la tarea en la base de datos",
@@ -355,36 +266,6 @@ GROUP BY
 
     try {
       const [rows] = await connection.execute(
-        //         `SELECT
-        //   t.id AS tarea_id,
-        //   t.name AS tarea_nombre,
-        //   t.description AS tarea_descripcion,
-        //   t.scheduled_date AS tarea_fecha_programada,
-        //   t.created_at AS tarea_fecha_creacion,
-        //   t.last_update_date AS tarea_ultima_actualizacion,
-        //   t.isCompleted AS tarea_completada,
-        //   t.priority AS tarea_prioridad,
-        //   t.user_id AS tarea_id_usuario,
-
-        //   GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
-        //   GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
-        //   GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
-        //   GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
-        //   GROUP_CONCAT(e.user_id ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
-
-        // FROM
-        //   tasks t
-        // LEFT JOIN
-        //   task_tag te ON t.id = te.id
-        // LEFT JOIN
-        //    e ON te.id_etiqueta = e.id_etiqueta
-
-        // WHERE
-        //   t.user_id = ? AND t.isCompleted = 0
-
-        // GROUP BY
-        //   t.id;
-        // `,
         `SELECT 
     t.id AS tarea_id,
     t.name AS tarea_nombre,
@@ -447,36 +328,6 @@ GROUP BY
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.execute(
-        //         `SELECT
-        //   t.id AS tarea_id,
-        //   t.name AS tarea_nombre,
-        //   t.description AS tarea_descripcion,
-        //   t.scheduled_date AS tarea_fecha_programada,
-        //   t.created_at AS tarea_fecha_creacion,
-        //   t.last_update_date AS tarea_ultima_actualizacion,
-        //   t.isCompleted AS tarea_completada,
-        //   t.priority AS tarea_prioridad,
-        //   t.user_id AS tarea_id_usuario,
-
-        //   GROUP_CONCAT(DISTINCT te.id_tarea_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS tarea_etiqueta_ids,
-        //   GROUP_CONCAT(DISTINCT e.id_etiqueta ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_ids,
-        //   GROUP_CONCAT(DISTINCT e.name ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_nombres,
-        //   GROUP_CONCAT(e.description ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_descripciones,
-        //   GROUP_CONCAT(e.user_id ORDER BY te.id_tarea_etiqueta SEPARATOR ',') AS etiquetas_usuarios
-
-        // FROM
-        //   tasks t
-        // LEFT JOIN
-        //   task_tag te ON t.id = te.id
-        // LEFT JOIN
-        //    e ON te.id_etiqueta = e.id_etiqueta
-
-        // WHERE
-        //   t.user_id = ? AND t.isCompleted = 1
-
-        // GROUP BY
-        //   t.id;
-        // `,
         `SELECT 
     t.id AS tarea_id,
     t.name AS tarea_nombre,

@@ -1,11 +1,10 @@
 const BaseDatabaseHandler = require('../config/BaseDatabaseHandler');
 
 class TaskTagDAO extends BaseDatabaseHandler {
-   constructor({taskTagMapper, connectionDB, DatabaseError, NotFoundError, ConflictError}) {
+   constructor({taskTagMapper, connectionDB, DatabaseError, ConflictError}) {
     super(connectionDB);
     this.taskTagMapper = taskTagMapper;
     this.DatabaseError = DatabaseError;
-    this.NotFoundError = NotFoundError;
     this.ConflictError = ConflictError;
   }
 
@@ -54,15 +53,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
           taskTag.id,
         ]
       );
-
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError('Relación tarea-etiqueta no encontrada',{ attemptedData:{taskId: taskTag.taskId, tagId: taskTag.tagId}});
-      }
-
       return taskTag;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
-      
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         throw new this.ConflictError(
           'Ya existe esta combinación de tarea y etiqueta',
@@ -88,14 +80,10 @@ class TaskTagDAO extends BaseDatabaseHandler {
         [id]
       );
       
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError('Relación tarea-etiqueta no encontrada',{attemptedData:{taskTagId:id}});
-      }
+    
       
-      return result.affectedRows;
+      return result.affectedRows>0;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
-      
       throw new this.DatabaseError(
         'Error al eliminar la relación taskTag de la base de datos',
         {attemptedData:{taskTagId: id}, originalError: error.message, code: error.code }

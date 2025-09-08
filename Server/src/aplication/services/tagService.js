@@ -1,9 +1,10 @@
 const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class TagService extends BaseDatabaseHandler {
-  constructor({tagDAO, connectionDB}) {
+  constructor({tagDAO, connectionDB, NotFoundError}) {
     super(connectionDB);
     this.tagDAO = tagDAO;
+    this.NotFoundError = NotFoundError;
   }
 
   async createTag(tag, externalConn = null) {
