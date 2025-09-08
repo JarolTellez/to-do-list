@@ -22,16 +22,17 @@ class UserDAO extends BaseDatabaseHandler {
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         if (error.message.includes('nombre_usuario')) {
-          throw new this.ConflictError('El nombre de user ya está en uso', {
-            userName: user.userName,
+          throw new this.ConflictError('El nombre de usuario ya está en uso', {
+           attemptedData:{userName: user.userName},
           });
         } else if (error.message.includes('email')) {
           throw new this.ConflictError('El email electrónico ya está registrado', {
-            email: user.email,
+            attemptedData:{email: user.email},
           });
         }
       }
       throw new this.DatabaseError('No se pudo registrar el user', {
+        attemptedData:{userId: user.id, userName: user.userName},
         originalError: error.message,
         code: error.code,
       });
@@ -49,7 +50,7 @@ class UserDAO extends BaseDatabaseHandler {
       );
 
       if (result.affectedRows === 0) {
-        throw new this.NotFoundError('Usuario no encontrado');
+        throw new this.NotFoundError('Usuario no encontrado',{attemptedData:{userId: user.id}});
       }
       return user;
     } catch (error) {
@@ -58,15 +59,16 @@ class UserDAO extends BaseDatabaseHandler {
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         if (error.message.includes('nombre_usuario')) {
           throw new this.ConflictError('El nombre de user ya está en uso', {
-            userName: user.userName,
+             attemptedData:{userName: user.userName},
           });
         } else if (error.message.includes('email')) {
           throw new this.ConflictError('El email electrónico ya está registrado', {
-            email: user.email,
+           attemptedData:{email: user.email},
           });
         }
       }
-      throw new this.DatabaseError('No se pudo actualizar el user', {
+      throw new this.DatabaseError('Error al actualizar el usuario en la base de datos', {
+        attemptedData:{userId: user.id, userName: user.userName},
         originalError: error.message,
         code: error.code,
       });
@@ -84,19 +86,20 @@ class UserDAO extends BaseDatabaseHandler {
       );
 
       if (result.affectedRows === 0) {
-        throw new this.NotFoundError('Usuario no encontrado');
+        throw new this.NotFoundError('Usuario no encontrado', {attemptedData:{userId: id}});
       }
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
 
       if (error.code === 'ER_ROW_IS_REFERENCED' || error.errno === 1451) {
         throw new this.ConflictError(
-          'No se puede eliminar el user porque tiene tareas o sesiones asociadas',
-          { id }
+          'No se puede eliminar el usario porque tiene tareas o sesiones asociadas',
+          {attemptedData:{userId:id} }
         );
       }
 
-      throw new this.DatabaseError('No se pudo eliminar el user', {
+      throw new this.DatabaseError('Error al eliminar el usuario de la base de datos', {
+        attemptedData:{userId:id},
         originalError: error.message,
         code: error.code,
       });
@@ -111,7 +114,7 @@ class UserDAO extends BaseDatabaseHandler {
       const [rows] = await connection.execute('SELECT * FROM users');
       return rows.length > 0 ? rows.map((r) => this.userMapper.dbToDomain(r)) : [];
     } catch (error) {
-      throw new this.DatabaseError('No se pudo consultar los usuarios', {
+      throw new this.DatabaseError('Error al consultar todos los usuarios en la base de datos', {
         originalError: error.message,
         code: error.code,
       });
@@ -128,12 +131,13 @@ class UserDAO extends BaseDatabaseHandler {
         [id]
       );
       if (!rows || rows.length === 0) {
-        throw new this.NotFoundError('Usuario no encontrado');
+        throw new this.NotFoundError('Usuario no encontrado', {attemptedData:{userId: id}});
       }
       return this.userMapper.dbToDomain(rows[0]);
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
-      throw new this.DatabaseError('No se pudo consultar el user', {
+      throw new this.DatabaseError('Error al consultar el usuario en la base de datos', {
+        attemptedData:{userId:id},
         originalError: error.message,
         code: error.code,
       });
@@ -158,7 +162,8 @@ async findByName(userName, externalConn = null) {
     return this.userMapper.dbToDomain(rows[0]);
     
   } catch (error) {
-    throw new this.DatabaseError('No se pudo consultar el user por nombre', {
+    throw new this.DatabaseError('Error al consultar el usuario en la base de datos', {
+      attemptedData:{userName},
       originalError: error.message,
       code: error.code,
     });
@@ -175,12 +180,13 @@ async findByName(userName, externalConn = null) {
         [email]
       );
       if (!rows || rows.length === 0) {
-        throw new this.NotFoundError('Usuario no encontrado');
+        throw new this.NotFoundError('Usuario no encontrado',{attemptedData:{email}});
       }
       return this.userMapper.dbToDomain(rows[0]);
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
-      throw new this.DatabaseError('No se pudo consultar el user por email', {
+      throw new this.DatabaseError('Error al consultar el usuario por email en la base de datos', {
+        attemptedData:{email},
         originalError: error.message,
         code: error.code,
       });
@@ -229,14 +235,14 @@ async findByName(userName, externalConn = null) {
         );
 
         if (!rows || rows.length === 0) {
-            throw new this.NotFoundError('Credenciales inválidas');
+            throw new this.NotFoundError('Credenciales inválidas',{attemptedData:{userName, password}});
         }
 
         const usuarioBD = rows[0];
         const isValid = await this.bcrypt.compare(password.trim(), usuarioBD.password);
 
         if (!isValid) {
-            throw new this.ConflictError('Credenciales inválidas');
+            throw new this.ConflictError('Credenciales inválidas',{attemptedData:{userName, password}});
         }
 
         return this.userMapper.dbToDomain(usuarioBD);
@@ -248,7 +254,8 @@ async findByName(userName, externalConn = null) {
         }
 
         // Para errores de BD, muestra más detalles
-        throw new this.DatabaseError('Error de autenticación', {
+        throw new this.DatabaseError('Error al consultar usuario por credenciales en la base de datos', {
+            attemptedData:{userName, password},
             originalError: error.message,
             code: error.code,
             sqlState: error.sqlState,

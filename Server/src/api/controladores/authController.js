@@ -86,7 +86,6 @@ class AuthController {
 
 async logOut(req, res, next) {
   try {
-    console.log('LLEGOOOOOO');
     const refreshTokenExistente = req.cookies.refreshToken;
 
     if (!refreshTokenExistente) {
