@@ -1,14 +1,16 @@
 const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHandler");
 
 class TaskService extends BaseDatabaseHandler {
-  constructor({ taskDAO, tagService, taskTagService, connectionDB }) {
+  constructor({ taskDAO, tagService, taskTagService, connectionDB, NotFoundError }) {
     super(connectionDB);
     this.taskDAO = taskDAO;
     this.taskTagService = taskTagService;
     this.tagService = tagService;
+    this.NotFoundError = NotFoundError;
   }
 
   async createTask(task, externalConn = null) {
+    this.validateRequired(["task"], { task });
     return this.withTransaction(async (connection) => {
       const newTask = await this.taskDAO.create(task, connection);
 
@@ -40,6 +42,7 @@ class TaskService extends BaseDatabaseHandler {
   }
 
   async updateTask(task, externalConn = null) {
+    this.validateRequired(["task"], { task });
     return this.withTransaction(async (connection) => {
       const existingTask = await this.taskDAO.findById(task.id, connection);
       if (!existingTask) {
@@ -84,6 +87,7 @@ class TaskService extends BaseDatabaseHandler {
   }
 
   async deleteTask(taskId, userId, externalConn = null) {
+    this.validateRequired(["taskId","userId"], { taskId, userId });
     return this.withTransaction(async (connection) => {
       const existingTask = await this.taskDAO.findByIdAndUserId(
         taskId,

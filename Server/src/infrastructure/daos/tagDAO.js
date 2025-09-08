@@ -1,11 +1,10 @@
 const BaseDatabaseHandler = require('../config/BaseDatabaseHandler');
 
 class TagDAO extends BaseDatabaseHandler {
-   constructor({tagMapper, connectionDB, DatabaseError, NotFoundError, ConflictError}) {
+   constructor({tagMapper, connectionDB, DatabaseError, ConflictError}) {
     super(connectionDB);
     this.tagMapper = tagMapper;
     this.DatabaseError = DatabaseError;
-    this.NotFoundError = NotFoundError;
     this.ConflictError = ConflictError;
   }
 
@@ -45,15 +44,8 @@ class TagDAO extends BaseDatabaseHandler {
         'UPDATE tags SET name = ? WHERE id = ?', 
         [tag.name, tag.id]
       );
-      
-      // Verificar si se actualizó algún registro
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError('La etiqueta no existe', {tagId: tag.tagId});
-      }
-      
       return tag;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
       
       // Error de duplicado al actualizar
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
@@ -78,13 +70,8 @@ class TagDAO extends BaseDatabaseHandler {
         [id]
       );
       
-      // Verificar si se eliminó algún registro
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError('La etiqueta no existe en la base de datos',{ attemptedData:{tagId:id}});
-      }
+      return result.affectedRows>0;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
-      
       // Manejar error de clave foránea
       if (error.code === 'ER_ROW_IS_REFERENCED' || error.errno === 1451) {
         throw new this.ConflictError(
@@ -143,14 +130,10 @@ class TagDAO extends BaseDatabaseHandler {
         'SELECT * FROM tags WHERE id = ?',
         [id]
       );
-      
-      if (!rows[0]) {
-        throw new this.NotFoundError('Etiqueta no encontrada',{attemptedData:{tagId: id}});
-      }
+    
       
       return rows[0];
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
         'No se pudo consultar la etiqueta en la base de datos',

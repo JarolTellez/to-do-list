@@ -36,6 +36,21 @@ class TaskMapper {
     }
   }
 
+  dbToDomain(taskDB){
+    return this.taskFactory.newTask({
+      id: taskDB.id,
+      name: taskDB.name,
+      description: taskDB.description,
+      scheduledDate: taskDB.scheduled_date,
+      createdAt: taskDB.created_At,
+      lastUpdateDate: taskDB.last_update_date,
+      isCompleted: taskDB.is_completed,
+      userId: taskDB.userId,
+      priority: taskDB.priority,
+      tags:taskDB.tags 
+    })
+  }
+
   updateRequestToDominio(taskRequest) {
     try {
       return this.taskFactory.createNew({

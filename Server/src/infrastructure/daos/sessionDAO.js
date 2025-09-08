@@ -2,11 +2,10 @@ const BaseDatabaseHandler = require('../config/BaseDatabaseHandler');
 
 
 class SessionDAO extends BaseDatabaseHandler{
-  constructor({sessionMapper, connectionDB, DatabaseError, NotFoundError, ConflictError}) {
+  constructor({sessionMapper, connectionDB, DatabaseError, ConflictError}) {
     super(connectionDB);
     this.sessionMapper = sessionMapper;
     this.DatabaseError = DatabaseError;
-    this.NotFoundError = NotFoundError;
     this.ConflictError = ConflictError;
   }
 
@@ -58,12 +57,9 @@ class SessionDAO extends BaseDatabaseHandler{
         [id]
       );
       
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError('No se encontro la session especificada',{sessionId: id});
-      }
-      return result.affectedRows
+  
+      return result.affectedRows>0
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
         'Error al desactivar la sesion en la base de datos',
@@ -111,7 +107,6 @@ class SessionDAO extends BaseDatabaseHandler{
     return { deactivated: result.affectedRows, message: 'Sesion desactivada' };
       
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
         'Error al desactivar la  sesion en la base de datos',
@@ -132,13 +127,9 @@ class SessionDAO extends BaseDatabaseHandler{
         LIMIT 1
       `, [userId]);
 
-      if (result.affectedRows === 0) {
-        throw new this.NotFoundError('No se encontraron sessions para este usuario');
-      }
 
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
         'No se pudo eliminar la sesión más antigua del usuario en la base de datos',
