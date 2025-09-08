@@ -49,20 +49,20 @@ const sessionMapper = new SessionMapper(Session);
 
 const connectionDB = ConnectionDB.getInstance();
 // DAOs con sus dependencias
-const taskDAO = new TaskDAO({taskMapper, connectionDB, DatabaseError, NotFoundError, ConflictError} );
-const taskTagDAO = new TaskTagDAO({taskTagMapper, connectionDB, DatabaseError, NotFoundError, ConflictError});
-const tagDAO = new TagDAO({tagMapper, connectionDB, DatabaseError, NotFoundError, ConflictError});
-const userDAO = new UserDAO({userMapper, connectionDB, bcrypt, DatabaseError, NotFoundError, ConflictError});
-const sessionDAO = new SessionDAO({sessionMapper, connectionDB, DatabaseError, NotFoundError, ConflictError});
+const taskDAO = new TaskDAO({taskMapper, connectionDB, DatabaseError, ConflictError} );
+const taskTagDAO = new TaskTagDAO({taskTagMapper, connectionDB, DatabaseError,  ConflictError});
+const tagDAO = new TagDAO({tagMapper, connectionDB, DatabaseError,  ConflictError});
+const userDAO = new UserDAO({userMapper, connectionDB, bcrypt, DatabaseError,  ConflictError});
+const sessionDAO = new SessionDAO({sessionMapper, connectionDB, DatabaseError, ConflictError});
 
 const jwtAuth = new JwtAuth();
 
 // Servicios
-const userService = new UserService({userDAO,connectionDB, bcrypt, ConflictError, ValidationError, validateRequired: validateRequiredObj});
-const tagService = new TagService({tagDAO, connectionDB, validateRequired: validateRequiredObj});
-const taskTagService = new TaskTagService({taskTagDAO, connectionDB, validateRequired: validateRequiredObj});
-const taskService = new TaskService({taskDAO, tagService, taskTagService, connectionDB, validateRequired: validateRequiredObj});
-const sessionService = new SessionService({sessionDAO,jwtAuth, AuthenticationError, connectionDB, validateRequired: validateRequiredObj});
+const userService = new UserService({userDAO,connectionDB, bcrypt, ConflictError, ValidationError, NotFoundError, validateRequired: validateRequiredObj});
+const tagService = new TagService({tagDAO, connectionDB, NotFoundError, validateRequired: validateRequiredObj});
+const taskTagService = new TaskTagService({taskTagDAO, connectionDB, NotFoundError, validateRequired: validateRequiredObj});
+const taskService = new TaskService({taskDAO, tagService, taskTagService, connectionDB, NotFoundError, validateRequired: validateRequiredObj});
+const sessionService = new SessionService({sessionDAO,jwtAuth, AuthenticationError, NotFoundError, connectionDB, validateRequired: validateRequiredObj});
 const authService = new AuthService({User, sessionFactory, userService, sessionService, connectionDB, userDAO, jwtAuth, bcrypt, crypto, NotFoundError, ValidationError, ConflictError,  AuthenticationError, validateRequired: validateRequiredObj});
 
 // Controladores

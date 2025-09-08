@@ -11,11 +11,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
    async create(taskId, tagId, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [taskTagResponse] = await connection.execute(
+      const [result] = await connection.execute(
         'INSERT INTO task_tag (task_id, tag_id) VALUES (?, ?)',
         [taskId, tagId]
       );
-      const id = taskTagResponse.insertId;
+      const id = result.insertId;
       return id;
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
@@ -66,7 +66,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
         'Error al actualizar la taskTag en la base de datos',
         {attemptedData:{taskId: taskTag.taskId, tagId: taskTag.tagId}, originalError: error.message, code: error.code }
       );
-    } finally {
+          } finally {
       await this.releaseConnection(connection, isExternal);
     }
   }
@@ -79,9 +79,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
         'DELETE FROM task_tag WHERE id = ?',
         [id]
       );
-      
     
-      
       return result.affectedRows>0;
     } catch (error) {
       throw new this.DatabaseError(
@@ -98,12 +96,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
      const {connection, isExternal} = await this.getConnection(externalConn);
 
     try {
-      const [result] = await connection.query(
+      const [result] = await connection.execute(
         'DELETE FROM task_tag WHERE task_id = ?',
         [taskId]
       );
-
-      return result.affectedRows;
+      return result.affectedRows>0;
     } catch (error) {
       throw new this.DatabaseError(
         'Error al eliminar la relacion tarea-etiqueta de la base de datos',
@@ -118,7 +115,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     const {connection, isExternal} = await this.getConnection(externalConn);
 
     try {
-      const [rows] = await connection.query(
+      const [rows] = await connection.execute(
         'SELECT * FROM task_tag'
       );
       return rows;

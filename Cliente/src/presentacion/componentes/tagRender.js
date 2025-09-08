@@ -169,9 +169,6 @@ export const tagComponent = {
           userId,
           null
         );
-
-    console.log("Resultado de buscarCoincidencias:");
-    console.log(newTag);
     return newTag;
   },
 };

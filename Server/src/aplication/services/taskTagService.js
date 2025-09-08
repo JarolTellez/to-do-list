@@ -1,18 +1,17 @@
 const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class TaskTagService extends BaseDatabaseHandler {
-  constructor({taskTagDAO, connectionDB, NotFoundError}) {
+  constructor({taskTagDAO, connectionDB, NotFoundError, validateRequired}) {
     super(connectionDB);
     this.taskTagDAO = taskTagDAO;
     this.NotFoundError = NotFoundError;
+    this.validateRequired = validateRequired;
   }
 
   async createTaskTag(taskId, tagId, externalConn = null) {
      this.validateRequired(["taskId","tagId"], { taskId, tagId });
       return this.withTransaction(async (connection) => {
       const relationId = await this.taskTagDAO.create(taskId, tagId, connection);
-      console.log(`Relación agregada: Tarea ${taskId} ↔ Etiqueta ${tagId}`);
-        
       return relationId;
          },externalConn);
   }
@@ -21,7 +20,11 @@ class TaskTagService extends BaseDatabaseHandler {
       this.validateRequired(["taskId"], { taskId });
        return this.withTransaction(async (connection) => {
       const deleted = await this.taskTagDAO.deleteByTaskId(taskId, connection);
-      console.log(`Relaciones eliminadas para tarea ${taskId}: ${deleted}`);
+      if (!deleted) {
+      throw new this.NotFoundError("Relación task-tag no encontrada", {
+        attemptedData: { taskId },
+      });
+    }
       return deleted;
     }, externalConn);
   }
@@ -30,7 +33,11 @@ class TaskTagService extends BaseDatabaseHandler {
     this.validateRequired(["taskId"], { taskId });
        return this.withTransaction(async (connection) => {
       const tarea = await this.taskTagDAO.findByTaskId(taskId, connection);
-    
+      if (!tarea) {
+        throw new this.NotFoundError("Relacion task-tag no encontrada", {
+          attemptedData: { taskId },
+        });
+      }
        return tarea;
     },externalConn);
   }
@@ -39,6 +46,11 @@ class TaskTagService extends BaseDatabaseHandler {
     this.validateRequired(["taskTagId"], { taskTagId });
       return this.withTransaction(async (connection) => {
       const result = await this.taskTagDAO.delete(taskTagId, connection);
+      if (!result) {
+      throw new this.NotFoundError("Relación task-tag no encontrada", {
+        attemptedData: { taskTagId },
+      });
+    }
       return result;
     },externalConn);
   }

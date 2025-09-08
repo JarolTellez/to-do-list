@@ -1,12 +1,14 @@
 const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class SessionService extends BaseDatabaseHandler {
-  constructor({sessionDAO, JwtAuth, AuthenticationError, connectionDB, NotFoundError}) {
+  constructor({sessionDAO, JwtAuth, AuthenticationError, connectionDB, NotFoundError, validateRequired,}) {
     super(connectionDB);
     this.sessionDAO = sessionDAO;
     this.JwtAuth = JwtAuth;
     this.AuthenticationError = AuthenticationError;
     this.NotFoundError=NotFoundError;
+    this.validateRequired=validateRequired;
+    
   }
 
   async createSession(session, externalConn = null) {
@@ -55,6 +57,12 @@ class SessionService extends BaseDatabaseHandler {
         validateSession.id,
         connection
       );
+
+       if (!result) {
+        throw new this.NotFoundError("Sesion del usuario no encontrada", {
+          attemptedData: {userId},
+        });
+      }
     
       return result;
     }, externalConn);
@@ -69,18 +77,17 @@ class SessionService extends BaseDatabaseHandler {
       throw new Error('Faltan datos requeridos: IdUsuario o RefreshToken');
     }
     return this.withTransaction(async (connection) => {
-      const session = await this.sessionDAO.findAllActivesSessionsByUserIdAndRtHash(
+      const session = await this.sessionDAO.findActiveSessionByUserIdAndRtHash(
           userId,
           refreshTokenHash,
           connection
         );
-
-      // if (!session) {
-      //   throw new this.AuthenticationError('Sesión no encontrada o token inválido', {
-      //   userId,
-      //   tokenHash: refreshTokenHash.substring(0, 10) + '...' 
-      // });
+      //    if (!session) {
+      //   throw new this.NotFoundError("Sesion no encontrada", {
+      //     attemptedData: {userId},
+      //   });
       // }
+
 
       return session;
     }, externalConn);
@@ -107,11 +114,8 @@ class SessionService extends BaseDatabaseHandler {
           connection
         );
 
-        if (!deactivated) {
-          throw new Error('No se pudo liberar espacio de sesiones');
-        }
-
-        return { deactivated: true, message: 'Sesión más antigua deactivated' };
+      
+        return { deactivated: true, message: 'Sesión más antigua desactivada' };
       }
 
       return { deactivated: false, message: 'Dentro del límite' };

@@ -1,12 +1,20 @@
 const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHandler");
 
 class TaskService extends BaseDatabaseHandler {
-  constructor({ taskDAO, tagService, taskTagService, connectionDB, NotFoundError }) {
+  constructor({
+    taskDAO,
+    tagService,
+    taskTagService,
+    connectionDB,
+    NotFoundError,
+    validateRequired,
+  }) {
     super(connectionDB);
     this.taskDAO = taskDAO;
     this.taskTagService = taskTagService;
     this.tagService = tagService;
     this.NotFoundError = NotFoundError;
+    this.validateRequired=validateRequired;
   }
 
   async createTask(task, externalConn = null) {
@@ -16,7 +24,6 @@ class TaskService extends BaseDatabaseHandler {
 
       if (Array.isArray(task.tags)) {
         for (const tag of task.tags) {
-          //   console.log('AGREGAR: ', tag.nombreEtiqueta);
           let tagId;
 
           if (tag.id) {
@@ -46,15 +53,15 @@ class TaskService extends BaseDatabaseHandler {
     return this.withTransaction(async (connection) => {
       const existingTask = await this.taskDAO.findById(task.id, connection);
       if (!existingTask) {
-        throw new Error(`No se encontró la task con el id: ${task.id}.`);
+        throw new this.NotFoundError("Tarea no encontrada", {
+          attemptedData: { taskId: task.id, name: task.name },
+        });
       }
 
       // Actualizar información principal de la task
       await this.taskDAO.update(task, connection);
 
-      // Procesar tags
       for (const tag of task.tags) {
-        //Eliminar relación si es necesario
         if (tag.toDelete === true && tag.taskTagId) {
           await this.taskTagService.deleteById(tag.taskTagId, connection);
           continue;
@@ -81,50 +88,61 @@ class TaskService extends BaseDatabaseHandler {
 
       //  Consultar y retornar task actualizada
       const taskResult = await this.taskDAO.findById(task.id, connection);
-      console.log("TAREA FINAL ACTUALIZAR: ", taskResult);
+      if (!taskResult) {
+        throw new this.NotFoundError("Tarea no encontrada", {
+          attemptedData: { taskId: task.id, name: task.name },
+        });
+      }
       return taskResult;
     }, externalConn);
   }
 
   async deleteTask(taskId, userId, externalConn = null) {
-    this.validateRequired(["taskId","userId"], { taskId, userId });
+    this.validateRequired(["taskId", "userId"], { taskId, userId });
     return this.withTransaction(async (connection) => {
-      const existingTask = await this.taskDAO.findByIdAndUserId(
+      const existingTask = await this.taskDAO.findById(
         taskId,
-        userId,
         connection
       );
-
-      if (!existingTask) {
-        throw new Error(`No se encontró la task con id ${taskId}`);
+      if(existingTask.tags.length>0){
+      const deletedTaskTag = await this.taskTagService.deleteAllByTaskId(
+        taskId,
+        connection
+      );
+      if (!deletedTaskTag) {
+        throw new this.NotFoundError("Tarea no encontrada", {
+          attemptedData: { taskId, userId },
+        });
       }
-
-      await this.taskTagService.deleteAllByTaskId(taskId, connection);
+      }
       const deletedTask = await this.taskDAO.delete(taskId, connection);
-
-      if (deletedTask <= 0) {
-        throw new Error("No se pudo eliminar la task");
+      if (!deletedTask) {
+        throw new this.NotFoundError("Tarea no encontrada", {
+          attemptedData: { taskId, userId },
+        });
       }
     }, externalConn);
   }
 
   async completeTask(taskId, completada, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const existingTask = await this.taskDAO.findById(taskId, connection);
-      if (!existingTask) {
-        throw new Error(`No se encontró la task con el id: ${taskId}.`);
-      }
+      // const existingTask = await this.taskDAO.findById(taskId, connection);
+      // if (!existingTask) {
+      //   throw new Error(`No se encontró la task con el id: ${taskId}.`);
+      // }
 
       const result = await this.taskDAO.updateCompleted(
         taskId,
         completada,
         connection
       );
-      if (result <= 0) {
-        throw new Error("No se pudo actualizar la tarea");
-      }
-
+    
       const updatedTask = await this.taskDAO.findById(taskId, connection);
+        if (!updatedTask|| !result) {
+        throw new this.NotFoundError("Tarea no encontrada", {
+          attemptedData: {taskId},
+        });
+      }
 
       return updatedTask;
     }, externalConn);
