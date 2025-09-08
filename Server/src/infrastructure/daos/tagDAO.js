@@ -24,14 +24,14 @@ class TagDAO extends BaseDatabaseHandler {
       // Error específico para duplicados
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         throw new this.ConflictError(
-          'Ya existe una etiqueta con ese name para este usuario',
-          { name: tag.name, userId: tag.idUsuario }
+          'Ya existe una etiqueta con ese nombre para este usuario',
+          { name: tag.name, userId: tag.userId }
         );
       }
       
       throw new this.DatabaseError(
-        'No se pudo guardar la tag',
-        { originalError: error.message, code: error.code }
+        'Error al crear la etiqueta en la base de datos',
+        { originalError: error.message, code: error.code, attemptedData:{name: tag.name, userId: tag.userId} }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -48,7 +48,7 @@ class TagDAO extends BaseDatabaseHandler {
       
       // Verificar si se actualizó algún registro
       if (result.affectedRows === 0) {
-        throw new this.NotFoundError('La etiqueta no existe');
+        throw new this.NotFoundError('La etiqueta no existe', {tagId: tag.tagId});
       }
       
       return tag;
@@ -57,12 +57,12 @@ class TagDAO extends BaseDatabaseHandler {
       
       // Error de duplicado al actualizar
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
-        throw new this.ConflictError('Ya existe una tag con ese nombre');
+        throw new this.ConflictError('Ya existe una etiqueta con ese nombre',{attemptedData:{tagName: tag.name}});
       }
       
       throw new this.DatabaseError(
-        'No se pudo actualizar la etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al actualizar la etiqueta en la base de datos',
+        { originalError: error.message, code: error.code, attemptedData:{ tagId: tag.id, tagName: tag.name} }
       );
     } finally {
      await this.releaseConnection(connection, isExternal);
@@ -80,7 +80,7 @@ class TagDAO extends BaseDatabaseHandler {
       
       // Verificar si se eliminó algún registro
       if (result.affectedRows === 0) {
-        throw new this.NotFoundError('La etiqueta no existe');
+        throw new this.NotFoundError('La etiqueta no existe en la base de datos',{ attemptedData:{tagId:id}});
       }
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;

@@ -9,6 +9,7 @@ class AppError extends Error {
         this.details = details;
         this.timestamp = new Date().toISOString();
         Error.captureStackTrace(this, this.constructor);
+       
     }
 
     toJSON(){
@@ -20,6 +21,13 @@ class AppError extends Error {
             timestamp: this.timestamp,
             ...(this.details && {details:this.details})
         };
+        
+        // Solo incluir detalles en desarrollo
+        if (this.details && process.env.NODE_ENV !== 'development') {
+            response.details = this.details;
+        }
+
+        return response;
     }
 }
 
@@ -58,6 +66,27 @@ class ConflictError extends AppError {
     }
 }
 
+class RateLimitError extends AppError {
+    constructor(message = 'Límite de solicitudes excedido', details = null) {
+        super(message, 429, details); // 429 Too Many Requests
+        this.name = 'RateLimitError';
+    }
+}
+
+class ForbiddenError extends AppError {
+    constructor(message = 'Acceso prohibido', details = null) {
+        super(message, 403, details); // 403 Forbidden
+        this.name = 'ForbiddenError';
+    }
+}
+
+class ServiceUnavailableError extends AppError {
+    constructor(message = 'Servicio no disponible', details = null) {
+        super(message, 503, details); // 503 Service Unavailable
+        this.name = 'ServiceUnavailableError';
+    }
+}
+
 
 module.exports = {
     AppError,
@@ -65,5 +94,8 @@ module.exports = {
     ValidationError,
     DatabaseError,
     AuthenticationError,
-    ConflictError
+    ConflictError,
+    RateLimitError,
+    ForbiddenError,
+    ServiceUnavailableError,
 };

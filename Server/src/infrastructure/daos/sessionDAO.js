@@ -35,14 +35,14 @@ class SessionDAO extends BaseDatabaseHandler{
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         throw new this.ConflictError(
-          'Ya existe una sesión activa para este dispositivo',
-          { deviceId: session.deviceId, id: session.id }
+          'Ya existe una sesion para este dispositivo',
+          {attemptedData:{userId:session.userId, deviceId: session.deviceId} }
         );
       }
       
       throw new this.DatabaseError(
-        'No se pudo guardar la sesión',
-        { originalError: error.message, code: error.code }
+        'Error al crear la sesion en la base de datos',
+        {attemptedData:{attemptedData:{userId:session.userId, deviceId: session.deviceId}}, originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -59,15 +59,18 @@ class SessionDAO extends BaseDatabaseHandler{
       );
       
       if (result.affectedRows === 0) {
-        throw new this.NotFoundError('La sesión no existe');
+        throw new this.NotFoundError('No se encontro la session especificada',{sessionId: id});
       }
       return result.affectedRows
     } catch (error) {
       if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
-        'No se pudo desactivar la sesión',
-        { originalError: error.message, code: error.code }
+        'Error al desactivar la sesion en la base de datos',
+        {   attemptedData:{sessionId:id},
+            originalError: error.message,
+            code: error.code
+         }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -85,8 +88,8 @@ class SessionDAO extends BaseDatabaseHandler{
      return result;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo desactivar todas las sessions del usuario',
-        { originalError: error.message, code: error.code }
+        'Error al desactivar las sesiones del usuario en la base de datos',
+        {attemptedData:{userId: userId}, originalError: error.message, code: error.code, userId: userId }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -111,8 +114,8 @@ class SessionDAO extends BaseDatabaseHandler{
       if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
-        'No se pudo desactivar la sesión del dispositivo',
-        { originalError: error.message, code: error.code }
+        'Error al desactivar la  sesion en la base de datos',
+        { attemptedData:{userId:userId, deviceId: deviceId},originalError: error.message, code: error.code, userId: userId, deviceId: deviceId }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -138,8 +141,8 @@ class SessionDAO extends BaseDatabaseHandler{
       if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
-        'No se pudo eliminar la sesión más antigua del usuario',
-        { originalError: error.message, code: error.code }
+        'No se pudo eliminar la sesión más antigua del usuario en la base de datos',
+        { attemptedData:{userId:userId},originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -160,7 +163,7 @@ class SessionDAO extends BaseDatabaseHandler{
     } catch (error) {
       throw new this.DatabaseError(
         'No se pudo consultar las sessions del usuario',
-        { originalError: error.message, code: error.code }
+        { attemptedData:{userId:userId},originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -180,7 +183,7 @@ class SessionDAO extends BaseDatabaseHandler{
     } catch (error) {
       throw new this.DatabaseError(
         'No se pudo consultar las sessions activas del usuario',
-        { originalError: error.message, code: error.code }
+        { attemptedData:{userId:userId}, originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -206,7 +209,7 @@ class SessionDAO extends BaseDatabaseHandler{
     } catch (error) {
       throw new this.DatabaseError(
         'No se pudo consultar la sesión is_active',
-        { originalError: error.message, code: error.code }
+        {attemptedData:{userId:userId}, originalError: error.message, code: error.code }
       );
     } finally {
       if (connection) {
