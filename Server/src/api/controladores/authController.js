@@ -142,11 +142,7 @@ async refreshAccessToken(req, res, next) {
                 tipo: 'NO_REFRESH_TOKEN'
             });
         }
-console.log("RESFRESH TOKEN: ", refreshToken);
         const result = await this.authService.refreshAccessToken(refreshToken);
-        console.log("RESULTADO: ", result);
-        console.log('Token renovado para user:', result.user.id);
-
         return res.status(200).json({
             success: true,
             message: 'Access token renovado exitosamente',

@@ -37,6 +37,7 @@ class TaskController {
 
   async deleteTask(req, res, next) {
     try {
+      console.log("tarea recibida para eliminar", req.body);
       const { taskId, userId } = req.body;
       await this.taskService.deleteTask(taskId, userId);
 

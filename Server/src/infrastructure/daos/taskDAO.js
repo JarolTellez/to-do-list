@@ -2,12 +2,7 @@ const { logError } = require("../../utils/logger");
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 class TaskDAO extends BaseDatabaseHandler {
-  constructor({
-    taskMapper,
-    connectionDB,
-    DatabaseError,
-    ConflictError,
-  }) {
+  constructor({ taskMapper, connectionDB, DatabaseError, ConflictError }) {
     super(connectionDB);
     this.taskMapper = taskMapper;
     this.DatabaseError = DatabaseError;
@@ -73,7 +68,6 @@ class TaskDAO extends BaseDatabaseHandler {
       );
       return task;
     } catch (error) {
-
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw new this.ConflictError("Ya existe una rows con ese name");
       }
@@ -96,7 +90,7 @@ class TaskDAO extends BaseDatabaseHandler {
         [isCompleted, id]
       );
 
-      return result.affectedRows>0;
+      return result.affectedRows > 0;
     } catch (error) {
       throw new this.DatabaseError(
         "Error a marcar como completada la tarea en la base de datos",
@@ -117,14 +111,13 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const result = await connection.execute(
+      const [result] = await connection.execute(
         "DELETE FROM tasks WHERE id = ?",
         [id]
       );
 
-      return result.affectedRows>0;
+      return result.affectedRows > 0;
     } catch (error) {
-
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
         throw new this.ConflictError(
           "No se puede eliminar la rows porque tiene  asociadas",
@@ -218,15 +211,14 @@ GROUP BY
     t.id;`,
         [id]
       );
+      const row = rows[0];
+      if (!row) return null;
 
-
-      const mappedTasks = rows.map((row) => {
-        return this.taskMapper.taskWithTagsDbToDomain(row);
-      });
-      return mappedTasks;
+      const mappedTask = this.taskMapper.taskWithTagsDbToDomain(row);
+      return mappedTask;
     } catch (error) {
       throw new this.DatabaseError("No se pudo consultar la consulta por id", {
-        attemptedData:{taskId: id},
+        attemptedData: { taskId: id },
         originalError: error.message,
         code: error.code,
       });
@@ -245,13 +237,15 @@ GROUP BY
         "SELECT * FROM tasks WHERE id = ? AND user_id = ?",
         [id, userId]
       );
-
       return rows[0];
     } catch (error) {
-
       throw new this.DatabaseError(
         "Error al consultar la tarea en la base de datos",
-        {attemptedData:{taskId: id, userId}, originalError: error.message, code: error.code }
+        {
+          attemptedData: { taskId: id, userId },
+          originalError: error.message,
+          code: error.code,
+        }
       );
     } finally {
       if (connection) {
@@ -314,7 +308,11 @@ GROUP BY
     } catch (error) {
       throw new this.DatabaseError(
         "No se pudo consultar las tareas pendientes en la base de datos",
-        {attemptedData:{userId}, originalError: error.message, code: error.code }
+        {
+          attemptedData: { userId },
+          originalError: error.message,
+          code: error.code,
+        }
       );
     } finally {
       if (connection) {
@@ -377,7 +375,11 @@ GROUP BY
     } catch (error) {
       throw new this.DatabaseError(
         "Error al consultar las tareas completadas en la base de datos",
-        {attemptedData:{userId}, originalError: error.message, code: error.code }
+        {
+          attemptedData: { userId },
+          originalError: error.message,
+          code: error.code,
+        }
       );
     } finally {
       if (connection) {

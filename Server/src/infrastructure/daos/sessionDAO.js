@@ -169,7 +169,8 @@ class SessionDAO extends BaseDatabaseHandler{
         [userId]
       );
       
-      const mappedSessions = result.map(elemento => this.sessionMapper.dbToDomain(elemento));
+      const mappedSessions = result.map(element => this.sessionMapper.dbToDomain(element));
+   
       return mappedSessions;
     } catch (error) {
       throw new this.DatabaseError(
@@ -181,7 +182,7 @@ class SessionDAO extends BaseDatabaseHandler{
     }
   }
 
-  async findAllActivesSessionsByUserIdAndRtHash(userId, refreshTokenHash, externalConn = null) {
+  async findActiveSessionByUserIdAndRtHash(userId, refreshTokenHash, externalConn = null) {
   const {connection, isExternal} = await this.getConnection(externalConn);
     
     try {
@@ -189,11 +190,7 @@ class SessionDAO extends BaseDatabaseHandler{
         'SELECT * FROM sessions WHERE user_id = ? AND refresh_token_hash = ? AND is_active = TRUE',
         [userId, refreshTokenHash]
       );
-      
-      if (result.length === 0) {
-        return null;
-      }
-
+    
       const mappedSessions = this.sessionMapper.dbToDomain(result[0]);
       return mappedSessions;
 

@@ -1,12 +1,16 @@
 const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class TagService extends BaseDatabaseHandler {
-  constructor({tagDAO, connectionDB, NotFoundError}) {
+  constructor({tagDAO, connectionDB, NotFoundError, validateRequired}) {
     super(connectionDB);
     this.tagDAO = tagDAO;
     this.NotFoundError = NotFoundError;
+    this.validateRequired = validateRequired;
   }
 
+
+  // MODIFICAR LA DAO Y SUS METODO PARA QUE HAYA UNA TABLA INTERMEDIA CON LAS ETIQUETAS Y USUARIOS CON RELACION
+  // MUCHOS A MUCHOS
   async createTag(tag, externalConn = null) {
     return this.withTransaction(async (connection) => {
       const tagResult = await this.tagDAO.findByNameAndUserId(
@@ -43,6 +47,11 @@ class TagService extends BaseDatabaseHandler {
         name,
         connection
       );
+       if (tag) {
+        throw new this.NotFoundError("Etiqueta no encontrada", {
+          attemptedData: {name},
+        });
+      }
       return tag;
     }, externalConn);
   }
