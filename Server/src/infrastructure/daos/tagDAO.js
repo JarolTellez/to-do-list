@@ -89,13 +89,13 @@ class TagDAO extends BaseDatabaseHandler {
       if (error.code === 'ER_ROW_IS_REFERENCED' || error.errno === 1451) {
         throw new this.ConflictError(
           'No se puede eliminar la etiqueta porque está siendo utilizada',
-          { id }
+          { attemptedData:{tagId: id} }
         );
       }
       
       throw new this.DatabaseError(
-        'No se pudo eliminar la etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al eliminar la etiqueta de la base de datos',
+        { attemptedData:{tagId: id}, originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -109,7 +109,7 @@ class TagDAO extends BaseDatabaseHandler {
       return rows;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar todas las tags',
+        'Error al consultar todas las etiquetas',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -128,8 +128,8 @@ class TagDAO extends BaseDatabaseHandler {
       return rows[0];
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar la tag',
-        { originalError: error.message, code: error.code }
+        'Error al consultar la etiqueta en la base de datos',
+        { attemptedData:{name: name, userId:userId},originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -145,7 +145,7 @@ class TagDAO extends BaseDatabaseHandler {
       );
       
       if (!rows[0]) {
-        throw new this.NotFoundError('Etiqueta no encontrada');
+        throw new this.NotFoundError('Etiqueta no encontrada',{attemptedData:{tagId: id}});
       }
       
       return rows[0];
@@ -153,7 +153,7 @@ class TagDAO extends BaseDatabaseHandler {
       if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
-        'No se pudo consultar la etiqueta',
+        'No se pudo consultar la etiqueta en la base de datos',
         { originalError: error.message, code: error.code }
       );
     } finally {
@@ -161,20 +161,20 @@ class TagDAO extends BaseDatabaseHandler {
     }
   }
 
-   async findAllByUserId(idUsuario, externalConn = null) {
+   async findAllByUserId(userId, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [tags] = await connection.query(
         'SELECT * FROM tags WHERE user_id= ?',
-        [idUsuario]
+        [userId]
       );
       
       const tareasMapeadas = tags.map(tag => this.tagMapper.dbToDomain(tag));
       return tareasMapeadas;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar las tags del usuario',
-        { originalError: error.message, code: error.code }
+        'Error al consultar las etiquetas en la base de datos',
+        {attemptedData:{userId:userId}, originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);

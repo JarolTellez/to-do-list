@@ -22,20 +22,20 @@ class TaskTagDAO extends BaseDatabaseHandler {
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         throw new this.ConflictError(
           'Esta tarea ya tiene asignada esta etiqueta',
-          { taskId, tagId }
+          { attemptedData:{taskId, tagId}}
         );
       }
       
       if (error.code === 'ER_NO_REFERENCED_ROW' || error.errno === 1452) {
         throw new this.ConflictError(
           'La tarea o etiqueta referenciada no existe',
-          { taskId, tagId }
+          {attemptedData:{taskId, tagId}}
         );
       }
       
       throw new this.DatabaseError(
-        'No se pudo agregar la relación tarea-etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al crear la relacion taskTag en la base de datos',
+        {attemptedData:{taskId, tagId},originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -56,7 +56,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
       );
 
       if (result.affectedRows === 0) {
-        throw new this.NotFoundError('La relación tarea-etiqueta no existe');
+        throw new this.NotFoundError('Relación tarea-etiqueta no encontrada',{ attemptedData:{taskId: taskTag.taskId, tagId: taskTag.tagId}});
       }
 
       return taskTag;
@@ -66,13 +66,13 @@ class TaskTagDAO extends BaseDatabaseHandler {
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         throw new this.ConflictError(
           'Ya existe esta combinación de tarea y etiqueta',
-          { taskId: taskTag.taskId, tagId: taskTag.tagId }
+          {attemptedData:{taskId: taskTag.taskId, tagId: taskTag.tagId}}
         );
       }
       
       throw new this.DatabaseError(
-        'No se pudo actualizar la relación tarea-etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al actualizar la taskTag en la base de datos',
+        {attemptedData:{taskId: taskTag.taskId, tagId: taskTag.tagId}, originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -89,7 +89,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
       );
       
       if (result.affectedRows === 0) {
-        throw new this.NotFoundError('La relación tarea-etiqueta no existe');
+        throw new this.NotFoundError('Relación tarea-etiqueta no encontrada',{attemptedData:{taskTagId:id}});
       }
       
       return result.affectedRows;
@@ -97,8 +97,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
       if (error instanceof this.NotFoundError) throw error;
       
       throw new this.DatabaseError(
-        'No se pudo eliminar la relación tarea-etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al eliminar la relación taskTag de la base de datos',
+        {attemptedData:{taskTagId: id}, originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -118,8 +118,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
       return result.affectedRows;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo eliminar las relaciones tarea-etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al eliminar la relacion tarea-etiqueta de la base de datos',
+        {attemptedData:{taskTagId: id}, originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -136,8 +136,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
       return rows;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar todas las relaciones tarea-etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al consultar todas las taskTags en la base de datos',
+        {originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -155,8 +155,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
       return rows;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo consultar las relaciones tarea-etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al consultar la taskTag en la base de datos',
+        { attemptedData:{taskId},originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -176,8 +176,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
       return rows.length > 0;
     } catch (error) {
       throw new this.DatabaseError(
-        'No se pudo verificar la relación tarea-etiqueta',
-        { originalError: error.message, code: error.code }
+        'Error al consultar la taskTag en la base de datos',
+        { attemptedData:{taskId, tagId},originalError: error.message, code: error.code }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
