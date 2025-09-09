@@ -70,7 +70,9 @@ class TaskDAO extends BaseDatabaseHandler {
       return task;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new this.ConflictError("Ya existe una tarea con ese nombre",{attemptedData:{name: task.name}});
+        throw new this.ConflictError("Ya existe una tarea con ese nombre", {
+          attemptedData: { name: task.name },
+        });
       }
       throw new this.DatabaseError("No se pudo actualizar la tarea", {
         originalError: error.message,
@@ -120,10 +122,9 @@ class TaskDAO extends BaseDatabaseHandler {
       return result.affectedRows > 0;
     } catch (error) {
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
-        throw new this.ConflictError(
-          "No se puede eliminar la tarea",
-          { attemptedData: { taskId: id } }
-        );
+        throw new this.ConflictError("No se puede eliminar la tarea", {
+          attemptedData: { taskId: id },
+        });
       }
 
       throw new this.DatabaseError("No se pudo eliminar la tarea", {
@@ -138,38 +139,41 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
-
   async findById(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
       const [rows] = await connection.execute(
         `SELECT 
-    t.id AS tarea_id,
-    t.name AS tarea_nombre,
-    t.description AS tarea_descripcion,
-    t.scheduled_date AS tarea_fecha_programada,
-    t.created_at AS tarea_fecha_creacion,
-    t.last_update_date AS tarea_ultima_actualizacion,
-    t.is_completed AS tarea_completada, 
-    t.user_id AS tarea_id_usuario,  
-    t.priority AS tarea_prioridad, 
-  
-    GROUP_CONCAT(DISTINCT te.id ORDER BY te.id SEPARATOR ',') AS tarea_etiqueta_ids,  
-    GROUP_CONCAT(DISTINCT e.id ORDER BY te.id SEPARATOR ',') AS etiquetas_ids,         
-    GROUP_CONCAT(DISTINCT e.name ORDER BY te.id SEPARATOR ',') AS etiquetas_nombres,
-    GROUP_CONCAT(e.description ORDER BY te.id SEPARATOR ',') AS etiquetas_descripciones,
-    GROUP_CONCAT(e.user_id ORDER BY te.id SEPARATOR ',') AS etiquetas_usuarios
-FROM 
-    tasks t
-LEFT JOIN 
-    task_tag te ON t.id = te.task_id 
-LEFT JOIN 
-    tags e ON te.tag_id = e.id        
-WHERE 
-    t.id = ?
-GROUP BY 
-    t.id;`,
+    t.id,
+    t.name,
+    t.description,
+    t.scheduled_date,
+    t.created_at,
+    t.last_update_date,
+    t.is_completed, 
+    t.user_id,  
+    t.priority,
+    
+    (
+        SELECT JSON_ARRAYAGG(
+
+                JSON_OBJECT(
+                'id', e.id,
+                'task_tag_id', te.id,
+                'name', e.name,
+                'description', e.description,
+                'user_id', e.user_id
+            )
+        )
+        FROM task_tag te
+        JOIN tags e ON te.tag_id = e.id
+        WHERE te.task_id = t.id
+        ORDER BY te.id
+    ) AS tags
+    
+FROM tasks t
+WHERE t.id = ?;`,
         [id]
       );
       const row = rows[0];
@@ -190,37 +194,40 @@ GROUP BY
     }
   }
 
-    async findByIdAndUserId(id, userId, externalConn = null) {
+  async findByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
       const [rows] = await connection.execute(
         `SELECT 
-    t.id AS tarea_id,
-    t.name AS tarea_nombre,
-    t.description AS tarea_descripcion,
-    t.scheduled_date AS tarea_fecha_programada,
-    t.created_at AS tarea_fecha_creacion,
-    t.last_update_date AS tarea_ultima_actualizacion,
-    t.is_completed AS tarea_completada, 
-    t.user_id AS tarea_id_usuario,  
-    t.priority AS tarea_prioridad, 
-  
-    GROUP_CONCAT(DISTINCT te.id ORDER BY te.id SEPARATOR ',') AS tarea_etiqueta_ids,  
-    GROUP_CONCAT(DISTINCT e.id ORDER BY te.id SEPARATOR ',') AS etiquetas_ids,         
-    GROUP_CONCAT(DISTINCT e.name ORDER BY te.id SEPARATOR ',') AS etiquetas_nombres,
-    GROUP_CONCAT(e.description ORDER BY te.id SEPARATOR ',') AS etiquetas_descripciones,
-    GROUP_CONCAT(e.user_id ORDER BY te.id SEPARATOR ',') AS etiquetas_usuarios
-FROM 
-    tasks t
-LEFT JOIN 
-    task_tag te ON t.id = te.task_id 
-LEFT JOIN 
-    tags e ON te.tag_id = e.id        
-WHERE 
-    t.id = ? AND t.user_id = ?
-GROUP BY 
-    t.id;`,
+    t.id,
+    t.name,
+    t.description,
+    t.scheduled_date,
+    t.created_at,
+    t.last_update_date,
+    t.is_completed, 
+    t.user_id,  
+    t.priority,
+    
+    (
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', e.id,
+                'task_tag_id', te.id,
+                'name', e.name,
+                'description', e.description,
+                'user_id', e.user_id
+            )
+        )
+        FROM task_tag te
+        INNER JOIN tags e ON te.tag_id = e.id
+        WHERE te.task_id = t.id
+        ORDER BY te.id
+    ) AS tags
+    
+FROM tasks t
+WHERE t.id = ? AND t.user_id = ?;`,
         [id, userId]
       );
       const row = rows[0];
@@ -240,7 +247,7 @@ GROUP BY
       }
     }
   }
- 
+
   //Consulta las tasks pendientes del usuario, es decir las que no estan marcadas como completadas
   async findPendingByUserId(userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
@@ -248,33 +255,36 @@ GROUP BY
     try {
       const [rows] = await connection.execute(
         `SELECT 
-    t.id AS tarea_id,
-    t.name AS tarea_nombre,
-    t.description AS tarea_descripcion,
-    t.scheduled_date AS tarea_fecha_programada,
-    t.created_at AS tarea_fecha_creacion,
-    t.last_update_date AS tarea_ultima_actualizacion,
-    t.is_completed AS tarea_completada,
-    t.user_id AS tarea_id_usuario,
-    t.priority AS tarea_prioridad,
+    t.id,
+    t.name,
+    t.description,
+    t.scheduled_date,
+    t.created_at,
+    t.last_update_date,
+    t.is_completed,
+    t.user_id,
+    t.priority,
     
-
-    GROUP_CONCAT(DISTINCT te.id ORDER BY te.id SEPARATOR ',') AS tarea_etiqueta_ids,
-    GROUP_CONCAT(DISTINCT e.id ORDER BY te.id SEPARATOR ',') AS etiquetas_ids,
-    GROUP_CONCAT(DISTINCT e.name ORDER BY te.id SEPARATOR ',') AS etiquetas_nombres,
-    GROUP_CONCAT(e.description ORDER BY te.id SEPARATOR ',') AS etiquetas_descripciones,
-    GROUP_CONCAT(e.user_id ORDER BY te.id SEPARATOR ',') AS etiquetas_usuarios
-
-FROM 
-    tasks t
-LEFT JOIN 
-    task_tag te ON t.id = te.task_id 
-LEFT JOIN 
-    tags e ON te.tag_id = e.id         
-WHERE 
-    t.user_id = ? AND t.is_completed = 0
-GROUP BY 
-    t.id;`,
+  
+    (
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', e.id,
+                'task_tag_id', te.id,
+                'name', e.name,
+                'description', e.description,
+                'user_id', e.user_id
+            )
+        )
+        FROM task_tag te
+        INNER JOIN tags e ON te.tag_id = e.id
+        WHERE te.task_id = t.id
+        ORDER BY te.id
+    ) AS tags
+    
+FROM tasks t
+WHERE t.user_id = ? AND t.is_completed = 0
+ORDER BY t.last_update_date DESC`,
         [userId]
       );
 
@@ -289,7 +299,7 @@ GROUP BY
           return null;
         }
       });
-
+      console.log("LAS MAPEDAS:", mappedTasks);
       // return tasks;
       return mappedTasks;
     } catch (error) {
@@ -314,35 +324,36 @@ GROUP BY
     try {
       const [rows] = await connection.execute(
         `SELECT 
-    t.id AS tarea_id,
-    t.name AS tarea_nombre,
-    t.description AS tarea_descripcion,
-    t.scheduled_date AS tarea_fecha_programada,
-    t.created_at AS tarea_fecha_creacion,
-    t.last_update_date AS tarea_ultima_actualizacion,
-    t.is_completed AS tarea_completada,
-    t.user_id AS tarea_id_usuario,
-    t.priority AS tarea_prioridad,
+    t.id,
+    t.name,
+    t.description,
+    t.scheduled_date,
+    t.created_at,
+    t.last_update_date,
+    t.is_completed,
+    t.user_id,
+    t.priority,
     
-
-    GROUP_CONCAT(DISTINCT te.id ORDER BY te.id SEPARATOR ',') AS tarea_etiqueta_ids,
-    GROUP_CONCAT(DISTINCT e.id ORDER BY te.id SEPARATOR ',') AS etiquetas_ids,
-    GROUP_CONCAT(DISTINCT e.name ORDER BY te.id SEPARATOR ',') AS etiquetas_nombres,
-    GROUP_CONCAT(e.description ORDER BY te.id SEPARATOR ',') AS etiquetas_descripciones,
-    GROUP_CONCAT(e.user_id ORDER BY te.id SEPARATOR ',') AS etiquetas_usuarios
-
-FROM 
-    tasks t
-LEFT JOIN 
-    task_tag te ON t.id = te.task_id 
-LEFT JOIN 
-    tags e ON te.tag_id = e.id         
-
-WHERE 
-    t.user_id = ? AND t.is_completed = 1
-
-GROUP BY 
-    t.id`,
+    -- JSON structure for tags
+    (
+        SELECT JSON_ARRAYAGG(
+           JSON_OBJECT(
+                'id', e.id,
+                'task_tag_id', te.id,
+                'name', e.name,
+                'description', e.description,
+                'user_id', e.user_id
+            )
+        )
+        FROM task_tag te
+        INNER JOIN tags e ON te.tag_id = e.id
+        WHERE te.task_id = t.id
+        ORDER BY te.id
+    ) AS tags
+    
+FROM tasks t
+WHERE t.user_id = ? AND t.is_completed = 1
+ORDER BY t.last_update_date DESC`,
         [userId]
       );
 

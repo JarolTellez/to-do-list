@@ -71,37 +71,11 @@ class TaskMapper {
   }
 
   taskWithTagsDbToDomain(task) {
-    //  return tareas.map((task) => {
+     const tags = task.tags ? task.tags.map(tag => 
+        this.tagMapper.dbToDomain(tag)
+    ) : [];
 
-    const tagsIds = task.etiquetas_ids
-      ? task.etiquetas_ids.split(',')
-      : [];
-    const tagsNames = task.etiquetas_nombres
-      ? task.etiquetas_nombres.split(',')
-      : [];
-    const tagsDescriptions = task.etiquetas_descripciones
-      ? task.etiquetas_descripciones.split(',')
-      : [];
-    const userTags = task.etiquetas_usuarios
-      ? task.etiquetas_usuarios.split(',')
-      : [];
-    const taskTagIds = task.tarea_etiqueta_ids
-      ? task.tarea_etiqueta_ids.split(',')
-      : [];
-
-    const tags = tagsIds.map((id, index) => {
-  
-
-      return this.tagMapper.dbJoinToDomain(
-        id,
-        tagsNames[index],
-        tagsDescriptions[index],
-        userTags[index],
-        taskTagIds[index]
-      );
-    });
-
-
+    
     const newTask = this.taskFactory.createFromExistingTask(task, tags);
     return newTask;
   }

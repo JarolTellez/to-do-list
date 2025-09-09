@@ -3,7 +3,7 @@ class TagMapper{
     this.Tag=Tag;
   }
    dbToDomain(tag) {
-  const { id, name, description, user_id } = tag;
+  const { id, name, description, user_id , task_tag_id} = tag;
 
   return new this.Tag({
     id: id,
@@ -12,7 +12,7 @@ class TagMapper{
     exists: true,
     toDelete: false,
     userId: user_id,
-    taskTagId: null
+    taskTagId: task_tag_id
   });
 }
 

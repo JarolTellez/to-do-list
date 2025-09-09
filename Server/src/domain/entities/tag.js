@@ -16,27 +16,25 @@ class Tag {
     this.userId = userId;
     this.taskTagId = taskTagId;
 
-
-    
-    this.validate();
+   // this.validate();
   }
 
   validate() {
-    const errors = [];
+    // const errors = [];
     
-    // Validación más robusta pero con los mismos campos
-    if ( this.name.trim() === '') {
-      errors.push({ field: 'nombreEtiqueta', message: 'El name de la etiqueta es obligatorio y debe ser texto' });
-    } else if (this.name.length > 30) {
-      errors.push({ field: 'nombreEtiqueta', message: 'El name no puede exceder 30 caracteres' });
-    }
+    // // Validación más robusta pero con los mismos campos
+    // if ( this.name.trim() === '') {
+    //   errors.push({ field: 'nombreEtiqueta', message: 'El name de la etiqueta es obligatorio y debe ser texto' });
+    // } else if (this.name.length > 30) {
+    //   errors.push({ field: 'nombreEtiqueta', message: 'El name no puede exceder 30 caracteres' });
+    // }
     
-    if (errors.length > 0) {
-      throw new Error(JSON.stringify({
-        tipoError: 'VALIDACION_ETIQUETA',
-        errors
-      }));
-    }
+    // if (errors.length > 0) {
+    //   throw new Error(JSON.stringify({
+    //     tipoError: 'VALIDACION_ETIQUETA',
+    //     errors
+    //   }));
+    // }
   }
   
   toJSON() {
