@@ -38,16 +38,16 @@ class TaskFactory {
 
 // estos names son los establecidos en la consulta del DAO, MODIFICAR***
     const newTask = new this.Task({
-      id: task.tarea_id || null,
-      name: task.tarea_nombre,
-      description: task.tarea_descripcion || null,
-      scheduledDate: parseAndValidateDate(task.tarea_fecha_programada),
-      createdAt: parseAndValidateDate(task.tarea_fecha_creacion) || new Date(),
+      id: task.id || null,
+      name: task.name,
+      description: task.description || null,
+      scheduledDate: parseAndValidateDate(task.scheduled_date),
+      createdAt: parseAndValidateDate(task.created_at) || new Date(),
       lastUpdateDate:
-        parseAndValidateDate(task.tarea_ultima_actualizacion) || new Date(),
-      isCompleted: task.tarea_completada,
-      userId: task.tarea_id_usuario,
-      priority: task.tarea_prioridad || null,
+        parseAndValidateDate(task.last_update_date) || new Date(),
+      isCompleted: task.is_completed,
+      userId: task.user_id,
+      priority: task.priority || null,
       tags,
     });
 
