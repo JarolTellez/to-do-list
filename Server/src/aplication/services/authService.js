@@ -236,24 +236,6 @@ class AuthService extends BaseDatabaseHandler {
     } catch (cleanupError) {
       console.error("Error al limpiar sesión inválida:", cleanupError);
     }
-
-    // if (error.message === 'Refresh token expirado') {
-    //   throw this.crearErrorPersonalizado(
-    //     'Refresh token expirado',
-    //     401,
-    //     'REFRESH_EXPIRED'
-    //   );
-    // }
-
-    // if (error.message === 'Refresh token inválido') {
-    //   throw this.crearErrorPersonalizado(
-    //     'Refresh token inválido',
-    //     401,
-    //     'REFRESH_INVALID'
-    //   );
-    // }
-
-    // throw this.crearErrorPersonalizado('Token inválido', 401, 'TOKEN_INVALID');
   }
 
   async deactivateSession(idUsuario, refreshToken, externalConn = null) {

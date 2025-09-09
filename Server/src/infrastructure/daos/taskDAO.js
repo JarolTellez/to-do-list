@@ -66,12 +66,13 @@ class TaskDAO extends BaseDatabaseHandler {
           task.id,
         ]
       );
+
       return task;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new this.ConflictError("Ya existe una rows con ese name");
+        throw new this.ConflictError("Ya existe una tarea con ese nombre",{attemptedData:{name: task.name}});
       }
-      throw new this.DatabaseError("No se pudo actualizar la rows", {
+      throw new this.DatabaseError("No se pudo actualizar la tarea", {
         originalError: error.message,
         code: error.code,
       });
@@ -120,12 +121,12 @@ class TaskDAO extends BaseDatabaseHandler {
     } catch (error) {
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
         throw new this.ConflictError(
-          "No se puede eliminar la rows porque tiene  asociadas",
+          "No se puede eliminar la tarea",
           { attemptedData: { taskId: id } }
         );
       }
 
-      throw new this.DatabaseError("No se pudo eliminar la rows", {
+      throw new this.DatabaseError("No se pudo eliminar la tarea", {
         attemptedData: { taskId: id },
         originalError: error.message,
         code: error.code,
@@ -137,46 +138,6 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
-  // async findAll(externalConn = null) {
-  //   const { connection, isExternal } = await this.getConnection(externalConn);
-  //   try {
-  //     const [rows] = await connection.query("SELECT * FROM tasks");
-  //     return rows;
-  //   } catch (error) {
-  //     throw new this.DatabaseError(
-  //       "Error al consultar todas las tareas en la base de datos",
-  //       { originalError: error.message, code: error.code }
-  //     );
-  //   } finally {
-  //     if (connection) {
-  //       await this.releaseConnection(this.connectionDB, isExternal);
-  //     }
-  //   }
-  // }
-
-  // async findByName(name, externalConn = null) {
-  //   const { connection, isExternal } = await this.getConnection(externalConn);
-
-  //   try {
-  //     const [rows] = await connection.execute(
-  //       "SELECT * FROM tasks WHERE name = ?",
-  //       [name]
-  //     );
-
-  //     return rows[0];
-  //   } catch (error) {
-
-  //     throw new this.DatabaseError("Error al consultar la tarea en la base de datos", {
-  //       attemptedData:{name},
-  //       originalError: error.message,
-  //       code: error.code,
-  //     });
-  //   } finally {
-  //     if (connection) {
-  //       await this.releaseConnection(connection, isExternal);
-  //     }
-  //   }
-  // }
 
   async findById(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
@@ -229,31 +190,57 @@ GROUP BY
     }
   }
 
-  async findByIdAndUserId(id, userId, externalConn = null) {
+    async findByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
       const [rows] = await connection.execute(
-        "SELECT * FROM tasks WHERE id = ? AND user_id = ?",
+        `SELECT 
+    t.id AS tarea_id,
+    t.name AS tarea_nombre,
+    t.description AS tarea_descripcion,
+    t.scheduled_date AS tarea_fecha_programada,
+    t.created_at AS tarea_fecha_creacion,
+    t.last_update_date AS tarea_ultima_actualizacion,
+    t.is_completed AS tarea_completada, 
+    t.user_id AS tarea_id_usuario,  
+    t.priority AS tarea_prioridad, 
+  
+    GROUP_CONCAT(DISTINCT te.id ORDER BY te.id SEPARATOR ',') AS tarea_etiqueta_ids,  
+    GROUP_CONCAT(DISTINCT e.id ORDER BY te.id SEPARATOR ',') AS etiquetas_ids,         
+    GROUP_CONCAT(DISTINCT e.name ORDER BY te.id SEPARATOR ',') AS etiquetas_nombres,
+    GROUP_CONCAT(e.description ORDER BY te.id SEPARATOR ',') AS etiquetas_descripciones,
+    GROUP_CONCAT(e.user_id ORDER BY te.id SEPARATOR ',') AS etiquetas_usuarios
+FROM 
+    tasks t
+LEFT JOIN 
+    task_tag te ON t.id = te.task_id 
+LEFT JOIN 
+    tags e ON te.tag_id = e.id        
+WHERE 
+    t.id = ? AND t.user_id = ?
+GROUP BY 
+    t.id;`,
         [id, userId]
       );
-      return rows[0];
+      const row = rows[0];
+      if (!row) return null;
+
+      const mappedTask = this.taskMapper.taskWithTagsDbToDomain(row);
+      return mappedTask;
     } catch (error) {
-      throw new this.DatabaseError(
-        "Error al consultar la tarea en la base de datos",
-        {
-          attemptedData: { taskId: id, userId },
-          originalError: error.message,
-          code: error.code,
-        }
-      );
+      throw new this.DatabaseError("Error al consultar las tareas", {
+        attemptedData: { taskId: id },
+        originalError: error.message,
+        code: error.code,
+      });
     } finally {
       if (connection) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
-
+ 
   //Consulta las tasks pendientes del usuario, es decir las que no estan marcadas como completadas
   async findPendingByUserId(userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);

@@ -41,9 +41,6 @@ class TaskService extends BaseDatabaseHandler {
         }
       }
 
-      //   //  forzar rollback
-      // throw new Error('Error simulado para probar transacciones');
-
       return newTask;
     }, externalConn);
   }
@@ -51,14 +48,14 @@ class TaskService extends BaseDatabaseHandler {
   async updateTask(task, externalConn = null) {
     this.validateRequired(["task"], { task });
     return this.withTransaction(async (connection) => {
-      const existingTask = await this.taskDAO.findById(task.id, connection);
+      const existingTask = await this.taskDAO.findByIdAndUserId(task.id, task.userId, connection);
       if (!existingTask) {
         throw new this.NotFoundError("Tarea no encontrada", {
           attemptedData: { taskId: task.id, name: task.name },
         });
       }
 
-      // Actualizar información principal de la task
+      // Actualizar información principal de la tarea
       await this.taskDAO.update(task, connection);
 
       for (const tag of task.tags) {
@@ -77,9 +74,7 @@ class TaskService extends BaseDatabaseHandler {
               createdTag.id,
               connection
             );
-          } else {
-            throw new Error("No se pudo obtener el id de la nueva tag creada.");
-          }
+          } 
         } else if (!tag.taskTagId) {
           // Si la tag ya existe pero no está relacionada, se crea la relación
           await this.taskTagService.createTaskTag(task.id, tag.id, connection);
@@ -121,6 +116,7 @@ class TaskService extends BaseDatabaseHandler {
           attemptedData: { taskId, userId },
         });
       }
+      return deletedTask;
     }, externalConn);
   }
 
