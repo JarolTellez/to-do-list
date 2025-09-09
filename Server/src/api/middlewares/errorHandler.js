@@ -1,58 +1,3 @@
-// const {
-//   NotFoundError,          
-//   ValidationError,        
-//   DatabaseError,          
-//   AuthenticationError,
-//   AppError     
-// } = require('../../utils/appErrors');  
-
-// const isProduction = process.env.NODE_ENV === 'development';
-
-// const errorHandler = (error, req, res, next) => {
-//   console.error('=== ERROR LOG ===');
-//   console.error('Timestamp:', new Date().toISOString());
-//   console.error('Path:', req.path);
-//   console.error('Method:', req.method);
-//   console.error('Error Name:', error.name);
-//   console.error('Error Message:', error.message);
-//   console.error('Error Code:', error.errorCode || 'No especificado');
-//   console.error('Stack:', error.stack);
-//   console.error('=================');
-
- 
-//   if (!(error instanceof AppError)) {
-//     error = new DatabaseError(
-//       isProduction ? 'Error interno del servidor' : error.message,
-//       isProduction ? null : { originalError: error.message }
-//     );
-//   }
-
-//   // Determinar el mensaje de error para producción
-//   const errorMessage = isProduction && error.statusCode >= 500 
-//     ? 'Error interno del servidor' 
-//     : error.message;
-
-//   // Respuesta base
-//   const response = {
-//     success: false,
-//     error: errorMessage,
-//     code: error.errorCode || error.name,
-//     status: error.statusCode,
-//     timestamp: new Date().toISOString()
-//   };
-
-//   // Agregar detalles solo en desarrollo y si existen
-//   if (!isProduction && error.details) {
-//     response.details = error.details;
-//   }
-
-
-//   res.status(error.statusCode).json(response);
-// }
-
-// module.exports = { errorHandler };
-
-
 const {
     NotFoundError,
     ValidationError,
@@ -61,13 +6,13 @@ const {
     AppError,
     ForbiddenError,
     RateLimitError,
-    ServiceUnavailableError
+    ServiceUnavailableError,
+    ConflictError
 } = require('../../utils/appErrors');
 
-const isProduction = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production';
 
 const errorHandler = (error, req, res, next) => {
-    // Log del error completo
     console.error('=== ERROR HANDLER LOG ===');
     console.error('Timestamp:', new Date().toISOString());
     console.error('Path:', req.path);
@@ -76,36 +21,114 @@ const errorHandler = (error, req, res, next) => {
     console.error('User Agent:', req.get('User-Agent'));
     console.error('Error Name:', error.name);
     console.error('Error Message:', error.message);
-    console.error('Error Code:', error.errorCode || 'N/A');
+    console.error('Error Code:', error.code || error.errorCode || 'N/A');
     console.error('Status Code:', error.statusCode || 'N/A');
-    console.error('Stack:', error.stack);
+    
+    if (!isProduction) {
+        console.error('Stack:', error.stack);
+    }
     console.error('=================');
 
-    // Si el error no es una instancia de AppError, convertirlo
-    if (!(error instanceof AppError)) {
-        // Mapear errores comunes de base de datos
-        if (error.name === 'ValidationError' || error.name === 'ValidatorError') {
-            error = new ValidationError(
-                'Error de validación de datos',
-                isProduction ? null : { mongooseError: error.message }
-            );
-        } else if (error.name === 'CastError') {
-            error = new ValidationError(
-                'ID inválido',
-                isProduction ? null : { originalError: error.message }
-            );
-        } else if (error.name === 'MongoServerError' && error.code === 11000) {
-            error = new ConflictError(
+    let appError;
+    let retryAfter = null;
+
+    // Si el error ya es una instancia de AppError
+    if (error instanceof AppError) {
+        appError = error;
+        if (error instanceof RateLimitError) {
+            retryAfter = '60';
+        }
+    } else {
+        // Mapear errores que no son instancias de AppError
+        if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+            appError = new ConflictError(
                 'Recurso duplicado',
-                isProduction ? null : { duplicateKey: error.keyValue }
+                isProduction ? null : { 
+                    originalError: error.message,
+                    mysqlCode: error.code,
+                    mysqlErrno: error.errno
+                }
             );
-        } else if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-            error = new AuthenticationError(
-                'Token inválido o expirado',
-                isProduction ? null : { originalError: error.message }
+        } 
+        else if (error.code === 'ER_NO_REFERENCED_ROW_2' || error.errno === 1452) {
+            appError = new ValidationError(
+                'Referencia inválida - el recurso relacionado no existe',
+                isProduction ? null : { 
+                    originalError: error.message,
+                    mysqlCode: error.code 
+                }
             );
-        } else {
-            error = new DatabaseError(
+        }
+        else if (error.code === 'ER_DATA_TOO_LONG' || error.errno === 1406) {
+            appError = new ValidationError(
+                'Datos demasiado largos para la columna',
+                isProduction ? null : { 
+                    originalError: error.message,
+                    mysqlCode: error.code 
+                }
+            );
+        }
+        else if (error.code === 'ER_BAD_NULL_ERROR' || error.errno === 1048) {
+            appError = new ValidationError(
+                'Campo requerido no puede ser nulo',
+                isProduction ? null : { 
+                    originalError: error.message,
+                    mysqlCode: error.code 
+                }
+            );
+        }
+        else if (error.name === 'ValidationError' || error.name === 'ValidatorError') {
+            appError = new ValidationError(
+                'Error de validación de datos',
+                isProduction ? null : { 
+                    validationErrors: error.errors || error.message 
+                }
+            );
+        } 
+        else if (error.name === 'CastError') {
+            appError = new ValidationError(
+                'ID inválido o formato incorrecto',
+                isProduction ? null : { 
+                    originalError: error.message 
+                }
+            );
+        }
+        else if (error.name === 'JsonWebTokenError') {
+            appError = new AuthenticationError(
+                'Token de autenticación inválido',
+                isProduction ? null : { 
+                    originalError: error.message 
+                }
+            );
+        }
+        else if (error.name === 'TokenExpiredError') {
+            appError = new AuthenticationError(
+                'Token de autenticación expirado',
+                isProduction ? null : { 
+                    originalError: error.message 
+                }
+            );
+        }
+        else if (error.name === 'MongoServerError' && error.code === 11000) {
+            appError = new ConflictError(
+                'Recurso duplicado',
+                isProduction ? null : { 
+                    duplicateKey: error.keyValue 
+                }
+            );
+        }
+        else if (error.sql || error.sqlMessage) {
+            appError = new DatabaseError(
+                'Error en la base de datos',
+                isProduction ? null : { 
+                    originalError: error.message,
+                    sqlCode: error.code,
+                    sqlMessage: error.sqlMessage
+                }
+            );
+        }
+        else {
+            appError = new DatabaseError(
                 isProduction ? 'Error interno del servidor' : error.message,
                 isProduction ? null : { 
                     originalError: error.message,
@@ -115,33 +138,25 @@ const errorHandler = (error, req, res, next) => {
         }
     }
 
-    // Determinar mensaje para producción
-    let errorMessage = error.message;
-    if (isProduction && error.statusCode >= 500) {
-        errorMessage = 'Error interno del servidor';
-    }
-
-    // Construir respuesta
+   
     const response = {
         success: false,
-        error: errorMessage,
-        code: error.errorCode || error.name,
-        status: error.statusCode,
-        timestamp: error.timestamp || new Date().toISOString()
+        error: appError.message,
+        code: appError.errorCode,
+        status: appError.statusCode,
+        timestamp: appError.timestamp
     };
 
-    // Agregar detalles solo en desarrollo
-    if (!isProduction && error.details) {
-        response.details = error.details;
+    // Agrega detalles solo en desarrollo
+    if (!isProduction && appError.details) {
+        response.details = appError.details;
     }
 
-    // Headers adicionales para ciertos errores
-    if (error instanceof RateLimitError) {
-        res.set('Retry-After', '60'); // 60 segundos
+    if (appError instanceof RateLimitError) {
+        res.set('Retry-After', '60');
     }
 
-    // Enviar respuesta
-    res.status(error.statusCode).json(response);
+    res.status(appError.statusCode).json(response);
 };
 
 module.exports = { errorHandler };

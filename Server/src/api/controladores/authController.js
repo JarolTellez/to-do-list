@@ -17,11 +17,6 @@ class AuthController {
       });
     } catch (error) {
       next(error);
-    //   return res.status(500).json({
-    //      success: false,
-    //     message: 'Ocurrió un error al intentar registrar el usuario.',
-    //     error: error.message,
-    //   });
     }
   }
 

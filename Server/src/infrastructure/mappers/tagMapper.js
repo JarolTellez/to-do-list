@@ -20,7 +20,7 @@ class TagMapper{
   dbJoinToDomain(Id, name, description, tagUserId, taskTagId) {
 //  console.log('TIENE ID USUARIO: ', tagUserId);
   return new this.Tag({
-    idEtiqueta: Id,
+    id: Id,
     name: name,
     description: description,
     exists: true,
