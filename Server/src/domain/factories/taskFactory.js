@@ -54,6 +54,8 @@ class TaskFactory {
     newTask.validate();
     return newTask;
   }
+
+  
 }
 
 module.exports = TaskFactory;

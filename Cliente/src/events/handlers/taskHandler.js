@@ -64,9 +64,9 @@ export async function handleUpdateTask(taskData) {
   }
 }
 
-export async function handleCompleteTask(taksId) {
+export async function handleCompleteTask(taskId, userId) {
   try {
-    await completeTask(taksId, true);
+    await completeTask(taskId, true, userId);
     await updateTasksList();
   } catch (error) {
     handleError(error);

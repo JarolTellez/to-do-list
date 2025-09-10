@@ -56,7 +56,10 @@ class TaskService extends BaseDatabaseHandler {
       }
 
       // Actualizar información principal de la tarea
-      await this.taskDAO.update(task, connection);
+     const result= await this.taskDAO.update(task, connection);
+     if(!result){
+      throw new this.NotFoundError("Tarea no encontrada para actualizar",{attemptedData:{taskId:task.taskId,userId:task.userId}})
+     }
 
       for (const tag of task.tags) {
         if (tag.toDelete === true && tag.taskTagId) {
@@ -82,7 +85,7 @@ class TaskService extends BaseDatabaseHandler {
       }
 
       //  Consultar y retornar task actualizada
-      const taskResult = await this.taskDAO.findById(task.id, connection);
+      const taskResult = await this.taskDAO.findByIdAndUserId(task.id, task.userId, connection);
       if (!taskResult) {
         throw new this.NotFoundError("Tarea no encontrada", {
           attemptedData: { taskId: task.id, name: task.name },
@@ -95,8 +98,9 @@ class TaskService extends BaseDatabaseHandler {
   async deleteTask(taskId, userId, externalConn = null) {
     this.validateRequired(["taskId", "userId"], { taskId, userId });
     return this.withTransaction(async (connection) => {
-      const existingTask = await this.taskDAO.findById(
+      const existingTask = await this.taskDAO.findByIdAndUserId(
         taskId,
+        userId,
         connection
       );
       if(existingTask.tags.length>0){
@@ -110,7 +114,7 @@ class TaskService extends BaseDatabaseHandler {
         });
       }
       }
-      const deletedTask = await this.taskDAO.delete(taskId, connection);
+      const deletedTask = await this.taskDAO.delete(taskId,userId, connection);
       if (!deletedTask) {
         throw new this.NotFoundError("Tarea no encontrada", {
           attemptedData: { taskId, userId },
@@ -120,7 +124,7 @@ class TaskService extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-  async completeTask(taskId, completada, externalConn = null) {
+  async completeTask(taskId, completed,userId, externalConn = null) {
     return this.withTransaction(async (connection) => {
       // const existingTask = await this.taskDAO.findById(taskId, connection);
       // if (!existingTask) {
@@ -129,11 +133,12 @@ class TaskService extends BaseDatabaseHandler {
 
       const result = await this.taskDAO.updateCompleted(
         taskId,
-        completada,
+        completed,
+        userId,
         connection
       );
     
-      const updatedTask = await this.taskDAO.findById(taskId, connection);
+      const updatedTask = await this.taskDAO.findByIdAndUserId(taskId, userId, connection);
         if (!updatedTask|| !result) {
         throw new this.NotFoundError("Tarea no encontrada", {
           attemptedData: {taskId},
@@ -144,20 +149,34 @@ class TaskService extends BaseDatabaseHandler {
     }, externalConn);
   }
 
-  async getAllTasksByUserId(userId, externalConn = null) {
+  async getAllTasksByUserId(userId, options={}, externalConn = null) {
     return this.withTransaction(async (connection) => {
+       const { 
+            pendingPage = 1, 
+            pendingLimit = 2,
+            completedPage = 1,
+            completedLimit = 2
+        } = options;
       const pendingTasks = await this.taskDAO.findPendingByUserId(
         userId,
+        pendingPage,
+        pendingLimit,
         connection
       );
       const completedTasks = await this.taskDAO.findCompletedByUserId(
         userId,
+        completedPage,
+        completedLimit,
         connection
       );
 
       return { pendingTasks, completedTasks };
     }, externalConn);
   }
+
+  
+
+  
 }
 
 module.exports = TaskService;

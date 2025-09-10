@@ -122,8 +122,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   async function handleCompletedTaskEvent(event) {
     const taskId = event.target.value;
     const taskElement = event.target.closest(".tarea");
-    
-    await  handleCompleteTask(taskId);
+     const userId = sessionStorage.getItem("userId");
+    await  handleCompleteTask(taskId, userId);
     await updateStatsAndRender();
     updateLists();
     

@@ -83,8 +83,8 @@ class TaskController {
   async completeTask(req, res, next) {
     try {
       
-      const { taskId, isCompleted } = req.body;
-      const updatedTask = await this.taskService.completeTask(taskId, isCompleted);
+      const { taskId, isCompleted, userId } = req.body;
+      const updatedTask = await this.taskService.completeTask(taskId, isCompleted, userId);
 
       return res.status(200).json({
         status: 'success',
@@ -105,7 +105,19 @@ class TaskController {
   async findAllTasksByUserId(req, res, next) {
     try {
       const { userId } = req.body;
-      const { pendingTasks, completedTasks } = await this.taskService.getAllTasksByUserId(userId);
+             const { 
+            pendingPage = 1, 
+            pendingLimit = 10,
+            completedPage = 1,
+            completedLimit = 10
+        } = req.query;
+      const { pendingTasks, completedTasks } = await this.taskService.getAllTasksByUserId(userId, {
+                pendingPage: parseInt(pendingPage),
+                pendingLimit: parseInt(pendingLimit),
+                completedPage: parseInt(completedPage),
+                completedLimit: parseInt(completedLimit)
+            });
+
 
       return res.status(200).json({
         status: 'success',
