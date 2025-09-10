@@ -20,8 +20,8 @@ export async function findAllTasksByUserId(userId) {
   try {
     const response = await api.post("/tarea/consultar", { userId: userId });
    console.log("data", response.data);
-    const pendingTasks= response.data.pendingTasks.map(mapApiToTarea);
-    const completedTasks= response.data.completedTasks.map(mapApiToTarea);
+    const pendingTasks= response.data.pendingTasks.tasks.map(mapApiToTarea);
+    const completedTasks= response.data.completedTasks.tasks.map(mapApiToTarea);
 
     
     return { pendingTasks, completedTasks};
@@ -32,11 +32,13 @@ export async function findAllTasksByUserId(userId) {
   }
 }
 
-export async function completeTask(taskId, isCompleted) {
+export async function completeTask(taskId,isCompleted, userId) {
   try {
     const response = await api.patch("/tarea/gestionar", {
       taskId: taskId, 
-      isCompleted: isCompleted
+      isCompleted: isCompleted,
+      userId: userId,
+      
     });
 
     return response.data;
