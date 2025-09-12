@@ -92,7 +92,13 @@ class TagDAO extends BaseDatabaseHandler {
    async findAll(externalConn = null) {
    const {connection, isExternal} = await this.getConnection(externalConn);
     try {
-      const [rows] = await connection.query('SELECT * FROM tags');
+      const [rows] = await connection.query(
+       ` SELECT 
+       id AS tag_id,
+       name AS tag_name,
+       description AS tag_description,
+       created_at AS tag_created_at
+        FROM tags`);
       return rows;
     } catch (error) {
       throw new this.DatabaseError(
@@ -108,7 +114,12 @@ class TagDAO extends BaseDatabaseHandler {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.query(
-        'SELECT * FROM tags WHERE name = ?',
+        `SELECT 
+         id AS tag_id,
+          name AS tag_name,
+          description AS tag_description,
+          created_at AS tag_created_at
+          FROM tags WHERE name = ?`,
         [name]
       );
       
@@ -128,7 +139,12 @@ class TagDAO extends BaseDatabaseHandler {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.execute(
-        'SELECT * FROM tags WHERE id = ?',
+        `SELECT 
+         id AS tag_id,
+         name AS tag_name,
+         description AS tag_description,
+         created_at AS tag_created_at
+         FROM tags WHERE id = ?`,
         [id]
       );
     
@@ -152,7 +168,15 @@ class TagDAO extends BaseDatabaseHandler {
     const {connection, isExternal} = await this.getConnection(externalConn);
 
     try {
-        const [rows]= await connection.execute("SELECT t.* FROM tags t INNER JOIN user_tag ut ON t.id=ut.tag_id WHERE ut.user_id = ?",[userId]);
+        const [rows]= await connection.execute(`
+          SELECT 
+          t.id AS tag_id,
+	      	t.name AS tag_name,
+          t.description AS tag_description,
+	      	t.created_at AS tag_created_at
+          FROM tags t 
+          INNER JOIN user_tag ut ON t.id=ut.tag_id 
+          WHERE ut.user_id = ?`,[userId]);
         const mappedTags = rows.map(tag=>this.tagMapper.dbToDomain(tag));
 
         return mappedTags;

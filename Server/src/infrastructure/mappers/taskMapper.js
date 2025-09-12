@@ -43,7 +43,7 @@ class TaskMapper {
       createdAt: row.task_created_At,
       lastUpdateDate: row.last_update_date,
       isCompleted: row.is_completed,
-      userId: row.userId,
+      userId: row.user_id,
       priority: row.priority,
       taskTags: [],
     });

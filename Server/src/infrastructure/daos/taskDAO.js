@@ -149,6 +149,7 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
+  //PENDIENTE ACTUALIZAR
   // Dejarlo com subconsulta no afecta rendimieto solo consultara 1
   async findByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
@@ -156,11 +157,11 @@ class TaskDAO extends BaseDatabaseHandler {
     try {
       const [rows] = await connection.execute(
         `SELECT 
-    t.id,
-    t.name,
-    t.description,
+    t.id AS task_id,
+    t.name AS task_name,
+    t.description AS task_description,
     t.scheduled_date,
-    t.created_at,
+    t.created_at AS task_created_at,
     t.last_update_date,
     t.is_completed, 
     t.user_id,  
@@ -236,11 +237,11 @@ WHERE t.id = ? AND t.user_id = ?;`,
 
       const query = `
 SELECT 
-  t.id,
-  t.name,
-  t.description,
+  t.id AS task_id,
+  t.name AS task_name,
+  t.description AS task_description,
   t.scheduled_date,
-  t.created_at,
+  t.created_at AS task_created_at,
   t.last_update_date,
   t.is_completed,
   t.user_id,

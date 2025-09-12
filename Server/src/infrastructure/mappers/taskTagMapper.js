@@ -7,7 +7,7 @@ class TaskTagMapper{
     
   dbToDomain(row){
     return new this.TaskTag({
-        id: row.id,
+        id: row.task_tag_id,
         taskId: row.task_id,
         tagId: row.tag_id,
         createdAt:row.task_tag_created_at,
