@@ -2,44 +2,38 @@ class TagMapper{
   constructor(Tag){
     this.Tag=Tag;
   }
-   dbToDomain(tag) {
-  const { id, name, description, user_id , task_tag_id} = tag;
+   dbToDomain(row) {
+  
 
   return new this.Tag({
-    id: id,
-    name: name,
-    descripcion: description,
+    id: row.tag_id,
+    name: row.tag_name,
+    descripcion: row.tag_description,
+    createdAt: row.tag_created_at,
     exists: true,
     toDelete: false,
-    userId: user_id,
-    taskTagId: task_tag_id
   });
 }
 
 
-  dbJoinToDomain(Id, name, description, tagUserId, taskTagId) {
-//  console.log('TIENE ID USUARIO: ', tagUserId);
-  return new this.Tag({
-    id: Id,
-    name: name,
-    description: description,
-    exists: true,
-    toDelete: false,
-    userId: tagUserId,
-    taskTagId: taskTagId
-  });
-}
+//   dbJoinToDomain(Id, name, description) {
+//   return new this.Tag({
+//     id: Id,
+//     name: name,
+//     description: description,
+//     exists: true,
+//     toDelete: false,
+//   });
+// }
 
-// Mapea tag recibida de los request del cliente a entidad de dominio del backend
-   requestToDomain(tagRequest, userId=null) {
+// Mapea row recibida de los request del cliente a entidad de dominio del backend
+   requestToDomain(tagRequest) {
     return new this.Tag({
       id: tagRequest.id || tagRequest.id|| null ,
       name: tagRequest.name, 
       description: tagRequest.description || null,
       exists: tagRequest.exists,    
-      toDelete: tagRequest.toDelete,   
-      userId: tagRequest.userId || userId,
-      taskTagId: tagRequest.taskTagId || null
+      toDelete: tagRequest.toDelete
    });
   
   }

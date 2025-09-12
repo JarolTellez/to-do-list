@@ -172,8 +172,7 @@ class TaskDAO extends BaseDatabaseHandler {
                 'id', e.id,
                 'task_tag_id', te.id,
                 'name', e.name,
-                'description', e.description,
-                'user_id', e.user_id
+                'description', e.description
             )
         )
         FROM task_tag te

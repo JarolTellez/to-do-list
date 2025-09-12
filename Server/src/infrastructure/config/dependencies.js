@@ -25,6 +25,7 @@ const TaskController = require('../../api/controladores/taskController');
 const TagController = require('../../api/controladores/tagController');
 const AuthController = require('../../api/controladores/authController');
 const ConnectionDB = require('./connectionDB');
+// No inyectar
 const JwtAuth = require('./jwtAuth');
 const UserResponseDTO = require('../../aplication/dtos/response_dto/userResponseDTO');
 const bcrypt = require('bcryptjs');
@@ -32,7 +33,6 @@ const crypto = require('crypto');
 
 const validateRequired = require('../../utils/validators')
 
-const {NotFoundError, ValidationError, DatabaseError, AuthenticationError, ConflictError} = require('../../utils/appErrors');
 
 
 //validator

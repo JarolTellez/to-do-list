@@ -1,14 +1,17 @@
 class TaskTagMapper{
 
-    constructor(TaskTag){
+    constructor(TaskTag, tagMapper){
         this.TaskTag = TaskTag;
+        this.tagMapper=tagMapper;
     }
     
-  dbToDomain(tareaEtiquetaBD){
+  dbToDomain(row){
     return new this.TaskTag({
-        id: tareaEtiquetaBD.id,
-        taskId: tareaEtiquetaBD.task_id,
-        tagId: tareaEtiquetaBD.tag_id,
+        id: row.id,
+        taskId: row.task_id,
+        tagId: row.tag_id,
+        createdAt:row.task_tag_created_at,
+        tag: row.tag_id?this.tagMapper.dbToDomain(row):null,
     });
         
     

@@ -1,7 +1,8 @@
 class TaskMapper {
-  constructor(taskFactory, tagMapper) {
+  constructor(taskFactory, tagMapper, taskTagMapper) {
     this.taskFactory = taskFactory;
     this.tagMapper = tagMapper;
+    this.taskTagMapper = taskTagMapper;
   }
 
   requestToDomain(taskRequest) {
@@ -33,19 +34,28 @@ class TaskMapper {
     }
   }
 
-  dbToDomain(taskDB) {
+  dbToDomain(row) {
     return this.taskFactory.newTask({
-      id: taskDB.id,
-      name: taskDB.name,
-      description: taskDB.description,
-      scheduledDate: taskDB.scheduled_date,
-      createdAt: taskDB.created_At,
-      lastUpdateDate: taskDB.last_update_date,
-      isCompleted: taskDB.is_completed,
-      userId: taskDB.userId,
-      priority: taskDB.priority,
-      tags: taskDB.tags,
+      id: row.task_id,
+      name: row.task_name,
+      description: row.task_description,
+      scheduledDate: row.scheduled_date,
+      createdAt: row.task_created_At,
+      lastUpdateDate: row.last_update_date,
+      isCompleted: row.is_completed,
+      userId: row.userId,
+      priority: row.priority,
+      taskTags: [],
     });
+  }
+
+  dbToDomainWithTags(rows){
+    if(rows.length===0) return null;
+    //Unica tarea en todas las rows
+    const task = this.dbToDomain(rows[0]);
+
+    task.taskTags= rows.filter(r=>r.task_tag_id).map(r=>taskTagMapper.dbToDomain(r));
+    return task;
   }
 
   updateRequestToDominio(taskRequest) {

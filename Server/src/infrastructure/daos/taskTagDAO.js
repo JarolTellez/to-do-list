@@ -13,8 +13,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     try {
       const [result] = await connection.execute(
         'INSERT INTO task_tag (task_id, tag_id) VALUES (?, ?)',
-        [taskId, tagId]
-      );
+        [taskId, tagId]);
       const id = result.insertId;
       return id;
     } catch (error) {
@@ -90,7 +89,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
       await this.releaseConnection(connection, isExternal);
     }
   }
-
+  
   // Elimina todas las relaciones de TareaEtiqueta por taskId para eliminar todas las etiquetas de una tarea
    async deleteByTaskId(taskId, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
@@ -147,7 +146,6 @@ class TaskTagDAO extends BaseDatabaseHandler {
       await this.releaseConnection(connection, isExternal);
     }
   }
-
   // Método adicional útil: Consultar si existe una relación específica
   async findByTaskIdAndTagId(taskId, tagId, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
