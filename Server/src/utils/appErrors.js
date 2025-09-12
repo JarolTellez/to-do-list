@@ -1,4 +1,3 @@
-const { error } = require("winston");
 const ErrorCodes = require("./errorCodes");
 
 class AppError extends Error {
@@ -24,51 +23,45 @@ class AppError extends Error {
 }
 
 class NotFoundError extends AppError {
-  constructor(message = "Recurso no encontrado", details = null) {
-    super(message, 404, details, ErrorCodes.NOT_FOUND);
-    // this.name = 'NotFoundError';
+  constructor(message = "Recurso no encontrado", details = null, errorCode= ErrorCodes.NOT_FOUND) {
+    super(message, 404, details, errorCode);
   }
 }
 
 class ValidationError extends AppError {
-  constructor(message = "Datos inválidos", details = null) {
-    super(message, 400, details, ErrorCodes.VALIDATION_ERROR);
-    // this.name = 'ValidationError';
+  constructor(message = "Datos inválidos", details = null, errorCode= ErrorCodes.VALIDATION_ERROR) {
+    super(message, 400, details, errorCode);
+    
   }
 }
 
 class DatabaseError extends AppError {
-  constructor(message = "Error de base de datos", details = null) {
-    super(message, 500, details, ErrorCodes.DATABASE_ERROR);
-    //this.name = 'DatabaseError';
+  constructor(message = "Error de base de datos", details = null, errorCode=ErrorCodes.DATABASE_ERROR) {
+    super(message, 500, details, errorCode );
   }
 }
 
 class AuthenticationError extends AppError {
-  constructor(message = "No autorizado", details = null) {
-    super(message, 401, details, ErrorCodes.UNAUTHORIZED);
-    //this.name = 'AuthenticationError';
+  constructor(message = "No autorizado", details = null, errorCode=ErrorCodes.UNAUTHORIZED) {
+    super(message, 401, details, errorCode);
   }
 }
 
 class ConflictError extends AppError {
-  constructor(message = "Conflicto con el recurso", details = null) {
-    super(message, 409, details, ErrorCodes.CONFLICT);
-    //this.name = 'ConflictError';
+  constructor(message = "Conflicto con el recurso", details = null, errorCode= ErrorCodes.CONFLICT) {
+    super(message, 409, details, errorCode);
   }
 }
 
 class RateLimitError extends AppError {
-  constructor(message = "Límite de solicitudes excedido", details = null) {
-    super(message, 429, details, ErrorCodes.RATE_LIMIT_EXCEEDED); // 429 Too Many Requests
-    //this.name = 'RateLimitError';
+  constructor(message = "Límite de solicitudes excedido", details = null, errorCode=ErrorCodes.RATE_LIMIT_EXCEEDED) {
+    super(message, 429, details, errorCode); // 429 Too Many Requests
   }
 }
 
 class ForbiddenError extends AppError {
-  constructor(message = "Acceso prohibido", details = null) {
-    super(message, 403, details, ErrorCodes.FORBIDDEN); // 403 Forbidden
-    // this.name = 'ForbiddenError';
+  constructor(message = "Acceso prohibido", details = null, errorCode=ErrorCodes.FORBIDDEN) {
+    super(message, 403, details, errorCode); // 403 Forbidden
   }
 }
 

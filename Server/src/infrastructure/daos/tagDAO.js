@@ -16,11 +16,10 @@ class TagDAO extends BaseDatabaseHandler {
         'INSERT INTO tags (name, user_id) VALUES(?, ?)',
         [tag.name, tag.userId]
       );
-// AGREGAR MAPEO
       tag.id = result.insertId;
       return tag;
     } catch (error) {
-      // Error específico para duplicados
+      // Error para duplicados
       if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
         throw new this.ConflictError(
           'Ya existe una etiqueta con ese nombre para este usuario',
@@ -89,6 +88,7 @@ class TagDAO extends BaseDatabaseHandler {
     }
   }
 
+
    async findAll(externalConn = null) {
    const {connection, isExternal} = await this.getConnection(externalConn);
     try {
@@ -104,12 +104,12 @@ class TagDAO extends BaseDatabaseHandler {
     }
   }
 
-   async findByNameAndUserId(name, userId, externalConn = null) {
+   async findByName(name, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.query(
-        'SELECT * FROM tags WHERE name = ? AND user_id = ?',
-        [name, userId]
+        'SELECT * FROM tags WHERE name = ?',
+        [name]
       );
       
       return rows[0];
@@ -123,6 +123,7 @@ class TagDAO extends BaseDatabaseHandler {
     }
   }
 
+  //busca Tag por Id
    async findById(id, externalConn = null) {
      const {connection, isExternal} = await this.getConnection(externalConn);
     try {
@@ -144,31 +145,27 @@ class TagDAO extends BaseDatabaseHandler {
     }
   }
 
-   async findAllByUserId(userId, externalConn = null) {
-     const {connection, isExternal} = await this.getConnection(externalConn);
+
+  //Metodos compuestos
+  //Busca tags asociados a un usuario (join con user_tag)
+   async findAllByUserId(userId, externalConn=null){
+    const {connection, isExternal} = await this.getConnection(externalConn);
+
     try {
-      const [tags] = await connection.query(
-        'SELECT * FROM tags WHERE user_id= ?',
-        [userId]
-      );
-      
-      const tareasMapeadas = tags.map(tag => this.tagMapper.dbToDomain(tag));
-      return tareasMapeadas;
+        const [rows]= await connection.execute("SELECT t.* FROM tags t INNER JOIN user_tag ut ON t.id=ut.tag_id WHERE ut.user_id = ?",[userId]);
+        const mappedTags = rows.map(tag=>this.tagMapper.dbToDomain(tag));
+
+        return mappedTags;
     } catch (error) {
-      throw new this.DatabaseError(
-        'Error al consultar las etiquetas en la base de datos',
-        {attemptedData:{userId:userId}, originalError: error.message, code: error.code }
-      );
-    } finally {
-      await this.releaseConnection(connection, isExternal);
+        throw new this.DatabaseError("Error al consultar las userTag en la base de datos",{
+            attemptedData:{userId,originalError: error.message, code: error.code}
+        })
+        
+    }finally{
+        await this.releaseConnection(connection, isExternal);
     }
   }
 
-
-// DESAROLLAR DESPUES, NO ES PRIORIDAD
-  findByName(name){
-
-  }
 }
 
 module.exports = TagDAO;

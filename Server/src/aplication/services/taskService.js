@@ -103,17 +103,18 @@ class TaskService extends BaseDatabaseHandler {
         userId,
         connection
       );
-      if(existingTask.tags.length>0){
-      const deletedTaskTag = await this.taskTagService.deleteAllByTaskId(
-        taskId,
-        connection
-      );
-      if (!deletedTaskTag) {
-        throw new this.NotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId, userId },
-        });
-      }
-      }
+      // if(existingTask.tags.length>0){
+      // const deletedTaskTag = await this.taskTagService.deleteAllByTaskId(
+      //   taskId,
+      //   connection
+      // );
+      // if (!deletedTaskTag) {
+      //   throw new this.NotFoundError("Tarea no encontrada", {
+      //     attemptedData: { taskId, userId },
+      //   });
+      // }
+      // }
+      
       const deletedTask = await this.taskDAO.delete(taskId,userId, connection);
       if (!deletedTask) {
         throw new this.NotFoundError("Tarea no encontrada", {

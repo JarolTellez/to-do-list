@@ -33,7 +33,7 @@ class TagService extends BaseDatabaseHandler {
 
   async getAllTagsByUserId(userId, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const tagsResult = await this.tagDAO.findAllByUserId(
+      const tagsResult = await this.userTagDAO.findAllByUserId(
         userId,
         connection
       );

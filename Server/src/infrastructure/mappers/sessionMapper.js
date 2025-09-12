@@ -3,20 +3,20 @@ class SessionMapper{
         this.Session = Session;
     }
 // CORREGIR RETURN ERROR
-    dbToDomain(sesionBD){
-     if(!sesionBD){
+    dbToDomain(row){
+     if(!row){
         return null;
      }
         return new this.Session({
-            id: sesionBD.id,
-            userId: sesionBD.user_id,
-            refreshTokenHash: sesionBD.refresh_token_hash,
-            deviceId: sesionBD.device_id,
-            userAgent: sesionBD.user_agent,
-            ip: sesionBD.ip,
-            createdAt: sesionBD.created_at,
-            expiresAt: sesionBD.expires_at,
-            isActive: sesionBD.is_active,
+            id: row.id,
+            userId: row.user_id,
+            refreshTokenHash: row.refresh_token_hash,
+            deviceId: row.device_id,
+            userAgent: row.user_agent,
+            ip: row.ip,
+            createdAt: row.created_at,
+            expiresAt: row.expires_at,
+            isActive: row.is_active,
 
         });
     }
