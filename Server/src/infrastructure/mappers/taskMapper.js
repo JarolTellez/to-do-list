@@ -40,7 +40,7 @@ class TaskMapper {
       name: row.task_name,
       description: row.task_description,
       scheduledDate: row.scheduled_date,
-      createdAt: row.task_created_At,
+      createdAt: row.task_created_at,
       lastUpdateDate: row.last_update_date,
       isCompleted: row.is_completed,
       userId: row.user_id,
@@ -49,14 +49,41 @@ class TaskMapper {
     });
   }
 
-  dbToDomainWithTags(rows){
-    if(rows.length===0) return null;
-    //Unica tarea en todas las rows
-    const task = this.dbToDomain(rows[0]);
+  dbToDomainWithTags(rows) {
+  if (!rows || rows.length === 0) return null;
 
-    task.taskTags= rows.filter(r=>r.task_tag_id).map(r=>taskTagMapper.dbToDomain(r));
-    return task;
-  }
+  const tasksMap = new Map();
+
+  rows.forEach(row => {
+    let task = tasksMap.get(row.task_id);
+
+    // Si la tarea aún no está en el mapa, la creamos
+    if (!task) {
+      task = this.dbToDomain(row);
+      tasksMap.set(row.task_id, task);
+    }
+
+    // Si hay taskTag, creamos la entidad TaskTag y la asociamos
+    if (row.task_tag_id) {
+      const taskTag = this.taskTagMapper.dbToDomain(row);
+      task.addTaskTag(taskTag);
+    }
+  });
+
+  // Retornamos todas las tareas con sus taskTags agrupadas
+  return Array.from(tasksMap.values());
+}
+
+
+  // dbToDomainWithTags(rows){
+  //   if(rows.length===0) return null;
+  //   //Unica tarea en todas las rows
+  //   const task = this.dbToDomain(rows[0]);
+
+  //   task.taskTags= rows.filter(r=>r.task_tag_id).map(r=>taskTagMapper.dbToDomain(r));
+  //   return task;
+  // }
+
 
   updateRequestToDominio(taskRequest) {
     try {

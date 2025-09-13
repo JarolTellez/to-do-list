@@ -1,20 +1,28 @@
-const BaseDatabaseHandler = require('../config/BaseDatabaseHandler');
+const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
+const PAGINATION_CONFIG = require("../config/pagination");
+const {
+  DatabaseError,
+  ConflictError,
+  ValidationError,
+} = require("../../utils/appErrors");
 
+const {
+  SORT_ORDER,
+  SESSION_SORT_FIELD,
+} = require("../constants/sortConstants");
 
-class SessionDAO extends BaseDatabaseHandler{
-  constructor({sessionMapper, connectionDB, DatabaseError, ConflictError}) {
+class SessionDAO extends BaseDatabaseHandler {
+  constructor({ sessionMapper, connectionDB }) {
     super(connectionDB);
     this.sessionMapper = sessionMapper;
-    this.DatabaseError = DatabaseError;
-    this.ConflictError = ConflictError;
   }
 
   // Guardar una nueva sesión
   async create(session, externalConn = null) {
-    const {connection, isExternal} = await this.getConnection(externalConn);
+    const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        'INSERT INTO sessions (user_id, refresh_token_hash, device_id, user_agent, ip, created_at, expires_at, is_active) VALUES (?,?,?,?,?,?,?,?)',
+        "INSERT INTO sessions (user_id, refresh_token_hash, device_id, user_agent, ip, created_at, expires_at, is_active) VALUES (?,?,?,?,?,?,?,?)",
         [
           session.userId,
           session.refreshTokenHash,
@@ -23,7 +31,7 @@ class SessionDAO extends BaseDatabaseHandler{
           session.ip,
           session.createdAt,
           session.expiresAt,
-          session.isActive
+          session.isActive,
         ]
       );
 
@@ -32,17 +40,28 @@ class SessionDAO extends BaseDatabaseHandler{
 
       return session;
     } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
-        throw new this.ConflictError(
-          'Ya existe una sesion para este dispositivo',
-          {attemptedData:{userId:session.userId, deviceId: session.deviceId} }
+      if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
+        throw new ConflictError(
+          "Ya existe una sesion para este dispositivo",
+          {
+            attemptedData: {
+              userId: session.userId,
+              deviceId: session.deviceId,
+            },
+          }
         );
       }
-      
-      throw new this.DatabaseError(
-        'Error al crear la sesion en la base de datos',
-        {attemptedData:{attemptedData:{userId:session.userId, deviceId: session.deviceId}}, originalError: error.message, code: error.code }
-      );
+
+      throw new DatabaseError("Error al crear la sesion en la base de datos", {
+        attemptedData: {
+          attemptedData: {
+            userId: session.userId,
+            deviceId: session.deviceId,
+          },
+        },
+        originalError: error.message,
+        code: error.code,
+      });
     } finally {
       await this.releaseConnection(connection, isExternal);
     }
@@ -50,23 +69,31 @@ class SessionDAO extends BaseDatabaseHandler{
 
   // Desactivar una sesión por ID de la session
   async deactivateById(id, externalConn = null) {
-     const {connection, isExternal} = await this.getConnection(externalConn);
+    const { connection, isExternal } = await this.getConnection(externalConn);
     try {
+      // Validación del userId
+      const sessionIdNum = Number(id);
+      if (!Number.isInteger(sessionIdNum) || sessionIdNum <= 0) {
+        throw new ValidationError("Invalid session id");
+      }
       const [result] = await connection.execute(
-        'UPDATE sessions SET is_active = FALSE WHERE id = ?',
-        [id]
+        "UPDATE sessions SET is_active = FALSE WHERE id = ?",
+        [sessionIdNum]
       );
-      
-  
-      return result.affectedRows>0
+
+      return result.affectedRows > 0;
     } catch (error) {
-      
-      throw new this.DatabaseError(
-        'Error al desactivar la sesion en la base de datos',
-        {   attemptedData:{sessionId:id},
-            originalError: error.message,
-            code: error.code
-         }
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new DatabaseError(
+        "Error al desactivar la sesion en la base de datos",
+        {
+          attemptedData: { sessionId: id },
+          originalError: error.message,
+          code: error.code,
+        }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -74,43 +101,73 @@ class SessionDAO extends BaseDatabaseHandler{
   }
 
   // Desactivar todas las sessions de un usuario
-  async deactivateByUserId(userId, externalConn = null) {
-     const {connection, isExternal} = await this.getConnection(externalConn);
+  async deactivateAllByUserId(userId, externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
     try {
+      const userIdNum = Number(userId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw new ValidationError("Invalid user id");
+      }
       const [result] = await connection.execute(
-        'UPDATE sessions SET is_active=FALSE WHERE user_id=?',
-        [userId]
+        "UPDATE sessions SET is_active=FALSE WHERE user_id=?",
+        [userIdNum]
       );
-     return result;
+      return {
+        affectedRows: result.affectedRows,
+        message: `Deactivated ${result.affectedRows} sessions for user ${userIdNum}`,
+      };
     } catch (error) {
-      throw new this.DatabaseError(
-        'Error al desactivar las sesiones del usuario en la base de datos',
-        {attemptedData:{userId}, originalError: error.message, code: error.code }
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new DatabaseError(
+        "Error al desactivar las sesiones del usuario en la base de datos",
+        {
+          attemptedData: { userId },
+          originalError: error.message,
+          code: error.code,
+        }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
     }
   }
 
-  async deactivateByUserIdAndDeviceId(userId, deviceId, externalConn = null) {
-     const {connection, isExternal} = await this.getConnection(externalConn);
+  async deactivateAllByUserIdAndDeviceId(
+    userId,
+    deviceId,
+    externalConn = null
+  ) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
     try {
+      const userIdNum = Number(userId);
+      const deviceIdNum = Number(deviceId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw new ValidationError("Invalid user id");
+      }
+      if (!Number.isInteger(deviceIdNum) || deviceIdNum <= 0) {
+        throw new ValidationError("Invalid device id");
+      }
       const [result] = await connection.execute(
-        'UPDATE sessions SET is_active = FALSE WHERE user_id = ? AND device_id = ?',
-        [userId, deviceId]
+        "UPDATE sessions SET is_active = FALSE WHERE user_id = ? AND device_id = ?",
+        [userIdNum, deviceIdNum]
       );
-      
-        if (result.affectedRows === 0) {
-      return { desactivadas: 0, message: 'No habia sessions para desactivar' };
-    }
-    
-    return { deactivated: result.affectedRows, message: 'Sesion desactivada' };
-      
+
+      return {
+        affectedRows: result.affectedRows,
+        message: `Deactivated ${result.affectedRows} sessions for user ${userIdNum} and device ${deviceIdNum}`,
+      };
     } catch (error) {
-      
-      throw new this.DatabaseError(
-        'Error al desactivar la  sesion en la base de datos',
-        { attemptedData:{userId, deviceId},originalError: error.message, code: error.code}
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new DatabaseError(
+        "Error al desactivar la  sesion en la base de datos",
+        {
+          attemptedData: { userId, deviceId },
+          originalError: error.message,
+          code: error.code,
+        }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -118,22 +175,35 @@ class SessionDAO extends BaseDatabaseHandler{
   }
 
   async deactivateOldestByUserId(userId, externalConn = null) {
-  const {connection, isExternal} = await this.getConnection(externalConn);
+    const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const [result] = await connection.execute(`
-        DELETE FROM sessions 
+      const userIdNum = Number(userId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw new ValidationError("Invalid user id");
+      }
+      const [result] = await connection.execute(
+        `
+        UPDATE sessions 
+        SET is_active = FALSE
         WHERE user_id = ? 
         ORDER BY created_at ASC 
         LIMIT 1
-      `, [userId]);
-
+      `,
+        [userIdNum]
+      );
 
       return result.affectedRows > 0;
     } catch (error) {
-      
-      throw new this.DatabaseError(
-        'No se pudo eliminar la sesión más antigua del usuario en la base de datos',
-        { attemptedData:{userId},originalError: error.message, code: error.code }
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new DatabaseError(
+        "No se pudo eliminar la sesión más antigua del usuario en la base de datos",
+        {
+          attemptedData: { userId },
+          originalError: error.message,
+          code: error.code,
+        }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
@@ -141,91 +211,386 @@ class SessionDAO extends BaseDatabaseHandler{
   }
 
   // Consultar todas las sessions de un usuario
-  async findAllByUserId(userId, externalConn = null) {
-     const {connection, isExternal} = await this.getConnection(externalConn);
-    try {
-      const [result] = await connection.execute(
-        'SELECT * FROM sessions WHERE user_id = ?',
-        [userId]
-      );
-      
-      const mappedSessions = result.map(elemento => this.sessionMapper.dbToDomain(elemento));
-      return mappedSessions;
-    } catch (error) {
-      throw new this.DatabaseError(
-        'No se pudo consultar las sessions del usuario',
-        { attemptedData:{userId},originalError: error.message, code: error.code }
-      );
-    } finally {
-      await this.releaseConnection(connection, isExternal);
+  async findAllByUserId(
+    userId,
+    {
+      externalConn = null,
+      page = PAGINATION_CONFIG.DEFAULT_PAGE,
+      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+      sortBy = SESSION_SORT_FIELD.CREATED_AT,
+      sortOrder = SORT_ORDER.DESC,
     }
-  }
-
-  async findAllActiveSessionsByUserId(userId, externalConn = null) {
-    const {connection, isExternal} = await this.getConnection(externalConn);
+  ) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const [result] = await connection.execute(
-        'SELECT * FROM sessions WHERE user_id = ? AND is_active = TRUE',
-        [userId]
-      );
-      
-      const mappedSessions = result.map(element => this.sessionMapper.dbToDomain(element));
-   
-      return mappedSessions;
-    } catch (error) {
-      throw new this.DatabaseError(
-        'No se pudo consultar las sessions activas del usuario',
-        { attemptedData:{userId}, originalError: error.message, code: error.code }
-      );
-    } finally {
-      await this.releaseConnection(connection, isExternal);
-    }
-  }
-
-  async findActiveSessionByUserIdAndRtHash(userId, refreshTokenHash, externalConn = null) {
-  const {connection, isExternal} = await this.getConnection(externalConn);
-    
-    try {
-      const [result] = await connection.execute(
-        'SELECT * FROM sessions WHERE user_id = ? AND refresh_token_hash = ? AND is_active = TRUE',
-        [userId, refreshTokenHash]
-      );
-    
-      const mappedSessions = this.sessionMapper.dbToDomain(result[0]);
-      return mappedSessions;
-
-    } catch (error) {
-      throw new this.DatabaseError(
-        'No se pudo consultar la sesión is_active',
-        {attemptedData:{userId}, originalError: error.message, code: error.code }
-      );
-    } finally {
-      if (connection) {
-        await this.releaseConnection(connection, isExternal);
+      const userIdNum = Number(userId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw new ValidationError("invalid user id");
       }
+
+      if (!Object.values(SESSION_SORT_FIELD).includes(sortBy)) {
+        throw new ValidationError(
+          `Invalid sort field. Valid values: ${Object.values(
+            SESSION_SORT_FIELD
+          ).join(",")}`
+        );
+      }
+
+      if (!Object.values(SORT_ORDER).includes(sortOrder)) {
+        throw new ValidationError(
+          `Invalid sort order. Valid values: ${Object.values(SORT_ORDER).join(
+            ", "
+          )}`
+        );
+      }
+
+      const pageNum = Math.max(
+        PAGINATION_CONFIG.DEFAULT_PAGE,
+        parseInt(page, 10) || PAGINATION_CONFIG.DEFAULT_PAGE
+      );
+      let limitNum = parseInt(limit, 10) || PAGINATION_CONFIG.DEFAULT_LIMIT;
+
+      // Aplicar limite maximo
+      limitNum = Math.min(limitNum, PAGINATION_CONFIG.MAX_LIMIT);
+      // aplicar limite minimo
+      limitNum = Math.max(1, limitNum); // asegurar que sea al menos 1
+
+      const offset = (pageNum - 1) * limitNum;
+
+      const [totalRows] = await connection.execute(
+        "SELECT COUNT(*) as total FROM sessions WHERE user_id = ?",
+        [userIdNum]
+      );
+
+      const total = Number(totalRows[0]?.total) || 0;
+      const totalPages = total > 0 ? Math.ceil(total / limitNum) : 0;
+
+      // Si no hay datos retornar de una vez
+      if (total === 0 || pageNum > totalPages) {
+        return {
+          sessions: [],
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false,
+            maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
+          },
+        };
+      }
+
+      const [rows] = await connection.execute(
+        `SELECT *
+         FROM sessions 
+         WHERE user_id = ? 
+         ORDER BY ${sortBy} ${sortOrder}
+        LIMIT ? OFFSET ?
+        `,
+        [userIdNum, limitNum, offset]
+      );
+
+      const mappedSessions = Array.isArray(rows)
+        ? rows.map((row) => this.sessionMapper.dbToDomain(row))
+        : [];
+
+      return {
+        sessions: mappedSessions,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages,
+          hasNext: pageNum < totalPages,
+          hasPrev: pageNum > 1,
+          maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new DatabaseError("No se pudo consultar las sessions del usuario", {
+        attemptedData: { userId },
+        originalError: error.message,
+        code: error.code,
+      });
+    } finally {
+      await this.releaseConnection(connection, isExternal);
+    }
+  }
+
+  async findAllActiveByUserId(
+    userId,
+    {
+      externalConn = null,
+      page = PAGINATION_CONFIG.DEFAULT_PAGE,
+      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+      sortBy = SESSION_SORT_FIELD.CREATED_AT,
+      sortOrder = SORT_ORDER.DESC,
+    }
+  ) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+    try {
+      const userIdNum = Number(userId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw new ValidationError("invalid user id");
+      }
+
+      if (!Object.values(SESSION_SORT_FIELD).includes(sortBy)) {
+        throw new ValidationError(
+          `Invalid sort field. Valid values: ${Object.values(
+            SESSION_SORT_FIELD
+          ).join(",")}`
+        );
+      }
+
+      if (!Object.values(SORT_ORDER).includes(sortOrder)) {
+        throw new ValidationError(
+          `Invalid sort order. Valid values: ${Object.values(SORT_ORDER).join(
+            ", "
+          )}`
+        );
+      }
+
+      const pageNum = Math.max(
+        PAGINATION_CONFIG.DEFAULT_PAGE,
+        parseInt(page, 10) || PAGINATION_CONFIG.DEFAULT_PAGE
+      );
+      let limitNum = parseInt(limit, 10) || PAGINATION_CONFIG.DEFAULT_LIMIT;
+
+      // Aplicar limite maximo
+      limitNum = Math.min(limitNum, PAGINATION_CONFIG.MAX_LIMIT);
+      // aplicar limite minimo
+      limitNum = Math.max(1, limitNum); // asegurar que sea al menos 1
+
+      const offset = (pageNum - 1) * limitNum;
+
+      const [totalRows] = await connection.execute(
+        "SELECT COUNT(*) as total FROM sessions WHERE user_id = ? AND is_active = TRUE",
+        [userId]
+      );
+
+      const total = Number(totalRows[0]?.total) || 0;
+      const totalPages = total > 0 ? Math.ceil(total / limitNum) : 0;
+
+      // Si no hay datos retornar de una vez
+      if (total === 0 || pageNum > totalPages) {
+        return {
+          sessions: [],
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false,
+            maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
+          },
+        };
+      }
+
+      const [rows] = await connection.execute(
+        `SELECT *
+         FROM sessions 
+         WHERE user_id = ? AND is_active = TRUE
+         ORDER BY ${sortBy} ${sortOrder}
+        LIMIT ? OFFSET ?
+        `,
+        [userIdNum, limitNum, offset]
+      );
+
+      const mappedSessions = Array.isArray(rows)
+        ? rows.map((row) => this.sessionMapper.dbToDomain(row))
+        : [];
+
+      return {
+        sessions: mappedSessions,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages,
+          hasNext: pageNum < totalPages,
+          hasPrev: pageNum > 1,
+          maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new DatabaseError(
+        "No se pudo consultar las sessions activas del usuario",
+        {
+          attemptedData: { userId },
+          originalError: error.message,
+          code: error.code,
+        }
+      );
+    } finally {
+      await this.releaseConnection(connection, isExternal);
+    }
+  }
+
+  async findAllActiveSessionByUserIdAndRtHash(
+    userId,
+    refreshTokenHash,
+    {
+      externalConn = null,
+      page = PAGINATION_CONFIG.DEFAULT_PAGE,
+      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+      sortBy = SESSION_SORT_FIELD.CREATED_AT,
+      sortOrder = SORT_ORDER.DESC,
+    }
+  ) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+    try {
+      const userIdNum = Number(userId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw new ValidationError("invalid user id");
+      }
+
+        if (!refreshTokenHash || typeof refreshTokenHash !== "string") {
+        throw new ValidationError("invalid refresh token hash");
+      }
+
+
+      if (!Object.values(SESSION_SORT_FIELD).includes(sortBy)) {
+        throw new ValidationError(
+          `Invalid sort field. Valid values: ${Object.values(
+            SESSION_SORT_FIELD
+          ).join(",")}`
+        );
+      }
+
+      if (!Object.values(SORT_ORDER).includes(sortOrder)) {
+        throw new ValidationError(
+          `Invalid sort order. Valid values: ${Object.values(SORT_ORDER).join(
+            ", "
+          )}`
+        );
+      }
+
+      const pageNum = Math.max(
+        PAGINATION_CONFIG.DEFAULT_PAGE,
+        parseInt(page, 10) || PAGINATION_CONFIG.DEFAULT_PAGE
+      );
+      let limitNum = parseInt(limit, 10) || PAGINATION_CONFIG.DEFAULT_LIMIT;
+
+      // Aplicar limite maximo
+      limitNum = Math.min(limitNum, PAGINATION_CONFIG.MAX_LIMIT);
+      // aplicar limite minimo
+      limitNum = Math.max(1, limitNum); // asegurar que sea al menos 1
+
+      const offset = (pageNum - 1) * limitNum;
+
+      const [totalRows] = await connection.execute(
+        "SELECT COUNT(*) as total FROM sessions WHERE user_id = ? AND refresh_token_hash = ? AND is_active = TRUE",
+        [userIdNum, refreshTokenHash]
+      );
+
+      const total = Number(totalRows[0]?.total) || 0;
+      const totalPages = total > 0 ? Math.ceil(total / limitNum) : 0;
+
+      // Si no hay datos retornar de una vez
+      if (total === 0 || pageNum > totalPages) {
+        return {
+          sessions: [],
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false,
+            maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
+          },
+        };
+      }
+
+      const [rows] = await connection.execute(
+        `SELECT *
+         FROM sessions 
+         WHERE user_id = ? AND refresh_token_hash = ? AND is_active = TRUE
+         ORDER BY ${sortBy} ${sortOrder}
+        LIMIT ? OFFSET ?
+        `,
+        [userIdNum, refreshTokenHash, limitNum, offset]
+      );
+
+      const mappedSessions = Array.isArray(rows)
+        ? rows.map((row) => this.sessionMapper.dbToDomain(row))
+        : [];
+
+      return {
+        sessions: mappedSessions,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages,
+          hasNext: pageNum < totalPages,
+          hasPrev: pageNum > 1,
+          maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new DatabaseError(
+        "No se pudo consultar las sessions activas del usuario",
+        {
+          attemptedData: {
+            userId: userIdNum,
+            refreshTokenHash: refreshTokenHash,
+          },
+          originalError: error.message,
+          code: error.code,
+        }
+      );
+    } finally {
+      await this.releaseConnection(connection, isExternal);
     }
   }
 
   // Consultar una sesión por refresh token hash
   async findByRefreshTokenHash(refreshTokenHash, externalConn = null) {
-     const {connection, isExternal} = await this.getConnection(externalConn);
+    const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const [result] = await connection.execute(
-        'SELECT * FROM sessions WHERE refresh_token_hash = ?',
+      if (!refreshTokenHash || typeof refreshTokenHash !== "string") {
+        throw new ValidationError("invalid refresh token hash");
+      }
+
+    
+      const [rows] = await connection.execute(
+        "SELECT * FROM sessions WHERE refresh_token_hash = ?",
         [refreshTokenHash]
       );
 
-      if (result.length === 0) {
-        return null; 
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return null;
       }
 
-      const mappedSession = this.sessionMapper.dbToDomain(result[0]);
+      const mappedSession = this.sessionMapper.dbToDomain(rows[0]);
       return mappedSession;
-      
     } catch (error) {
-      throw new this.DatabaseError(
-        'No se pudo consultar la sesión por token de refresco',
-        {attemptedData:{refreshTokenHash}, originalError: error.message, code: error.code }
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new DatabaseError(
+        "No se pudo consultar la sesión por token de refresco",
+        {
+          attemptedData: { refreshTokenHash },
+          originalError: error.message,
+          code: error.code,
+        }
       );
     } finally {
       await this.releaseConnection(connection, isExternal);
