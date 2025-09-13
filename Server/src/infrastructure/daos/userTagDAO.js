@@ -47,45 +47,39 @@ class UserTagDAO extends BaseDatabaseHandler {
   }
 
   // DELETE
-  async delete(id, userId, externalConn=null){
-    const {connection, isExternal}= await this.getConnection(externalConn);
+  async delete(id, userId, externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-        const [result] = await connection.execute("DELETE FROM user_tag WHERE id=? AND user_id=?",[id, userId]);
-        return result.affectedRows>0;
+      const [result] = await connection.execute(
+        "DELETE FROM user_tag WHERE id=? AND user_id=?",
+        [id, userId]
+      );
+      return result.affectedRows > 0;
     } catch (error) {
-        throw new this.DatabaseError(`Erro al eliminar la relacion userTag de la base de datos`,{
-            attemptedData:{userTagId: id, userId,originalError: error.message, code: error.code}
-        })
-        
-    }finally{
-        await this.releaseConnection(connection, isExternal);
+      throw new this.DatabaseError(
+        `Erro al eliminar la relacion userTag de la base de datos`,
+        {
+          attemptedData: {
+            userTagId: id,
+            userId,
+            originalError: error.message,
+            code: error.code,
+          },
+        }
+      );
+    } finally {
+      await this.releaseConnection(connection, isExternal);
     }
-
-
   }
 
-  async deleteAllForUser(userId){
+  async deleteByUserIdAndTagId(userId, tagId) {}
 
-  }
+  async deleteAllByUserId(userId, externalConn = null) {}
 
-  async deleteAllForTag(tagId){
-
-  }
-
-  // Metodos compuestos
-
-  //Obtiene un usuario con todos sus tags (join con users y tags)
-  async findUserWithTags(userId){
-
-  }
-
-  //obtiene un tag con todos sus usuarios(join con tags y users)
-  async findTagWithUsers(tagId){
-
-  }
-
- 
+  async deleteAllByTagId(tagId, externalConn = null) {}
+  async findById(id) {}
+  async findByUserIdAndTagId(userId, tagId) {}
+  async findByUserId(userId) {}
+  async findByTagId(tagId) {}
 }
-module.exports=UserTagDAO;
-
-
+module.exports = UserTagDAO;

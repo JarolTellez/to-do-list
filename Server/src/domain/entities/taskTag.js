@@ -41,6 +41,10 @@ class TaskTag{
     this.#taskId = task.id;
   }
 
+  assignCreatedAt(createdAt){
+    this.#createdAt=createdAt;
+  }
+
 
   // validations
   validate() {

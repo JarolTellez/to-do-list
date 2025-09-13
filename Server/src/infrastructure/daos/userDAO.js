@@ -138,8 +138,9 @@ class UserDAO extends BaseDatabaseHandler {
         rol,
         created_at AS user_created_at
         FROM users;`);
-      return rows.length > 0
-        ? rows.map((r) => this.userMapper.dbToDomain(r))
+      const rowsArray = Array.isArray(rows) ? rows : [];
+      return rowsArray.length > 0
+        ? rowsArray.map((r) => this.userMapper.dbToDomain(r))
         : [];
     } catch (error) {
       throw new DatabaseError(
@@ -258,7 +259,7 @@ class UserDAO extends BaseDatabaseHandler {
       await this.releaseConnection(connection, isExternal);
     }
   }
-
+//ELIMINAR(SE USARA SOLO EL FIND BY USERNAME LA VALIDAICON DE CONTRASENA SE HACE EN CAPA SERVICES)
   async findByNameAndPassword(userName, password, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
@@ -307,6 +308,7 @@ class UserDAO extends BaseDatabaseHandler {
     }
   }
 
+  //Consulta un usuario con sus etiquetas
   async findByIdWithUserTags(userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
