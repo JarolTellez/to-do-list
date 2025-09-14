@@ -6,6 +6,9 @@ const {
   ValidationError,
 } = require("../../utils/appErrors");
 
+const {validateSortField, validateSortOrder}= require('../utils/validation/sortValidator');
+const { calculatePagination,calculateTotalPages} = require('../utils/pagination');
+
 const { SORT_ORDER, TAG_SORT_FIELD } = require("../constants/sortConstants");
 
 class TagDAO extends BaseDatabaseHandler {
@@ -137,7 +140,7 @@ class TagDAO extends BaseDatabaseHandler {
 
     
     if (total === 0 || pagination.page > totalPages) {
-      return buildPaginationResponse([], pagination, 0, 0);
+      return buildPaginationResponse([], pagination, 0, 0, 'tags');
     }
 
     
@@ -157,7 +160,7 @@ class TagDAO extends BaseDatabaseHandler {
       ? rows.map((row) => this.tagMapper.dbToDomain(row))
       : [];
 
-    return buildPaginationResponse(mappedTags, pagination, total, totalPages);
+    return buildPaginationResponse(mappedTags, pagination, total, totalPages,'tags');
 
   } catch (error) {
     if (error instanceof ValidationError) {

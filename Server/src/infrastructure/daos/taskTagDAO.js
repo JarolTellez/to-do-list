@@ -17,7 +17,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     this.taskTagMapper = taskTagMapper;
   }
 
-  async create({ taskTag, externalConn = null }) {
+  async create( taskTag, externalConn = null ) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
@@ -66,7 +66,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
   }
 
   // eliminar una relacion taskTag por id
-  async delete({ id, externalConn = null }) {
+  async delete( id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -100,7 +100,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
   }
 
   //eliminar una relacion especifica por taskId y tagId
-  async deleteByTaskIdAndTagId({ taskId, tagId, externalConn = null }) {
+  async deleteByTaskIdAndTagId(taskId, tagId, externalConn = null ) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -137,7 +137,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
   }
 
   // Elimina todas las relaciones de TareaEtiqueta por taskId para eliminar todas las etiquetas de una tarea
-  async deleteByTaskId({ taskId, externalConn = null }) {
+  async deleteByTaskId( taskId, externalConn = null ) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -169,7 +169,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findById({ id, externalConn = null }) {
+  async findById( id, externalConn = null ) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -214,14 +214,15 @@ class TaskTagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findByTaskId({
+  async findByTaskId(
     taskId,
+    {
     externalConn = null,
     page = PAGINATION_CONFIG.DEFAULT_PAGE,
     limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
     sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
-    sortOrder = SORT_ORDER.DESC,
-  }) {
+    sortOrder = SORT_ORDER.DESC}={}
+  ) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -295,7 +296,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findByTagId({ tagId, externalConn = null }) {
+  async findByTagId( tagId, externalConn = null ) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -340,7 +341,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findByTaskId({ taskId, tagId, externalConn = null }) {
+  async findByTaskId(taskId, tagId, externalConn = null ) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
