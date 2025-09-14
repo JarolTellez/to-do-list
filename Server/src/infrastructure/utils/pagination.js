@@ -1,4 +1,10 @@
-export const calculatePagination = (page, limit, maxLimit = 100, defaultPage = 1, defaultLimit = 10) => {
+export const calculatePagination = (
+  page, 
+  limit, 
+  maxLimit = 100, 
+  defaultPage = 1, 
+  defaultLimit = 10
+) => {
   const pageNum = Math.max(defaultPage, parseInt(page, 10) || defaultPage);
   let limitNum = parseInt(limit, 10) || defaultLimit;
 
@@ -10,7 +16,8 @@ export const calculatePagination = (page, limit, maxLimit = 100, defaultPage = 1
   return {
     page: pageNum,
     limit: limitNum,
-    offset
+    offset,
+    maxLimit 
   };
 };
 
@@ -18,9 +25,15 @@ export const calculateTotalPages = (total, limit) => {
   return total > 0 ? Math.ceil(total / limit) : 0;
 };
 
-export const buildPaginationResponse = (data, paginationInfo, total, totalPages) => {
+export const buildPaginationResponse = (
+  data, 
+  paginationInfo, 
+  total, 
+  totalPages,
+  itemsKey = 'items' 
+) => {
   return {
-    [Array.isArray(data) ? 'tags' : 'items']: data,
+    [itemsKey]: data, 
     pagination: {
       page: paginationInfo.page,
       limit: paginationInfo.limit,
