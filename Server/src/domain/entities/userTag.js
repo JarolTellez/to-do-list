@@ -46,6 +46,15 @@ class UserTag {
     this.#userId = user.id;
   }
 
+   assignCreatedAt(date) {
+    
+    this.#createdAt = date;
+  }
+
+   assignId(id) {
+    
+    this.#id = id;
+  }
   // validations
   validate() {
     const errors = [];

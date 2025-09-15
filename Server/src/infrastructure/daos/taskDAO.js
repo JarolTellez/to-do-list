@@ -41,9 +41,11 @@ class TaskDAO extends BaseDatabaseHandler {
           task.userId,
         ]
       );
-      task.id = result.insertId;
-
-      return task;
+      const actualTask = await this.findWithTagsByIdAndUserId(
+        result.insertId,
+        task.userId
+      );
+      return actualTask;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw new this.ConflictError(
@@ -60,8 +62,12 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      if (connection) {
-        await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
       }
     }
   }
@@ -104,8 +110,12 @@ class TaskDAO extends BaseDatabaseHandler {
         code: error.code,
       });
     } finally {
-      if (connection) {
-        await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
       }
     }
   }
@@ -130,8 +140,12 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      if (connection) {
-        await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
       }
     }
   }
@@ -159,8 +173,12 @@ class TaskDAO extends BaseDatabaseHandler {
         code: error.code,
       });
     } finally {
-      if (connection) {
-        await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
       }
     }
   }
@@ -209,7 +227,13 @@ class TaskDAO extends BaseDatabaseHandler {
         attemptedData: { taskId: taskIdNum },
       });
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
@@ -228,13 +252,11 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      
       const userIdNum = Number(userId);
       if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
         throw new ValidationError("Invalid user id");
       }
 
-      
       let completedBool = isCompleted;
       if (typeof isCompleted === "string") {
         completedBool = isCompleted.toLowerCase() === "true";
@@ -245,7 +267,6 @@ class TaskDAO extends BaseDatabaseHandler {
         );
       }
 
-     
       const { safeField } = validateSortField(
         sortBy,
         TASK_SORT_FIELD,
@@ -255,7 +276,6 @@ class TaskDAO extends BaseDatabaseHandler {
 
       const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
 
-    
       const pagination = calculatePagination(
         page,
         limit,
@@ -264,7 +284,7 @@ class TaskDAO extends BaseDatabaseHandler {
         PAGINATION_CONFIG.DEFAULT_LIMIT
       );
 
-      // CONSULTA 1: Contar total de TAREAS 
+      // CONSULTA 1: Contar total de TAREAS
       const [totalRows] = await connection.execute(
         `SELECT COUNT(*) AS total
        FROM tasks t
@@ -338,7 +358,6 @@ class TaskDAO extends BaseDatabaseHandler {
         [taskIds, ...taskIds] // doble para el FIELD y el IN
       );
 
-      
       const mappedTasks =
         Array.isArray(rows) && rows.length > 0
           ? this.taskMapper.dbToDomainWithTags(rows)
@@ -392,8 +411,6 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
-  //PENDIENTE ACTUALIZAR
-  // Dejarlo com subconsulta no afecta rendimieto solo consultara 1
   //consulta una tarea con sus etiquetas por id y userId
   async findWithTagsByIdAndUserId(id, userId, { externalConn = null }) {
     const { connection, isExternal } = await this.getConnection(externalConn);
@@ -434,10 +451,15 @@ class TaskDAO extends BaseDatabaseHandler {
       LEFT JOIN task_tag tt ON t.id = tt.task_id
       LEFT JOIN tags tg ON tt.tag_id = tg.id
       WHERE t.id = ? AND t.user_id = ?
-      ORDER BY tt.id`,
-        [id, userId]
+      ORDER BY tg.name ASC, tt.id ASC`,
+        [taskIdNum, userIdNum]
       );
-      if (!rows || rows.length === 0) return null;
+      if (!Array.isArray(rows) || rows.length === 0) return null;
+
+      //si no tiene etiquetas
+      if (rows.length === 1 && rows[0].task_tag_id === null) {
+        return this.taskMapper.dbToDomain(rows[0]);
+      }
 
       const mappedTask = this.taskMapper.dbToDomainWithTags(rows);
       return mappedTask;
@@ -451,38 +473,36 @@ class TaskDAO extends BaseDatabaseHandler {
         code: error.code,
       });
     } finally {
-      if (connection) {
-        await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
       }
     }
   }
 
   // consulta todas las tareas pendientes por userId
-  async findAllPendingByUserId(
-    userId,
-    { page = 1, limit = 10, externalConn = null }
-  ) {
+  async findAllPendingByUserId(userId, { page, limit, externalConn } = {}) {
     return this.findAllWithTagsByUserId(userId, {
       isCompleted: false,
       page,
       limit,
-      sortBy: "last_update_date",
-      sortOrder: "DESC",
+      sortBy: TASK_SORT_FIELD.LAST_UPDATE_DATE,
+      sortOrder: SORT_ORDER.DESC,
       externalConn,
     });
   }
 
   //consulta todas las tareas completadas por userId
-  async findAllCompletedByUserId(
-    userId,
-    { page = 1, limit = 10, externalConn = null }
-  ) {
+  async findAllPendingByUserId(userId, { page, limit, externalConn } = {}) {
     return this.findAllWithTagsByUserId(userId, {
       isCompleted: true,
       page,
       limit,
-      sortBy: "last_update_date",
-      sortOrder: "DESC",
+      sortBy: TASK_SORT_FIELD.LAST_UPDATE_DATE,
+      sortOrder: SORT_ORDER.DESC,
       externalConn,
     });
   }
@@ -505,34 +525,24 @@ class TaskDAO extends BaseDatabaseHandler {
       if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
         throw new ValidationError("Invalid user id");
       }
-
-      if (!Object.values(TASK_SORT_FIELD).includes(sortBy)) {
-        throw new ValidationError(
-          `Invalid sort field. Valid values: ${Object.values(
-            TASK_SORT_FIELD
-          ).join(", ")}`
-        );
-      }
-
-      if (!Object.values(SORT_ORDER).includes(sortOrder)) {
-        throw new ValidationError(
-          `Invalid sort order. Valid values: ${Object.values(SORT_ORDER).join(
-            ", "
-          )}`
-        );
-      }
-
-      const pageNum = Math.max(
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        parseInt(page, 10) || PAGINATION_CONFIG.DEFAULT_PAGE
+      const { safeField } = validateSortField(
+        sortBy,
+        TASK_SORT_FIELD,
+        "TASK",
+        "task sort field"
       );
-      let limitNum = parseInt(limit, 10) || PAGINATION_CONFIG.DEFAULT_LIMIT;
 
-      limitNum = Math.min(limitNum, PAGINATION_CONFIG.MAX_LIMIT);
-      limitNum = Math.max(1, limitNum);
-      const offset = (pageNum - 1) * limitNum;
+      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
 
-      // Total de tareas vencidas
+      const pagination = calculatePagination(
+        page,
+        limit,
+        PAGINATION_CONFIG.MAX_LIMIT,
+        PAGINATION_CONFIG.DEFAULT_PAGE,
+        PAGINATION_CONFIG.DEFAULT_LIMIT
+      );
+
+      // CONSULTA 1: Contar total de TAREAS vencidas
       const [totalRows] = await connection.execute(
         `SELECT COUNT(*) AS total
        FROM tasks t
@@ -541,81 +551,116 @@ class TaskDAO extends BaseDatabaseHandler {
       );
 
       const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = total > 0 ? Math.ceil(total / limitNum) : 0;
+      const totalPages = calculateTotalPages(total, pagination.limit);
 
-      if (total === 0 || pageNum > totalPages) {
-        return {
-          tasks: [],
-          pagination: {
-            page: pageNum,
-            limit: limitNum,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false,
-            maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
-          },
-        };
+      // Early return si no hay datos o pagina inválida
+      if (total === 0 || pagination.page > totalPages) {
+        return buildPaginationResponse(
+          [],
+          pagination,
+          total,
+          totalPages,
+          "tasks"
+        );
       }
 
+      // CONSULTA 2: Obtener IDs de tareas vencidas paginadas
+      const [taskIdsResult] = await connection.query(
+        `SELECT t.id
+       FROM tasks t
+       WHERE t.user_id = ? AND t.is_completed = FALSE AND t.scheduled_date < NOW()
+       ORDER BY ${safeField} ${safeOrder}, t.id ASC
+       LIMIT ? OFFSET ?`,
+        [userIdNum, pagination.limit, pagination.offset]
+      );
+
+      if (taskIdsResult.length === 0) {
+        return buildPaginationResponse(
+          [],
+          pagination,
+          total,
+          totalPages,
+          "tasks"
+        );
+      }
+
+      const taskIds = taskIdsResult.map((row) => row.id);
+
+      // CONSULTA 3: Obtener detalles completos con tags solo para las tareas paginadas
       const [rows] = await connection.query(
-        `SELECT
-        t.id AS task_id,
-        t.name AS task_name,
-        t.description AS task_description,
-        t.scheduled_date,
-        t.created_at AS task_created_at,
-        t.last_update_date,
-        t.is_completed,
-        t.user_id,
-        t.priority,
-
-        tt.id AS task_tag_id,
-        tt.created_at AS task_tag_created_at,
-
-        tg.id AS tag_id,
-        tg.name AS tag_name,
-        tg.description AS tag_description,
-        tg.created_at AS tag_created_at
-
+        `SELECT 
+          t.id AS task_id,
+          t.name AS task_name,
+          t.description AS task_description,
+          t.scheduled_date,
+          t.created_at AS task_created_at,
+          t.last_update_date,
+          t.is_completed,
+          t.user_id,
+          t.priority,
+          
+          tt.id AS task_tag_id,
+          tt.created_at AS task_tag_created_at,
+          
+          tg.id AS tag_id,
+          tg.name AS tag_name,
+          tg.description AS tag_description,
+          tg.created_at AS tag_created_at
        FROM tasks t
        LEFT JOIN task_tag tt ON t.id = tt.task_id
        LEFT JOIN tags tg ON tt.tag_id = tg.id
-       WHERE t.user_id = ? AND t.is_completed = FALSE AND t.scheduled_date < NOW()
-       ORDER BY t.${sortBy} ${sortOrder}, t.id, tt.id
-       LIMIT ? OFFSET ?`,
-        [userIdNum, limitNum, offset]
+       WHERE t.id IN (?)
+       ORDER BY 
+         FIELD(t.id, ${taskIds.map((_, index) => "?").join(",")}),
+         tt.id ASC`,
+        [taskIds, ...taskIds] // Doble para el FIELD y el IN
       );
 
-      const mappedTasks = Array.isArray(rows)
-        ? this.taskMapper.dbToDomainWithTags(rows)
-        : [];
+      const mappedTasks =
+        Array.isArray(rows) && rows.length > 0
+          ? this.taskMapper.dbToDomainWithTags(rows)
+          : [];
 
-      return {
-        tasks: mappedTasks,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total,
-          totalPages,
-          hasNext: pageNum < totalPages,
-          hasPrev: pageNum > 1,
-          maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
-        },
-      };
+      return buildPaginationResponse(
+        mappedTasks,
+        pagination,
+        total,
+        totalPages,
+        "tasks"
+      );
     } catch (error) {
-      if (error instanceof ValidationError) throw error;
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      console.error("Database error in findAllOverdueTasksByUserId:", {
+        userId,
+        error: error.message,
+      });
 
       throw new this.DatabaseError(
         "No se pudo consultar las tareas vencidas del usuario",
         {
-          attemptedData: { userIdNum, page, limit },
+          attemptedData: {
+            userId,
+            page,
+            limit,
+            sortBy,
+            sortOrder,
+          },
           originalError: error.message,
           code: error.code,
+          stack: error.stack,
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 }

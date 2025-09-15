@@ -35,6 +35,10 @@ export const TASK_TAG_SORT_FIELD = Object.freeze({
   CREATED_AT: 'created_at',
 });
 
+export const USER_TAG_SORT_FIELD = Object.freeze({
+  CREATED_AT: 'created_at',
+});
+
 export const SORT_FIELD_MAPPINGS = Object.freeze({
   TASK: {
     [TASK_SORT_FIELD.ID]: 't.id',
@@ -62,5 +66,9 @@ export const SORT_FIELD_MAPPINGS = Object.freeze({
   },
   TASK_TAG: {
     [TASK_TAG_SORT_FIELD.CREATED_AT]: 'tt.created_at'
+  },
+
+  USER_TAG: {
+    [USER_TAG_SORT_FIELD.CREATED_AT]: 'ut.created_at'
   }
 });

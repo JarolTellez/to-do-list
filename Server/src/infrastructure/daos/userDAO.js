@@ -1,16 +1,29 @@
-const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
-const bcrypt = require('bcryptjs');
+const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
+const PAGINATION_CONFIG = require("../config/pagination");
+const {
+  DatabaseError,
+  ConflictError,
+  ValidationError,
+} = require("../../utils/appErrors");
 
-const {DatabaseError,ConflictError} = require('../../utils/appErrors');
+const {
+  validateSortField,
+  validateSortOrder,
+} = require("../utils/validation/sortValidator");
+const {
+  calculatePagination,
+  calculateTotalPages,
+  buildPaginationResponse,
+} = require("../utils/pagination");
+
+const { SORT_ORDER, USER_SORT_FIELD } = require("../constants/sortConstants");
+
 class UserDAO extends BaseDatabaseHandler {
   /**
    * @typedef {import('../../types/entities').User} User
    * @typedef {import('../../types/entities').Connection} Connection
    */
-  constructor({
-    userMapper,
-    connectionDB,
-  }) {
+  constructor({ userMapper, connectionDB }) {
     super(connectionDB);
     this.userMapper = userMapper;
   }
@@ -30,8 +43,10 @@ class UserDAO extends BaseDatabaseHandler {
         "INSERT INTO users (user_name, email, password, rol) VALUES (?, ?, ?, ?)",
         [user.userName, user.email, user.password, user.rol]
       );
-      user.id = result.insertId;
-      return user;
+
+      const actualUser = this.findById(result.insertId);
+
+      return actualUser;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         if (error.message.includes("nombre_usuario")) {
@@ -39,12 +54,9 @@ class UserDAO extends BaseDatabaseHandler {
             attemptedData: { userName: user.userName },
           });
         } else if (error.message.includes("email")) {
-          throw new ConflictError(
-            "El email electrónico ya está registrado",
-            {
-              attemptedData: { email: user.email },
-            }
-          );
+          throw new ConflictError("El email electrónico ya está registrado", {
+            attemptedData: { email: user.email },
+          });
         }
       }
       throw new DatabaseError("No se pudo registrar el user", {
@@ -53,7 +65,13 @@ class UserDAO extends BaseDatabaseHandler {
         code: error.code,
       });
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
@@ -73,12 +91,9 @@ class UserDAO extends BaseDatabaseHandler {
             attemptedData: { userName: user.userName },
           });
         } else if (error.message.includes("email")) {
-          throw new ConflictError(
-            "El email electrónico ya está registrado",
-            {
-              attemptedData: { email: user.email },
-            }
-          );
+          throw new ConflictError("El email electrónico ya está registrado", {
+            attemptedData: { email: user.email },
+          });
         }
       }
       throw new DatabaseError(
@@ -90,7 +105,13 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
@@ -120,38 +141,146 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
   //READ
   //obtiene todos los usuarios
-  async findAll(externalConn = null) {
+  async findAll({
+    externalConn = null,
+    page = PAGINATION_CONFIG.DEFAULT_PAGE,
+    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    sortBy = USER_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
+
     try {
-      const [rows] = await connection.execute(`
-        SELECT 
-        id AS user_id,
-        user_name,
-        email,
-        password,
-        rol,
-        created_at AS user_created_at
-        FROM users;`);
-      const rowsArray = Array.isArray(rows) ? rows : [];
-      return rowsArray.length > 0
-        ? rowsArray.map((r) => this.userMapper.dbToDomain(r))
-        : [];
+      const { safeField } = validateSortField(
+        sortBy,
+        USER_SORT_FIELD,
+        "USER",
+        "user sort field"
+      );
+
+      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
+
+      const pagination = calculatePagination(
+        page,
+        limit,
+        PAGINATION_CONFIG.MAX_LIMIT,
+        PAGINATION_CONFIG.DEFAULT_PAGE,
+        PAGINATION_CONFIG.DEFAULT_LIMIT
+      );
+
+      // CONSULTA 1: Contar total de usuarios
+      const [totalRows] = await connection.execute(
+        `SELECT COUNT(*) AS total FROM users u`
+      );
+      const total = Number(totalRows[0]?.total) || 0;
+      const totalPages = calculateTotalPages(total, pagination.limit);
+
+      // Early return si no hay datos o pagina invalida
+      if (total === 0 || pagination.page > totalPages) {
+        return buildPaginationResponse(
+          [],
+          pagination,
+          total,
+          totalPages,
+          "users"
+        );
+      }
+
+      // CONSULTA 2: Obtener IDs de usuarios paginados
+      const [userIdsResult] = await connection.query(
+        `SELECT u.id
+       FROM users u 
+       ORDER BY ${safeField} ${safeOrder}, u.id ASC
+       LIMIT ? OFFSET ?`,
+        [pagination.limit, pagination.offset]
+      );
+
+      if (userIdsResult.length === 0) {
+        return buildPaginationResponse(
+          [],
+          pagination,
+          total,
+          totalPages,
+          "users"
+        );
+      }
+
+      const userIds = userIdsResult.map((row) => row.id);
+
+      // CONSULTA 3: Obtener detalles completos solo para los usuarios paginados
+      const [rows] = await connection.query(
+        `SELECT 
+         u.id AS user_id,
+         u.user_name,
+         u.email,
+         u.password,
+         u.rol,
+         u.created_at AS user_created_at
+       FROM users u 
+       WHERE u.id IN (?)
+       ORDER BY FIELD(u.id, ${userIds.map((_, index) => "?").join(",")})`,
+        [userIds, ...userIds]
+      );
+
+      const mappedUsers =
+        Array.isArray(rows) && rows.length > 0
+          ? rows.map((row) => this.userMapper.dbToDomain(row))
+          : [];
+
+      return buildPaginationResponse(
+        mappedUsers,
+        pagination,
+        total,
+        totalPages,
+        "users"
+      );
     } catch (error) {
-      throw new DatabaseError(
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      console.error("Database error in UserDAO.findAll:", {
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        error: error.message,
+      });
+
+      throw new this.DatabaseError(
         "Error al consultar todos los usuarios en la base de datos",
         {
+          attemptedData: {
+            page,
+            limit,
+            sortBy,
+            sortOrder,
+          },
           originalError: error.message,
           code: error.code,
+          stack: error.stack,
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
@@ -159,6 +288,11 @@ class UserDAO extends BaseDatabaseHandler {
   async findById(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
+      const userIdNum = Number(id);
+
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw new ValidationError("Invalid user id");
+      }
       const [rows] = await connection.execute(
         `SELECT  
           id AS user_id,
@@ -168,7 +302,7 @@ class UserDAO extends BaseDatabaseHandler {
           rol,
           created_at AS user_created_at 
           FROM users WHERE id = ?`,
-        [id]
+        [userIdNum]
       );
       const mappedUser = this.userMapper.dbToDomain(rows[0]);
       return mappedUser;
@@ -182,89 +316,144 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
-  //busca usuario por username
+  // Busca usuario por username
   async findByUserName(userName, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
+
     try {
+      if (typeof userName !== "string" || userName.trim().length === 0) {
+        throw new ValidationError("Invalid user name");
+      }
+
+      const cleanUserName = userName.trim();
+
       const [rows] = await connection.execute(
-         `SELECT  
-          id AS user_id,
-          user_name,
-          email,
-          password,
-          rol,
-          created_at AS user_created_at 
-          FROM users 
-          WHERE user_name = ?`,
-        [userName]
+        `SELECT  
+        u.id AS user_id,
+        u.user_name,
+        u.email,
+        u.password,
+        u.rol,
+        u.created_at AS user_created_at 
+       FROM users u 
+       WHERE u.user_name = ?`,
+        [cleanUserName]
       );
 
-      // Si no hay resultados, retornar null 
-      if (!rows || rows.length === 0) {
+      if (!Array.isArray(rows) || rows.length === 0) {
         return null;
       }
 
       return this.userMapper.dbToDomain(rows[0]);
     } catch (error) {
-      throw new DatabaseError(
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      console.error("Database error in UserDAO.findByUserName:", {
+        userNameLength: userName?.length || 0,
+        error: error.message,
+      });
+
+      throw new this.DatabaseError(
         "Error al consultar el usuario en la base de datos",
         {
-          attemptedData: { userName },
+          attemptedData: {
+            userNameLength: userName?.length || 0,
+          },
           originalError: error.message,
           code: error.code,
+          stack: error.stack,
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
-  // busca usuario por email
+  // Busca usuario por email
   async findByEmail(email, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
+
     try {
+      if (typeof email !== "string" || email.trim().length === 0) {
+        throw new ValidationError("Invalid email");
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
+
       const [rows] = await connection.execute(
         `SELECT  
-          id AS user_id,
-          user_name,
-          email,
-          password,
-          rol,
-          created_at AS user_created_at 
-          FROM users 
-          WHERE email = ?`,
-        [email]
+        u.id AS user_id,
+        u.user_name,
+        u.email,
+        u.password,
+        u.rol,
+        u.created_at AS user_created_at 
+       FROM users u 
+       WHERE u.email = ?`,
+        [cleanEmail]
       );
-      
-      // Si no hay resultados, retornar null 
-      if (!rows || rows.length === 0) {
+
+      if (!Array.isArray(rows) || rows.length === 0) {
         return null;
       }
-      const mappedUser = this.userMapper.dbToDomain(rows[0]);
-      return mappedUser;
+
+      return this.userMapper.dbToDomain(rows[0]);
     } catch (error) {
-      throw new DatabaseError(
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      console.error("Database error in UserDAO.findByEmail:", {
+        emailPrefix: email ? email.split("@")[0] + "@***" : "null",
+        error: error.message,
+      });
+
+      throw new this.DatabaseError(
         "Error al consultar el usuario por email en la base de datos",
         {
-          attemptedData: { email },
+          attemptedData: {
+            emailPrefix: email ? email.split("@")[0] + "@***" : "null",
+          },
           originalError: error.message,
           code: error.code,
+          stack: error.stack,
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
-//ELIMINAR(SE USARA SOLO EL FIND BY USERNAME LA VALIDAICON DE CONTRASENA SE HACE EN CAPA SERVICES)
+
+  //ELIMINAR(SE USARA SOLO EL FIND BY USERNAME LA VALIDAICON DE CONTRASENA SE HACE EN CAPA SERVICES)
   async findByNameAndPassword(userName, password, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [rows] = await connection.execute(
-         `SELECT  
+        `SELECT  
           id AS user_id,
           user_name,
           email,
@@ -292,7 +481,6 @@ class UserDAO extends BaseDatabaseHandler {
       const mappedUser = this.userMapper.dbToDomain(usuarioBD);
       return mappedUser;
     } catch (error) {
-      // Para errores de BD, muestra más detalles
       throw new DatabaseError(
         "Error al consultar usuario por credenciales en la base de datos",
         {
@@ -304,7 +492,13 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
@@ -335,15 +529,15 @@ class UserDAO extends BaseDatabaseHandler {
         [userId]
       );
 
-      // Si no hay resultados retornar null 
+      // Si no hay resultados retornar null
       if (!rows || rows.length === 0) {
         return null;
       }
       const mappedUser = this.userMapper.dbToDomainWithTags(rows);
-      
+
       return mappedUser;
     } catch (error) {
-       throw new DatabaseError(
+      throw new DatabaseError(
         "Error al consultar el usuario con etiquetas en la abse de datos",
         {
           attemptedData: { userId },
@@ -352,9 +546,14 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
-    
   }
 }
 
