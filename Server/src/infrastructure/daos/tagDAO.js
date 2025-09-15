@@ -6,8 +6,15 @@ const {
   ValidationError,
 } = require("../../utils/appErrors");
 
-const {validateSortField, validateSortOrder}= require('../utils/validation/sortValidator');
-const { calculatePagination,calculateTotalPages} = require('../utils/pagination');
+const {
+  validateSortField,
+  validateSortOrder,
+} = require("../utils/validation/sortValidator");
+const {
+  calculatePagination,
+  calculateTotalPages,
+  buildPaginationResponse,
+} = require("../utils/pagination");
 
 const { SORT_ORDER, TAG_SORT_FIELD } = require("../constants/sortConstants");
 
@@ -17,7 +24,7 @@ class TagDAO extends BaseDatabaseHandler {
     this.tagMapper = tagMapper;
   }
 
-  async create({tag, externalConn = null}) {
+  async create(tag, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -25,8 +32,9 @@ class TagDAO extends BaseDatabaseHandler {
         "INSERT INTO tags (name, user_id) VALUES(?, ?)",
         [tag.name, tag.userId]
       );
-      tag.id = result.insertId;
-      return tag;
+      const actualTag = this.findById(result.insertId);
+
+      return actualTag;
     } catch (error) {
       // Error para duplicados
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
@@ -45,11 +53,17 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
-  async update({tag, externalConn = null}) {
+  async update(tag, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
@@ -74,11 +88,17 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
-  async delete({id, externalConn = null}) {
+  async delete(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -89,7 +109,7 @@ class TagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-      // Manejar error de clave foránea
+      // Manejar error de clave foranea
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
         throw new ConflictError(
           "No se puede eliminar la etiqueta porque está siendo utilizada",
@@ -106,77 +126,143 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
   //obtiene todas las etiquetas
- async findAll({
-  externalConn = null,
-  page = PAGINATION_CONFIG.DEFAULT_PAGE,
-  limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-  sortBy = TAG_SORT_FIELD.CREATED_AT,
-  sortOrder = SORT_ORDER.DESC,
-} = {}) {
-  const { connection, isExternal } = await this.getConnection(externalConn);
+  async findAll({
+    externalConn = null,
+    page = PAGINATION_CONFIG.DEFAULT_PAGE,
+    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    sortBy = TAG_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+  } = {}) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
 
-  try {
-    // Validaciones con utils
-    validateSortField(sortBy, TAG_SORT_FIELD, 'tag sort field');
-    validateSortOrder(sortOrder, SORT_ORDER);
+    try {
+      const { safeField } = validateSortField(
+        sortBy,
+        TAG_SORT_FIELD,
+        "TAG",
+        "tag sort field"
+      );
 
-    const pagination = calculatePagination(
-      page, 
-      limit, 
-      PAGINATION_CONFIG.MAX_LIMIT,
-      PAGINATION_CONFIG.DEFAULT_PAGE,
-      PAGINATION_CONFIG.DEFAULT_LIMIT
-    );
+      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
 
-    // Consulta del total
-    const [totalRows] = await connection.execute(`SELECT COUNT(*) as total FROM tags`);
-    const total = Number(totalRows[0]?.total) || 0;
-    const totalPages = calculateTotalPages(total, pagination.limit);
+      const pagination = calculatePagination(
+        page,
+        limit,
+        PAGINATION_CONFIG.MAX_LIMIT,
+        PAGINATION_CONFIG.DEFAULT_PAGE,
+        PAGINATION_CONFIG.DEFAULT_LIMIT
+      );
 
-    
-    if (total === 0 || pagination.page > totalPages) {
-      return buildPaginationResponse([], pagination, 0, 0, 'tags');
-    }
+      const [totalRows] = await connection.execute(
+        `SELECT COUNT(*) AS total FROM tags`
+      );
+      const total = Number(totalRows[0]?.total) || 0;
+      const totalPages = calculateTotalPages(total, pagination.limit);
 
-    
-    const [rows] = await connection.query(
-      `SELECT 
+      if (total === 0 || pagination.page > totalPages) {
+        return buildPaginationResponse(
+          [],
+          pagination,
+          total,
+          totalPages,
+          "tags"
+        );
+      }
+
+      // CONSULTA 2: Obtener IDs de tags paginados
+      const [tagIdsResult] = await connection.query(
+        `SELECT id
+         FROM tags tg  
+         ORDER BY ${safeField} ${safeOrder}, 
+         LIMIT ? OFFSET ?`,
+        [pagination.limit, pagination.offset]
+      );
+
+      if (tagIdsResult.length === 0) {
+        return buildPaginationResponse(
+          [],
+          pagination,
+          total,
+          totalPages,
+          "tags"
+        );
+      }
+
+      const tagIds = tagIdsResult.map((row) => row.id);
+
+      // CONSULTA 3: Obtener detalles completos solo para los tags paginados
+      const [rows] = await connection.query(
+        `SELECT 
          id AS tag_id,
          name AS tag_name,
          description AS tag_description,
          created_at AS tag_created_at
        FROM tags 
-       ORDER BY ${sortBy} ${sortOrder}, id ASC
-       LIMIT ? OFFSET ?`,
-      [pagination.limit, pagination.offset]
-    );
+       WHERE id IN (?)
+       ORDER BY FIELD(id, ${tagIds.map((_, index) => "?").join(",")})`,
+        [tagIds, ...tagIds] // Doble para el IN y el FIELD
+      );
 
-    const mappedTags = Array.isArray(rows)
-      ? rows.map((row) => this.tagMapper.dbToDomain(row))
-      : [];
+      const mappedTags =
+        Array.isArray(rows) && rows.length > 0
+          ? rows.map((row) => this.tagMapper.dbToDomain(row))
+          : [];
 
-    return buildPaginationResponse(mappedTags, pagination, total, totalPages,'tags');
+      return buildPaginationResponse(
+        mappedTags,
+        pagination,
+        total,
+        totalPages,
+        "tags"
+      );
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
 
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      throw error;
+      console.error("Database error in TagDAO.findAll:", {
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        error: error.message,
+      });
+
+      throw new this.DatabaseError("Error al consultar todas las etiquetas", {
+        attemptedData: {
+          page,
+          limit,
+          sortBy,
+          sortOrder,
+        },
+        originalError: error.message,
+        code: error.code,
+        stack: error.stack,
+      });
+    } finally {
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
-    throw new DatabaseError("Error al consultar todas las etiquetas", {
-      originalError: error.message,
-      code: error.code,
-    });
-  } finally {
-    await this.releaseConnection(connection, isExternal);
   }
-}
 
   //busca Tag por Id
-  async findById({id, externalConn = null}) {
+  async findById({ id, externalConn = null }) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const tagIdNum = Number(id);
@@ -201,9 +287,8 @@ class TagDAO extends BaseDatabaseHandler {
       const mappedTag = this.tagMapper.dbToDomain(rows[0]);
       return mappedTag;
     } catch (error) {
-      // para preservar los tipos de errores y que no se conviertan en DatabaseError
       if (error instanceof ValidationError) {
-        throw error; // Preservar error de validacion
+        throw error;
       }
 
       throw new DatabaseError(
@@ -215,12 +300,18 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
   // busca tag por nombre
-  async findByName({name, externalConn = null}) {
+  async findByName({ name, externalConn = null }) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       if (!name || typeof name !== "string") {
@@ -244,7 +335,7 @@ class TagDAO extends BaseDatabaseHandler {
       return mappedTag;
     } catch (error) {
       if (error instanceof ValidationError) {
-        throw error; // Preservar error de validacion
+        throw error;
       }
 
       throw new DatabaseError(
@@ -256,20 +347,25 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
   //Metodos compuestos
   //Busca tags asociados a un usuario (join con user_tag)
   async findAllByUserId({
     userId,
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = TAG_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    }
-  ) {
+    externalConn = null,
+    page = PAGINATION_CONFIG.DEFAULT_PAGE,
+    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    sortBy = TAG_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -278,125 +374,144 @@ class TagDAO extends BaseDatabaseHandler {
         throw new ValidationError("Invalid user id");
       }
 
-      // Validar parametros de ordenamiento, que existan en las constantes
-      if (!Object.values(TAG_SORT_FIELD).includes(sortBy)) {
-        throw new ValidationError(
-          `Invalid sort field. Valid values: ${Object.values(
-            TAG_SORT_FIELD
-          ).join(", ")}`
-        );
-      }
-
-      if (!Object.values(SORT_ORDER).includes(sortOrder)) {
-        throw new ValidationError(
-          `Invalid sort order. Valid values: ${Object.values(SORT_ORDER).join(
-            ", "
-          )}`
-        );
-      }
-
-      const pageNum = Math.max(
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        parseInt(page, 10) || PAGINATION_CONFIG.DEFAULT_PAGE
+      const { safeField } = validateSortField(
+        sortBy,
+        TAG_SORT_FIELD,
+        "TAG",
+        "tag sort field"
       );
-      let limitNum = parseInt(limit, 10) || PAGINATION_CONFIG.DEFAULT_LIMIT;
 
-      // Aplicar limite maximo
-      limitNum = Math.min(limitNum, PAGINATION_CONFIG.MAX_LIMIT);
-      // aplicar limite minimo
-      limitNum = Math.max(1, limitNum); // asegurar que sea al menos 1
+      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
 
-      const offset = (pageNum - 1) * limitNum;
+      const pagination = calculatePagination(
+        page,
+        limit,
+        PAGINATION_CONFIG.MAX_LIMIT,
+        PAGINATION_CONFIG.DEFAULT_PAGE,
+        PAGINATION_CONFIG.DEFAULT_LIMIT
+      );
 
-      // Consulta del total de registros
+      // CONSULTA 1: Contar total de tags del usuario
       const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) as total
-        FROM tags t
-        INNER JOIN user_tag ut ON t.id = ut.tag_id
-        WHERE ut.user_id = ?
-          `,
+        `SELECT COUNT(*) AS total
+       FROM tags t
+       INNER JOIN user_tag ut ON t.id = ut.tag_id
+       WHERE ut.user_id = ?`,
         [userIdNum]
       );
+
       const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = total > 0 ? Math.ceil(total / limitNum) : 0;
+      const totalPages = calculateTotalPages(total, pagination.limit);
 
-      // Si no hay datos retornar de una vez
-      if (total === 0 || pageNum > totalPages) {
-        return {
-          tags: [],
-          pagination: {
-            page: pageNum,
-            limit: limitNum,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false,
-            maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
-          },
-        };
-      }
-
-      const [rows] = await connection.execute(
-        `
-          SELECT 
-          t.id AS tag_id,
-	      	t.name AS tag_name,
-          t.description AS tag_description,
-	      	t.created_at AS tag_created_at
-          FROM tags t 
-          INNER JOIN user_tag ut ON t.id=ut.tag_id 
-          WHERE ut.user_id = ?
-          ORDER BY t.${sortBy} ${sortOrder}
-          LIMIT ? OFFSET ?`,
-        [userIdNum, limitNum, offset]
-      );
-
-      const mappedTags = Array.isArray(rows)
-        ? rows.map((row) => this.tagMapper.dbToDomain(row))
-        : [];
-
-      return {
-        tags: mappedTags,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
+      // Early return si no hay datos o pagina invalida
+      if (total === 0 || pagination.page > totalPages) {
+        return buildPaginationResponse(
+          [],
+          pagination,
           total,
           totalPages,
-          hasNext: pageNum < totalPages,
-          hasPrev: pageNum > 1,
-          maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
-        },
-      };
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        throw error; // Preservar error de validacion
+          "tags"
+        );
       }
 
-      throw new DatabaseError(
-        "Error al consultar las userTag en la base de datos",
+      // CONSULTA 2: Obtener IDs de tags paginados del usuario
+      const [tagIdsResult] = await connection.query(
+        `SELECT t.id
+       FROM tags t
+       INNER JOIN user_tag ut ON t.id = ut.tag_id
+       WHERE ut.user_id = ?
+       ORDER BY ${safeField} ${safeOrder}, t.id ASC
+       LIMIT ? OFFSET ?`,
+        [userIdNum, pagination.limit, pagination.offset]
+      );
+
+      if (tagIdsResult.length === 0) {
+        return buildPaginationResponse(
+          [],
+          pagination,
+          total,
+          totalPages,
+          "tags"
+        );
+      }
+
+      const tagIds = tagIdsResult.map((row) => row.id);
+
+      // CONSULTA 3: Obtener detalles completos solo para los tags paginados
+      const [rows] = await connection.query(
+        `SELECT 
+         t.id AS tag_id,
+         t.name AS tag_name,
+         t.description AS tag_description,
+         t.created_at AS tag_created_at
+       FROM tags t
+       INNER JOIN user_tag ut ON t.id = ut.tag_id
+       WHERE t.id IN (?) AND ut.user_id = ?
+       ORDER BY FIELD(t.id, ${tagIds.map((_, index) => "?").join(",")})`,
+        [tagIds, userIdNum, ...tagIds] // tagIds para IN, userIdNum para WHERE, tagIds para FIELD
+      );
+
+      const mappedTags =
+        Array.isArray(rows) && rows.length > 0
+          ? rows.map((row) => this.tagMapper.dbToDomain(row))
+          : [];
+
+      return buildPaginationResponse(
+        mappedTags,
+        pagination,
+        total,
+        totalPages,
+        "tags"
+      );
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      console.error("Database error in TagDAO.findAllByUserId:", {
+        userId,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        error: error.message,
+      });
+
+      throw new this.DatabaseError(
+        "Error al consultar las etiquetas del usuario en la base de datos",
         {
           attemptedData: {
-            userIdNum,
-            originalError: error.message,
-            code: error.code,
+            userId,
+            page,
+            limit,
+            sortBy,
+            sortOrder,
           },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 
   // Busca tags asociadas a una tarea
   async findAllByTaskId({
     taskId,
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = TAG_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    }
-  ) {
+    externalConn = null,
+    page = PAGINATION_CONFIG.DEFAULT_PAGE,
+    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    sortBy = TAG_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -405,110 +520,130 @@ class TagDAO extends BaseDatabaseHandler {
         throw new ValidationError("Invalid task id");
       }
 
-      // Validar parametros de ordenamiento, que existan en las constantes
-      if (!Object.values(TAG_SORT_FIELD).includes(sortBy)) {
-        throw new ValidationError(
-          `Invalid sort field. Valid values: ${Object.values(
-            TAG_SORT_FIELD
-          ).join(", ")}`
-        );
-      }
+      const { safeField } = validateSortField(
+        sortBy,
+        TAG_SORT_FIELD,
+        "TAG",
+        "tag sort field"
+      );
 
-      if (!Object.values(SORT_ORDER).includes(sortOrder)) {
-        throw new ValidationError(
-          `Invalid sort order. Valid values: ${Object.values(SORT_ORDER).join(
-            ", "
-          )}`
-        );
-      }
+      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
 
-      const pageNum = Math.max(
+      const pagination = calculatePagination(
+        page,
+        limit,
+        PAGINATION_CONFIG.MAX_LIMIT,
         PAGINATION_CONFIG.DEFAULT_PAGE,
-        parseInt(page, 10) || PAGINATION_CONFIG.DEFAULT_PAGE
+        PAGINATION_CONFIG.DEFAULT_LIMIT
       );
-      let limitNum = parseInt(limit, 10) || PAGINATION_CONFIG.DEFAULT_LIMIT;
 
-      // Aplicar limite maximo
-      limitNum = Math.min(limitNum, PAGINATION_CONFIG.MAX_LIMIT);
-      // aplicar limite minimo
-      limitNum = Math.max(1, limitNum); // asegurar que sea al menos 1
-
-      const offset = (pageNum - 1) * limitNum;
-
-      // Consulta del total de registros
+      // CONSULTA 1: Contar total de tags de la tarea
       const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) as total
-FROM tags t
-INNER JOIN task_tag tt ON t.id = tt.tag_id
-WHERE tt.task_id = ?
- `,[taskIdNum]
+        `SELECT COUNT(*) AS total
+       FROM tags t
+       INNER JOIN task_tag tt ON t.id = tt.tag_id
+       WHERE tt.task_id = ?`,
+        [taskIdNum]
       );
+
       const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = total > 0 ? Math.ceil(total / limitNum) : 0;
+      const totalPages = calculateTotalPages(total, pagination.limit);
 
-      // Si no hay datos retornar de una vez
-      if (total === 0 || pageNum > totalPages) {
-        return {
-          tags: [],
-          pagination: {
-            page: pageNum,
-            limit: limitNum,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false,
-            maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
-          },
-        };
-      }
-
-      const [rows] = await connection.execute(
-        `SELECT 
-          t.id AS tag_id,
-	      	t.name AS tag_name,
-          t.description AS tag_description,
-	      	t.created_at AS tag_created_at
-          FROM tags t 
-          INNER JOIN task_tag tt ON t.id=tt.tag_id 
-          WHERE tt.task_id = ?
-          ORDER BY t.${sortBy} ${sortOrder}
-          LIMIT ? OFFSET ?`,
-        [taskIdNum, limitNum, offset]
-      );
-
-      const mappedTags = Array.isArray(rows)
-        ? rows.map((row) => this.tagMapper.dbToDomain(row))
-        : [];
-
-      return {
-        tags: mappedTags,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
+      if (total === 0 || pagination.page > totalPages) {
+        return buildPaginationResponse(
+          [],
+          pagination,
           total,
           totalPages,
-          hasNext: pageNum < totalPages,
-          hasPrev: pageNum > 1,
-          maxLimit: PAGINATION_CONFIG.MAX_LIMIT,
-        },
-      };
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        throw error; // Preservar error de validacion
+          "tags"
+        );
       }
 
-      throw new DatabaseError(
-        "Error al consultar las userTag en la base de datos",
+      // CONSULTA 2: Obtener IDs de tags paginados de la tarea
+      const [tagIdsResult] = await connection.query(
+        `SELECT t.id
+       FROM tags t
+       INNER JOIN task_tag tt ON t.id = tt.tag_id
+       WHERE tt.task_id = ?
+       ORDER BY ${safeField} ${safeOrder}, t.id ASC
+       LIMIT ? OFFSET ?`,
+        [taskIdNum, pagination.limit, pagination.offset]
+      );
+
+      if (tagIdsResult.length === 0) {
+        return buildPaginationResponse(
+          [],
+          pagination,
+          total,
+          totalPages,
+          "tags"
+        );
+      }
+
+      const tagIds = tagIdsResult.map((row) => row.id);
+
+      // CONSULTA 3: Obtener detalles completos solo para los tags paginados
+      const [rows] = await connection.query(
+        `SELECT 
+         t.id AS tag_id,
+         t.name AS tag_name,
+         t.description AS tag_description,
+         t.created_at AS tag_created_at
+       FROM tags t
+       INNER JOIN task_tag tt ON t.id = tt.tag_id
+       WHERE t.id IN (?) AND tt.task_id = ?
+       ORDER BY FIELD(t.id, ${tagIds.map((_, index) => "?").join(",")})`,
+        [tagIds, taskIdNum, ...tagIds] // tagIds para IN, taskIdNum para WHERE, tagIds para FIELD
+      );
+
+      const mappedTags =
+        Array.isArray(rows) && rows.length > 0
+          ? rows.map((row) => this.tagMapper.dbToDomain(row))
+          : [];
+
+      return buildPaginationResponse(
+        mappedTags,
+        pagination,
+        total,
+        totalPages,
+        "tags"
+      );
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      console.error("Database error in TagDAO.findAllByTaskId:", {
+        taskId,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        error: error.message,
+      });
+
+      throw new this.DatabaseError(
+        "Error al consultar las etiquetas de la tarea en la base de datos",
         {
           attemptedData: {
-            taskId: taskIdNum,
-            originalError: error.message,
-            code: error.code,
+            taskId,
+            page,
+            limit,
+            sortBy,
+            sortOrder,
           },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
         }
       );
     } finally {
-      await this.releaseConnection(connection, isExternal);
+      if (connection && !isExternal) {
+        try {
+          await this.releaseConnection(connection, isExternal);
+        } catch (releaseError) {
+          console.error("Error releasing connection:", releaseError.message);
+        }
+      }
     }
   }
 }
