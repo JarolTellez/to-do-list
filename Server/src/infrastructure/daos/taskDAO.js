@@ -1,27 +1,13 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
-const PAGINATION_CONFIG = require("../config/pagination");
-const {
-  DatabaseError,
-  ConflictError,
-  ValidationError,
-} = require("../../utils/appErrors");
-
-const {
-  validateSortField,
-  validateSortOrder,
-} = require("../utils/validation/sortValidator");
-const {
-  calculatePagination,
-  calculateTotalPages,
-  buildPaginationResponse,
-} = require("../utils/pagination");
 
 const { SORT_ORDER, TASK_SORT_FIELD } = require("../constants/sortConstants");
 
 class TaskDAO extends BaseDatabaseHandler {
-  constructor({ taskMapper, connectionDB }) {
+  constructor({ taskMapper, connectionDB, errorFactory, sortValidator }) {
     super(connectionDB);
     this.taskMapper = taskMapper;
+    this.errorFactory = errorFactory;
+    this.sortValidator = sortValidator;
   }
 
   async create(task, externalConn = null) {
@@ -29,39 +15,38 @@ class TaskDAO extends BaseDatabaseHandler {
 
     try {
       const [result] = await connection.execute(
-        "INSERT INTO tasks (name,description,scheduled_date,created_at,last_update_date,is_completed,priority,user_id) VALUES(?,?,?,?,?,?,?,?)",
+        "INSERT INTO tasks (name,description,scheduled_date,is_completed,priority,user_id) VALUES(?,?,?,?,?,?)",
         [
           task.name,
           task.description,
           task.scheduledDate,
-          task.createdAt,
-          task.lastUpdateDate,
           task.isCompleted,
           task.priority,
           task.userId,
         ]
       );
-      const actualTask = await this.findWithTagsByIdAndUserId(
-        result.insertId,
+
+      const insertedId = result.insertId;
+      const createdTask = this.findWithTagsByIdAndUserId(
+        insertedId,
         task.userId
       );
-      return actualTask;
+
+      return createdTask;
     } catch (error) {
+      // Duplicated error
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new this.ConflictError(
-          "Already exist a task with this name to this user",
+        throw this.errorFactory.createConflictError(
+          "A task with this name already exists for this user",
           { name: task.name, userId: task.userId }
         );
       }
-      throw new this.DatabaseError(
-        "Failed to create task",
-        {
-          attemptedData: { userId: task.userId, name: task.name },
-          originalError: error.message,
-          code: error.code,
-          context:"taskDAO - create method"
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to create task", {
+        attemptedData: { userId: task.userId, name: task.name },
+        originalError: error.message,
+        code: error.code,
+        context: "taskDAO - create method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -74,7 +59,7 @@ class TaskDAO extends BaseDatabaseHandler {
 
     try {
       const [result] = await connection.execute(
-        "UPDATE tasks SET name = ?, description = ?, scheduled_date = ?, last_update_date = NOW(), priority = ? WHERE id=? AND user_id=?",
+        "UPDATE tasks SET name = ?, description = ?, scheduled_date = ?, priority = ? WHERE id=? AND user_id=?",
         [
           task.name,
           task.description,
@@ -89,23 +74,19 @@ class TaskDAO extends BaseDatabaseHandler {
         return null;
       }
 
-      const [updatedRows] = await connection.execute(
-        "SELECT last_update_date FROM tasks WHERE id = ?",
-        [task.id]
-      );
+      const updatedTask = this.findWithTagsByIdAndUserId(task.id, task.userId);
 
-      task.lastUpdateDate = updatedRows[0]?.last_update_date;
-      return task;
+      return updatedTask;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new this.ConflictError("Alredy exist a task with this name", {
+        throw  this.errorFactory.createConflictError("Alredy exist a task with this name", {
           attemptedData: { name: task.name, userId: task.userId },
         });
       }
-      throw new this.DatabaseError("Failed to update task", {
+      throw  this.errorFactory.createDatabaseError("Failed to update task", {
         originalError: error.message,
         code: error.code,
-         context:"taskDAO - update method"
+        context: "taskDAO - update method",
       });
     } finally {
       if (connection && !isExternal) {
@@ -115,23 +96,43 @@ class TaskDAO extends BaseDatabaseHandler {
   }
 
   async updateCompleted(id, isCompleted, userId, externalConn = null) {
-    console.log("DATOS RECIIVIDOA:", id, isCompleted, userId);
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
+      const taskIdNum = Number(id);
+      const userIdNum = Number(userId);
+
+      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
+        throw this.errorFactory.createValidationError("Invalid task id");
+      }
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw this.errorFactory.createValidationError("Invalid user id");
+      }
+
+      if (typeof isCompleted !== "boolean") {
+        throw this.errorFactory.createValidationError(
+          "isCompleted must be a boolean"
+        );
+      }
+
       const [result] = await connection.execute(
-        "UPDATE tasks SET is_completed = ?, last_update_date = NOW() WHERE id = ? and user_id = ? ",
+        "UPDATE tasks SET is_completed = ? WHERE id = ? and user_id = ? ",
         [isCompleted, id, userId]
       );
 
-      return result.affectedRows > 0;
+      if (result.affectedRows === 0) {
+        return null;
+      }
+      const updatedTask = this.findWithTagsByIdAndUserId(id, userId);
+
+      return updatedTask;
     } catch (error) {
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed update as completed this task",
         {
           attemptedData: { taskId: id, userId },
           originalError: error.message,
           code: error.code,
-           context:"taskDAO - updateCompleted method"
+          context: "taskDAO - updateCompleted method",
         }
       );
     } finally {
@@ -145,6 +146,11 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
+      const taskIdNum = Number(id);
+      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
+        throw this.errorFactory.createValidationError("Invalid task id");
+      }
+
       const [result] = await connection.execute(
         "DELETE FROM tasks WHERE id = ? AND user_id=?",
         [id, userId]
@@ -153,16 +159,16 @@ class TaskDAO extends BaseDatabaseHandler {
       return result.affectedRows > 0;
     } catch (error) {
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
-        throw new this.ConflictError("Failed no delete task", {
+        throw  this.errorFactory.createConflictError("Failed no delete task", {
           attemptedData: { taskId: id, userId },
         });
       }
 
-      throw new this.DatabaseError("Failed to delete task", {
+      throw  this.errorFactory.createDatabaseError("Failed to delete task", {
         attemptedData: { taskId: id, userId },
         originalError: error.message,
         code: error.code,
-         context:"taskDAO - delete method"
+        context: "taskDAO - delete method",
       });
     } finally {
       if (connection && !isExternal) {
@@ -179,7 +185,7 @@ class TaskDAO extends BaseDatabaseHandler {
       const taskIdNum = Number(id);
 
       if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
+        throw this.errorFactory.createValidationError("Invalid task id");
       }
 
       const [rows] = await connection.execute(
@@ -205,176 +211,17 @@ class TaskDAO extends BaseDatabaseHandler {
       const mappedTask = this.taskMapper.dbToDomain(rows[0]);
       return mappedTask;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to retrieve task by id", {
-        originalError: error.message,
-        code: error.code,
-        attemptedData: { taskId: taskIdNum },
-         context:"taskDAO -findById method"
-      });
-    } finally {
-      if (connection && !isExternal) {
-        await this.releaseConnection(connection, isExternal);
-      }
-    }
-  }
-
-  // consulta todas las tareas con etiquetas de un usuario
-  async findAllWithTagsByUserId(
-    userId,
-    {
-      isCompleted = false,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
-      sortOrder = SORT_ORDER.DESC,
-      externalConn = null,
-    } = {}
-  ) {
-    const { connection, isExternal } = await this.getConnection(externalConn);
-
-    try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
-
-      let completedBool = isCompleted;
-      if (typeof isCompleted === "string") {
-        completedBool = isCompleted.toLowerCase() === "true";
-      }
-      if (typeof completedBool !== "boolean") {
-        throw new ValidationError(
-          "isCompleted must be a boolean or boolean string"
-        );
-      }
-
-      const { safeField } = validateSortField(
-        sortBy,
-        TASK_SORT_FIELD,
-        "TASK",
-        "task sort field"
-      );
-
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
-
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
-      );
-
-      // CONSULTA 1: Contar total de TAREAS
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total
-       FROM tasks t
-       WHERE t.user_id = ? AND t.is_completed = ?;`,
-        [userIdNum, completedBool]
-      );
-
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // retornar si no hay datos o pagina invalida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "tasks"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de tareas paginadas (sin etiquetas para evitar duplicados)
-      const [taskIdsResult] = await connection.query(
-        `SELECT t.id
-       FROM tasks t
-       WHERE t.user_id = ? AND t.is_completed = ?
-       ORDER BY ${safeField} ${safeOrder}, t.id ASC
-       LIMIT ? OFFSET ?`,
-        [userIdNum, completedBool, pagination.limit, pagination.offset]
-      );
-
-      if (taskIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "tasks"
-        );
-      }
-
-      const taskIds = taskIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos con tags solo para las tareas paginadas
-      const [rows] = await connection.query(
-        `SELECT 
-          t.id AS task_id,
-          t.name AS task_name,
-          t.description AS task_description,
-          t.scheduled_date,
-          t.created_at AS task_created_at,
-          t.last_update_date,
-          t.is_completed,
-          t.user_id,
-          t.priority,
-          
-          tt.id AS task_tag_id,
-          tt.created_at AS task_tag_created_at,
-          
-          tg.id AS tag_id,
-          tg.name AS tag_name,
-          tg.description AS tag_description,
-          tg.created_at AS tag_created_at
-       FROM tasks t
-       LEFT JOIN task_tag tt ON t.id = tt.task_id
-       LEFT JOIN tags tg ON tt.tag_id = tg.id
-       WHERE t.id IN (?)
-       ORDER BY 
-         FIELD(t.id, ${taskIds.map((_, index) => "?").join(",")}),
-         tt.id ASC`,
-        [taskIds, ...taskIds] // doble para el FIELD y el IN
-      );
-
-      const mappedTasks =
-        Array.isArray(rows) && rows.length > 0
-          ? this.taskMapper.dbToDomainWithTags(rows)
-          : [];
-
-      return buildPaginationResponse(
-        mappedTasks,
-        pagination,
-        total,
-        totalPages,
-        "tasks"
-      );
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        throw error;
-      }
-      throw new this.DatabaseError(
-        `Failed to find all tasks with tags by userId`,
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve task by id",
         {
-          attemptedData: {
-            userId,
-            isCompleted:
-              typeof isCompleted === "boolean" ? isCompleted : completedBool,
-            page,
-            limit,
-            sortBy,
-            sortOrder,
-          },
           originalError: error.message,
           code: error.code,
-          stack: error.stack,
-           context:"taskDAO - findAllWithTagsByUserId method"
+          attemptedData: { taskId: taskIdNum },
+          context: "taskDAO -findById method",
         }
       );
     } finally {
@@ -384,8 +231,8 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
-  //consulta una tarea con sus etiquetas por id y userId
-  async findWithTagsByIdAndUserId(id, userId, { externalConn = null }) {
+    // Consulta una tarea con sus etiquetas por id y userId
+  async findWithTagsByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -393,11 +240,11 @@ class TaskDAO extends BaseDatabaseHandler {
       const userIdNum = Number(userId);
 
       if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
+        throw this.errorFactory.createValidationError("Invalid task id");
       }
 
       if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id num");
+        throw this.errorFactory.createValidationError("Invalid user id");
       }
 
       const [rows] = await connection.execute(
@@ -427,9 +274,10 @@ class TaskDAO extends BaseDatabaseHandler {
       ORDER BY tg.name ASC, tt.id ASC`,
         [taskIdNum, userIdNum]
       );
+      
       if (!Array.isArray(rows) || rows.length === 0) return null;
 
-      //si no tiene etiquetas
+      // Si no tiene etiquetas
       if (rows.length === 1 && rows[0].task_tag_id === null) {
         return this.taskMapper.dbToDomain(rows[0]);
       }
@@ -437,15 +285,19 @@ class TaskDAO extends BaseDatabaseHandler {
       const mappedTask = this.taskMapper.dbToDomainWithTags(rows);
       return mappedTask;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      throw new this.DatabaseError("Failed to retrieve task with tags by id and userId", {
-        attemptedData: { taskId: id, userId },
-        originalError: error.message,
-        code: error.code,
-         context:"taskDAO - findWithTagsByIdAndUserId method"
-      });
+      
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve task with tags by id and userId",
+        {
+          attemptedData: { taskId: id, userId },
+          originalError: error.message,
+          code: error.code,
+          context: "taskDAO - findWithTagsByIdAndUserId method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -453,110 +305,60 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
-  // consulta todas las tareas pendientes por userId
-  async findAllPendingByUserId(userId, { page, limit, externalConn } = {}) {
-    return this.findAllWithTagsByUserId(userId, {
-      isCompleted: false,
-      page,
-      limit,
-      sortBy: TASK_SORT_FIELD.LAST_UPDATE_DATE,
-      sortOrder: SORT_ORDER.DESC,
-      externalConn,
-    });
-  }
-
-  //consulta todas las tareas completadas por userId
-  async findAllPendingByUserId(userId, { page, limit, externalConn } = {}) {
-    return this.findAllWithTagsByUserId(userId, {
-      isCompleted: true,
-      page,
-      limit,
-      sortBy: TASK_SORT_FIELD.LAST_UPDATE_DATE,
-      sortOrder: SORT_ORDER.DESC,
-      externalConn,
-    });
-  }
-
-  //consulta todas las tareas vencidas de un usuario
-  async findAllOverdueTasksByUserId(
+  //Consulta todas las tareas con etiquetas por userId
+   async findAllWithTagsByUserId({
     userId,
-    {
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = TASK_SORT_FIELD.SCHEDULED_DATE,
-      sortOrder = SORT_ORDER.ASC,
-      externalConn = null,
-    } = {}
-  ) {
+    isCompleted = false,
+    sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
+    sortOrder = SORT_ORDER.DESC,
+    limit = null,
+    offset = null,
+    externalConn = null,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
       const userIdNum = Number(userId);
       if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
+        throw this.errorFactory.createValidationError("Invalid user id");
       }
-      const { safeField } = validateSortField(
+
+      if (typeof isCompleted !== "boolean") {
+        throw this.errorFactory.createValidationError(
+          "isCompleted must be a boolean"
+        );
+      }
+
+      const { safeField } = this.sortValidator.validateSortField(
         sortBy,
         TASK_SORT_FIELD,
         "TASK",
         "task sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
-
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
+      const { safeOrder } = this.sortValidator.validateSortOrder(
+        sortOrder,
+        SORT_ORDER
       );
 
-      // CONSULTA 1: Contar total de TAREAS vencidas
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total
-       FROM tasks t
-       WHERE t.user_id = ? AND t.is_completed = FALSE AND t.scheduled_date < NOW()`,
-        [userIdNum]
-      );
-
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // Early return si no hay datos o pagina inválida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "tasks"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de tareas vencidas paginadas
+      // Obtener IDs de tareas con límite y offset
       const [taskIdsResult] = await connection.query(
         `SELECT t.id
        FROM tasks t
-       WHERE t.user_id = ? AND t.is_completed = FALSE AND t.scheduled_date < NOW()
+       WHERE t.user_id = ? AND t.is_completed = ?
        ORDER BY ${safeField} ${safeOrder}, t.id ASC
-       LIMIT ? OFFSET ?`,
-        [userIdNum, pagination.limit, pagination.offset]
+       ${limit !== null ? "LIMIT ?" : ""} 
+       ${offset !== null ? "OFFSET ?" : ""}`,
+        [userIdNum, isCompleted, limit, offset].filter(param => param !== null)
       );
 
       if (taskIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "tasks"
-        );
+        return [];
       }
 
       const taskIds = taskIdsResult.map((row) => row.id);
 
-      // CONSULTA 3: Obtener detalles completos con tags solo para las tareas paginadas
+      // Obtener detalles completos con tags solo para las tareas seleccionadas
       const [rows] = await connection.query(
         `SELECT 
           t.id AS task_id,
@@ -583,7 +385,7 @@ class TaskDAO extends BaseDatabaseHandler {
        ORDER BY 
          FIELD(t.id, ${taskIds.map((_, index) => "?").join(",")}),
          tt.id ASC`,
-        [taskIds, ...taskIds] // Doble para el FIELD y el IN
+        [taskIds, ...taskIds]
       );
 
       const mappedTasks =
@@ -591,33 +393,27 @@ class TaskDAO extends BaseDatabaseHandler {
           ? this.taskMapper.dbToDomainWithTags(rows)
           : [];
 
-      return buildPaginationResponse(
-        mappedTasks,
-        pagination,
-        total,
-        totalPages,
-        "tasks"
-      );
+      return mappedTasks;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-
-      throw new this.DatabaseError(
-        "Failed to retrieve all overdue tasks by userId",
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve tasks with tags by user id",
         {
           attemptedData: {
             userId,
-            page,
-            limit,
+            isCompleted,
             sortBy,
             sortOrder,
+            limit,
+            offset,
           },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-           context:"taskDAO - findAllOverdueTasksByUserId method"
+          context: "taskDAO: findAllWithTagsByUserId method",
         }
       );
     } finally {
@@ -626,5 +422,233 @@ class TaskDAO extends BaseDatabaseHandler {
       }
     }
   }
+
+  // Consulta todas las tareas PENDIENTES por userId
+  async findAllPendingByUserId({
+    userId,
+    sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
+    sortOrder = SORT_ORDER.DESC,
+    limit = null,
+    offset = null,
+    externalConn = null,
+  } = {}) {
+    return this.findAllWithTagsByUserId({
+      userId,
+      isCompleted: false,
+      sortBy,
+      sortOrder,
+      limit,
+      offset,
+      externalConn,
+    });
+  }
+
+  // Consulta todas las tareas COMPLETADAS por userId
+  async findAllCompleteByUserId({
+    userId,
+    sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
+    sortOrder = SORT_ORDER.DESC,
+    limit = null,
+    offset = null,
+    externalConn = null,
+  } = {}) {
+    return this.findAllWithTagsByUserId({
+      userId,
+      isCompleted: true,
+      sortBy,
+      sortOrder,
+      limit,
+      offset,
+      externalConn,
+    });
+  }
+
+
+  // Cuenta todas las tareas de un usuario por estado
+  async countAllByUserIdAndStatus(userId, isCompleted, externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const userIdNum = Number(userId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw this.errorFactory.createValidationError("Invalid user id");
+      }
+
+      const [totalRows] = await connection.execute(
+        `SELECT COUNT(*) AS total
+         FROM tasks t
+         WHERE t.user_id = ? AND t.is_completed = ?`,
+        [userIdNum, isCompleted]
+      );
+
+      return Number(totalRows[0]?.total) || 0;
+    } catch (error) {
+      throw this.errorFactory.createDatabaseError("Failed to count tasks", {
+        originalError: error.message,
+        code: error.code,
+        context: "TaskDAO.countAllByUserIdAndStatus",
+        userId,
+        isCompleted,
+      });
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+
+  // Cuenta todas las tareas PENDIENTES de un usuario
+  async countAllPendingByUserId(userId, externalConn = null) {
+    return this.countAllByUserIdAndStatus(userId, false, externalConn);
+  }
+
+  // Cuenta todas las tareas COMPLETADAS de un usuario
+  async countAllCompleteByUserId(userId, externalConn = null) {
+    return this.countAllByUserIdAndStatus(userId, true, externalConn);
+  }
+
+  // Cuenta todas las tareas vencidas de un usuario
+  async countAllOverdueByUserId(userId, externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const userIdNum = Number(userId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw this.errorFactory.createValidationError("Invalid user id");
+      }
+
+      const [totalRows] = await connection.execute(
+        `SELECT COUNT(*) AS total
+         FROM tasks t
+         WHERE t.user_id = ? AND t.is_completed = FALSE AND t.scheduled_date < NOW()`,
+        [userIdNum]
+      );
+
+      return Number(totalRows[0]?.total) || 0;
+    } catch (error) {
+      throw this.errorFactory.createDatabaseError("Failed to count overdue tasks", {
+        originalError: error.message,
+        code: error.code,
+        context: "TaskDAO.countAllOverdueByUserId",
+        userId,
+      });
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+
+  // Consulta todas las tareas vencidas de un usuario
+  async findAllOverdueByUserId({
+    userId,
+    sortBy = TASK_SORT_FIELD.SCHEDULED_DATE,
+    sortOrder = SORT_ORDER.ASC,
+    limit = null,
+    offset = null,
+    externalConn = null,
+  } = {}) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const userIdNum = Number(userId);
+      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+        throw this.errorFactory.createValidationError("Invalid user id");
+      }
+
+      const { safeField } = this.sortValidator.validateSortField(
+        sortBy,
+        TASK_SORT_FIELD,
+        "TASK",
+        "task sort field"
+      );
+
+      const { safeOrder } = this.sortValidator.validateSortOrder(
+        sortOrder,
+        SORT_ORDER
+      );
+
+      // Obtener IDs de tareas vencidas con limit y offset
+      const [taskIdsResult] = await connection.query(
+        `SELECT t.id
+       FROM tasks t
+       WHERE t.user_id = ? AND t.is_completed = FALSE AND t.scheduled_date < NOW()
+       ORDER BY ${safeField} ${safeOrder}, t.id ASC
+       ${limit !== null ? "LIMIT ?" : ""} 
+       ${offset !== null ? "OFFSET ?" : ""}`,
+        [userIdNum, limit, offset].filter(param => param !== null)
+      );
+
+      if (taskIdsResult.length === 0) {
+        return [];
+      }
+
+      const taskIds = taskIdsResult.map((row) => row.id);
+
+      // Obtener detalles completos con tags
+      const [rows] = await connection.query(
+        `SELECT 
+          t.id AS task_id,
+          t.name AS task_name,
+          t.description AS task_description,
+          t.scheduled_date,
+          t.created_at AS task_created_at,
+          t.last_update_date,
+          t.is_completed,
+          t.user_id,
+          t.priority,
+          
+          tt.id AS task_tag_id,
+          tt.created_at AS task_tag_created_at,
+          
+          tg.id AS tag_id,
+          tg.name AS tag_name,
+          tg.description AS tag_description,
+          tg.created_at AS tag_created_at
+       FROM tasks t
+       LEFT JOIN task_tag tt ON t.id = tt.task_id
+       LEFT JOIN tags tg ON tt.tag_id = tg.id
+       WHERE t.id IN (?)
+       ORDER BY 
+         FIELD(t.id, ${taskIds.map((_, index) => "?").join(",")}),
+         tt.id ASC`,
+        [taskIds, ...taskIds]
+      );
+
+      const mappedTasks =
+        Array.isArray(rows) && rows.length > 0
+          ? this.taskMapper.dbToDomainWithTags(rows)
+          : [];
+
+      return mappedTasks;
+    } catch (error) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve overdue tasks by user id",
+        {
+          attemptedData: {
+            userId,
+            sortBy,
+            sortOrder,
+            limit,
+            offset,
+          },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "taskDAO: findAllOverdueByUserId method",
+        }
+      );
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+  
 }
-module.exports = TaskDAO;
+
+
