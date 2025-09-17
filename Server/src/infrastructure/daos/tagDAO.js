@@ -25,31 +25,11 @@ class TagDAO extends BaseDatabaseHandler {
       );
       const insertedId = result.insertId;
 
-      const [rows] = await connection.execute(
-        `SELECT 
-         id AS tag_id,
-         name AS tag_name,
-         description AS tag_description,
-         created_at AS tag_created_at
-       FROM tags
-       WHERE id = ?`,
-        [insertedId]
-      );
+      const createdTag = this.findById(insertedId);
 
-      if (!Array.isArray(rows) || rows.length === 0) {
-        throw this.errorFactory.createDatabaseError(
-          "Failed to retrieve the tag after creation",
-          {
-            attemptedData: { tagName: tag.name, userId: tag.userId },
-          }
-        );
-      }
-
-      const mappedTag = this.tagMapper.dbToDomain(rows[0]);
-
-      return mappedTag;
+      return createdTag;
     } catch (error) {
-      // Error para duplicados
+      // Duplicated error
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
           "A tag with this name already exists for this user ",
@@ -57,7 +37,7 @@ class TagDAO extends BaseDatabaseHandler {
         );
       }
 
-      throw this.errorFactory.createDatabaseError("Failed to create task", {
+      throw this.errorFactory.createDatabaseError("Failed to create tag", {
         originalError: error.message,
         code: error.code,
         attemptedData: { name: tag.name, userId: tag.userId },
@@ -77,6 +57,9 @@ class TagDAO extends BaseDatabaseHandler {
         "UPDATE tags SET name = ? WHERE id = ?",
         [tag.name, tag.id]
       );
+      if(result.affectedRows ===0){
+        return null;
+      }
       return tag;
     } catch (error) {
       // Error de duplicado al actualizar
