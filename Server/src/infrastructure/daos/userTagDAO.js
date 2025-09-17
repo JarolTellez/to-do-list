@@ -60,14 +60,14 @@ class UserTagDAO extends BaseDatabaseHandler {
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw new this.ConflictError(
-          "Este usuario ya tiene asignado esta etiqueta",
+          "This user already has this tag assigned",
           { attemptedData: { userId: userTag.userId, tagId: userTag.tagId } }
         );
       }
 
       if (error.code === "ER_NO_REFERENCED_ROW" || error.errno === 1452) {
         throw new this.ConflictError(
-          "El usuario o etiqueta referenciada no existe",
+          "The referenced user or tag does not exist",
           { attemptedData: { userId: userTag.userId, tagId: userTag.tagId } }
         );
       }
@@ -76,28 +76,55 @@ class UserTagDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      throw new this.DatabaseError(
-        "Error al crear la relación userTag en la base de datos",
-        {
-          attemptedData: { userId: userTag.userId, tagId: userTag.tagId },
-          originalError: error.message,
-          code: error.code,
-          stack: error.stack,
-        }
-      );
+      throw new this.DatabaseError("Failed to create user-tag relationship", {
+        attemptedData: { userId: userTag.userId, tagId: userTag.tagId },
+        originalError: error.message,
+        code: error.code,
+        stack: error.stack,
+        context: "userTag DAO - create method",
+      });
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // DELETE
-  async delete(id, userId, externalConn = null) {
+  async delete(id, externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const idNum = Number(id);
+
+      if (!Number.isInteger(idNum) || idNum <= 0) {
+        throw new this.ValidationError("Invalid user tag id");
+      }
+
+      const [result] = await connection.execute(
+        "DELETE FROM user_tag WHERE id = ? ",
+        [idNum]
+      );
+
+      return result.affectedRows > 0;
+    } catch (error) {
+      if (error instanceof this.ValidationError) {
+        throw error;
+      }
+
+      throw new this.DatabaseError("Failed to delete user-tag relationship", {
+        attemptedData: { id, userId },
+        originalError: error.message,
+        code: error.code,
+        stack: error.stack,
+        contest: "DAO layer - delete by id and userId method",
+      });
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+  async deleteByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -123,22 +150,16 @@ class UserTagDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      throw new this.DatabaseError(
-        "Error al eliminar la relación userTag de la base de datos",
-        {
-          attemptedData: { id, userId },
-          originalError: error.message,
-          code: error.code,
-          stack: error.stack,
-        }
-      );
+      throw new this.DatabaseError("Failed to delete user-tag relationship", {
+        attemptedData: { id, userId },
+        originalError: error.message,
+        code: error.code,
+        stack: error.stack,
+        contest: "DAO layer - delete by id and userId method",
+      });
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -169,22 +190,16 @@ class UserTagDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      throw new this.DatabaseError(
-        "Error al eliminar la relación userTag por user_id y tag_id",
-        {
-          attemptedData: { userId, tagId },
-          originalError: error.message,
-          code: error.code,
-          stack: error.stack,
-        }
-      );
+      throw new this.DatabaseError("Failed to delete user-tag relationship", {
+        attemptedData: { userId, tagId },
+        originalError: error.message,
+        code: error.code,
+        stack: error.stack,
+        context: "DAO layer - delete by userId and tagId",
+      });
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -210,21 +225,18 @@ class UserTagDAO extends BaseDatabaseHandler {
       }
 
       throw new this.DatabaseError(
-        "Error al eliminar todas las relaciones userTag del usuario",
+        "Failed to delete al user-tag relationship for the specific user",
         {
           attemptedData: { userId },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+          context: "userTag DAO - bulk deletion by userId",
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -250,26 +262,23 @@ class UserTagDAO extends BaseDatabaseHandler {
       }
 
       throw new this.DatabaseError(
-        "Error al eliminar todas las relaciones userTag de la etiqueta",
+        "Failed to delete all user-tag relationships for the specified tag",
         {
           attemptedData: { tagId },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+          context: "userTag DAO - bulk deletion by tagId",
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  async findByIdAndUserId(id, userId, externalConn = null) {
+  async findByIdAndUserId(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -291,7 +300,7 @@ class UserTagDAO extends BaseDatabaseHandler {
            ut.tag_id,
            ut.created_at AS user_tag_created_at
          FROM user_tag ut 
-         WHERE ut.id = ? AND ut.user_id = ?`,
+         WHERE ut.id = ? `,
         [idNum, userIdNum]
       );
 
@@ -306,21 +315,18 @@ class UserTagDAO extends BaseDatabaseHandler {
       }
 
       throw new this.DatabaseError(
-        "Error al consultar la relación userTag por id y user_id",
+        "Failed to retrieve userTag relationship by ID and user ID",
         {
           attemptedData: { id, userId },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+          context: "userTagDAO - find by id and userId",
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -362,21 +368,18 @@ class UserTagDAO extends BaseDatabaseHandler {
       }
 
       throw new this.DatabaseError(
-        "Error al consultar la relación userTag por user_id y tag_id",
+        "Failed to retrieve user-tag relationship by user_id and tag_id",
         {
           attemptedData: { userId, tagId },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+          context: "userTag DAO - find by userId and tagId",
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -488,17 +491,8 @@ class UserTagDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      console.error("Database error in UserTagDAO.findAllByTagId:", {
-        tagId,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-        error: error.message,
-      });
-
       throw new this.DatabaseError(
-        "Error al consultar las relaciones userTag de la etiqueta",
+        "Error retrieving user-tag associations by tagId",
         {
           attemptedData: {
             tagId,
@@ -510,15 +504,12 @@ class UserTagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+          context: "userTagDAO - find by tagId",
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }

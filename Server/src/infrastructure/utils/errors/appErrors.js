@@ -23,52 +23,52 @@ class AppError extends Error {
 }
 
 class NotFoundError extends AppError {
-  constructor(message = "Recurso no encontrado", details = null, errorCode= ErrorCodes.NOT_FOUND) {
+  constructor(message = "Resource not found", details = null, errorCode= ErrorCodes.NOT_FOUND) {
     super(message, 404, details, errorCode);
   }
 }
 
 class ValidationError extends AppError {
-  constructor(message = "Datos inválidos", details = null, errorCode= ErrorCodes.VALIDATION_ERROR) {
+  constructor(message = "Invalid data", details = null, errorCode= ErrorCodes.VALIDATION_ERROR) {
     super(message, 400, details, errorCode);
     
   }
 }
 
 class DatabaseError extends AppError {
-  constructor(message = "Error de base de datos", details = null, errorCode=ErrorCodes.DATABASE_ERROR) {
+  constructor(message = "Database error", details = null, errorCode=ErrorCodes.DATABASE_ERROR) {
     super(message, 500, details, errorCode );
   }
 }
 
 class AuthenticationError extends AppError {
-  constructor(message = "No autorizado", details = null, errorCode=ErrorCodes.UNAUTHORIZED) {
+  constructor(message = "Unauthorized", details = null, errorCode=ErrorCodes.UNAUTHORIZED) {
     super(message, 401, details, errorCode);
   }
 }
 
 class ConflictError extends AppError {
-  constructor(message = "Conflicto con el recurso", details = null, errorCode= ErrorCodes.CONFLICT) {
+  constructor(message = "Resource conflict", details = null, errorCode= ErrorCodes.CONFLICT) {
     super(message, 409, details, errorCode);
   }
 }
 
 class RateLimitError extends AppError {
-  constructor(message = "Límite de solicitudes excedido", details = null, errorCode=ErrorCodes.RATE_LIMIT_EXCEEDED) {
-    super(message, 429, details, errorCode); // 429 Too Many Requests
+  constructor(message = "Rate limit exceeded", details = null, errorCode=ErrorCodes.RATE_LIMIT_EXCEEDED) {
+    super(message, 429, details, errorCode); 
   }
 }
 
 class ForbiddenError extends AppError {
-  constructor(message = "Acceso prohibido", details = null, errorCode=ErrorCodes.FORBIDDEN) {
-    super(message, 403, details, errorCode); // 403 Forbidden
+  constructor(message = "Forbidden access", details = null, errorCode=ErrorCodes.FORBIDDEN) {
+    super(message, 403, details, errorCode); 
   }
 }
 
 class ServiceUnavailableError extends AppError {
-  constructor(message = "Servicio no disponible", details = null) {
-    super(message, 503, details, ErrorCodes.SERVICE_UNAVAILABLE); // 503 Service Unavailable
-    // this.name = 'ServiceUnavailableError';
+  constructor(message = "Service unavailable", details = null) {
+    super(message, 503, details, ErrorCodes.SERVICE_UNAVAILABLE);
+  
   }
 }
 

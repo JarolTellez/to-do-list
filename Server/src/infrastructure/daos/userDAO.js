@@ -49,28 +49,25 @@ class UserDAO extends BaseDatabaseHandler {
       return actualUser;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        if (error.message.includes("nombre_usuario")) {
-          throw new ConflictError("El nombre de usuario ya está en uso", {
+        if (error.message.includes("user_name")) {
+          throw new ConflictError("Username is already taken", {
             attemptedData: { userName: user.userName },
           });
         } else if (error.message.includes("email")) {
-          throw new ConflictError("El email electrónico ya está registrado", {
+          throw new ConflictError("Email is already taken", {
             attemptedData: { email: user.email },
           });
         }
       }
-      throw new DatabaseError("No se pudo registrar el user", {
+      throw new DatabaseError("Failed to create user", {
         attemptedData: { userId: user.id, userName: user.userName },
         originalError: error.message,
         code: error.code,
+        context: "userDAO - create method"
       });
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -86,31 +83,28 @@ class UserDAO extends BaseDatabaseHandler {
       return user;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        if (error.message.includes("nombre_usuario")) {
-          throw new ConflictError("El nombre de user ya está en uso", {
+        if (error.message.includes("user_name")) {
+          throw new ConflictError("Username already taken", {
             attemptedData: { userName: user.userName },
           });
         } else if (error.message.includes("email")) {
-          throw new ConflictError("El email electrónico ya está registrado", {
+          throw new ConflictError("Email already taken", {
             attemptedData: { email: user.email },
           });
         }
       }
       throw new DatabaseError(
-        "Error al actualizar el usuario en la base de datos",
+        "Failed to update user",
         {
           attemptedData: { userId: user.id, userName: user.userName },
           originalError: error.message,
           code: error.code,
+          context: "userDAO - update method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -127,26 +121,23 @@ class UserDAO extends BaseDatabaseHandler {
     } catch (error) {
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
         throw new ConflictError(
-          "No se puede eliminar el usario porque tiene tareas o sesiones asociadas",
+          "Failed to delete user: user has associated tasks or sessions",
           { attemptedData: { userId: id } }
         );
       }
 
       throw new DatabaseError(
-        "Error al eliminar el usuario de la base de datos",
+        "Failed to delete user",
         {
           attemptedData: { userId: id },
           originalError: error.message,
           code: error.code,
+          context: "userDAO - delete method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -251,16 +242,8 @@ class UserDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      console.error("Database error in UserDAO.findAll:", {
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-        error: error.message,
-      });
-
       throw new this.DatabaseError(
-        "Error al consultar todos los usuarios en la base de datos",
+        "Failed to delete all users",
         {
           attemptedData: {
             page,
@@ -271,15 +254,12 @@ class UserDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+          context: "userDAO - adminFindAll mehtod"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -308,20 +288,17 @@ class UserDAO extends BaseDatabaseHandler {
       return mappedUser;
     } catch (error) {
       throw new DatabaseError(
-        "Error al consultar el usuario en la base de datos",
+        "Failed to retrieve user by id",
         {
           attemptedData: { userId: id },
           originalError: error.message,
           code: error.code,
+          context: "userDAO - findById Method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -360,13 +337,8 @@ class UserDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      console.error("Database error in UserDAO.findByUserName:", {
-        userNameLength: userName?.length || 0,
-        error: error.message,
-      });
-
       throw new this.DatabaseError(
-        "Error al consultar el usuario en la base de datos",
+        "Failed to retrieve user by username",
         {
           attemptedData: {
             userNameLength: userName?.length || 0,
@@ -374,15 +346,12 @@ class UserDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+          context:"userDAO - findByUserName method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -421,13 +390,8 @@ class UserDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      console.error("Database error in UserDAO.findByEmail:", {
-        emailPrefix: email ? email.split("@")[0] + "@***" : "null",
-        error: error.message,
-      });
-
       throw new this.DatabaseError(
-        "Error al consultar el usuario por email en la base de datos",
+        "Failed to retrieve user by email",
         {
           attemptedData: {
             emailPrefix: email ? email.split("@")[0] + "@***" : "null",
@@ -435,15 +399,12 @@ class UserDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+            context:"userDAO - findByEmail method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -482,22 +443,19 @@ class UserDAO extends BaseDatabaseHandler {
       return mappedUser;
     } catch (error) {
       throw new DatabaseError(
-        "Error al consultar usuario por credenciales en la base de datos",
+        "Failed to retrieve user by credentials",
         {
           attemptedData: { userName, password },
           originalError: error.message,
           code: error.code,
           sqlState: error.sqlState,
           errno: error.errno,
+            context:"userDAO - findByNameAn method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -538,20 +496,17 @@ class UserDAO extends BaseDatabaseHandler {
       return mappedUser;
     } catch (error) {
       throw new DatabaseError(
-        "Error al consultar el usuario con etiquetas en la abse de datos",
+        "Failed to retrieve user with tags",
         {
           attemptedData: { userId },
           originalError: error.message,
           code: error.code,
+            context:"userDAO - findByIdWithTags method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }

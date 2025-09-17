@@ -49,25 +49,22 @@ class TaskDAO extends BaseDatabaseHandler {
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw new this.ConflictError(
-          "Ya existe una tarea con ese nombre para este usuario",
+          "Already exist a task with this name to this user",
           { name: task.name, userId: task.userId }
         );
       }
       throw new this.DatabaseError(
-        "Error al guardar la tarea en la base de datos",
+        "Failed to create task",
         {
           attemptedData: { userId: task.userId, name: task.name },
           originalError: error.message,
           code: error.code,
+          context:"taskDAO - create method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -101,21 +98,18 @@ class TaskDAO extends BaseDatabaseHandler {
       return task;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new this.ConflictError("Ya existe una tarea con ese nombre", {
+        throw new this.ConflictError("Alredy exist a task with this name", {
           attemptedData: { name: task.name, userId: task.userId },
         });
       }
-      throw new this.DatabaseError("No se pudo actualizar la tarea", {
+      throw new this.DatabaseError("Failed to update task", {
         originalError: error.message,
         code: error.code,
+         context:"taskDAO - update method"
       });
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -132,20 +126,17 @@ class TaskDAO extends BaseDatabaseHandler {
       return result.affectedRows > 0;
     } catch (error) {
       throw new this.DatabaseError(
-        "Error a marcar como completada la tarea en la base de datos",
+        "Failed update as completed this task",
         {
           attemptedData: { taskId: id, userId },
           originalError: error.message,
           code: error.code,
+           context:"taskDAO - updateCompleted method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -162,23 +153,20 @@ class TaskDAO extends BaseDatabaseHandler {
       return result.affectedRows > 0;
     } catch (error) {
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
-        throw new this.ConflictError("No se puede eliminar la tarea", {
+        throw new this.ConflictError("Failed no delete task", {
           attemptedData: { taskId: id, userId },
         });
       }
 
-      throw new this.DatabaseError("No se pudo eliminar la tarea", {
+      throw new this.DatabaseError("Failed to delete task", {
         attemptedData: { taskId: id, userId },
         originalError: error.message,
         code: error.code,
+         context:"taskDAO - delete method"
       });
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -221,18 +209,15 @@ class TaskDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      throw new DatabaseError("No se pudo consultar la tarea por id", {
+      throw new DatabaseError("Failed to retrieve task by id", {
         originalError: error.message,
         code: error.code,
         attemptedData: { taskId: taskIdNum },
+         context:"taskDAO -findById method"
       });
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -374,17 +359,8 @@ class TaskDAO extends BaseDatabaseHandler {
       if (error instanceof ValidationError) {
         throw error;
       }
-
-      console.error("Database error in findAllWithTagsByUserId:", {
-        userId,
-        isCompleted,
-        error: error.message,
-      });
-
       throw new this.DatabaseError(
-        `No se pudo consultar las tareas ${
-          isCompleted ? "completadas" : "pendientes"
-        } en la base de datos`,
+        `Failed to find all tasks with tags by userId`,
         {
           attemptedData: {
             userId,
@@ -398,15 +374,12 @@ class TaskDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+           context:"taskDAO - findAllWithTagsByUserId method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -467,18 +440,15 @@ class TaskDAO extends BaseDatabaseHandler {
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new this.DatabaseError("Error al consultar las tareas", {
+      throw new this.DatabaseError("Failed to retrieve task with tags by id and userId", {
         attemptedData: { taskId: id, userId },
         originalError: error.message,
         code: error.code,
+         context:"taskDAO - findWithTagsByIdAndUserId method"
       });
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }
@@ -633,13 +603,9 @@ class TaskDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      console.error("Database error in findAllOverdueTasksByUserId:", {
-        userId,
-        error: error.message,
-      });
 
       throw new this.DatabaseError(
-        "No se pudo consultar las tareas vencidas del usuario",
+        "Failed to retrieve all overdue tasks by userId",
         {
           attemptedData: {
             userId,
@@ -651,15 +617,12 @@ class TaskDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
+           context:"taskDAO - findAllOverdueTasksByUserId method"
         }
       );
     } finally {
       if (connection && !isExternal) {
-        try {
-          await this.releaseConnection(connection, isExternal);
-        } catch (releaseError) {
-          console.error("Error releasing connection:", releaseError.message);
-        }
+        await this.releaseConnection(connection, isExternal);
       }
     }
   }

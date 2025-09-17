@@ -10,10 +10,23 @@ class BaseDatabaseHandler {
   }
 
   async releaseConnection(connection, isExternal) {
-    if (!isExternal && connection && typeof connection.release === 'function') {
+  if (!isExternal && connection && typeof connection.release === 'function') {
+    try {
       connection.release();
+    } catch (releaseError) {
+      console.error("Error releasing database connection:", releaseError.message);
+      
+      throw new this.DatabaseError(
+        "Error releasing database connection",
+        {
+          originalError: releaseError.message,
+          code: releaseError.code,
+          stack: releaseError.stack
+        }
+      );
     }
   }
+}
 
   // Para centralizar el manejo de transacciones (uso en DAO y servicios)
   async withTransaction(callback, externalConn = null) {
