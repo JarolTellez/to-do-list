@@ -1,21 +1,18 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
-const {
-  DatabaseError,
-  ConflictError,
-  ValidationError,
-} = require("../utils/errors/appErrors");
-
-const {
-  validateSortField,
-  validateSortOrder,
-} = require("../utils/validation/sortValidator");
 
 const { SORT_ORDER, TAG_SORT_FIELD } = require("../constants/sortConstants");
 
 class TagDAO extends BaseDatabaseHandler {
-  constructor({ tagMapper, connectionDB }) {
+  constructor({
+    tagMapper,
+    connectionDB,
+    errorFactory,
+    sortValidator
+  }) {
     super(connectionDB);
     this.tagMapper = tagMapper;
+    this.errorFactory = errorFactory;
+    this.sortValidator = sortValidator;
   }
 
   async create(tag, externalConn = null) {
@@ -40,9 +37,12 @@ class TagDAO extends BaseDatabaseHandler {
       );
 
       if (!Array.isArray(rows) || rows.length === 0) {
-        throw new DatabaseError("Failed to retrieve the tag after creation", {
-          attemptedData: { tagName: tag.name, userId: tag.userId },
-        });
+        throw this.errorFactory.createDatabaseError(
+          "Failed to retrieve the tag after creation",
+          {
+            attemptedData: { tagName: tag.name, userId: tag.userId },
+          }
+        );
       }
 
       const mappedTag = this.tagMapper.dbToDomain(rows[0]);
@@ -51,13 +51,13 @@ class TagDAO extends BaseDatabaseHandler {
     } catch (error) {
       // Error para duplicados
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new ConflictError(
+        throw this.errorFactory.createConflictError(
           "A tag with this name already exists for this user ",
           { name: tag.name, userId: tag.userId }
         );
       }
 
-      throw new DatabaseError("Failed to create task", {
+      throw this.errorFactory.createDatabaseError("Failed to create task", {
         originalError: error.message,
         code: error.code,
         attemptedData: { name: tag.name, userId: tag.userId },
@@ -81,12 +81,15 @@ class TagDAO extends BaseDatabaseHandler {
     } catch (error) {
       // Error de duplicado al actualizar
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new ConflictError("Already exist a tag with this name", {
-          attemptedData: { tagName: tag.name },
-        });
+        throw this.errorFactory.createConflictError(
+          "Already exist a tag with this name",
+          {
+            attemptedData: { tagName: tag.name },
+          }
+        );
       }
 
-      throw new DatabaseError("Failed to update tag", {
+      throw this.errorFactory.createDatabaseError("Failed to update tag", {
         originalError: error.message,
         code: error.code,
         attemptedData: { tagId: tag.id, tagName: tag.name },
@@ -112,13 +115,13 @@ class TagDAO extends BaseDatabaseHandler {
     } catch (error) {
       // Manejar error de clave foranea
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
-        throw new ConflictError(
+        throw this.errorFactory.createConflictError(
           "No se puede eliminar la etiqueta porque está siendo utilizada",
           { attemptedData: { tagId: id } }
         );
       }
 
-      throw new DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Error al eliminar la etiqueta de la base de datos",
         {
           attemptedData: { tagId: id },
@@ -144,14 +147,14 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const { safeField } = validateSortField(
+      const { safeField } = this.sortValidator.validateSortField(
         sortBy,
         TAG_SORT_FIELD,
         "TAG",
         "tag sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
+      const { safeOrder } = this.sortValidator.validateSortOrder(sortOrder, SORT_ORDER);
 
       // CONSULTA: Obtener tags con limite y offset
       const [rows] = await connection.query(
@@ -174,22 +177,25 @@ class TagDAO extends BaseDatabaseHandler {
 
       return mappedTags;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to retrieve all tags", {
-        attemptedData: {
-          sortBy,
-          sortOrder,
-          limit,
-          offset,
-        },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "tagDAO: findAll method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve all tags",
+        {
+          attemptedData: {
+            sortBy,
+            sortOrder,
+            limit,
+            offset,
+          },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "tagDAO: findAll method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -207,11 +213,11 @@ class TagDAO extends BaseDatabaseHandler {
       );
       return Number(totalRows[0]?.total) || 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to count all tags", {
+      throw this.errorFactory.createDatabaseError("Failed to count all tags", {
         originalError: error.message,
         code: error.code,
         stack: error.stack,
@@ -230,7 +236,7 @@ class TagDAO extends BaseDatabaseHandler {
     try {
       const tagIdNum = Number(id);
       if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new ValidationError("Invalid tag id");
+        throw this.errorFactory.createValidationError("Invalid tag id");
       }
 
       const [rows] = await connection.execute(
@@ -250,16 +256,19 @@ class TagDAO extends BaseDatabaseHandler {
       const mappedTag = this.tagMapper.dbToDomain(rows[0]);
       return mappedTag;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to retrieve tag by id", {
-        originalError: error.message,
-        code: error.code,
-        attemptedData: { tagId: tagIdNum },
-        context: "tagDAO - findById method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve tag by id",
+        {
+          originalError: error.message,
+          code: error.code,
+          attemptedData: { tagId: tagIdNum },
+          context: "tagDAO - findById method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -272,7 +281,7 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       if (!name || typeof name !== "string") {
-        throw new ValidationError("Invalid tag name");
+        throw this.errorFactory.createValidationError("Invalid tag name");
       }
 
       const [rows] = await connection.query(
@@ -291,16 +300,19 @@ class TagDAO extends BaseDatabaseHandler {
       const mappedTag = this.tagMapper.dbToDomain(rows[0]);
       return mappedTag;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to retrieve tag by name", {
-        attemptedData: { name },
-        originalError: error.message,
-        code: error.code,
-        context: "tagDAO - findByName method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve tag by name",
+        {
+          attemptedData: { name },
+          originalError: error.message,
+          code: error.code,
+          context: "tagDAO - findByName method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -322,17 +334,17 @@ class TagDAO extends BaseDatabaseHandler {
     try {
       const userIdNum = Number(userId);
       if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
+        throw this.errorFactory.createValidationError("Invalid user id");
       }
 
-      const { safeField } = validateSortField(
+      const { safeField } = this.sortValidator.validateSortField(
         sortBy,
         TAG_SORT_FIELD,
         "TAG",
         "tag sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
+      const { safeOrder } = this.sortValidator.validateSortOrder(sortOrder, SORT_ORDER);
 
       // CONSULTA: Obtener tags del usuario
       const [rows] = await connection.query(
@@ -357,23 +369,26 @@ class TagDAO extends BaseDatabaseHandler {
 
       return mappedTags;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to retrieve tags by user id", {
-        attemptedData: {
-          userId,
-          sortBy,
-          sortOrder,
-          limit,
-          offset,
-        },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "tagDAO: findAllByUserId method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve tags by user id",
+        {
+          attemptedData: {
+            userId,
+            sortBy,
+            sortOrder,
+            limit,
+            offset,
+          },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "tagDAO: findAllByUserId method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -395,17 +410,17 @@ class TagDAO extends BaseDatabaseHandler {
     try {
       const taskIdNum = Number(taskId);
       if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
+        throw this.errorFactory.createValidationError("Invalid task id");
       }
 
-      const { safeField } = validateSortField(
+      const { safeField } = this.sortValidator.validateSortField(
         sortBy,
         TAG_SORT_FIELD,
         "TAG",
         "tag sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
+      const { safeOrder } = this.sortValidator.validateSortOrder(sortOrder, SORT_ORDER);
 
       // CONSULTA: Obtener tags de la tarea
       const [rows] = await connection.query(
@@ -430,23 +445,26 @@ class TagDAO extends BaseDatabaseHandler {
 
       return mappedTags;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to retrieve tags by task id", {
-        attemptedData: {
-          taskId,
-          sortBy,
-          sortOrder,
-          limit,
-          offset,
-        },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "tagDAO: findAllByTaskId method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve tags by task id",
+        {
+          attemptedData: {
+            taskId,
+            sortBy,
+            sortOrder,
+            limit,
+            offset,
+          },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "tagDAO: findAllByTaskId method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -461,7 +479,7 @@ class TagDAO extends BaseDatabaseHandler {
     try {
       const userIdNum = Number(userId);
       if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
+        throw this.errorFactory.createValidationError("Invalid user id");
       }
 
       const [totalRows] = await connection.execute(
@@ -474,17 +492,20 @@ class TagDAO extends BaseDatabaseHandler {
 
       return Number(totalRows[0]?.total) || 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to count tags by user id", {
-        attemptedData: { userId },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "tagDAO: countAllByUserId method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to count tags by user id",
+        {
+          attemptedData: { userId },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "tagDAO: countAllByUserId method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -499,7 +520,7 @@ class TagDAO extends BaseDatabaseHandler {
     try {
       const taskIdNum = Number(taskId);
       if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
+        throw this.errorFactory.createValidationError("Invalid task id");
       }
 
       const [totalRows] = await connection.execute(
@@ -512,17 +533,20 @@ class TagDAO extends BaseDatabaseHandler {
 
       return Number(totalRows[0]?.total) || 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to count tags by task id", {
-        attemptedData: { taskId },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "tagDAO: countAllByTaskId method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to count tags by task id",
+        {
+          attemptedData: { taskId },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "tagDAO: countAllByTaskId method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
