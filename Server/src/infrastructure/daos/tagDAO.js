@@ -3,16 +3,11 @@ const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 const { SORT_ORDER, TAG_SORT_FIELD } = require("../constants/sortConstants");
 
 class TagDAO extends BaseDatabaseHandler {
-  constructor({
-    tagMapper,
-    connectionDB,
-    errorFactory,
-    sortValidator
-  }) {
+  constructor({ tagMapper, connectionDB, errorFactory, inputValidator }) {
     super(connectionDB);
     this.tagMapper = tagMapper;
     this.errorFactory = errorFactory;
-    this.sortValidator = sortValidator;
+    this.inputValidator = inputValidator;
   }
 
   async create(tag, externalConn = null) {
@@ -25,7 +20,7 @@ class TagDAO extends BaseDatabaseHandler {
       );
       const insertedId = result.insertId;
 
-      const createdTag = this.findById(insertedId);
+      const createdTag = await this.findById(insertedId, connection);
 
       return createdTag;
     } catch (error) {
@@ -57,7 +52,7 @@ class TagDAO extends BaseDatabaseHandler {
         "UPDATE tags SET name = ? WHERE id = ?",
         [tag.name, tag.id]
       );
-      if(result.affectedRows ===0){
+      if (result.affectedRows === 0) {
         return null;
       }
       return tag;
@@ -89,9 +84,10 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
+      const tagIdNum = this.validators.validateId(id, "tag id");
       const [result] = await connection.execute(
         "DELETE FROM tags WHERE id = ?",
-        [id]
+        [tagIdNum]
       );
 
       return result.affectedRows > 0;
@@ -130,35 +126,21 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const { safeField } = this.sortValidator.validateSortField(
-        sortBy,
-        TAG_SORT_FIELD,
-        "TAG",
-        "tag sort field"
-      );
-
-      const { safeOrder } = this.sortValidator.validateSortOrder(sortOrder, SORT_ORDER);
-
-      // CONSULTA: Obtener tags con limite y offset
-      const [rows] = await connection.query(
-        `SELECT 
+      const baseQuery = `SELECT 
        id AS tag_id,
        name AS tag_name,
        description AS tag_description,
        created_at AS tag_created_at
-     FROM tags 
-     ORDER BY ${safeField} ${safeOrder}
-     ${limit !== null ? "LIMIT ?" : ""} 
-     ${offset !== null ? "OFFSET ?" : ""}`,
-        [limit, offset].filter((param) => param !== null)
-      );
+       FROM tags`;
 
-      const mappedTags =
-        Array.isArray(rows) && rows.length > 0
-          ? rows.map((row) => this.tagMapper.dbToDomain(row))
-          : [];
-
-      return mappedTags;
+      return await this._executeTagQuery({
+        connection,
+        baseQuery,
+        sortBy,
+        sortOrder,
+        limit,
+        offset,
+      });
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -217,10 +199,7 @@ class TagDAO extends BaseDatabaseHandler {
   async findById(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const tagIdNum = Number(id);
-      if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid tag id");
-      }
+      const tagIdNum = this.validators.validateId(id, "tag id");
 
       const [rows] = await connection.execute(
         `SELECT 
@@ -315,42 +294,27 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid user id");
-      }
+      const userIdNum = this.validators.validateId(userId, "user id");
 
-      const { safeField } = this.sortValidator.validateSortField(
+      const baseQuery = `
+      SELECT 
+        t.id AS tag_id,
+        t.name AS tag_name,
+        t.description AS tag_description,
+        t.created_at AS tag_created_at
+      FROM tags t
+      INNER JOIN user_tag ut ON t.id = ut.tag_id
+      WHERE ut.user_id = ?`;
+
+      return await this._executeTagQuery({
+        connection,
+        baseQuery,
+        params: [userIdNum],
         sortBy,
-        TAG_SORT_FIELD,
-        "TAG",
-        "tag sort field"
-      );
-
-      const { safeOrder } = this.sortValidator.validateSortOrder(sortOrder, SORT_ORDER);
-
-      // CONSULTA: Obtener tags del usuario
-      const [rows] = await connection.query(
-        `SELECT 
-       t.id AS tag_id,
-       t.name AS tag_name,
-       t.description AS tag_description,
-       t.created_at AS tag_created_at
-     FROM tags t
-     INNER JOIN user_tag ut ON t.id = ut.tag_id
-     WHERE ut.user_id = ?
-     ORDER BY ${safeField} ${safeOrder}, t.id ASC
-     ${limit !== null ? "LIMIT ?" : ""} 
-     ${offset !== null ? "OFFSET ?" : ""}`,
-        [userIdNum, limit, offset].filter((param) => param !== null)
-      );
-
-      const mappedTags =
-        Array.isArray(rows) && rows.length > 0
-          ? rows.map((row) => this.tagMapper.dbToDomain(row))
-          : [];
-
-      return mappedTags;
+        sortOrder,
+        limit,
+        offset,
+      });
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -391,42 +355,27 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(taskId);
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid task id");
-      }
+      const taskIdNum = this.validators.validateId(task, "task id");
 
-      const { safeField } = this.sortValidator.validateSortField(
+      const baseQuery = `
+      SELECT 
+        t.id AS tag_id,
+        t.name AS tag_name,
+        t.description AS tag_description,
+        t.created_at AS tag_created_at
+      FROM tags t
+      INNER JOIN task_tag tt ON t.id = tt.tag_id
+      WHERE tt.task_id = ?`;
+
+      return await this._executeTagQuery({
+        connection,
+        baseQuery,
+        params: [taskIdNum],
         sortBy,
-        TAG_SORT_FIELD,
-        "TAG",
-        "tag sort field"
-      );
-
-      const { safeOrder } = this.sortValidator.validateSortOrder(sortOrder, SORT_ORDER);
-
-      // CONSULTA: Obtener tags de la tarea
-      const [rows] = await connection.query(
-        `SELECT 
-       t.id AS tag_id,
-       t.name AS tag_name,
-       t.description AS tag_description,
-       t.created_at AS tag_created_at
-     FROM tags t
-     INNER JOIN task_tag tt ON t.id = tt.tag_id
-     WHERE tt.task_id = ?
-     ORDER BY ${safeField} ${safeOrder}, t.id ASC
-     ${limit !== null ? "LIMIT ?" : ""} 
-     ${offset !== null ? "OFFSET ?" : ""}`,
-        [taskIdNum, limit, offset].filter((param) => param !== null)
-      );
-
-      const mappedTags =
-        Array.isArray(rows) && rows.length > 0
-          ? rows.map((row) => this.tagMapper.dbToDomain(row))
-          : [];
-
-      return mappedTags;
+        sortOrder,
+        limit,
+        offset,
+      });
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -460,10 +409,7 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid user id");
-      }
+      const userIdNum = this.validators.validateId(userId, "userS id");
 
       const [totalRows] = await connection.execute(
         `SELECT COUNT(*) AS total
@@ -501,10 +447,7 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(taskId);
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid task id");
-      }
+      const taskIdNum = this.validators.validateId(taskId, "task id");
 
       const [totalRows] = await connection.execute(
         `SELECT COUNT(*) AS total
@@ -535,6 +478,40 @@ class TagDAO extends BaseDatabaseHandler {
         await this.releaseConnection(connection, isExternal);
       }
     }
+  }
+
+  async _executeTagQuery({
+    connection,
+    baseQuery,
+    params = [],
+    sortBy = TAG_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+    limit = null,
+    offset = null,
+  }) {
+    const { safeField } = this.inputValidator.validateSortField(
+      sortBy,
+      TAG_SORT_FIELD,
+      "TAG",
+      "tag sort field"
+    );
+    const { safeOrder } = this.inputValidator.validateSortOrder(
+      sortOrder,
+      SORT_ORDER
+    );
+
+    let query = `${baseQuery} ORDER BY ${safeField} ${safeOrder}`;
+    const queryParams = [...params];
+    if (limit !== null) query += " LIMIT ?";
+    if (offset !== null) query += " OFFSET ?";
+    if (limit !== null) queryParams.push(limit);
+    if (offset !== null) queryParams.push(offset);
+
+    const [rows] = await connection.query(query, queryParams);
+
+    return Array.isArray(rows) && rows.length > 0
+      ? rows.map((row) => this.tagMapper.dbToDomain(row))
+      : [];
   }
 }
 

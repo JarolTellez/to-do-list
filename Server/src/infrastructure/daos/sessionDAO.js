@@ -1,20 +1,4 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
-const PAGINATION_CONFIG = require("../config/pagination");
-const {
-  DatabaseError,
-  ConflictError,
-  ValidationError,
-} = require("../../utils/appErrors");
-
-const {
-  validateSortField,
-  validateSortOrder,
-} = require("../utils/validation/sortValidator");
-const {
-  calculatePagination,
-  calculateTotalPages,
-  buildPaginationResponse,
-} = require("../utils/pagination");
 
 const {
   SORT_ORDER,
@@ -22,9 +6,11 @@ const {
 } = require("../constants/sortConstants");
 
 class SessionDAO extends BaseDatabaseHandler {
-  constructor({ sessionMapper, connectionDB }) {
+  constructor({ sessionMapper, connectionDB, errorFactory, inputValidator }) {
     super(connectionDB);
     this.sessionMapper = sessionMapper;
+    this.errorFactory = errorFactory;
+    this.inputValidator = inputValidator;
   }
 
   // Guardar una nueva sesión
@@ -32,43 +18,45 @@ class SessionDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        "INSERT INTO sessions (user_id, refresh_token_hash, device_id, user_agent, ip, created_at, expires_at, is_active) VALUES (?,?,?,?,?,?,?,?)",
+        "INSERT INTO sessions (user_id, refresh_token_hash, device_id, user_agent, ip, expires_at, is_active) VALUES (?,?,?,?,?,?,?)",
         [
           session.userId,
           session.refreshTokenHash,
           session.deviceId,
           session.userAgent,
           session.ip,
-          session.createdAt,
           session.expiresAt,
           session.isActive,
         ]
       );
 
-      const actualSession = this.findByIdAndUserId(
+      const actualSession = await this.findByIdAndUserId(
         result.insertId,
-        session.userId
+        session.userId,
+        connection
       );
 
       return actualSession;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new ConflictError("A session already exists for this device", {
-          attemptedData: {
-            userId: session.userId,
-            deviceId: session.deviceId,
-          },
-        });
+        throw this.errorFactory.createConflictError(
+          "A session already exists for this device",
+          {
+            attemptedData: {
+              userId: session.userId,
+              deviceId: session.deviceId,
+            },
+          }
+        );
       }
 
-      throw new DatabaseError("Failed to create session", {
+      throw this.errorFactory.createDatabaseError("Failed to create session", {
         attemptedData: {
-          attemptedData: {
-            userId: session.userId,
-            deviceId: session.deviceId,
-            context: "sessioDAO - create method",
-          },
+          userId: session.userId,
+          deviceId: session.deviceId,
+          context: "sessioDAO - create method",
         },
+
         originalError: error.message,
         code: error.code,
       });
@@ -83,10 +71,7 @@ class SessionDAO extends BaseDatabaseHandler {
   async deactivate(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const sessionIdNum = Number(id);
-      if (!Number.isInteger(sessionIdNum) || sessionIdNum <= 0) {
-        throw new ValidationError("Invalid session id");
-      }
+      const sessionIdNum = this.validators.validateId(id, "session id");
       const [result] = await connection.execute(
         "UPDATE sessions SET is_active = FALSE WHERE id = ?",
         [sessionIdNum]
@@ -94,16 +79,19 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to deactive session", {
-        attemptedData: { sessionId: id },
-        originalError: error.message,
-        code: error.code,
-        context: "sessionDAO - deactivate method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to deactive session",
+        {
+          attemptedData: { sessionId: id },
+          originalError: error.message,
+          code: error.code,
+          context: "sessionDAO - deactivate method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -115,28 +103,25 @@ class SessionDAO extends BaseDatabaseHandler {
   async deactivateAllByUserId(userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
+      const userIdNum = this.validators.validateId(userId, "user id");
       const [result] = await connection.execute(
         "UPDATE sessions SET is_active=FALSE WHERE user_id=?",
         [userIdNum]
       );
-      return {
-        affectedRows: result.affectedRows,
-        message: `Deactivated ${result.affectedRows} sessions for user ${userIdNum}`,
-      };
+      return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      throw new DatabaseError("Failed to deactive all user sessions", {
-        attemptedData: { userId },
-        originalError: error.message,
-        code: error.code,
-        context: "sessionDAO - deactiveAllByUserId",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to deactive all user sessions",
+        {
+          attemptedData: { userId },
+          originalError: error.message,
+          code: error.code,
+          context: "sessionDAO - deactiveAllByUserId",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -151,28 +136,19 @@ class SessionDAO extends BaseDatabaseHandler {
   ) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const userIdNum = Number(userId);
-      const deviceIdNum = Number(deviceId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
-      if (!Number.isInteger(deviceIdNum) || deviceIdNum <= 0) {
-        throw new ValidationError("Invalid device id");
-      }
+      const userIdNum = this.validators.validateId(userId, "user id");
+  
       const [result] = await connection.execute(
         "UPDATE sessions SET is_active = FALSE WHERE user_id = ? AND device_id = ?",
-        [userIdNum, deviceIdNum]
+        [userIdNum, deviceId]
       );
 
-      return {
-        affectedRows: result.affectedRows,
-        message: `Deactivated ${result.affectedRows} sessions for user ${userIdNum} and device ${deviceIdNum}`,
-      };
+      return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      throw new DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to deactive all sessions by userId and deviceId",
         {
           attemptedData: { userId, deviceId },
@@ -191,10 +167,7 @@ class SessionDAO extends BaseDatabaseHandler {
   async deactivateOldestByUserId(userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
+      const userIdNum = this.validators.validateId(userId, "user id");
       const [result] = await connection.execute(
         `
         UPDATE sessions 
@@ -208,15 +181,18 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      throw new DatabaseError("Failed to deactive oldest user session", {
-        attemptedData: { userId },
-        originalError: error.message,
-        code: error.code,
-        context: "sessionDAO - deactivateOldestByUserId method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to deactive oldest user session",
+        {
+          attemptedData: { userId },
+          originalError: error.message,
+          code: error.code,
+          context: "sessionDAO - deactivateOldestByUserId method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -224,87 +200,45 @@ class SessionDAO extends BaseDatabaseHandler {
     }
   }
 
- async findAll(
-    {
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = SESSION_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    } = {}
-  ) {
+  async findAll({
+    externalConn = null,
+    sortBy = SESSION_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+    limit = null,
+    offset = null,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const { safeField } = validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         SESSION_SORT_FIELD,
         "SESSION",
         "session sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
-
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
+      const { safeOrder } = this.inputValidator.validateSortOrder(
+        sortOrder,
+        SORT_ORDER
       );
 
-      // CONSULTA 1: Contar total de TODAS las sessions
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total FROM sessions s`
-      );
+      const queryParams = [];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
 
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // Early return si no hay datos o pagina invalida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de TODAS las sessions paginadas
-      const [sessionIdsResult] = await connection.query(
-        `SELECT s.id
-         FROM sessions s 
-         ORDER BY ${safeField} ${safeOrder}, s.id ASC
-         LIMIT ? OFFSET ?`,
-        [pagination.limit, pagination.offset]
-      );
-
-      if (sessionIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
-      }
-
-      const sessionIds = sessionIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos de las sessions paginadas
       const [rows] = await connection.query(
         `SELECT 
-           s.id AS session_id,
-           s.user_id,
-           s.created_at,
-           s.expires_at,
-           s.is_active  // ← CORREGIDO: is_active en lugar de is_ative
-         FROM sessions s 
-         WHERE s.id IN (?)
-         ORDER BY FIELD(s.id, ${sessionIds.map((_, index) => "?").join(",")})`,
-        [sessionIds, ...sessionIds]
+         s.id AS session_id,
+         s.user_id,
+         s.refresh_token_hash,
+         s.created_at,
+         s.expires_at,
+         s.is_active  
+       FROM sessions s 
+       ORDER BY ${safeField} ${safeOrder}, s.id ASC
+       ${limit !== null ? "LIMIT ?" : ""}
+       ${offset !== null ? "OFFSET ?" : ""}`,
+        queryParams
       );
 
       const mappedSessions =
@@ -312,19 +246,13 @@ class SessionDAO extends BaseDatabaseHandler {
           ? rows.map((row) => this.sessionMapper.dbToDomain(row))
           : [];
 
-      return buildPaginationResponse(
-        mappedSessions,
-        pagination,
-        total,
-        totalPages,
-        "sessions"
-      );
+      return mappedSessions;
     } catch (error) {
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all sessions",
         {
           attemptedData: {
-            page,
+            offset,
             limit,
             sortBy,
             sortOrder,
@@ -342,122 +270,67 @@ class SessionDAO extends BaseDatabaseHandler {
     }
   }
   // Consultar todas las sessions de un usuario
-  async findAllByUserId(
+  async findAllByUserId({
     userId,
-    {
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = SESSION_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    } = {}
-  ) {
+    externalConn = null,
+    offset = null,
+    limit = null,
+    sortBy = SESSION_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
+      const userIdNum = this.validators.validateId(userId, "user id");
 
-      const { safeField } = validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         SESSION_SORT_FIELD,
         "SESSION",
         "session sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
-
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
+      const { safeOrder } = this.inputValidator.validateSortOrder(
+        sortOrder,
+        SORT_ORDER
       );
 
-      // CONSULTA 1: Contar total de sessions del usuario
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total 
-       FROM sessions s 
-       WHERE s.user_id = ?`,
-        [userIdNum]
-      );
+      const queryParams = [userIdNum];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
 
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // Early return si no hay datos o pagina invalida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de sessions paginadas
-      const [sessionIdsResult] = await connection.query(
-        `SELECT s.id
-       FROM sessions s 
-       WHERE s.user_id = ?
-       ORDER BY ${safeField} ${safeOrder}, s.id ASC
-       LIMIT ? OFFSET ?`,
-        [userIdNum, pagination.limit, pagination.offset]
-      );
-
-      if (sessionIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
-      }
-
-      const sessionIds = sessionIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos solo para las sessions paginadas
       const [rows] = await connection.query(
         `SELECT 
-         s.id AS session_id,
-         s.user_id,
-         s.created_at,
-         s.expires_at,
-         s.is_ative
-       FROM sessions s 
-       WHERE s.id IN (?)
-       ORDER BY FIELD(s.id, ${sessionIds.map((_, index) => "?").join(",")})`,
-        [sessionIds, ...sessionIds]
+     s.id AS session_id,
+     s.user_id,
+     s.created_at,
+     s.expires_at,
+     s.is_active
+     FROM sessions s 
+     WHERE s.user_id = ?
+     ORDER BY ${safeField} ${safeOrder}, s.id ASC
+     ${limit !== null ? "LIMIT ?" : ""} 
+     ${offset !== null ? "OFFSET ?" : ""}`,
+        queryParams
       );
-      o;
+
       const mappedSessions =
         Array.isArray(rows) && rows.length > 0
           ? rows.map((row) => this.sessionMapper.dbToDomain(row))
           : [];
 
-      return buildPaginationResponse(
-        mappedSessions,
-        pagination,
-        total,
-        totalPages,
-        "sessions"
-      );
+      return mappedSessions;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all sessions by userId",
         {
           attemptedData: {
             userId,
-            page,
+            offset,
             limit,
             sortBy,
             sortOrder,
@@ -475,87 +348,41 @@ class SessionDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findAllByUserIdAndIsActive(
+  async findAllByUserIdAndIsActive({
     userId,
-    {
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = SESSION_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-      active = true,
-    } = {}
-  ) {
+    externalConn = null,
+    sortBy = SESSION_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+    active = true,
+    limit = null,
+    offset = null,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
+      const userIdNum = this.validators.validateId(userId, "user id");
+       if (typeof active!== "boolean") {
+        throw this.errorFactory.createValidationError(
+          "Active must be a boolean"
+        );
       }
 
-      const { safeField } = validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         SESSION_SORT_FIELD,
         "SESSION",
         "session sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
-
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
+      const { safeOrder } = this.inputValidator.validateSortOrder(
+        sortOrder,
+        SORT_ORDER
       );
 
-      // CONSULTA 1: Contar total de sessions según el estado
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total 
-         FROM sessions s 
-         WHERE s.user_id = ? AND s.is_active = ?`,
-        [userIdNum, active]
-      );
-
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // Early return si no hay datos o pagina invalida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de sessions paginadas según el estado
-      const [sessionIdsResult] = await connection.query(
-        `SELECT s.id
-         FROM sessions s 
-         WHERE s.user_id = ? AND s.is_active = ?
-         ORDER BY ${safeField} ${safeOrder}, s.id ASC
-         LIMIT ? OFFSET ?`,
-        [userIdNum, active, pagination.limit, pagination.offset]
-      );
-
-      if (sessionIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
-      }
-
-      const sessionIds = sessionIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos
+        const queryParams = [userIdNum, active];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
+      
       const [rows] = await connection.query(
         `SELECT 
            s.id AS session_id,
@@ -564,29 +391,26 @@ class SessionDAO extends BaseDatabaseHandler {
            s.expires_at,
            s.is_active
          FROM sessions s 
-         WHERE s.id IN (?)
-         ORDER BY FIELD(s.id, ${sessionIds.map((_, index) => "?").join(",")})`,
-        [sessionIds, ...sessionIds]
+         WHERE s.user_id = ? AND s.is_active = ?
+         ORDER BY ${safeField} ${safeOrder}, s.id ASC
+         ${limit !== null ? "LIMIT ?" : ""} 
+         ${offset !== null ? "OFFSET ?" : ""}`,
+         queryParams
       );
+  
 
       const mappedSessions =
         Array.isArray(rows) && rows.length > 0
           ? rows.map((row) => this.sessionMapper.dbToDomain(row))
           : [];
 
-      return buildPaginationResponse(
-        mappedSessions,
-        pagination,
-        total,
-        totalPages,
-        "sessions"
-      );
+      return mappedSessions;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         `Failed to retrieve ${
           active ? "active" : "inactive"
         } sessions by userId`,
@@ -594,7 +418,7 @@ class SessionDAO extends BaseDatabaseHandler {
           attemptedData: {
             userId,
             active,
-            page,
+            offset,
             limit,
             sortBy,
             sortOrder,
@@ -612,90 +436,43 @@ class SessionDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findAllActiveSessionByUserIdAndRtHash(
+  async findAllActiveByUserIdAndRtHash({
     userId,
     refreshTokenHash,
-    {
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = SESSION_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    } = {}
-  ) {
+    externalConn = null,
+    limit = null,
+    offset = null,
+    sortBy = SESSION_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
+      const userIdNum = this.validators.validateId(userId, "user id");
 
       if (!refreshTokenHash || typeof refreshTokenHash !== "string") {
-        throw new ValidationError("Invalid refresh token hash");
+        throw this.errorFactory.createValidationError(
+          "Invalid refresh token hash"
+        );
       }
 
-      const { safeField } = validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         SESSION_SORT_FIELD,
         "SESSION",
         "session sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
-
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
+      const { safeOrder } = this.inputValidator.validateSortOrder(
+        sortOrder,
+        SORT_ORDER
       );
 
-      // CONSULTA 1: Contar total de sessions activas con el hash
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total 
-       FROM sessions s 
-       WHERE s.user_id = ? AND s.refresh_token_hash = ? AND s.is_active = TRUE`,
-        [userIdNum, refreshTokenHash]
-      );
+      
+      const queryParams = [userIdNum, refreshTokenHash];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
 
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de sessions paginadas
-      const [sessionIdsResult] = await connection.query(
-        `SELECT s.id
-       FROM sessions s 
-       WHERE s.user_id = ? AND s.refresh_token_hash = ? AND s.is_active = TRUE
-       ORDER BY ${safeField} ${safeOrder}, s.id ASC
-       LIMIT ? OFFSET ?`,
-        [userIdNum, refreshTokenHash, pagination.limit, pagination.offset]
-      );
-
-      if (sessionIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
-      }
-
-      const sessionIds = sessionIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos solo para las sessions paginadas
       const [rows] = await connection.query(
         `SELECT 
          s.id AS session_id,
@@ -705,9 +482,11 @@ class SessionDAO extends BaseDatabaseHandler {
          s.expires_at,
          s.is_active
        FROM sessions s 
-       WHERE s.id IN (?) AND s.user_id = ? AND s.refresh_token_hash = ? AND s.is_active = TRUE
-       ORDER BY FIELD(s.id, ${sessionIds.map((_, index) => "?").join(",")})`,
-        [sessionIds, userIdNum, refreshTokenHash, ...sessionIds]
+        WHERE s.user_id = ? AND s.refresh_token_hash = ? AND s.is_active = TRUE
+       ORDER BY ${safeField} ${safeOrder}, s.id ASC
+        ${limit !== null ? "LIMIT ?" : ""} 
+       ${offset !== null ? "OFFSET ?" : ""}`,
+        queryParams
       );
 
       const mappedSessions =
@@ -715,24 +494,18 @@ class SessionDAO extends BaseDatabaseHandler {
           ? rows.map((row) => this.sessionMapper.dbToDomain(row))
           : [];
 
-      return buildPaginationResponse(
-        mappedSessions,
-        pagination,
-        total,
-        totalPages,
-        "sessions"
-      );
+      return mappedSessions;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all active sessions by userId and refreshTokenHash",
         {
           attemptedData: {
             userId,
-            page,
+            offset,
             limit,
             sortBy,
             sortOrder,
@@ -758,7 +531,9 @@ class SessionDAO extends BaseDatabaseHandler {
         typeof refreshTokenHash !== "string" ||
         refreshTokenHash.trim().length === 0
       ) {
-        throw new ValidationError("Invalid refresh token hash");
+        throw this.errorFactory.createValidationError(
+          "Invalid refresh token hash"
+        );
       }
 
       const cleanHash = refreshTokenHash.trim();
@@ -784,11 +559,11 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return this.sessionMapper.dbToDomain(rows[0]);
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve session by refreshTokenHash",
         {
           attemptedData: {
@@ -811,15 +586,9 @@ class SessionDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const idNum = Number(id);
-      const userIdNum = Number(userId);
+      const sessionIdNum = this.validators.validateId(id, "session id");
+      const userIdNum = this.validators.validateId(userId, "user id");
 
-      if (!Number.isInteger(idNum) || idNum <= 0) {
-        throw new ValidationError("Invalid session id");
-      }
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
 
       // CONSULTA: Buscar sesión por hash
       const [rows] = await connection.execute(
@@ -832,7 +601,7 @@ class SessionDAO extends BaseDatabaseHandler {
          s.is_active
        FROM sessions s 
        WHERE s.id = ? AND s.user_id = ?`,
-        [idNum, userIdNum]
+        [sessionIdNum, userIdNum]
       );
 
       if (!Array.isArray(rows) || rows.length === 0) {
@@ -841,17 +610,11 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return this.sessionMapper.dbToDomain(rows[0]);
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      console.error("Database error in SessionDAO.findByRefreshTokenHash:", {
-        id: idNum,
-        userId: userIdNum,
-        error: error.message,
-      });
-
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve session by id and userId",
         {
           attemptedData: {
@@ -862,6 +625,139 @@ class SessionDAO extends BaseDatabaseHandler {
           code: error.code,
           stack: error.stack,
           context: "sessionDAO - findByIdAndUserId",
+        }
+      );
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+  async countAll(externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const [totalRows] = await connection.execute(
+        `SELECT COUNT(*) AS total FROM sessions s`
+      );
+      return Number(totalRows[0]?.total) || 0;
+    } catch (error) {
+      throw this.errorFactory.createDatabaseError(
+        "Failed to count all sessions",
+        {
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "sessionDAO: countAll method",
+        }
+      );
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+  // Contar sessions por usuario
+  async countAllByUserId(userId, externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const userIdNum = this.validators.validateId(userId, "user id");
+
+      const [totalRows] = await connection.execute(
+        `SELECT COUNT(*) AS total 
+       FROM sessions s 
+       WHERE s.user_id = ?`,
+        [userIdNum]
+      );
+
+      return Number(totalRows[0]?.total) || 0;
+    } catch (error) {
+      throw this.errorFactory.createDatabaseError(
+        "Failed to count sessions by user id",
+        {
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "sessionDAO: countAllByUserId method",
+          userId,
+        }
+      );
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+
+  // Contar sessions por usuario y estado
+  async countAllByUserIdAndIsActive(userId, active, externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const userIdNum = this.validators.validateId(userId, "user id");
+
+      const [totalRows] = await connection.execute(
+        `SELECT COUNT(*) AS total 
+         FROM sessions s 
+         WHERE s.user_id = ? AND s.is_active = ?`,
+        [userIdNum, active]
+      );
+
+      return Number(totalRows[0]?.total) || 0;
+    } catch (error) {
+      throw this.errorFactory.createDatabaseError(
+        "Failed to count sessions by user id and status",
+        {
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "sessionDAO: countAllByUserIdAndIsActive method",
+          userId,
+          active,
+        }
+      );
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+
+  // Contar sessions activas por usuario y hash de refresh token
+  async countAllActiveByUserIdAndRtHash(
+    userId,
+    refreshTokenHash,
+    externalConn = null
+  ) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const userIdNum = this.validators.validateId(userId, "userS id");
+
+      if (!refreshTokenHash || typeof refreshTokenHash !== "string") {
+        throw this.errorFactory.createValidationError(
+          "Invalid refresh token hash"
+        );
+      }
+
+      const [totalRows] = await connection.execute(
+        `SELECT COUNT(*) AS total 
+       FROM sessions s 
+       WHERE s.user_id = ? AND s.refresh_token_hash = ? AND s.is_active = TRUE`,
+        [userIdNum, refreshTokenHash]
+      );
+
+      return Number(totalRows[0]?.total) || 0;
+    } catch (error) {
+      throw this.errorFactory.createDatabaseError(
+        "Failed to count active sessions by user id and refresh token hash",
+        {
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "sessionDAO: countAllActiveByUserIdAndRtHash method",
+          userId,
         }
       );
     } finally {

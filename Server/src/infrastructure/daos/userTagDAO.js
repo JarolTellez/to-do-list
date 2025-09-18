@@ -1,33 +1,15 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
-const PAGINATION_CONFIG = require("../config/pagination");
-const {
-  DatabaseError,
-  ConflictError,
-  ValidationError,
-} = require("../../utils/appErrors");
-
-const {
-  validateSortField,
-  validateSortOrder,
-} = require("../utils/validation/sortValidator");
-const {
-  calculatePagination,
-  calculateTotalPages,
-  buildPaginationResponse,
-} = require("../utils/pagination");
-
 const {
   SORT_ORDER,
   USER_TAG_SORT_FIELD,
 } = require("../constants/sortConstants");
 
 class UserTagDAO extends BaseDatabaseHandler {
-  constructor({ tagMapper, connectionDB, DatabaseError, ConflictError }) {
+  constructor({ tagMapper, connectionDB, errorFactory, inputValidator }) {
     super(connectionDB);
     this.tagMapper = tagMapper;
-    this.DatabaseError = DatabaseError;
-    this.ConflictError = ConflictError;
-    this.ValidationError = ValidationError;
+    this.errorFactory = errorFactory;
+    this.inputValidator = inputValidator;
   }
 
   async create(userTag, externalConn = null) {
@@ -36,15 +18,8 @@ class UserTagDAO extends BaseDatabaseHandler {
     try {
       const { userId, tagId } = userTag;
 
-      const userIdNum = Number(userId);
-      const tagIdNum = Number(tagId);
-
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new this.ValidationError("Invalid user id");
-      }
-      if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new this.ValidationError("Invalid tag id");
-      }
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
+      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
       const [result] = await connection.execute(
         `INSERT INTO user_tag (user_id, tag_id) VALUES(?,?)`,
@@ -53,30 +28,31 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       const actualUserTag = await this.findByIdAndUserId(
         result.insertId,
-        userIdNum
+        userIdNum,
+        connection
       );
 
       return actualUserTag;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new this.ConflictError(
+        throw this.errorFactory.createConflictError(
           "This user already has this tag assigned",
           { attemptedData: { userId: userTag.userId, tagId: userTag.tagId } }
         );
       }
 
       if (error.code === "ER_NO_REFERENCED_ROW" || error.errno === 1452) {
-        throw new this.ConflictError(
+        throw this.errorFactory.createConflictError(
           "The referenced user or tag does not exist",
           { attemptedData: { userId: userTag.userId, tagId: userTag.tagId } }
         );
       }
 
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError("Failed to create user-tag relationship", {
+      throw this.errorFactory.createDatabaseError("Failed to create user-tag relationship", {
         attemptedData: { userId: userTag.userId, tagId: userTag.tagId },
         originalError: error.message,
         code: error.code,
@@ -94,11 +70,7 @@ class UserTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const idNum = Number(id);
-
-      if (!Number.isInteger(idNum) || idNum <= 0) {
-        throw new this.ValidationError("Invalid user tag id");
-      }
+      const idNum = this.inputValidator.validateId(id, "userTag id");
 
       const [result] = await connection.execute(
         "DELETE FROM user_tag WHERE id = ? ",
@@ -107,11 +79,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError("Failed to delete user-tag relationship", {
+      throw this.errorFactory.createDatabaseError("Failed to delete user-tag relationship", {
         attemptedData: { id, userId },
         originalError: error.message,
         code: error.code,
@@ -124,20 +96,13 @@ class UserTagDAO extends BaseDatabaseHandler {
       }
     }
   }
+
   async deleteByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const idNum = Number(id);
-      const userIdNum = Number(userId);
-
-      if (!Number.isInteger(idNum) || idNum <= 0) {
-        throw new this.ValidationError("Invalid user tag id");
-      }
-
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new this.ValidationError("Invalid user id");
-      }
+      const idNum = this.inputValidator.validateId(id, "userTag id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const [result] = await connection.execute(
         "DELETE FROM user_tag WHERE id = ? AND user_id = ?",
@@ -146,11 +111,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError("Failed to delete user-tag relationship", {
+      throw this.errorFactory.createDatabaseError("Failed to delete user-tag relationship", {
         attemptedData: { id, userId },
         originalError: error.message,
         code: error.code,
@@ -168,16 +133,8 @@ class UserTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      const tagIdNum = Number(tagId);
-
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new this.ValidationError("Invalid user id");
-      }
-
-      if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new this.ValidationError("Invalid tag id");
-      }
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
+      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
       const [result] = await connection.execute(
         "DELETE FROM user_tag WHERE user_id = ? AND tag_id = ?",
@@ -186,11 +143,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError("Failed to delete user-tag relationship", {
+      throw this.errorFactory.createDatabaseError("Failed to delete user-tag relationship", {
         attemptedData: { userId, tagId },
         originalError: error.message,
         code: error.code,
@@ -208,10 +165,7 @@ class UserTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new this.ValidationError("Invalid user id");
-      }
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const [result] = await connection.execute(
         "DELETE FROM user_tag WHERE user_id = ?",
@@ -220,11 +174,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows;
     } catch (error) {
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to delete al user-tag relationship for the specific user",
         {
           attemptedData: { userId },
@@ -245,10 +199,7 @@ class UserTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const tagIdNum = Number(tagId);
-      if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new this.ValidationError("Invalid tag id");
-      }
+      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
       const [result] = await connection.execute(
         "DELETE FROM user_tag WHERE tag_id = ?",
@@ -257,11 +208,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows;
     } catch (error) {
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to delete all user-tag relationships for the specified tag",
         {
           attemptedData: { tagId },
@@ -278,20 +229,12 @@ class UserTagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findByIdAndUserId(id, externalConn = null) {
+  async findByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const idNum = Number(id);
-      const userIdNum = Number(userId);
-
-      if (!Number.isInteger(idNum) || idNum <= 0) {
-        throw new this.ValidationError("Invalid user tag id");
-      }
-
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new this.ValidationError("Invalid user id");
-      }
+      const idNum = this.inputValidator.validateId(id, "userTag id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const [rows] = await connection.execute(
         `SELECT 
@@ -308,13 +251,14 @@ class UserTagDAO extends BaseDatabaseHandler {
         return null;
       }
 
-      return this.tagMapper.dbToDomain(rows[0]);
+      const mappedUser = this.tagMapper.dbToDomain(rows[0]);
+      return  mappedUser;
     } catch (error) {
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve userTag relationship by ID and user ID",
         {
           attemptedData: { id, userId },
@@ -335,16 +279,8 @@ class UserTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      const tagIdNum = Number(tagId);
-
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new this.ValidationError("Invalid user id");
-      }
-
-      if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new this.ValidationError("Invalid tag id");
-      }
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
+      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
       const [rows] = await connection.execute(
         `SELECT 
@@ -363,11 +299,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return this.tagMapper.dbToDomain(rows[0]);
     } catch (error) {
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve user-tag relationship by user_id and tag_id",
         {
           attemptedData: { userId, tagId },
@@ -397,71 +333,21 @@ class UserTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const tagIdNum = Number(tagId);
-      if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new this.ValidationError("Invalid tag id");
-      }
-      const { safeField } = validateSortField(
+      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
+      
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         USER_TAG_SORT_FIELD,
         "USER_TAG",
         "user tag sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
+      const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder, SORT_ORDER);
 
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
-      );
+       const queryParams = [tagIdNum];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
 
-      // CONSULTA 1: Contar total de user_tags del tag
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total 
-         FROM user_tag ut 
-         WHERE ut.tag_id = ?`,
-        [tagIdNum]
-      );
-
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "user_tags"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de user_tags paginados
-      const [userTagIdsResult] = await connection.query(
-        `SELECT ut.id
-         FROM user_tag ut 
-         WHERE ut.tag_id = ?
-         ORDER BY ${safeField} ${safeOrder}, ut.id ASC
-         LIMIT ? OFFSET ?`,
-        [tagIdNum, pagination.limit, pagination.offset]
-      );
-
-      if (userTagIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "user_tags"
-        );
-      }
-
-      const userTagIds = userTagIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos
       const [rows] = await connection.query(
         `SELECT 
            ut.id AS user_tag_id,
@@ -469,9 +355,10 @@ class UserTagDAO extends BaseDatabaseHandler {
            ut.tag_id,
            ut.created_at AS user_tag_created_at
          FROM user_tag ut 
-         WHERE ut.id IN (?)
-         ORDER BY FIELD(ut.id, ${userTagIds.map((_, index) => "?").join(",")})`,
-        [userTagIds, ...userTagIds]
+         WHERE ut.tag_id = ?
+         ORDER BY ${safeField} ${safeOrder}, ut.id ASC
+         LIMIT ? OFFSET ?`,
+        queryParams
       );
 
       const mappedUserTags =
@@ -479,19 +366,13 @@ class UserTagDAO extends BaseDatabaseHandler {
           ? rows.map((row) => this.tagMapper.dbToDomain(row))
           : [];
 
-      return buildPaginationResponse(
-        mappedUserTags,
-        pagination,
-        total,
-        totalPages,
-        "user_tags"
-      );
+      return mappedUserTags;
     } catch (error) {
-      if (error instanceof this.ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Error retrieving user-tag associations by tagId",
         {
           attemptedData: {

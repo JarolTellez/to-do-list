@@ -1,30 +1,16 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 const PAGINATION_CONFIG = require("../config/pagination");
 const {
-  DatabaseError,
-  ConflictError,
-  ValidationError,
-} = require("../../utils/appErrors");
-
-const {
-  validateSortField,
-  validateSortOrder,
-} = require("../utils/validation/sortValidator");
-const {
-  calculatePagination,
-  calculateTotalPages,
-  buildPaginationResponse,
-} = require("../utils/pagination");
-
-const {
   SORT_ORDER,
   TASK_TAG_SORT_FIELD,
 } = require("../constants/sortConstants");
 
 class TaskTagDAO extends BaseDatabaseHandler {
-  constructor({ taskTagMapper, connectionDB }) {
+  constructor({ taskTagMapper, errorFactory, inputValidator }) {
     super(connectionDB);
     this.taskTagMapper = taskTagMapper;
+    this.errorFactory = errorFactory;
+    this.inputValidator = inputValidator;
   }
 
   async create(taskTag, externalConn = null) {
@@ -35,31 +21,37 @@ class TaskTagDAO extends BaseDatabaseHandler {
         [taskTag.taskId, taskTag.tagId]
       );
 
-      const actualTaskTag = this.findById(result.insertId);
+      const actualTaskTag = await this.findById(result.insertId, connection);
       return actualTaskTag;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw new this.ConflictError(
+        throw this.errorFactory.createConflictError(
           "This task already has this tag assigned",
           { attemptedData: { taskId, tagId } }
         );
       }
 
       if (error.code === "ER_NO_REFERENCED_ROW" || error.errno === 1452) {
-        throw new this.ConflictError("the task or tag does not exist", {
-          attemptedData: { taskId, tagId },
-        });
+        throw this.errorFactory.createConflictError(
+          "the task or tag does not exist",
+          {
+            attemptedData: { taskId, tagId },
+          }
+        );
       }
 
-      throw new this.DatabaseError("Failed to create taskTag relationShip", {
-        attemptedData: { taskId, tagId },
-        originalError: error.message,
-        code: error.code,
-        context: "taskTag DAO - create method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to create taskTag relationShip",
+        {
+          attemptedData: { taskId, tagId },
+          originalError: error.message,
+          code: error.code,
+          context: "taskTag DAO - create method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -67,16 +59,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
     }
   }
 
-
   async delete(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskTagIdNum = Number(id);
-
-      if (!Number.isInteger(taskTagIdNum) || taskTagIdNum <= 0) {
-        throw new ValidationError("Invalid task tag id");
-      }
+      const taskTagIdNum = this.inputValidator.validateId(id, "taskTag id");
 
       const [result] = await connection.execute(
         "DELETE FROM task_tag WHERE id = ?",
@@ -85,16 +72,19 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError("Failed to delete taskTag relationship", {
-        attemptedData: { taskTagId: id },
-        originalError: error.message,
-        code: error.code,
-        context: "taskTag DAO - delete by id method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to delete taskTag relationship",
+        {
+          attemptedData: { taskTagId: id },
+          originalError: error.message,
+          code: error.code,
+          context: "taskTag DAO - delete by id method",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -111,11 +101,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
       const tagIdNum = Number(tagId);
 
       if (Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
+        throw this.errorFactory.createValidationError("Invalid task id");
       }
 
       if (Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new ValidationError("Invalid tag id");
+        throw this.errorFactory.createValidationError("Invalid tag id");
       }
       const [result] = connection.execute(
         `DELETE FROM tasg_tag WHERE task_id = ? AND tag_id =?`,
@@ -123,15 +113,18 @@ class TaskTagDAO extends BaseDatabaseHandler {
       );
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      throw new this.DatabaseError("Failed to delete taskTag relationship", {
-        attemptedData: { taskTagId: id },
-        originalError: error.message,
-        code: error.code,
-        context: "taskTagDAO - delete by taskId and userId",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to delete taskTag relationship",
+        {
+          attemptedData: { taskTagId: id },
+          originalError: error.message,
+          code: error.code,
+          context: "taskTagDAO - delete by taskId and userId",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -146,7 +139,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
       const taskIdNum = Number(taskId);
 
       if (Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
+        throw this.errorFactory.createValidationError("Invalid task id");
       }
 
       const [result] = await connection.execute(
@@ -155,10 +148,10 @@ class TaskTagDAO extends BaseDatabaseHandler {
       );
       return result.affectedRows > 0;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to delete all taskTag relationship for the specific task",
         {
           attemptedData: { taskTagId: id },
@@ -178,11 +171,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskTagIdNum = Number(id);
-
-      if (!Number.isInteger(taskTagIdNum) || taskTagIdNum <= 0) {
-        throw new ValidationError("Invalid task tag id");
-      }
+      const taskTagIdNum = this.inputValidator.validateId(id, "taskTag id");
 
       const [rows] = await connection.execute(
         `SELECT 
@@ -202,16 +191,19 @@ class TaskTagDAO extends BaseDatabaseHandler {
       const mappedTaskTag = this.taskTagMapper.dbToDomain(rows[0]);
       return mappedTaskTag;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new DatabaseError("Failed to retrieve taskTag relationShip by id", {
-        originalError: error.message,
-        code: error.code,
-        attemptedData: { taskTagId: taskTagIdNum },
-        context: "taskTagDAO - find by id",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve taskTag relationShip by id",
+        {
+          originalError: error.message,
+          code: error.code,
+          attemptedData: { taskTagId: taskTagIdNum },
+          context: "taskTagDAO - find by id",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -219,86 +211,31 @@ class TaskTagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findAllByTaskId(
+  async findAllByTaskId({
     taskId,
-    {
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    } = {}
-  ) {
+    externalConn = null,
+    page = PAGINATION_CONFIG.DEFAULT_PAGE,
+    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(taskId);
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
-      }
+      const taskIdNum = this.inputValidator.validateId(taskId, "task id");
 
-      const { safeField } = validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         TASK_TAG_SORT_FIELD,
         "TASK_TAG",
         "task tag sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
+      const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder, SORT_ORDER);
 
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
-      );
-
-      // CONSULTA 1: Contar total de task_tags del task
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total 
-       FROM task_tag tt 
-       WHERE tt.task_id = ?`,
-        [taskIdNum]
-      );
-
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // Early return si no hay datos o pagina invalida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "task_tags"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de task_tags paginados
-      const [taskTagIdsResult] = await connection.query(
-        `SELECT tt.id
-       FROM task_tag tt 
-       WHERE tt.task_id = ?
-       ORDER BY ${safeField} ${safeOrder}, tt.id ASC
-       LIMIT ? OFFSET ?`,
-        [taskIdNum, pagination.limit, pagination.offset]
-      );
-
-      if (taskTagIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "task_tags"
-        );
-      }
-
-      const taskTagIds = taskTagIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos solo para los task_tags paginados
+      const queryParams = [taskIdNum];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
       const [rows] = await connection.query(
         `SELECT 
          tt.id AS task_tag_id,
@@ -306,9 +243,10 @@ class TaskTagDAO extends BaseDatabaseHandler {
          tt.tag_id,
          tt.created_at AS task_tag_created_at
        FROM task_tag tt 
-       WHERE tt.id IN (?)
-       ORDER BY FIELD(tt.id, ${taskTagIds.map((_, index) => "?").join(",")})`,
-        [taskTagIds, ...taskTagIds]
+         WHERE tt.task_id = ?
+       ORDER BY ${safeField} ${safeOrder}, tt.id ASC
+       LIMIT ? OFFSET ?`,
+        queryParams
       );
 
       const mappedTaskTags =
@@ -316,19 +254,13 @@ class TaskTagDAO extends BaseDatabaseHandler {
           ? rows.map((row) => this.taskTagMapper.dbToDomain(row))
           : [];
 
-      return buildPaginationResponse(
-        mappedTaskTags,
-        pagination,
-        total,
-        totalPages,
-        "task_tags"
-      );
+      return mappedTaskTags;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all taskTag for specific task",
         {
           attemptedData: {
@@ -351,237 +283,32 @@ class TaskTagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findAllByTaskIdAndUserId(
-    taskId,
-    userId,
-    {
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    } = {}
-  ) {
-    const { connection, isExternal } = await this.getConnection(externalConn);
-
-    try {
-      const taskIdNum = Number(taskId);
-      const userIdNum = Number(userId);
-
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
-      }
-
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
-      const [task] = await connection.execute(
-        `SELECT t.id FROM tasks t WHERE t.id = ? AND t.user_id = ?`,
-        [taskIdNum, userIdNum]
-      );
-
-      if (task.length === 0) {
-        throw new this.NotFoundError("Task not found or not owned by user");
-      }
-
-      const { safeField } = validateSortField(
-        sortBy,
-        TASK_TAG_SORT_FIELD,
-        "TASK_TAG",
-        "task tag sort field"
-      );
-
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
-
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
-      );
-
-      // CONSULTA 1: Contar total de task_tags del task PARA ESTE USUARIO
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total 
-         FROM task_tag tt 
-         WHERE tt.task_id = ?`,
-        [taskIdNum]
-      );
-
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // Early return si no hay datos o pagina invalida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "task_tags"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de task_tags paginados
-      const [taskTagIdsResult] = await connection.query(
-        `SELECT tt.id
-         FROM task_tag tt 
-         WHERE tt.task_id = ?
-         ORDER BY ${safeField} ${safeOrder}, tt.id ASC
-         LIMIT ? OFFSET ?`,
-        [taskIdNum, pagination.limit, pagination.offset]
-      );
-
-      if (taskTagIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "task_tags"
-        );
-      }
-
-      const taskTagIds = taskTagIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos solo para los task_tags paginados
-      const [rows] = await connection.query(
-        `SELECT 
-           tt.id AS task_tag_id,
-           tt.task_id,
-           tt.tag_id,
-           tt.created_at AS task_tag_created_at
-         FROM task_tag tt 
-         WHERE tt.id IN (?)
-         ORDER BY FIELD(tt.id, ${taskTagIds.map((_, index) => "?").join(",")})`,
-        [taskTagIds, ...taskTagIds]
-      );
-
-      const mappedTaskTags =
-        Array.isArray(rows) && rows.length > 0
-          ? rows.map((row) => this.taskTagMapper.dbToDomain(row))
-          : [];
-
-      return buildPaginationResponse(
-        mappedTaskTags,
-        pagination,
-        total,
-        totalPages,
-        "task_tags"
-      );
-    } catch (error) {
-      if (
-        error instanceof ValidationError ||
-        error instanceof this.NotFoundError
-      ) {
-        throw error;
-      }
-
-      throw new this.DatabaseError(
-        "Failed to retrieve all taskTags for specific task and user",
-        {
-          attemptedData: {
-            taskId,
-            userId,
-            page,
-            limit,
-            sortBy,
-            sortOrder,
-          },
-          originalError: error.message,
-          code: error.code,
-          stack: error.stack,
-          context: "taskTagDAO - find all by taskId and userId",
-        }
-      );
-    } finally {
-      if (connection && !isExternal) {
-        await this.releaseConnection(connection, isExternal);
-      }
-    }
-  }
-
-  async findAllByTagId(
+  async findAllByTagId({
     tagId,
-    {
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    } = {}
-  ) {
+    externalConn = null,
+    page = PAGINATION_CONFIG.DEFAULT_PAGE,
+    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const tagIdNum = Number(tagId);
-      if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new ValidationError("Invalid tag id");
-      }
+      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
-      const { safeField } = validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         TASK_TAG_SORT_FIELD,
         "TASK_TAG",
         "task tag sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
+      const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder, SORT_ORDER);
 
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
-      );
+      const queryParams = [tagIdNum];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
 
-      // CONSULTA 1: Contar total de task_tags del tag
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total 
-       FROM task_tag tt 
-       WHERE tt.tag_id = ?`,
-        [tagIdNum]
-      );
-
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // Early return si no hay datos o pagina invalida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "task_tags"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de task_tags paginados
-      const [taskTagIdsResult] = await connection.query(
-        `SELECT tt.id
-       FROM task_tag tt 
-       WHERE tt.tag_id = ?
-       ORDER BY ${safeField} ${safeOrder}, tt.id ASC
-       LIMIT ? OFFSET ?`,
-        [tagIdNum, pagination.limit, pagination.offset]
-      );
-
-      if (taskTagIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "task_tags"
-        );
-      }
-
-      const taskTagIds = taskTagIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos solo para los task_tags paginados
       const [rows] = await connection.query(
         `SELECT 
          tt.id AS task_tag_id,
@@ -589,9 +316,10 @@ class TaskTagDAO extends BaseDatabaseHandler {
          tt.tag_id,
          tt.created_at AS task_tag_created_at
        FROM task_tag tt 
-       WHERE tt.id IN (?)
-       ORDER BY FIELD(tt.id, ${taskTagIds.map((_, index) => "?").join(",")})`,
-        [taskTagIds, ...taskTagIds]
+      WHERE tt.tag_id = ?
+       ORDER BY ${safeField} ${safeOrder}, tt.id ASC
+       LIMIT ? OFFSET ?`,
+        queryParams
       );
 
       const mappedTaskTags =
@@ -599,18 +327,12 @@ class TaskTagDAO extends BaseDatabaseHandler {
           ? rows.map((row) => this.taskTagMapper.dbToDomain(row))
           : [];
 
-      return buildPaginationResponse(
-        mappedTaskTags,
-        pagination,
-        total,
-        totalPages,
-        "task_tags"
-      );
+      return mappedTaskTags;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all taskTag for specific tag",
         {
           attemptedData: {
@@ -637,15 +359,9 @@ class TaskTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(taskId);
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw new ValidationError("Invalid task id");
-      }
+      const taskIdNum = this.inputValidator.validateId(taskId, "task id");
 
-      const tagIdNum = Number(tagId);
-      if (!Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw new ValidationError("Invalid tag id");
-      }
+      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
       const [rows] = await connection.execute(
         `SELECT 
@@ -664,26 +380,23 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
       return this.taskTagMapper.dbToDomain(rows[0]);
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      console.error("Database error in TaskTagDAO.findByTaskIdAndTagId:", {
-        taskId,
-        tagId,
-        error: error.message,
-      });
-
-      throw new this.DatabaseError("Failed to retrieve specific taskTag ", {
-        attemptedData: {
-          taskId,
-          tagId,
-        },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "taskTagDAO - find by taskId and tagId",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve specific taskTag ",
+        {
+          attemptedData: {
+            taskId,
+            tagId,
+          },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "taskTagDAO - find by taskId and tagId",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
