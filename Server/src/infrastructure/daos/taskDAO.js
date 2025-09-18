@@ -3,11 +3,11 @@ const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 const { SORT_ORDER, TASK_SORT_FIELD } = require("../constants/sortConstants");
 
 class TaskDAO extends BaseDatabaseHandler {
-  constructor({ taskMapper, connectionDB, errorFactory, sortValidator }) {
+  constructor({ taskMapper, connectionDB, errorFactory, inputValidator }) {
     super(connectionDB);
     this.taskMapper = taskMapper;
     this.errorFactory = errorFactory;
-    this.sortValidator = sortValidator;
+    this.inputValidator = inputValidator;
   }
 
   async create(task, externalConn = null) {
@@ -27,9 +27,10 @@ class TaskDAO extends BaseDatabaseHandler {
       );
 
       const insertedId = result.insertId;
-      const createdTask = this.findWithTagsByIdAndUserId(
+      const createdTask = await this.findWithTagsByIdAndUserId(
         insertedId,
-        task.userId
+        task.userId,
+        connection
       );
 
       return createdTask;
@@ -74,16 +75,23 @@ class TaskDAO extends BaseDatabaseHandler {
         return null;
       }
 
-      const updatedTask = this.findWithTagsByIdAndUserId(task.id, task.userId);
+      const updatedTask = await this.findWithTagsByIdAndUserId(
+        task.id,
+        task.userId,
+        connection
+      );
 
       return updatedTask;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
-        throw  this.errorFactory.createConflictError("Alredy exist a task with this name", {
-          attemptedData: { name: task.name, userId: task.userId },
-        });
+        throw this.errorFactory.createConflictError(
+          "Alredy exist a task with this name",
+          {
+            attemptedData: { name: task.name, userId: task.userId },
+          }
+        );
       }
-      throw  this.errorFactory.createDatabaseError("Failed to update task", {
+      throw this.errorFactory.createDatabaseError("Failed to update task", {
         originalError: error.message,
         code: error.code,
         context: "taskDAO - update method",
@@ -98,15 +106,10 @@ class TaskDAO extends BaseDatabaseHandler {
   async updateCompleted(id, isCompleted, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const taskIdNum = Number(id);
-      const userIdNum = Number(userId);
+      const taskIdNum = this.inputValidator.validateId(id, "task id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid task id");
-      }
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid user id");
-      }
+
 
       if (typeof isCompleted !== "boolean") {
         throw this.errorFactory.createValidationError(
@@ -116,13 +119,17 @@ class TaskDAO extends BaseDatabaseHandler {
 
       const [result] = await connection.execute(
         "UPDATE tasks SET is_completed = ? WHERE id = ? and user_id = ? ",
-        [isCompleted, id, userId]
+        [isCompleted, taskIdNum, userIdNum]
       );
 
       if (result.affectedRows === 0) {
         return null;
       }
-      const updatedTask = this.findWithTagsByIdAndUserId(id, userId);
+      const updatedTask = await this.findWithTagsByIdAndUserId(
+        id,
+        userId,
+        connection
+      );
 
       return updatedTask;
     } catch (error) {
@@ -146,25 +153,23 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(id);
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid task id");
-      }
+      const taskIdNum = this.inputValidator.validateId(id, "task id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const [result] = await connection.execute(
         "DELETE FROM tasks WHERE id = ? AND user_id=?",
-        [id, userId]
+        [taskIdNum, userIdNum]
       );
 
       return result.affectedRows > 0;
     } catch (error) {
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
-        throw  this.errorFactory.createConflictError("Failed no delete task", {
+        throw this.errorFactory.createConflictError("Failed no delete task", {
           attemptedData: { taskId: id, userId },
         });
       }
 
-      throw  this.errorFactory.createDatabaseError("Failed to delete task", {
+      throw this.errorFactory.createDatabaseError("Failed to delete task", {
         attemptedData: { taskId: id, userId },
         originalError: error.message,
         code: error.code,
@@ -182,11 +187,7 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(id);
-
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid task id");
-      }
+      const taskIdNum = this.inputValidator.validateId(id, "task id");
 
       const [rows] = await connection.execute(
         `SELECT 
@@ -231,21 +232,13 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
-    // Consulta una tarea con sus etiquetas por id y userId
+  // Consulta una tarea con sus etiquetas por id y userId
   async findWithTagsByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(id);
-      const userIdNum = Number(userId);
-
-      if (!Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid task id");
-      }
-
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid user id");
-      }
+      const taskIdNum = this.inputValidator.validateId(id, "task id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const [rows] = await connection.execute(
         `SELECT
@@ -274,7 +267,7 @@ class TaskDAO extends BaseDatabaseHandler {
       ORDER BY tg.name ASC, tt.id ASC`,
         [taskIdNum, userIdNum]
       );
-      
+
       if (!Array.isArray(rows) || rows.length === 0) return null;
 
       // Si no tiene etiquetas
@@ -288,7 +281,7 @@ class TaskDAO extends BaseDatabaseHandler {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      
+
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve task with tags by id and userId",
         {
@@ -306,7 +299,7 @@ class TaskDAO extends BaseDatabaseHandler {
   }
 
   //Consulta todas las tareas con etiquetas por userId
-   async findAllWithTagsByUserId({
+  async findAllWithTagsByUserId({
     userId,
     isCompleted = false,
     sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
@@ -318,10 +311,7 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid user id");
-      }
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       if (typeof isCompleted !== "boolean") {
         throw this.errorFactory.createValidationError(
@@ -329,17 +319,21 @@ class TaskDAO extends BaseDatabaseHandler {
         );
       }
 
-      const { safeField } = this.sortValidator.validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         TASK_SORT_FIELD,
         "TASK",
         "task sort field"
       );
 
-      const { safeOrder } = this.sortValidator.validateSortOrder(
+      const { safeOrder } = this.inputValidator.validateSortOrder(
         sortOrder,
         SORT_ORDER
       );
+
+      const queryParams = [userIdNum, isCompleted];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
 
       // Obtener IDs de tareas con límite y offset
       const [taskIdsResult] = await connection.query(
@@ -349,7 +343,7 @@ class TaskDAO extends BaseDatabaseHandler {
        ORDER BY ${safeField} ${safeOrder}, t.id ASC
        ${limit !== null ? "LIMIT ?" : ""} 
        ${offset !== null ? "OFFSET ?" : ""}`,
-        [userIdNum, isCompleted, limit, offset].filter(param => param !== null)
+        queryParams
       );
 
       if (taskIdsResult.length === 0) {
@@ -357,6 +351,8 @@ class TaskDAO extends BaseDatabaseHandler {
       }
 
       const taskIds = taskIdsResult.map((row) => row.id);
+      const placeholders = taskIds.map(() => "?").join(",");
+      const fieldPlaceholders = taskIds.map(() => "?").join(",");
 
       // Obtener detalles completos con tags solo para las tareas seleccionadas
       const [rows] = await connection.query(
@@ -381,11 +377,11 @@ class TaskDAO extends BaseDatabaseHandler {
        FROM tasks t
        LEFT JOIN task_tag tt ON t.id = tt.task_id
        LEFT JOIN tags tg ON tt.tag_id = tg.id
-       WHERE t.id IN (?)
+       WHERE t.id IN (${placeholders})
        ORDER BY 
-         FIELD(t.id, ${taskIds.map((_, index) => "?").join(",")}),
+         FIELD(t.id, ${fieldPlaceholders}),
          tt.id ASC`,
-        [taskIds, ...taskIds]
+        [...taskIds, ...taskIds] // primero para In y despues par FIELD
       );
 
       const mappedTasks =
@@ -463,16 +459,12 @@ class TaskDAO extends BaseDatabaseHandler {
     });
   }
 
-
   // Cuenta todas las tareas de un usuario por estado
   async countAllByUserIdAndStatus(userId, isCompleted, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid user id");
-      }
+      const userIdNum =this.inputValidator.validateId(userId, "user id");
 
       const [totalRows] = await connection.execute(
         `SELECT COUNT(*) AS total
@@ -512,10 +504,7 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid user id");
-      }
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const [totalRows] = await connection.execute(
         `SELECT COUNT(*) AS total
@@ -526,12 +515,15 @@ class TaskDAO extends BaseDatabaseHandler {
 
       return Number(totalRows[0]?.total) || 0;
     } catch (error) {
-      throw this.errorFactory.createDatabaseError("Failed to count overdue tasks", {
-        originalError: error.message,
-        code: error.code,
-        context: "TaskDAO.countAllOverdueByUserId",
-        userId,
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to count overdue tasks",
+        {
+          originalError: error.message,
+          code: error.code,
+          context: "TaskDAO.countAllOverdueByUserId",
+          userId,
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -551,22 +543,23 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = Number(userId);
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid user id");
-      }
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-      const { safeField } = this.sortValidator.validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         TASK_SORT_FIELD,
         "TASK",
         "task sort field"
       );
 
-      const { safeOrder } = this.sortValidator.validateSortOrder(
+      const { safeOrder } = this.inputValidator.validateSortOrder(
         sortOrder,
         SORT_ORDER
       );
+
+      const queryParams = [userIdNum];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
 
       // Obtener IDs de tareas vencidas con limit y offset
       const [taskIdsResult] = await connection.query(
@@ -576,7 +569,7 @@ class TaskDAO extends BaseDatabaseHandler {
        ORDER BY ${safeField} ${safeOrder}, t.id ASC
        ${limit !== null ? "LIMIT ?" : ""} 
        ${offset !== null ? "OFFSET ?" : ""}`,
-        [userIdNum, limit, offset].filter(param => param !== null)
+        queryParams
       );
 
       if (taskIdsResult.length === 0) {
@@ -584,6 +577,8 @@ class TaskDAO extends BaseDatabaseHandler {
       }
 
       const taskIds = taskIdsResult.map((row) => row.id);
+      const placeholders = taskIds.map(() => "?").join(",");
+      const fieldPlaceholders = taskIds.map(() => "?").join(",");
 
       // Obtener detalles completos con tags
       const [rows] = await connection.query(
@@ -608,11 +603,11 @@ class TaskDAO extends BaseDatabaseHandler {
        FROM tasks t
        LEFT JOIN task_tag tt ON t.id = tt.task_id
        LEFT JOIN tags tg ON tt.tag_id = tg.id
-       WHERE t.id IN (?)
+       WHERE t.id IN (${placeholders})
        ORDER BY 
-         FIELD(t.id, ${taskIds.map((_, index) => "?").join(",")}),
+         FIELD(t.id, ${fieldPlaceholders}),
          tt.id ASC`,
-        [taskIds, ...taskIds]
+        [...taskIds, ...taskIds]
       );
 
       const mappedTasks =
@@ -648,7 +643,4 @@ class TaskDAO extends BaseDatabaseHandler {
       }
     }
   }
-  
 }
-
-

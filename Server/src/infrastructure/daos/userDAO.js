@@ -1,21 +1,4 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
-const PAGINATION_CONFIG = require("../config/pagination");
-const {
-  DatabaseError,
-  ConflictError,
-  ValidationError,
-} = require("../../utils/appErrors");
-
-const {
-  validateSortField,
-  validateSortOrder,
-} = require("../utils/validation/sortValidator");
-const {
-  calculatePagination,
-  calculateTotalPages,
-  buildPaginationResponse,
-} = require("../utils/pagination");
-
 const { SORT_ORDER, USER_SORT_FIELD } = require("../constants/sortConstants");
 
 class UserDAO extends BaseDatabaseHandler {
@@ -23,9 +6,11 @@ class UserDAO extends BaseDatabaseHandler {
    * @typedef {import('../../types/entities').User} User
    * @typedef {import('../../types/entities').Connection} Connection
    */
-  constructor({ userMapper, connectionDB }) {
+  constructor({ userMapper, connectionDB, errorFactory, inputValidator }) {
     super(connectionDB);
     this.userMapper = userMapper;
+    this.errorFactory = errorFactory;
+    this.inputValidator = inputValidator;
   }
 
   /**
@@ -44,26 +29,32 @@ class UserDAO extends BaseDatabaseHandler {
         [user.userName, user.email, user.password, user.rol]
       );
 
-      const actualUser = this.findById(result.insertId);
+      const actualUser = this.findById(result.insertId, connection);
 
       return actualUser;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         if (error.message.includes("user_name")) {
-          throw new ConflictError("Username is already taken", {
-            attemptedData: { userName: user.userName },
-          });
+          throw this.errorFactory.createConflictError(
+            "Username is already taken",
+            {
+              attemptedData: { userName: user.userName },
+            }
+          );
         } else if (error.message.includes("email")) {
-          throw new ConflictError("Email is already taken", {
-            attemptedData: { email: user.email },
-          });
+          throw this.errorFactory.createConflictError(
+            "Email is already taken",
+            {
+              attemptedData: { email: user.email },
+            }
+          );
         }
       }
-      throw new DatabaseError("Failed to create user", {
+      throw this.errorFactory.createDatabaseError("Failed to create user", {
         attemptedData: { userId: user.id, userName: user.userName },
         originalError: error.message,
         code: error.code,
-        context: "userDAO - create method"
+        context: "userDAO - create method",
       });
     } finally {
       if (connection && !isExternal) {
@@ -80,28 +71,30 @@ class UserDAO extends BaseDatabaseHandler {
         [user.userName, user.email, user.password, user.id]
       );
 
-      return user;
+      const updatedUser = this.findById(result.insertId, connection);
+
+      return updatedUser;
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         if (error.message.includes("user_name")) {
-          throw new ConflictError("Username already taken", {
-            attemptedData: { userName: user.userName },
-          });
+          throw this.errorFactory.createConflictError(
+            "Username already taken",
+            {
+              attemptedData: { userName: user.userName },
+            }
+          );
         } else if (error.message.includes("email")) {
-          throw new ConflictError("Email already taken", {
+          throw this.errorFactory.createConflictError("Email already taken", {
             attemptedData: { email: user.email },
           });
         }
       }
-      throw new DatabaseError(
-        "Failed to update user",
-        {
-          attemptedData: { userId: user.id, userName: user.userName },
-          originalError: error.message,
-          code: error.code,
-          context: "userDAO - update method"
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to update user", {
+        attemptedData: { userId: user.id, userName: user.userName },
+        originalError: error.message,
+        code: error.code,
+        context: "userDAO - update method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -112,29 +105,27 @@ class UserDAO extends BaseDatabaseHandler {
   async delete(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
+      const userIdNum = this.inputValidator.validateId(id, "user id");
       const [result] = await connection.query(
         "DELETE FROM users WHERE id = ?",
-        [id]
+        [userIdNum]
       );
 
       return result.affectedRows > 0;
     } catch (error) {
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
-        throw new ConflictError(
+        throw this.errorFactory.createConflictError(
           "Failed to delete user: user has associated tasks or sessions",
           { attemptedData: { userId: id } }
         );
       }
 
-      throw new DatabaseError(
-        "Failed to delete user",
-        {
-          attemptedData: { userId: id },
-          originalError: error.message,
-          code: error.code,
-          context: "userDAO - delete method"
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to delete user", {
+        attemptedData: { userId: id },
+        originalError: error.message,
+        code: error.code,
+        context: "userDAO - delete method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -146,83 +137,40 @@ class UserDAO extends BaseDatabaseHandler {
   //obtiene todos los usuarios
   async findAll({
     externalConn = null,
-    page = PAGINATION_CONFIG.DEFAULT_PAGE,
-    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    limit = null,
+    offset = null,
     sortBy = USER_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const { safeField } = validateSortField(
+      const { safeField } = this.inputValidator.validateSortField(
         sortBy,
         USER_SORT_FIELD,
         "USER",
         "user sort field"
       );
 
-      const { safeOrder } = validateSortOrder(sortOrder, SORT_ORDER);
+      const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder, SORT_ORDER);
 
-      const pagination = calculatePagination(
-        page,
-        limit,
-        PAGINATION_CONFIG.MAX_LIMIT,
-        PAGINATION_CONFIG.DEFAULT_PAGE,
-        PAGINATION_CONFIG.DEFAULT_LIMIT
-      );
+      const queryParams = [];
+      if (limit !== null) queryParams.push(limit);
+      if (offset !== null) queryParams.push(offset);
 
-      // CONSULTA 1: Contar total de usuarios
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total FROM users u`
-      );
-      const total = Number(totalRows[0]?.total) || 0;
-      const totalPages = calculateTotalPages(total, pagination.limit);
-
-      // Early return si no hay datos o pagina invalida
-      if (total === 0 || pagination.page > totalPages) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "users"
-        );
-      }
-
-      // CONSULTA 2: Obtener IDs de usuarios paginados
-      const [userIdsResult] = await connection.query(
-        `SELECT u.id
-       FROM users u 
-       ORDER BY ${safeField} ${safeOrder}, u.id ASC
-       LIMIT ? OFFSET ?`,
-        [pagination.limit, pagination.offset]
-      );
-
-      if (userIdsResult.length === 0) {
-        return buildPaginationResponse(
-          [],
-          pagination,
-          total,
-          totalPages,
-          "users"
-        );
-      }
-
-      const userIds = userIdsResult.map((row) => row.id);
-
-      // CONSULTA 3: Obtener detalles completos solo para los usuarios paginados
       const [rows] = await connection.query(
         `SELECT 
-         u.id AS user_id,
-         u.user_name,
-         u.email,
-         u.password,
-         u.rol,
-         u.created_at AS user_created_at
-       FROM users u 
-       WHERE u.id IN (?)
-       ORDER BY FIELD(u.id, ${userIds.map((_, index) => "?").join(",")})`,
-        [userIds, ...userIds]
+     u.id AS user_id,
+     u.user_name,
+     u.email,
+     u.password,
+     u.rol,
+     u.created_at AS user_created_at
+     FROM users u 
+     ORDER BY ${safeField} ${safeOrder}, u.id ASC
+     ${limit !== null ? "LIMIT ?" : ""} 
+     ${offset !== null ? "OFFSET ?" : ""}`,
+        queryParams
       );
 
       const mappedUsers =
@@ -230,23 +178,17 @@ class UserDAO extends BaseDatabaseHandler {
           ? rows.map((row) => this.userMapper.dbToDomain(row))
           : [];
 
-      return buildPaginationResponse(
-        mappedUsers,
-        pagination,
-        total,
-        totalPages,
-        "users"
-      );
+      return mappedUsers;
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
+      throw this.errorFactory.createDatabaseError(
         "Failed to delete all users",
         {
           attemptedData: {
-            page,
+            offset,
             limit,
             sortBy,
             sortOrder,
@@ -254,7 +196,7 @@ class UserDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "userDAO - adminFindAll mehtod"
+          context: "userDAO - adminFindAll mehtod",
         }
       );
     } finally {
@@ -268,11 +210,7 @@ class UserDAO extends BaseDatabaseHandler {
   async findById(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const userIdNum = Number(id);
-
-      if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
-        throw new ValidationError("Invalid user id");
-      }
+      const userIdNum = this.inputValidator.validateId(id, "user id");
       const [rows] = await connection.execute(
         `SELECT  
           id AS user_id,
@@ -287,15 +225,12 @@ class UserDAO extends BaseDatabaseHandler {
       const mappedUser = this.userMapper.dbToDomain(rows[0]);
       return mappedUser;
     } catch (error) {
-      throw new DatabaseError(
-        "Failed to retrieve user by id",
-        {
-          attemptedData: { userId: id },
-          originalError: error.message,
-          code: error.code,
-          context: "userDAO - findById Method"
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to retrieve user by id", {
+        attemptedData: { userId: id },
+        originalError: error.message,
+        code: error.code,
+        context: "userDAO - findById Method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -309,7 +244,7 @@ class UserDAO extends BaseDatabaseHandler {
 
     try {
       if (typeof userName !== "string" || userName.trim().length === 0) {
-        throw new ValidationError("Invalid user name");
+        throw this.errorFactory.createValidationError("Invalid user name");
       }
 
       const cleanUserName = userName.trim();
@@ -333,22 +268,19 @@ class UserDAO extends BaseDatabaseHandler {
 
       return this.userMapper.dbToDomain(rows[0]);
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
-        "Failed to retrieve user by username",
-        {
-          attemptedData: {
-            userNameLength: userName?.length || 0,
-          },
-          originalError: error.message,
-          code: error.code,
-          stack: error.stack,
-          context:"userDAO - findByUserName method"
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to retrieve user by username", {
+        attemptedData: {
+          userNameLength: userName?.length || 0,
+        },
+        originalError: error.message,
+        code: error.code,
+        stack: error.stack,
+        context: "userDAO - findByUserName method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -362,7 +294,7 @@ class UserDAO extends BaseDatabaseHandler {
 
     try {
       if (typeof email !== "string" || email.trim().length === 0) {
-        throw new ValidationError("Invalid email");
+        throw  this.errorFactory.createValidationError("Invalid email");
       }
 
       const cleanEmail = email.trim().toLowerCase();
@@ -386,22 +318,19 @@ class UserDAO extends BaseDatabaseHandler {
 
       return this.userMapper.dbToDomain(rows[0]);
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
-      throw new this.DatabaseError(
-        "Failed to retrieve user by email",
-        {
-          attemptedData: {
-            emailPrefix: email ? email.split("@")[0] + "@***" : "null",
-          },
-          originalError: error.message,
-          code: error.code,
-          stack: error.stack,
-            context:"userDAO - findByEmail method"
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to retrieve user by email", {
+        attemptedData: {
+          emailPrefix: email ? email.split("@")[0] + "@***" : "null",
+        },
+        originalError: error.message,
+        code: error.code,
+        stack: error.stack,
+        context: "userDAO - findByEmail method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -442,17 +371,14 @@ class UserDAO extends BaseDatabaseHandler {
       const mappedUser = this.userMapper.dbToDomain(usuarioBD);
       return mappedUser;
     } catch (error) {
-      throw new DatabaseError(
-        "Failed to retrieve user by credentials",
-        {
-          attemptedData: { userName, password },
-          originalError: error.message,
-          code: error.code,
-          sqlState: error.sqlState,
-          errno: error.errno,
-            context:"userDAO - findByNameAn method"
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to retrieve user by credentials", {
+        attemptedData: { userName, password },
+        originalError: error.message,
+        code: error.code,
+        sqlState: error.sqlState,
+        errno: error.errno,
+        context: "userDAO - findByNameAn method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -495,15 +421,12 @@ class UserDAO extends BaseDatabaseHandler {
 
       return mappedUser;
     } catch (error) {
-      throw new DatabaseError(
-        "Failed to retrieve user with tags",
-        {
-          attemptedData: { userId },
-          originalError: error.message,
-          code: error.code,
-            context:"userDAO - findByIdWithTags method"
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to retrieve user with tags", {
+        attemptedData: { userId },
+        originalError: error.message,
+        code: error.code,
+        context: "userDAO - findByIdWithTags method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
