@@ -49,32 +49,31 @@ class TaskMapper {
     });
   }
 
-  dbToDomainWithTags(rows) {
-  if (!rows || rows.length === 0) return null;
-
-  const tasksMap = new Map();
-
-  rows.forEach(row => {
-    let task = tasksMap.get(row.task_id);
-
-    // Si la tarea aún no está en el mapa, la creamos
-    if (!task) {
-      task = this.dbToDomain(row);
-      tasksMap.set(row.task_id, task);
+  dbToDomainWithTags(rows, isSingle = false) {
+    if (!rows || rows.length === 0) {
+      return isSingle ? null : [];
     }
 
-    // Si hay taskTag, creamos la entidad TaskTag y la asociamos
-    if (row.task_tag_id) {
-      const taskTag = this.taskTagMapper.dbToDomain(row);
-      task.addTaskTag(taskTag);
-    }
-  });
+    const tasksMap = new Map();
 
-  // Retornamos todas las tareas con sus taskTags agrupadas
-  return Array.from(tasksMap.values());
-}
+    rows.forEach((row) => {
+      let task = tasksMap.get(row.task_id);
 
+      if (!task) {
+        task = this.dbToDomain(row);
+        tasksMap.set(row.task_id, task);
+      }
 
+      if (row.tag_id) {
+        const tag = this.tagMapper.dbToDomain(row);
+        task.taskTags.push(tag);
+      }
+    });
+
+    const result = Array.from(tasksMap.values());
+
+    return isSingle ? result[0] || null : result;
+  }
   // dbToDomainWithTags(rows){
   //   if(rows.length===0) return null;
   //   //Unica tarea en todas las rows
@@ -83,7 +82,6 @@ class TaskMapper {
   //   task.taskTags= rows.filter(r=>r.task_tag_id).map(r=>taskTagMapper.dbToDomain(r));
   //   return task;
   // }
-
 
   updateRequestToDominio(taskRequest) {
     try {

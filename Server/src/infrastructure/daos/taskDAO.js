@@ -1,6 +1,7 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 const { SORT_ORDER, TASK_SORT_FIELD } = require("../constants/sortConstants");
+const{MAPPER_TYPES} = require('../constants/mapperConstants');
 
 class TaskDAO extends BaseDatabaseHandler {
   constructor({ taskMapper, connectionDB, errorFactory, inputValidator }) {
@@ -85,7 +86,7 @@ class TaskDAO extends BaseDatabaseHandler {
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
-          "Alredy exist a task with this name",
+          "Alredy exists a task with this name",
           {
             attemptedData: { name: task.name, userId: task.userId },
           }
@@ -108,8 +109,6 @@ class TaskDAO extends BaseDatabaseHandler {
     try {
       const taskIdNum = this.inputValidator.validateId(id, "task id");
       const userIdNum = this.inputValidator.validateId(userId, "user id");
-
-
 
       if (typeof isCompleted !== "boolean") {
         throw this.errorFactory.createValidationError(
@@ -164,7 +163,7 @@ class TaskDAO extends BaseDatabaseHandler {
       return result.affectedRows > 0;
     } catch (error) {
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
-        throw this.errorFactory.createConflictError("Failed no delete task", {
+        throw this.errorFactory.createConflictError("Failed to delete task", {
           attemptedData: { taskId: id, userId },
         });
       }
@@ -189,8 +188,7 @@ class TaskDAO extends BaseDatabaseHandler {
     try {
       const taskIdNum = this.inputValidator.validateId(id, "task id");
 
-      const [rows] = await connection.execute(
-        `SELECT 
+      const baseQuery = `SELECT 
         id AS task_id,
         name AS task_name,
         description AS task_description,
@@ -201,16 +199,15 @@ class TaskDAO extends BaseDatabaseHandler {
         priority,
         user_id
         FROM tasks
-        WHERE id = ?`,
-        [taskIdNum]
-      );
+        WHERE id = ?`;
 
-      if (!Array.isArray(rows) || rows.length === 0) {
-        return null;
-      }
-
-      const mappedTask = this.taskMapper.dbToDomain(rows[0]);
-      return mappedTask;
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [taskIdNum],
+        mapper: this.taskMapper.dbToDomain,
+      });
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -232,6 +229,67 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
+  async findAll({
+    externalConn = null,
+    sortBy = TASK_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+    limit = null,
+    offset = null,
+  } = {}) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const baseQuery = ` SELECT 
+        id AS task_id,
+        name AS task_name,
+        description AS task_description,
+        scheduled_date,
+        created_at AS task_created_at,
+        last_update_date,
+        is_completed,
+        priority,
+        user_id
+        FROM tasks`;
+
+      return await this._executeQuery({
+        connection,
+        baseQuery,
+        sortBy,
+        sortOrder,
+        sortConstants: TASK_SORT_FIELD,
+        entityType: "TASK",
+        entityName: "task",
+        limit,
+        offset,
+        mapper: this.taskMapper.dbToDomain,
+      });
+    } catch (error) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve all tasks",
+        {
+          attemptedData: {
+            sortBy,
+            sortOrder,
+            limit,
+            offset,
+          },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "taskDAO: findAll method",
+        }
+      );
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+
   // Consulta una tarea con sus etiquetas por id y userId
   async findWithTagsByIdAndUserId(id, userId, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
@@ -240,8 +298,7 @@ class TaskDAO extends BaseDatabaseHandler {
       const taskIdNum = this.inputValidator.validateId(id, "task id");
       const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-      const [rows] = await connection.execute(
-        `SELECT
+      const baseQuery = `SELECT
         t.id AS task_id,
         t.name AS task_name,
         t.description AS task_description,
@@ -264,19 +321,16 @@ class TaskDAO extends BaseDatabaseHandler {
       LEFT JOIN task_tag tt ON t.id = tt.task_id
       LEFT JOIN tags tg ON tt.tag_id = tg.id
       WHERE t.id = ? AND t.user_id = ?
-      ORDER BY tg.name ASC, tt.id ASC`,
-        [taskIdNum, userIdNum]
-      );
+      ORDER BY tg.name ASC, tt.id ASC`;
 
-      if (!Array.isArray(rows) || rows.length === 0) return null;
-
-      // Si no tiene etiquetas
-      if (rows.length === 1 && rows[0].task_tag_id === null) {
-        return this.taskMapper.dbToDomain(rows[0]);
-      }
-
-      const mappedTask = this.taskMapper.dbToDomainWithTags(rows);
-      return mappedTask;
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params:[taskIdNum,userIdNum],
+        mapper:(rows) => this.taskMapper.dbToDomainWithTags(rows, true),
+        mapperType:MAPPER_TYPES.ALL_ROWS
+      });
+      return result;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -464,7 +518,7 @@ class TaskDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum =this.inputValidator.validateId(userId, "user id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const [totalRows] = await connection.execute(
         `SELECT COUNT(*) AS total

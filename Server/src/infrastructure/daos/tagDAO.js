@@ -1,6 +1,7 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 const { SORT_ORDER, TAG_SORT_FIELD } = require("../constants/sortConstants");
+const{MAPPER_TYPES} = require('../constants/mapperConstants');
 
 class TagDAO extends BaseDatabaseHandler {
   constructor({ tagMapper, connectionDB, errorFactory, inputValidator }) {
@@ -84,7 +85,7 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const tagIdNum = this.validators.validateId(id, "tag id");
+      const tagIdNum = this.inputValidator.validateId(id, "tag id");
       const [result] = await connection.execute(
         "DELETE FROM tags WHERE id = ?",
         [tagIdNum]
@@ -95,19 +96,17 @@ class TagDAO extends BaseDatabaseHandler {
       // Manejar error de clave foranea
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
         throw this.errorFactory.createConflictError(
-          "No se puede eliminar la etiqueta porque está siendo utilizada",
+          "Cannot delete the tag because it is currently in use",
           { attemptedData: { tagId: id } }
         );
       }
 
-      throw this.errorFactory.createDatabaseError(
-        "Error al eliminar la etiqueta de la base de datos",
-        {
-          attemptedData: { tagId: id },
-          originalError: error.message,
-          code: error.code,
-        }
-      );
+      throw this.errorFactory.createDatabaseError("Failed to delete tag", {
+        attemptedData: { tagId: id },
+        originalError: error.message,
+        code: error.code,
+        context: "tagDAO - delete method",
+      });
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -133,13 +132,17 @@ class TagDAO extends BaseDatabaseHandler {
        created_at AS tag_created_at
        FROM tags`;
 
-      return await this._executeTagQuery({
+      return await this._executeQuery({
         connection,
         baseQuery,
         sortBy,
         sortOrder,
+        sortConstants: TAG_SORT_FIELD,
+        entityType: "TAG",
+        entityName: "tag",
         limit,
         offset,
+        mapper: this.tagMapper.dbToDomain,
       });
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
@@ -168,55 +171,27 @@ class TagDAO extends BaseDatabaseHandler {
     }
   }
 
-  // Cuenta todos los tags
-  async countAll(externalConn = null) {
-    const { connection, isExternal } = await this.getConnection(externalConn);
-
-    try {
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total FROM tags`
-      );
-      return Number(totalRows[0]?.total) || 0;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-
-      throw this.errorFactory.createDatabaseError("Failed to count all tags", {
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "tagDAO: countAll method",
-      });
-    } finally {
-      if (connection && !isExternal) {
-        await this.releaseConnection(connection, isExternal);
-      }
-    }
-  }
-
   //busca Tag por Id
   async findById(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const tagIdNum = this.validators.validateId(id, "tag id");
+      const tagIdNum = this.inputValidator.validateId(id, "tag id");
 
-      const [rows] = await connection.execute(
-        `SELECT 
-         id AS tag_id,
-         name AS tag_name,
-         description AS tag_description,
-         created_at AS tag_created_at
-         FROM tags WHERE id = ?`,
-        [tagIdNum]
-      );
+      const baseQuery = `SELECT 
+       id AS tag_id,
+       name AS tag_name,
+       description AS tag_description,
+       created_at AS tag_created_at
+       FROM tags WHERE id = ?`;
 
-      if (!Array.isArray(rows) || rows.length === 0) {
-        return null;
-      }
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [tagIdNum],
+        mapper: this.tagMapper.dbToDomain,
+      });
 
-      const mappedTag = this.tagMapper.dbToDomain(rows[0]);
-      return mappedTag;
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -246,21 +221,21 @@ class TagDAO extends BaseDatabaseHandler {
         throw this.errorFactory.createValidationError("Invalid tag name");
       }
 
-      const [rows] = await connection.query(
-        `SELECT 
-         id AS tag_id,
-          name AS tag_name,
-          description AS tag_description,
-          created_at AS tag_created_at
-          FROM tags WHERE name = ?`,
-        [name]
-      );
+       const baseQuery = `SELECT 
+       id AS tag_id,
+       name AS tag_name,
+       description AS tag_description,
+       created_at AS tag_created_at
+       FROM tags WHERE name = ?`;
 
-      if (!Array.isArray(rows) || rows.length === 0) {
-        return null;
-      }
-      const mappedTag = this.tagMapper.dbToDomain(rows[0]);
-      return mappedTag;
+    const result = await this._executeQuery({
+      connection,
+      baseQuery,
+      params: [name],
+      mapper: this.tagMapper.dbToDomain
+    });
+
+    return result.length > 0 ? result[0] : null;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -294,7 +269,7 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = this.validators.validateId(userId, "user id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const baseQuery = `
       SELECT 
@@ -306,14 +281,18 @@ class TagDAO extends BaseDatabaseHandler {
       INNER JOIN user_tag ut ON t.id = ut.tag_id
       WHERE ut.user_id = ?`;
 
-      return await this._executeTagQuery({
+      return await this._executeQuery({
         connection,
         baseQuery,
         params: [userIdNum],
         sortBy,
         sortOrder,
+        sortConstants: TAG_SORT_FIELD,
+        entityType: "TAG",
+        entityName: "tag",
         limit,
         offset,
+        mapper: this.tagMapper.dbToDomain,
       });
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
@@ -355,7 +334,7 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = this.validators.validateId(task, "task id");
+      const taskIdNum = this.inputValidator.validateId(taskId, "task id");
 
       const baseQuery = `
       SELECT 
@@ -367,14 +346,18 @@ class TagDAO extends BaseDatabaseHandler {
       INNER JOIN task_tag tt ON t.id = tt.tag_id
       WHERE tt.task_id = ?`;
 
-      return await this._executeTagQuery({
+      return await this._executeQuery({
         connection,
         baseQuery,
         params: [taskIdNum],
         sortBy,
         sortOrder,
+        sortConstants: TAG_SORT_FIELD,
+        entityType: "TAG",
+        entityName: "tag",
         limit,
         offset,
+        mapper: this.tagMapper.dbToDomain,
       });
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
@@ -404,22 +387,56 @@ class TagDAO extends BaseDatabaseHandler {
     }
   }
 
+  // Cuenta todos los tags
+  async countAll(externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+      const baseQuery = `SELECT COUNT(*) AS total FROM tags`;
+
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        mapper: null,
+      });
+      return Number(result[0]?.total) || 0;
+    } catch (error) {
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+
+      throw this.errorFactory.createDatabaseError("Failed to count all tags", {
+        originalError: error.message,
+        code: error.code,
+        stack: error.stack,
+        context: "tagDAO: countAll method",
+      });
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
   // Contar tags por usuario
   async countAllByUserId({ userId, externalConn = null } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const userIdNum = this.validators.validateId(userId, "userS id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total
-     FROM tags t
-     INNER JOIN user_tag ut ON t.id = ut.tag_id
-     WHERE ut.user_id = ?`,
-        [userIdNum]
-      );
+      const baseQuery = `SELECT COUNT(*) AS total
+        FROM tags t
+        INNER JOIN user_tag ut ON t.id = ut.tag_id
+        WHERE ut.user_id = ?`;
 
-      return Number(totalRows[0]?.total) || 0;
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [userIdNum],
+        mapper: null,
+      });
+
+      return Number(result[0]?.total) || 0;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -447,17 +464,21 @@ class TagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = this.validators.validateId(taskId, "task id");
+      const taskIdNum = this.inputValidator.validateId(taskId, "task id");
 
-      const [totalRows] = await connection.execute(
-        `SELECT COUNT(*) AS total
-     FROM tags t
-     INNER JOIN task_tag tt ON t.id = tt.tag_id
-     WHERE tt.task_id = ?`,
-        [taskIdNum]
-      );
+      const baseQuery = `SELECT COUNT(*) AS total
+        FROM tags t
+        INNER JOIN task_tag tt ON t.id = tt.tag_id
+        WHERE tt.task_id = ?`;
 
-      return Number(totalRows[0]?.total) || 0;
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [taskIdNum],
+        mapper: null,
+      });
+
+      return Number(result[0]?.total) || 0;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -480,39 +501,38 @@ class TagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async _executeTagQuery({
-    connection,
-    baseQuery,
-    params = [],
-    sortBy = TAG_SORT_FIELD.CREATED_AT,
-    sortOrder = SORT_ORDER.DESC,
-    limit = null,
-    offset = null,
-  }) {
-    const { safeField } = this.inputValidator.validateSortField(
-      sortBy,
-      TAG_SORT_FIELD,
-      "TAG",
-      "tag sort field"
-    );
-    const { safeOrder } = this.inputValidator.validateSortOrder(
-      sortOrder,
-      SORT_ORDER
-    );
+  // async _executeTagQuery({
+  //   connection,
+  //   baseQuery,
+  //   params = [],
+  //   sortBy = TAG_SORT_FIELD.CREATED_AT,
+  //   sortOrder = SORT_ORDER.DESC,
 
-    let query = `${baseQuery} ORDER BY ${safeField} ${safeOrder}`;
-    const queryParams = [...params];
-    if (limit !== null) query += " LIMIT ?";
-    if (offset !== null) query += " OFFSET ?";
-    if (limit !== null) queryParams.push(limit);
-    if (offset !== null) queryParams.push(offset);
+  // }) {
+  //   const { safeField } = this.inputValidator.validateSortField(
+  //     sortBy,
+  //     TAG_SORT_FIELD,
+  //     "TAG",
+  //     "tag sort field"
+  //   );
+  //   const { safeOrder } = this.inputValidator.validateSortOrder(
+  //     sortOrder,
+  //     SORT_ORDER
+  //   );
 
-    const [rows] = await connection.query(query, queryParams);
+  //   let query = `${baseQuery} ORDER BY ${safeField} ${safeOrder}`;
+  //   const queryParams = [...params];
+  //   if (limit !== null) query += " LIMIT ?";
+  //   if (offset !== null) query += " OFFSET ?";
+  //   if (limit !== null) queryParams.push(limit);
+  //   if (offset !== null) queryParams.push(offset);
 
-    return Array.isArray(rows) && rows.length > 0
-      ? rows.map((row) => this.tagMapper.dbToDomain(row))
-      : [];
-  }
+  //   const [rows] = await connection.query(query, queryParams);
+
+  //   return Array.isArray(rows) && rows.length > 0
+  //     ? rows.map((row) => this.tagMapper.dbToDomain(row))
+  //     : [];
+  // }
 }
 
 module.exports = TagDAO;
