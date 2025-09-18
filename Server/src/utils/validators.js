@@ -6,7 +6,7 @@ const validateRequired =(ValidationError)=>{
   fields.forEach(field => {
     if (!object[field] || object[field].toString().trim() === '') {
       missing.push(field);
-      details[field] = 'Campo requerido';
+      details[field] = 'Required field';
     }
   });
   
