@@ -397,7 +397,6 @@ class TagDAO extends BaseDatabaseHandler {
       const result = await this._executeQuery({
         connection,
         baseQuery,
-        mapper: null,
       });
       return Number(result[0]?.total) || 0;
     } catch (error) {
@@ -433,7 +432,6 @@ class TagDAO extends BaseDatabaseHandler {
         connection,
         baseQuery,
         params: [userIdNum],
-        mapper: null,
       });
 
       return Number(result[0]?.total) || 0;
@@ -475,7 +473,6 @@ class TagDAO extends BaseDatabaseHandler {
         connection,
         baseQuery,
         params: [taskIdNum],
-        mapper: null,
       });
 
       return Number(result[0]?.total) || 0;
