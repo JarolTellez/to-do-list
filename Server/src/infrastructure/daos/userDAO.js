@@ -27,6 +27,7 @@ class UserDAO extends BaseDatabaseHandler {
    * @throws {DatabaseError} On database operation failure.
    */
   async create(user, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
@@ -34,10 +35,12 @@ class UserDAO extends BaseDatabaseHandler {
         [user.userName, user.email, user.password, user.rol]
       );
 
+      // Retrieve the complete created user with generated Id and timestamps
       const createdUser = await this.findById(result.insertId, connection);
 
       return createdUser;
     } catch (error) {
+      // Handle duplicate entry errors(username or email aready exists)
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         if (error.message.includes("user_name")) {
           throw this.errorFactory.createConflictError(
@@ -55,6 +58,8 @@ class UserDAO extends BaseDatabaseHandler {
           );
         }
       }
+
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to create user", {
         attemptedData: { userId: user.id, userName: user.userName },
         originalError: error.message,
@@ -62,6 +67,7 @@ class UserDAO extends BaseDatabaseHandler {
         context: "userDAO.create",
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
@@ -83,6 +89,7 @@ class UserDAO extends BaseDatabaseHandler {
    * @throws {ValidationError} If input validation fails.
    */
   async update(user, externalConn = null) {
+    // Get database connection (new or existing for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
@@ -90,10 +97,12 @@ class UserDAO extends BaseDatabaseHandler {
         [user.userName, user.email, user.password, user.rol, user.id]
       );
 
+      // Retrieve the complete updated user with their updated timestamps
       const updatedUser = await this.findById(result.insertId, connection);
 
       return updatedUser;
     } catch (error) {
+      // Handle duplicate entry errors(username or email aready exists)
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         if (error.message.includes("user_name")) {
           throw this.errorFactory.createConflictError(
@@ -108,6 +117,7 @@ class UserDAO extends BaseDatabaseHandler {
           });
         }
       }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to update user", {
         attemptedData: { userId: user.id, userName: user.userName },
         originalError: error.message,
@@ -115,6 +125,7 @@ class UserDAO extends BaseDatabaseHandler {
         context: "userDAO.update",
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
@@ -131,6 +142,7 @@ class UserDAO extends BaseDatabaseHandler {
    * @throws {ValidationError} If input validation fails.
    */
   async delete(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const userIdNum = this.inputValidator.validateId(id, "user id");
@@ -147,7 +159,7 @@ class UserDAO extends BaseDatabaseHandler {
           { attemptedData: { userId: id } }
         );
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to delete user", {
         attemptedData: { userId: id },
         originalError: error.message,
@@ -155,6 +167,7 @@ class UserDAO extends BaseDatabaseHandler {
         context: "userDAO.delete",
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
@@ -162,7 +175,7 @@ class UserDAO extends BaseDatabaseHandler {
   }
 
   /**
-   * Find a user in the database by their id.
+   * Retrieve a user from the database by their id.
    * @param {number} id  - The id of the user to find (required and unique).
    * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
    * @returns {Promise<Boolean>} User domain entity if was found, null if the user didn't exist.
@@ -170,6 +183,7 @@ class UserDAO extends BaseDatabaseHandler {
    * @throws {ValidationError} If input validation fails.
    */
   async findById(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const userIdNum = this.inputValidator.validateId(id, "user id");
@@ -191,6 +205,11 @@ class UserDAO extends BaseDatabaseHandler {
 
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve user by id",
         {
@@ -201,6 +220,7 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
@@ -208,7 +228,7 @@ class UserDAO extends BaseDatabaseHandler {
   }
 
   /**
-   *
+   * Retrieve a user from the database by their username
    * @param {string} userName - The username of the user to found (must be unique)
    * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
    * @returns {Promise<Boolean>} User domain entity if was found, null if the user didn't exist.
@@ -216,6 +236,7 @@ class UserDAO extends BaseDatabaseHandler {
    * @throws {ValidationError} If input validation fails.
    */
   async findByUserName(userName, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -243,15 +264,17 @@ class UserDAO extends BaseDatabaseHandler {
       });
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve user by username",
         {
           attemptedData: {
-            userNameLength: userName?.length || 0,
+            userNameLength: cleanUserName ? cleanUserName.length : 0,
           },
           originalError: error.message,
           code: error.code,
@@ -260,14 +283,23 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Busca usuario por email
+  /**
+   * Retrieve a user from the database by their email
+   * @param {string} email - The email of the user to found (must be unique)
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Boolean>} User domain entity if was found, null if the user didn't exist.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If input validation fails.
+   */
   async findByEmail(email, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -295,10 +327,11 @@ class UserDAO extends BaseDatabaseHandler {
       });
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve user by email",
         {
@@ -312,65 +345,25 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  //ELIMINAR(SE USARA SOLO EL FIND BY USERNAME LA VALIDAICON DE CONTRASENA SE HACE EN CAPA SERVICES)
-  // async findByNameAndPassword(userName, password, externalConn = null) {
-  //   const { connection, isExternal } = await this.getConnection(externalConn);
-  //   try {
-  //     const [rows] = await connection.execute(
-  //       `SELECT
-  //         id AS user_id,
-  //         user_name,
-  //         email,
-  //         password,
-  //         rol,
-  //         created_at AS user_created_at
-  //         FROM users
-  //         WHERE user_name = ?`,
-  //       [userName]
-  //     );
-
-  //     const usuarioBD = rows[0];
-  //     // PASAR VALIDACION AL SERVICE Y ELIMINAR ESTE METODO DE LA DAO
-  //     // const isValid = await this.bcrypt.compare(
-  //     //   password.trim(),
-  //     //   usuarioBD.password
-  //     // );
-
-  //     // if (!isValid) {
-  //     //   throw new ConflictError("Credenciales inválidas", {
-  //     //     attemptedData: { userName, password },
-  //     //   });
-  //     // }
-
-  //     const mappedUser = this.userMapper.dbToDomain(usuarioBD);
-  //     return mappedUser;
-  //   } catch (error) {
-  //     throw this.errorFactory.createDatabaseError(
-  //       "Failed to retrieve user by credentials",
-  //       {
-  //         attemptedData: { userName, password },
-  //         originalError: error.message,
-  //         code: error.code,
-  //         sqlState: error.sqlState,
-  //         errno: error.errno,
-  //         context: "userDAO - findByNameAn method",
-  //       }
-  //     );
-  //   } finally {
-  //     if (connection && !isExternal) {
-  //       await this.releaseConnection(connection, isExternal);
-  //     }
-  //   }
-  // }
-
-  //READ
-  //obtiene todos los usuarios
+  /**
+   * Retrieves all users from the database with optional pagination, sorting, and filtering.
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=USER_SORT_FIELD.CREATED_AT] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of user domain entity mapped to User domain entity.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
   async findAll({
     externalConn = null,
     limit = null,
@@ -378,6 +371,7 @@ class UserDAO extends BaseDatabaseHandler {
     sortBy = USER_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -404,10 +398,12 @@ class UserDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all users",
         {
@@ -424,17 +420,26 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  //Consulta un usuario con sus etiquetas
-  async findByIdWithUserTags(userId, externalConn = null) {
+  /**
+   * Retrieve a user with their tags from the database
+   * @param {number} id - The id of the user to retrieve
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @returns User domain entity if was found, null if the user didn't exist.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
+  async findByIdWithUserTags(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
+      const userIdNum = this.inputValidator.validateId(id, "user id");
       const baseQuery = `
         SELECT 
         u.id AS user_id,
@@ -464,6 +469,12 @@ class UserDAO extends BaseDatabaseHandler {
 
       return result;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve user with tags",
         {
@@ -474,6 +485,7 @@ class UserDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
