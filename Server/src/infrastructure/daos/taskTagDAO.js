@@ -6,7 +6,7 @@ const {
 } = require("../constants/sortConstants");
 
 class TaskTagDAO extends BaseDatabaseHandler {
-  constructor({ taskTagMapper, errorFactory, inputValidator }) {
+  constructor({ connectionDB, taskTagMapper, errorFactory, inputValidator }) {
     super(connectionDB);
     this.taskTagMapper = taskTagMapper;
     this.errorFactory = errorFactory;
@@ -30,7 +30,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
           "This task already has this tag assigned",
-          { attemptedData: { taskId, tagId } }
+          { attemptedData: {  taskId: taskTag.taskId, tagId: taskTag.tagId } }
         );
       }
 
@@ -38,7 +38,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
         throw this.errorFactory.createConflictError(
           "the task or tag does not exist",
           {
-            attemptedData: { taskId, tagId },
+            attemptedData: { taskId: taskTag.taskId, tagId: taskTag.tagId  },
           }
         );
       }
@@ -46,10 +46,10 @@ class TaskTagDAO extends BaseDatabaseHandler {
       throw this.errorFactory.createDatabaseError(
         "Failed to create taskTag relationShip",
         {
-          attemptedData: { taskId, tagId },
+          attemptedData: { taskId: taskTag.taskId, tagId: taskTag.tagId },
           originalError: error.message,
           code: error.code,
-          context: "taskTag DAO - create method",
+          context: "taskTagDAO.create",
         }
       );
     } finally {
@@ -79,10 +79,10 @@ class TaskTagDAO extends BaseDatabaseHandler {
       throw this.errorFactory.createDatabaseError(
         "Failed to delete taskTag relationship",
         {
-          attemptedData: { taskTagId: id },
+          attemptedData: { taskTagId:taskTagIdNum },
           originalError: error.message,
           code: error.code,
-          context: "taskTag DAO - delete by id method",
+          context: "taskTagDAO.delete",
         }
       );
     } finally {
@@ -97,18 +97,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(taskId);
-      const tagIdNum = Number(tagId);
+      const taskIdNum = this.inputValidator.validateId(taskId, "task id");
+      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
-      if (Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid task id");
-      }
-
-      if (Number.isInteger(tagIdNum) || tagIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid tag id");
-      }
-      const [result] = connection.execute(
-        `DELETE FROM tasg_tag WHERE task_id = ? AND tag_id =?`,
+      const [result] = await connection.execute(
+        `DELETE FROM task_tag WHERE task_id = ? AND tag_id =?`,
         [taskIdNum, tagIdNum]
       );
       return result.affectedRows > 0;
@@ -119,10 +112,10 @@ class TaskTagDAO extends BaseDatabaseHandler {
       throw this.errorFactory.createDatabaseError(
         "Failed to delete taskTag relationship",
         {
-          attemptedData: { taskTagId: id },
+          attemptedData: { taskId: taskIdNum, tagId: tagIdNum },
           originalError: error.message,
           code: error.code,
-          context: "taskTagDAO - delete by taskId and userId",
+          context: "taskTagDAO.deleteByTaskIdAndTagId",
         }
       );
     } finally {
@@ -136,11 +129,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum = Number(taskId);
-
-      if (Number.isInteger(taskIdNum) || taskIdNum <= 0) {
-        throw this.errorFactory.createValidationError("Invalid task id");
-      }
+      const taskIdNum =this.inputValidator.validateId(taskId, "task id");
 
       const [result] = await connection.execute(
         "DELETE FROM task_tag WHERE task_id = ?",
@@ -154,10 +143,10 @@ class TaskTagDAO extends BaseDatabaseHandler {
       throw this.errorFactory.createDatabaseError(
         "Failed to delete all taskTag relationship for the specific task",
         {
-          attemptedData: { taskTagId: id },
+          attemptedData: { taskId: taskIdNum },
           originalError: error.message,
           code: error.code,
-          context: "taskTagDAO - bulk deletion by taskId",
+          context: "taskTagDAO.deleteAllByTaskId",
         }
       );
     } finally {
@@ -173,23 +162,22 @@ class TaskTagDAO extends BaseDatabaseHandler {
     try {
       const taskTagIdNum = this.inputValidator.validateId(id, "taskTag id");
 
-      const [rows] = await connection.execute(
-        `SELECT 
-         id AS  task_tag_id,
-         task_id,
-         tag_id,
-         created_at AS task_tag_created_at
-         FROM task_tag
-        WHERE id = ?`,
-        [taskTagIdNum]
-      );
+      const baseQuery = `SELECT 
+         tt.id AS  task_tag_id,
+         tt.task_id,
+         tt.tag_id,
+         tt.created_at AS task_tag_created_at
+         FROM task_tag tt
+        WHERE id = ?`;
 
-      if (!Array.isArray(rows) || rows.length === 0) {
-        return null;
-      }
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [taskTagIdNum],
+        mapper: this.taskTagMapper.dbToDomain,
+      });
 
-      const mappedTaskTag = this.taskTagMapper.dbToDomain(rows[0]);
-      return mappedTaskTag;
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -201,7 +189,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           attemptedData: { taskTagId: taskTagIdNum },
-          context: "taskTagDAO - find by id",
+          context: "taskTagDAO.findById",
         }
       );
     } finally {
@@ -214,7 +202,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
   async findAllByTaskId({
     taskId,
     externalConn = null,
-    page = PAGINATION_CONFIG.DEFAULT_PAGE,
+    offset = PAGINATION_CONFIG.DEFAULT_PAGE,
     limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
     sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
@@ -224,37 +212,28 @@ class TaskTagDAO extends BaseDatabaseHandler {
     try {
       const taskIdNum = this.inputValidator.validateId(taskId, "task id");
 
-      const { safeField } = this.inputValidator.validateSortField(
-        sortBy,
-        TASK_TAG_SORT_FIELD,
-        "TASK_TAG",
-        "task tag sort field"
-      );
-
-      const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder, SORT_ORDER);
-
-      const queryParams = [taskIdNum];
-      if (limit !== null) queryParams.push(limit);
-      if (offset !== null) queryParams.push(offset);
-      const [rows] = await connection.query(
-        `SELECT 
+      const baseQuery = `SELECT 
          tt.id AS task_tag_id,
          tt.task_id,
          tt.tag_id,
          tt.created_at AS task_tag_created_at
        FROM task_tag tt 
-         WHERE tt.task_id = ?
-       ORDER BY ${safeField} ${safeOrder}, tt.id ASC
-       LIMIT ? OFFSET ?`,
-        queryParams
-      );
+         WHERE tt.task_id = ?`;
 
-      const mappedTaskTags =
-        Array.isArray(rows) && rows.length > 0
-          ? rows.map((row) => this.taskTagMapper.dbToDomain(row))
-          : [];
-
-      return mappedTaskTags;
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [taskIdNum],
+        sortBy,
+        sortOrder,
+        sortConstants: TASK_TAG_SORT_FIELD,
+        entityType: "TASK_TAG",
+        entityName: "taskTag",
+        limit,
+        offset,
+        mapper: this.taskTagMapper.dbToDomain,
+      });
+      return result;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -264,8 +243,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
         "Failed to retrieve all taskTag for specific task",
         {
           attemptedData: {
-            taskId,
-            page,
+            taskId: taskIdNum,
+            offset,
             limit,
             sortBy,
             sortOrder,
@@ -273,7 +252,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "taskTagDAO - find all by taskId",
+          context: "taskTagDAO.findAllByTaskId",
         }
       );
     } finally {
@@ -286,7 +265,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
   async findAllByTagId({
     tagId,
     externalConn = null,
-    page = PAGINATION_CONFIG.DEFAULT_PAGE,
+    offset = PAGINATION_CONFIG.DEFAULT_PAGE,
     limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
     sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
@@ -295,39 +274,28 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
     try {
       const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
-
-      const { safeField } = this.inputValidator.validateSortField(
-        sortBy,
-        TASK_TAG_SORT_FIELD,
-        "TASK_TAG",
-        "task tag sort field"
-      );
-
-      const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder, SORT_ORDER);
-
-      const queryParams = [tagIdNum];
-      if (limit !== null) queryParams.push(limit);
-      if (offset !== null) queryParams.push(offset);
-
-      const [rows] = await connection.query(
-        `SELECT 
+      const baseQuery = `SELECT 
          tt.id AS task_tag_id,
          tt.task_id,
          tt.tag_id,
          tt.created_at AS task_tag_created_at
        FROM task_tag tt 
-      WHERE tt.tag_id = ?
-       ORDER BY ${safeField} ${safeOrder}, tt.id ASC
-       LIMIT ? OFFSET ?`,
-        queryParams
-      );
+      WHERE tt.tag_id = ?`;
 
-      const mappedTaskTags =
-        Array.isArray(rows) && rows.length > 0
-          ? rows.map((row) => this.taskTagMapper.dbToDomain(row))
-          : [];
-
-      return mappedTaskTags;
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [tagIdNum],
+        sortBy,
+        sortOrder,
+        sortConstants: TASK_TAG_SORT_FIELD,
+        entityType: "TASK_TAG",
+        entityName: "taskTag",
+        limit,
+        offset,
+        mapper: this.taskTagMapper.dbToDomain,
+      });
+      return result;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -336,8 +304,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
         "Failed to retrieve all taskTag for specific tag",
         {
           attemptedData: {
-            tagId,
-            page,
+            tagId:tagIdNum,
+            offset,
             limit,
             sortBy,
             sortOrder,
@@ -345,7 +313,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "taskTagDAO - find all by tagId",
+          context: "taskTagDAO.findAllByTagId",
         }
       );
     } finally {
@@ -363,22 +331,21 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
       const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
-      const [rows] = await connection.execute(
-        `SELECT 
+      const baseQuery = `SELECT 
          tt.id AS task_tag_id,
          tt.task_id,
          tt.tag_id,
          tt.created_at AS task_tag_created_at
        FROM task_tag tt 
-       WHERE tt.task_id = ? AND tt.tag_id = ?`,
-        [taskIdNum, tagIdNum]
-      );
+       WHERE tt.task_id = ? AND tt.tag_id = ?`;
 
-      if (!Array.isArray(rows) || rows.length === 0) {
-        return null;
-      }
-
-      return this.taskTagMapper.dbToDomain(rows[0]);
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [taskIdNum, tagIdNum],
+        mapper: this.taskTagMapper.dbToDomain,
+      });
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -388,13 +355,13 @@ class TaskTagDAO extends BaseDatabaseHandler {
         "Failed to retrieve specific taskTag ",
         {
           attemptedData: {
-            taskId,
-            tagId,
+            taskId:taskIdNum,
+            tagId: tagIdNum,
           },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "taskTagDAO - find by taskId and tagId",
+          context: "taskTagDAO.findByTaskIdAndTagId",
         }
       );
     } finally {

@@ -15,6 +15,7 @@ export const USER_SORT_FIELD = Object.freeze({
   NAME: 'name',
   EMAIL: 'email',
   CREATED_AT: 'created_at',
+  UPDATED_AT:'updated_at'
 });
 
 export const TASK_SORT_FIELD = Object.freeze({
@@ -57,7 +58,8 @@ export const SORT_FIELD_MAPPINGS = Object.freeze({
     [USER_SORT_FIELD.ID]: 'u.id',
     [USER_SORT_FIELD.NAME]: 'u.name',
     [USER_SORT_FIELD.EMAIL]: 'u.email',
-    [USER_SORT_FIELD.CREATED_AT]: 'u.created_at'
+    [USER_SORT_FIELD.CREATED_AT]: 'u.created_at',
+    [USER_SORT_FIELD.UPDATED_AT]: 'u.updated_at'
   },
   SESSION: {
     [SESSION_SORT_FIELD.ID]: 's.id',

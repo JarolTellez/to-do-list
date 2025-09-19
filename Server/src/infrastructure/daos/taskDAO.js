@@ -1,5 +1,4 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
-
 const { SORT_ORDER, TASK_SORT_FIELD } = require("../constants/sortConstants");
 const { MAPPER_TYPES } = require("../constants/mapperConstants");
 
@@ -47,7 +46,7 @@ class TaskDAO extends BaseDatabaseHandler {
         attemptedData: { userId: task.userId, name: task.name },
         originalError: error.message,
         code: error.code,
-        context: "taskDAO - create method",
+        context: "taskDAO.create",
       });
     } finally {
       if (connection && !isExternal) {
@@ -95,7 +94,7 @@ class TaskDAO extends BaseDatabaseHandler {
       throw this.errorFactory.createDatabaseError("Failed to update task", {
         originalError: error.message,
         code: error.code,
-        context: "taskDAO - update method",
+        context: "taskDAO.update",
       });
     } finally {
       if (connection && !isExternal) {
@@ -138,7 +137,7 @@ class TaskDAO extends BaseDatabaseHandler {
           attemptedData: { taskId: id, userId },
           originalError: error.message,
           code: error.code,
-          context: "taskDAO - updateCompleted method",
+          context: "taskDAO.updateCompleted",
         }
       );
     } finally {
@@ -172,7 +171,7 @@ class TaskDAO extends BaseDatabaseHandler {
         attemptedData: { taskId: id, userId },
         originalError: error.message,
         code: error.code,
-        context: "taskDAO - delete method",
+        context: "taskDAO.delete",
       });
     } finally {
       if (connection && !isExternal) {
@@ -219,7 +218,7 @@ class TaskDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           attemptedData: { taskId: taskIdNum },
-          context: "taskDAO -findById method",
+          context: "taskDAO.findById",
         }
       );
     } finally {
@@ -240,16 +239,16 @@ class TaskDAO extends BaseDatabaseHandler {
 
     try {
       const baseQuery = ` SELECT 
-        id AS task_id,
-        name AS task_name,
-        description AS task_description,
-        scheduled_date,
-        created_at AS task_created_at,
-        last_update_date,
-        is_completed,
-        priority,
-        user_id
-        FROM tasks`;
+        t.id AS task_id,
+        t.name AS task_name,
+        t.description AS task_description,
+        t.scheduled_date,
+        t.created_at AS task_created_at,
+        t.last_update_date,
+        t.is_completed,
+        t.priority,
+        t.user_id
+        FROM tasks t`;
 
       return await this._executeQuery({
         connection,
@@ -280,7 +279,7 @@ class TaskDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "taskDAO: findAll method",
+          context: "taskDAO.findAll",
         }
       );
     } finally {
@@ -342,7 +341,7 @@ class TaskDAO extends BaseDatabaseHandler {
           attemptedData: { taskId: id, userId },
           originalError: error.message,
           code: error.code,
-          context: "taskDAO - findWithTagsByIdAndUserId method",
+          context: "taskDAO.findWithTagsByIdAndUserId",
         }
       );
     } finally {
@@ -449,7 +448,7 @@ class TaskDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "taskDAO: findAllWithTagsByUserId method",
+          context: "taskDAO.findAllWithTagsByUserId",
         }
       );
     } finally {
@@ -589,7 +588,7 @@ class TaskDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "taskDAO: findAllOverdueByUserId method",
+          context: "taskDAO.findAllOverdueByUserId",
         }
       );
     } finally {

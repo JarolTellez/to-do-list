@@ -37,7 +37,7 @@ class TagDAO extends BaseDatabaseHandler {
         originalError: error.message,
         code: error.code,
         attemptedData: { name: tag.name, userId: tag.userId },
-        context: "tagDAO - create method",
+        context: "tagDAO.create",
       });
     } finally {
       if (connection && !isExternal) {
@@ -72,7 +72,7 @@ class TagDAO extends BaseDatabaseHandler {
         originalError: error.message,
         code: error.code,
         attemptedData: { tagId: tag.id, tagName: tag.name },
-        context: "tagDAO - update method",
+        context: "tagDAO.update",
       });
     } finally {
       if (connection && !isExternal) {
@@ -105,7 +105,7 @@ class TagDAO extends BaseDatabaseHandler {
         attemptedData: { tagId: id },
         originalError: error.message,
         code: error.code,
-        context: "tagDAO - delete method",
+        context: "tagDAO.delete",
       });
     } finally {
       if (connection && !isExternal) {
@@ -161,7 +161,7 @@ class TagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "tagDAO: findAll method",
+          context: "tagDAO.findAll",
         }
       );
     } finally {
@@ -203,7 +203,7 @@ class TagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           attemptedData: { tagId: tagIdNum },
-          context: "tagDAO - findById method",
+          context: "tagDAO.findById",
         }
       );
     } finally {
@@ -247,7 +247,7 @@ class TagDAO extends BaseDatabaseHandler {
           attemptedData: { name },
           originalError: error.message,
           code: error.code,
-          context: "tagDAO - findByName method",
+          context: "tagDAO.findByName",
         }
       );
     } finally {
@@ -312,7 +312,7 @@ class TagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "tagDAO: findAllByUserId method",
+          context: "tagDAO.findAllByUserId",
         }
       );
     } finally {
@@ -377,7 +377,7 @@ class TagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "tagDAO: findAllByTaskId method",
+          context: "tagDAO.findAllByTaskId",
         }
       );
     } finally {
@@ -408,7 +408,7 @@ class TagDAO extends BaseDatabaseHandler {
         originalError: error.message,
         code: error.code,
         stack: error.stack,
-        context: "tagDAO: countAll method",
+        context: "tagDAO.countAll",
       });
     } finally {
       if (connection && !isExternal) {
@@ -447,7 +447,7 @@ class TagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "tagDAO: countAllByUserId method",
+          context: "tagDAO.countAllByUserId",
         }
       );
     } finally {
@@ -488,7 +488,7 @@ class TagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "tagDAO: countAllByTaskId method",
+          context: "tagDAO.countAllByTaskId",
         }
       );
     } finally {
