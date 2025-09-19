@@ -202,8 +202,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
   async findAllByTaskId({
     taskId,
     externalConn = null,
-    offset = PAGINATION_CONFIG.DEFAULT_PAGE,
-    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    offset = null,
+    limit = null,
     sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
@@ -265,8 +265,8 @@ class TaskTagDAO extends BaseDatabaseHandler {
   async findAllByTagId({
     tagId,
     externalConn = null,
-    offset = PAGINATION_CONFIG.DEFAULT_PAGE,
-    limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
+    offset = null,
+    limit = null,
     sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
