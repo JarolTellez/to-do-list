@@ -15,12 +15,16 @@ class UserDAO extends BaseDatabaseHandler {
   }
 
   /**
-   * Creates a new user in the database
-   * @param {User} user - User domain entity to persist
-   * @param {Connection}[externalConn=null] - External databse connection
-   * @returns {Promise<User>} Persisted user entity with assigned ID
-   * @throws {ConflictError} When username or email already exists
-   * @throws {DatabaseError} On database operation failure
+   * Creates a new user in the database.
+   * @param {User} user - User domain entity to persist.
+   * @param {string} user.userName - User account username (must be unique).
+   * @param {string} user.email - User account email (must be unique).
+   * @param {string} user.password - User account password (should be pre-hashed).
+   * @param {string} user.rol - User account rol.
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<User>} Persisted user entity with assigned ID and timestamps.
+   * @throws {ConflictError} When username or email already exists.
+   * @throws {DatabaseError} On database operation failure.
    */
   async create(user, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
@@ -64,12 +68,26 @@ class UserDAO extends BaseDatabaseHandler {
     }
   }
 
+  /**
+   * Updates an existing user in the database.
+   * @param {User} user User domain entity with updated data.
+   * @param {number} user.id - ID of the user to update (required and unique).
+   * @param {string} user.userName - New username (must be unique).
+   * @param {string} user.email - New email (must be unique).
+   * @param {string} user.password - New password (should be pre-hashed).
+   * @param {string} user.rol - New rol.
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<User>} Updated user entity with timestamps.
+   * @throws {ConflictError} When username or email already exists or taken.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If input validation fails.
+   */
   async update(user, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
-        "UPDATE users SET user_name = ?, email = ?, password = ? WHERE id = ?",
-        [user.userName, user.email, user.password, user.id]
+        "UPDATE users SET user_name = ?, email = ?, password = ?, rol=? WHERE id = ?",
+        [user.userName, user.email, user.password, user.rol, user.id]
       );
 
       const updatedUser = await this.findById(result.insertId, connection);
@@ -103,6 +121,15 @@ class UserDAO extends BaseDatabaseHandler {
     }
   }
 
+  /**
+   * Deletes a user from the database by their id.
+   * @param {number} id - The ID of the user to delete (required and unique).
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Boolean>} True if the user was successfully deleted, false if the user didn't exist.
+   * @throws {ConflictError} When user has associated tasks or sessions.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If input validation fails.
+   */
   async delete(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
@@ -134,7 +161,14 @@ class UserDAO extends BaseDatabaseHandler {
     }
   }
 
-  // Busca usuario por id
+  /**
+   * Find a user in the database by their id.
+   * @param {number} id  - The id of the user to find (required and unique).
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Boolean>} User domain entity if was found, null if the user didn't exist.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If input validation fails.
+   */
   async findById(id, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
@@ -173,7 +207,14 @@ class UserDAO extends BaseDatabaseHandler {
     }
   }
 
-  // Busca usuario por username
+  /**
+   *
+   * @param {string} userName - The username of the user to found (must be unique)
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Boolean>} User domain entity if was found, null if the user didn't exist.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If input validation fails.
+   */
   async findByUserName(userName, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
@@ -418,7 +459,7 @@ class UserDAO extends BaseDatabaseHandler {
         baseQuery,
         params: [userIdNum],
         mapper: this.userMapper.dbToDomainWithTags,
-        mapperType: MAPPER_TYPES.ALL_ROWS
+        mapperType: MAPPER_TYPES.ALL_ROWS,
       });
 
       return result;
