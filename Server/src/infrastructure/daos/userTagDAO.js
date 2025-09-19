@@ -5,9 +5,9 @@ const {
 } = require("../constants/sortConstants");
 
 class UserTagDAO extends BaseDatabaseHandler {
-  constructor({ tagMapper, connectionDB, errorFactory, inputValidator }) {
+  constructor({ userTagMapper, connectionDB, errorFactory, inputValidator }) {
     super(connectionDB);
-    this.tagMapper = tagMapper;
+    this.userTagMapper = userTagMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;
   }
@@ -52,13 +52,16 @@ class UserTagDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      throw this.errorFactory.createDatabaseError("Failed to create user-tag relationship", {
-        attemptedData: { userId: userTag.userId, tagId: userTag.tagId },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "userTag DAO - create method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to create user-tag relationship",
+        {
+          attemptedData: { userId: userTag.userId, tagId: userTag.tagId },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "userTagDAO.create",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -83,13 +86,16 @@ class UserTagDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      throw this.errorFactory.createDatabaseError("Failed to delete user-tag relationship", {
-        attemptedData: { id, userId },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        contest: "DAO layer - delete by id and userId method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to delete user-tag relationship",
+        {
+          attemptedData: { userTagId: idNum },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "userTagDAO.delete",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -115,13 +121,16 @@ class UserTagDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      throw this.errorFactory.createDatabaseError("Failed to delete user-tag relationship", {
-        attemptedData: { id, userId },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        contest: "DAO layer - delete by id and userId method",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to delete user-tag relationship",
+        {
+          attemptedData: { id, userId },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "userTagDAO.deleteByIdAndUserId",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -147,13 +156,16 @@ class UserTagDAO extends BaseDatabaseHandler {
         throw error;
       }
 
-      throw this.errorFactory.createDatabaseError("Failed to delete user-tag relationship", {
-        attemptedData: { userId, tagId },
-        originalError: error.message,
-        code: error.code,
-        stack: error.stack,
-        context: "DAO layer - delete by userId and tagId",
-      });
+      throw this.errorFactory.createDatabaseError(
+        "Failed to delete user-tag relationship",
+        {
+          attemptedData: { userId, tagId },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "userTagDao.deleteByUserIdAndTagId",
+        }
+      );
     } finally {
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
@@ -172,7 +184,7 @@ class UserTagDAO extends BaseDatabaseHandler {
         [userIdNum]
       );
 
-      return result.affectedRows;
+      return result.affectedRows > 0;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -185,7 +197,7 @@ class UserTagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "userTag DAO - bulk deletion by userId",
+          context: "userTagDAO.deleteAllByUserId",
         }
       );
     } finally {
@@ -206,7 +218,7 @@ class UserTagDAO extends BaseDatabaseHandler {
         [tagIdNum]
       );
 
-      return result.affectedRows;
+      return result.affectedRows > 0;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -219,7 +231,7 @@ class UserTagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "userTag DAO - bulk deletion by tagId",
+          context: "userTagDAO.deleteAllByTagId",
         }
       );
     } finally {
@@ -233,26 +245,25 @@ class UserTagDAO extends BaseDatabaseHandler {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const idNum = this.inputValidator.validateId(id, "userTag id");
+      const userTagIdNum = this.inputValidator.validateId(id, "userTag id");
       const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-      const [rows] = await connection.execute(
-        `SELECT 
+      const baseQuery = `SELECT 
            ut.id AS user_tag_id,
            ut.user_id,
            ut.tag_id,
            ut.created_at AS user_tag_created_at
          FROM user_tag ut 
-         WHERE ut.id = ? `,
-        [idNum, userIdNum]
-      );
+         WHERE ut.id = ? AND ut.user_id =? `;
 
-      if (!Array.isArray(rows) || rows.length === 0) {
-        return null;
-      }
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [userTagIdNum, userIdNum],
+        mapper: this.userTagMapper.dbToDomain,
+      });
 
-      const mappedUser = this.tagMapper.dbToDomain(rows[0]);
-      return  mappedUser;
+       return result.length > 0 ? result[0] : null;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -261,11 +272,11 @@ class UserTagDAO extends BaseDatabaseHandler {
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve userTag relationship by ID and user ID",
         {
-          attemptedData: { id, userId },
+          attemptedData: { userTagId: userTagIdNum, userId: userIdNum },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "userTagDAO - find by id and userId",
+          context: "userTagDAO.findByIdAndUserId",
         }
       );
     } finally {
@@ -282,22 +293,22 @@ class UserTagDAO extends BaseDatabaseHandler {
       const userIdNum = this.inputValidator.validateId(userId, "user id");
       const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
-      const [rows] = await connection.execute(
-        `SELECT 
+      const baseQuery = `SELECT 
            ut.id AS user_tag_id,
            ut.user_id,
            ut.tag_id,
            ut.created_at AS user_tag_created_at
          FROM user_tag ut 
-         WHERE ut.user_id = ? AND ut.tag_id = ?`,
-        [userIdNum, tagIdNum]
-      );
+         WHERE ut.user_id = ? AND ut.tag_id = ?`;
 
-      if (!Array.isArray(rows) || rows.length === 0) {
-        return null;
-      }
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [userIdNum, tagIdNum],
+        mapper: this.userTagMapper.dbToDomain,
+      });
 
-      return this.tagMapper.dbToDomain(rows[0]);
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -306,11 +317,11 @@ class UserTagDAO extends BaseDatabaseHandler {
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve user-tag relationship by user_id and tag_id",
         {
-          attemptedData: { userId, tagId },
+          attemptedData: { userId: userIdNum, tagId: tagIdNum },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "userTag DAO - find by userId and tagId",
+          context: "userTagDAO.findByUserIdAndTagId",
         }
       );
     } finally {
@@ -320,53 +331,42 @@ class UserTagDAO extends BaseDatabaseHandler {
     }
   }
 
-  async findAllByTagId(
+  async findAllByTagId({
     tagId,
-    {
-      externalConn = null,
-      page = PAGINATION_CONFIG.DEFAULT_PAGE,
-      limit = PAGINATION_CONFIG.DEFAULT_LIMIT,
-      sortBy = USER_TAG_SORT_FIELD.CREATED_AT,
-      sortOrder = SORT_ORDER.DESC,
-    } = {}
-  ) {
+    externalConn = null,
+    sortBy = USER_TAG_SORT_FIELD.CREATED_AT,
+    sortOrder = SORT_ORDER.DESC,
+    limit = null,
+    offset = null,
+  } = {}) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
       const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
-      
-      const { safeField } = this.inputValidator.validateSortField(
-        sortBy,
-        USER_TAG_SORT_FIELD,
-        "USER_TAG",
-        "user tag sort field"
-      );
 
-      const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder, SORT_ORDER);
-
-       const queryParams = [tagIdNum];
-      if (limit !== null) queryParams.push(limit);
-      if (offset !== null) queryParams.push(offset);
-
-      const [rows] = await connection.query(
-        `SELECT 
+      const baseQuery = `SELECT 
            ut.id AS user_tag_id,
            ut.user_id,
            ut.tag_id,
            ut.created_at AS user_tag_created_at
          FROM user_tag ut 
-         WHERE ut.tag_id = ?
-         ORDER BY ${safeField} ${safeOrder}, ut.id ASC
-         LIMIT ? OFFSET ?`,
-        queryParams
-      );
+         WHERE ut.tag_id = ?`;
 
-      const mappedUserTags =
-        Array.isArray(rows) && rows.length > 0
-          ? rows.map((row) => this.tagMapper.dbToDomain(row))
-          : [];
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [tagIdNum],
+        sortBy,
+        sortOrder,
+        sortConstants: USER_TAG_SORT_FIELD,
+        entityType: "USER_TAG",
+        entityName: "userTag",
+        limit,
+        offset,
+        mapper: this.userTagMapper.dbToDomain,
+      });
 
-      return mappedUserTags;
+      return result;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -377,7 +377,7 @@ class UserTagDAO extends BaseDatabaseHandler {
         {
           attemptedData: {
             tagId,
-            page,
+            offset,
             limit,
             sortBy,
             sortOrder,
@@ -385,7 +385,7 @@ class UserTagDAO extends BaseDatabaseHandler {
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "userTagDAO - find by tagId",
+          context: "userTagDAO.findAllByTagId",
         }
       );
     } finally {
