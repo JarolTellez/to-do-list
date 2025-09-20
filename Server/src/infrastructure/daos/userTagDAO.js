@@ -12,7 +12,19 @@ class UserTagDAO extends BaseDatabaseHandler {
     this.inputValidator = inputValidator;
   }
 
+  /**
+   * Creates a new user-tag relationship in the database
+   * @param {UserTag} userTag - UserTag domain entity to persist
+   * @param {number} userTag.userId - Id of the user to associate
+   * @param {number} userTag.tagId - Id of the tag to associate
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<UserTag>} Persisted UserTag entity with assigned Id and timestamps
+   * @throws {ConflictError} When the user-tag relationship already exists or referenced entities don't exist
+   * @throws {ValidationError} If input validation fails
+   * @throws {DatabaseError} On database operation failure
+   */
   async create(userTag, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -47,11 +59,12 @@ class UserTagDAO extends BaseDatabaseHandler {
           { attemptedData: { userId: userTag.userId, tagId: userTag.tagId } }
         );
       }
-
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to create user-tag relationship",
         {
@@ -63,13 +76,23 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deletes a user-tag relationship by its Id
+   * @param {number} id - Id of the user-tag relationship to delete
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if the relationship was found and deleted, false otherwise
+   * @throws {ValidationError} If the user-tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async delete(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -82,10 +105,12 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to delete user-tag relationship",
         {
@@ -97,13 +122,24 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deletes a user-tag relationship by Id and user Id (ensures ownership)
+   * @param {number} id - Id of the user-tag relationship to delete
+   * @param {number} userId - Id of the user who owns the relationship
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if the relationship was found and deleted, false otherwise
+   * @throws {ValidationError} If the user-tag Id or user Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deleteByIdAndUserId(id, userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -117,10 +153,12 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to delete user-tag relationship",
         {
@@ -132,13 +170,24 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deletes a specific user-tag relationship by user Id and tag Id
+   * @param {number} userId - Id of the user
+   * @param {number} tagId - Id of the tag
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if the relationship was found and deleted, false otherwise
+   * @throws {ValidationError} If the user Id or tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deleteByUserIdAndTagId(userId, tagId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -152,10 +201,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to delete user-tag relationship",
         {
@@ -167,13 +217,23 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deletes all user-tag relationships for a specific user
+   * @param {number} userId - Id of the user whose tags will be removed
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if any relationships were deleted, false otherwise
+   * @throws {ValidationError} If the user Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deleteAllByUserId(userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -186,10 +246,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to delete al user-tag relationship for the specific user",
         {
@@ -201,13 +262,23 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deletes all user-tag relationships for a specific tag
+   * @param {number} tagId - Id of the tag whose user associations will be removed
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if any relationships were deleted, false otherwise
+   * @throws {ValidationError} If the tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deleteAllByTagId(tagId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -220,10 +291,11 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to delete all user-tag relationships for the specified tag",
         {
@@ -235,13 +307,24 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Finds a user-tag relationship by its Id and user Id (ensures ownership)
+   * @param {number} id - Id of the user-tag relationship to find
+   * @param {number} userId - Id of the user who owns the relationship
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<UserTag|null>} UserTag entity if found, null otherwise
+   * @throws {ValidationError} If the user-tag Id or user Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findByIdAndUserId(id, userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -263,14 +346,15 @@ class UserTagDAO extends BaseDatabaseHandler {
         mapper: this.userTagMapper.dbToDomain,
       });
 
-       return result.length > 0 ? result[0] : null;
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
-        "Failed to retrieve userTag relationship by ID and user ID",
+        "Failed to retrieve userTag relationship by Id and user Id",
         {
           attemptedData: { userTagId: userTagIdNum, userId: userIdNum },
           originalError: error.message,
@@ -280,13 +364,24 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Finds a specific user-tag relationship by user Id and tag Id
+   * @param {number} userId - Id of the user
+   * @param {number} tagId - Id of the tag
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<UserTag|null>} UserTag entity if found, null otherwise
+   * @throws {ValidationError} If the user Id or tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findByUserIdAndTagId(userId, tagId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -310,10 +405,12 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve user-tag relationship by user_id and tag_id",
         {
@@ -325,12 +422,26 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Finds all user-tag relationships for a specific tag with optional pagination and sorting
+   * @param {Object} options - Configuration options for the query
+   * @param {number} options.tagId - Id of the tag whose user associations to retrieve
+   * @param {import('mysql2').Connection} [options.externalConn=null] - External database connection for transactions
+   * @param {string} [options.sortBy=USER_TAG_SORT_FIELD.CREATED_AT] - Field to sort results by
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC)
+   * @param {number} [options.limit=null] - Maximum number of records to return
+   * @param {number} [options.offset=null] - Number of records to skip for pagination
+   * @returns {Promise<Array<UserTag>>} Array of UserTag entities
+   * @throws {ValidationError} If the tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findAllByTagId({
     tagId,
     externalConn = null,
@@ -339,6 +450,7 @@ class UserTagDAO extends BaseDatabaseHandler {
     limit = null,
     offset = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -368,10 +480,12 @@ class UserTagDAO extends BaseDatabaseHandler {
 
       return result;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Error retrieving user-tag associations by tagId",
         {
@@ -389,6 +503,7 @@ class UserTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }

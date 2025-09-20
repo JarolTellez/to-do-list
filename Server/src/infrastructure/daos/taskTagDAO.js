@@ -12,13 +12,20 @@ class TaskTagDAO extends BaseDatabaseHandler {
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;
   }
-/**
- * Creates a ne
- * @param {*} taskTag 
- * @param {*} externalConn 
- * @returns 
- */
+
+  /**
+   * Creates a new task-tag relationship in the database
+   * @param {TaskTag} taskTag - TaskTag domain entity to persist
+   * @param {number} taskTag.taskId - Id of the task to associate
+   * @param {number} taskTag.tagId - Id of the tag to associate
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<TaskTag>} Persisted TaskTag entity with assigned id and timestamps
+   * @throws {ConflictError} When the task-tag relationship already exists or referenced entities don't exist
+   * @throws {ValidationError} If input validation fails
+   * @throws {DatabaseError} On database operation failure
+   */
   async create(taskTag, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
@@ -35,7 +42,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
           "This task already has this tag assigned",
-          { attemptedData: {  taskId: taskTag.taskId, tagId: taskTag.tagId } }
+          { attemptedData: { taskId: taskTag.taskId, tagId: taskTag.tagId } }
         );
       }
 
@@ -43,11 +50,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
         throw this.errorFactory.createConflictError(
           "the task or tag does not exist",
           {
-            attemptedData: { taskId: taskTag.taskId, tagId: taskTag.tagId  },
+            attemptedData: { taskId: taskTag.taskId, tagId: taskTag.tagId },
           }
         );
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to create taskTag relationShip",
         {
@@ -58,13 +65,23 @@ class TaskTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deletes a task-tag relationship by its Id
+   * @param {number} id - Id of the task-tag relationship to delete
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if the relationship was found and deleted, false otherwise
+   * @throws {ValidationError} If the task-tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async delete(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -77,28 +94,39 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to delete taskTag relationship",
         {
-          attemptedData: { taskTagId:taskTagIdNum },
+          attemptedData: { taskTagId: taskTagIdNum },
           originalError: error.message,
           code: error.code,
           context: "taskTagDAO.delete",
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  //eliminar una relacion especifica por taskId y tagId
+  /**
+   * Deletes a specific task-tag relationship by task Id and tag Id
+   * @param {number} taskId - Id of the task
+   * @param {number} tagId - Id of the tag
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if the relationship was found and deleted, false otherwise
+   * @throws {ValidationError} If the task Id or tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deleteByTaskIdAndTagId(taskId, tagId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -111,9 +139,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
       );
       return result.affectedRows > 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to delete taskTag relationship",
         {
@@ -124,17 +154,26 @@ class TaskTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
-  // Elimina todas las relaciones de TareaEtiqueta por taskId para eliminar todas las etiquetas de una tarea
+  /**
+   * Deletes all task-tag relationships for a specific task
+   * @param {number} taskId - Id of the task whose tags will be removed
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if any relationships were deleted, false otherwise
+   * @throws {ValidationError} If the task Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deleteAllByTaskId(taskId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-      const taskIdNum =this.inputValidator.validateId(taskId, "task id");
+      const taskIdNum = this.inputValidator.validateId(taskId, "task id");
 
       const [result] = await connection.execute(
         "DELETE FROM task_tag WHERE task_id = ?",
@@ -142,9 +181,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
       );
       return result.affectedRows > 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to delete all taskTag relationship for the specific task",
         {
@@ -155,13 +196,23 @@ class TaskTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Retrieves a task-tag relationship by its Id
+   * @param {number} id - Id of the task-tag relationship to find
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<TaskTag|null>} TaskTag entity if found, null otherwise
+   * @throws {ValidationError} If the task-tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findById(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -184,10 +235,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
 
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve taskTag relationShip by id",
         {
@@ -198,12 +250,26 @@ class TaskTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Retrieves all task-tag relationships for a specific task with optional pagination and sorting
+   * @param {Object} options - Configuration options for the query
+   * @param {number} options.taskId - Id of the task whose tags to retrieve
+   * @param {import('mysql2').Connection} [options.externalConn=null] - External database connection for transactions
+   * @param {number} [options.offset=null] - Number of records to skip for pagination
+   * @param {number} [options.limit=null] - Maximum number of records to return
+   * @param {string} [options.sortBy=TASK_TAG_SORT_FIELD.CREATED_AT] - Field to sort results by
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC)
+   * @returns {Promise<Array<TaskTag>>} Array of TaskTag entities
+   * @throws {ValidationError} If the task Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findAllByTaskId({
     taskId,
     externalConn = null,
@@ -212,6 +278,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -240,10 +307,11 @@ class TaskTagDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all taskTag for specific task",
         {
@@ -261,12 +329,26 @@ class TaskTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Retrieves all task-tag relationships for a specific tag with optional pagination and sorting
+   * @param {Object} options - Configuration options for the query
+   * @param {number} options.tagId - Id of the tag whose tasks to retrieve
+   * @param {import('mysql2').Connection} [options.externalConn=null] - External database connection for transactions
+   * @param {number} [options.offset=null] - Number of records to skip for pagination
+   * @param {number} [options.limit=null] - Maximum number of records to return
+   * @param {string} [options.sortBy=TASK_TAG_SORT_FIELD.CREATED_AT] - Field to sort results by
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC)
+   * @returns {Promise<Array<TaskTag>>} Array of TaskTag entities
+   * @throws {ValidationError} If the tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findAllByTagId({
     tagId,
     externalConn = null,
@@ -275,6 +357,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
     sortBy = TASK_TAG_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -302,14 +385,16 @@ class TaskTagDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all taskTag for specific tag",
         {
           attemptedData: {
-            tagId:tagIdNum,
+            tagId: tagIdNum,
             offset,
             limit,
             sortBy,
@@ -322,13 +407,24 @@ class TaskTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Retrieves a specific task-tag relationship by task Id and tag Id
+   * @param {number} taskId - Id of the task
+   * @param {number} tagId - Id of the tag
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<TaskTag|null>} TaskTag entity if found, null otherwise
+   * @throws {ValidationError} If the task Id or tag Id is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findByTaskIdAndTagId(taskId, tagId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -352,15 +448,16 @@ class TaskTagDAO extends BaseDatabaseHandler {
       });
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve specific taskTag ",
         {
           attemptedData: {
-            taskId:taskIdNum,
+            taskId: taskIdNum,
             tagId: tagIdNum,
           },
           originalError: error.message,
@@ -370,6 +467,7 @@ class TaskTagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }

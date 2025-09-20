@@ -1,7 +1,7 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 
 const { SORT_ORDER, TAG_SORT_FIELD } = require("../constants/sortConstants");
-const{MAPPER_TYPES} = require('../constants/mapperConstants');
+const { MAPPER_TYPES } = require("../constants/mapperConstants");
 
 class TagDAO extends BaseDatabaseHandler {
   constructor({ tagMapper, connectionDB, errorFactory, inputValidator }) {
@@ -11,7 +11,19 @@ class TagDAO extends BaseDatabaseHandler {
     this.inputValidator = inputValidator;
   }
 
+  /**
+   * Creates a new tag in the database
+   * @param {Tag} tag  - Tag domain entity to persist
+   * @param {string} tag.name - Tag name (required)
+   * @param {number} tag.userId - Id of the user associated with the task
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Task>} Persisted tag domain entity with assigned ID and timestamps.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ConflictError} On duplicate tag name error
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
   async create(tag, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -21,6 +33,7 @@ class TagDAO extends BaseDatabaseHandler {
       );
       const insertedId = result.insertId;
 
+      // Find the complete created tag with generated Id and timestamps
       const createdTag = await this.findById(insertedId, connection);
 
       return createdTag;
@@ -32,7 +45,7 @@ class TagDAO extends BaseDatabaseHandler {
           { name: tag.name, userId: tag.userId }
         );
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to create tag", {
         originalError: error.message,
         code: error.code,
@@ -40,12 +53,24 @@ class TagDAO extends BaseDatabaseHandler {
         context: "tagDAO.create",
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Updates an existing tag in the database
+   * @param {Tag} tag  - Tag domain entity to update
+   * @param {string} tag.name - new tag name (required)
+   * @param {number} tag.id - Id of the tag to update
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Task>} Persisted tag domain entity with assigned ID and timestamps.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ConflictError} On duplicate tag name error
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
   async update(tag, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
@@ -56,9 +81,12 @@ class TagDAO extends BaseDatabaseHandler {
       if (result.affectedRows === 0) {
         return null;
       }
-      return tag;
+      // Find the complete updated tag
+      const updatedTag = await this.findById(insertedId, connection);
+
+      return updatedTag;
     } catch (error) {
-      // Error de duplicado al actualizar
+      // Handle duplicate entry errrors
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
           "Already exist a tag with this name",
@@ -67,7 +95,7 @@ class TagDAO extends BaseDatabaseHandler {
           }
         );
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to update tag", {
         originalError: error.message,
         code: error.code,
@@ -75,13 +103,24 @@ class TagDAO extends BaseDatabaseHandler {
         context: "tagDAO.update",
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deletes an existing tag in the database by their id
+   * @param {number} id - The id of the tag to delete (required and unique)
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Boolean>} True if the tag was successfully deleted, false if the tag didn't exist.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ConflictError} when tag has associated data in other tables
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
   async delete(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -93,14 +132,14 @@ class TagDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-      // Manejar error de clave foranea
+      // Handle associated data in other tables
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
         throw this.errorFactory.createConflictError(
           "Cannot delete the tag because it is currently in use",
           { attemptedData: { tagId: id } }
         );
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to delete tag", {
         attemptedData: { tagId: id },
         originalError: error.message,
@@ -109,12 +148,130 @@ class TagDAO extends BaseDatabaseHandler {
       });
     } finally {
       if (connection && !isExternal) {
+        // Release only internal connection (external is managed by caller)
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  //obtiene todas las etiquetas
+  /**
+   * Retrieve a tag from the database by their id.
+   * @param {number} id - The id of the tag to retrieve (require and unique)
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Tag>} Tag domain entity if was found, null if the tag didn't exist.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
+  async findById(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
+    const { connection, isExternal } = await this.getConnection(externalConn);
+    try {
+      const tagIdNum = this.inputValidator.validateId(id, "tag id");
+
+      const baseQuery = `SELECT 
+       id AS tag_id,
+       name AS tag_name,
+       description AS tag_description,
+       created_at AS tag_created_at
+       FROM tags WHERE id = ?`;
+
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [tagIdNum],
+        mapper: this.tagMapper.dbToDomain,
+      });
+
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      // Re-throw ValidationErrors (input issues)
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+      // Handle all other database errors
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve tag by id",
+        {
+          originalError: error.message,
+          code: error.code,
+          attemptedData: { tagId: tagIdNum },
+          context: "tagDAO.findById",
+        }
+      );
+    } finally {
+      // Release only internal connection (external is managed by caller)
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+
+  /**
+   * Retrieve a tag from the database by their name.
+   * @param {string} name - The name of the tag to retrieve (require and unique)
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Tag>} Tag domain entity if was found, null if the tag didn't exist.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
+  async findByName(name, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
+    const { connection, isExternal } = await this.getConnection(externalConn);
+    try {
+      if (!name || typeof name !== "string") {
+        throw this.errorFactory.createValidationError("Invalid tag name");
+      }
+
+      const baseQuery = `SELECT 
+       id AS tag_id,
+       name AS tag_name,
+       description AS tag_description,
+       created_at AS tag_created_at
+       FROM tags WHERE name = ?`;
+
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [name],
+        mapper: this.tagMapper.dbToDomain,
+      });
+
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      // Re-throw ValidationErrors (input issues)
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+      // Handle all other database errors
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve tag by name",
+        {
+          attemptedData: { name },
+          originalError: error.message,
+          code: error.code,
+          context: "tagDAO.findByName",
+        }
+      );
+    } finally {
+      // Release only internal connection (external is managed by caller)
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
+    }
+  }
+
+  /**
+   * Retrieves all tags from the database with optional pagination, sorting, and filtering.
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=TAG_SORT_FIELD.CREATED_AT] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of Tag domain entity.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
   async findAll({
     externalConn = null,
     sortBy = TAG_SORT_FIELD.CREATED_AT,
@@ -122,6 +279,7 @@ class TagDAO extends BaseDatabaseHandler {
     limit = null,
     offset = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -145,10 +303,11 @@ class TagDAO extends BaseDatabaseHandler {
         mapper: this.tagMapper.dbToDomain,
       });
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all tags",
         {
@@ -165,99 +324,26 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
-      if (connection && !isExternal) {
-        await this.releaseConnection(connection, isExternal);
-      }
-    }
-  }
-
-  //busca Tag por Id
-  async findById(id, externalConn = null) {
-    const { connection, isExternal } = await this.getConnection(externalConn);
-    try {
-      const tagIdNum = this.inputValidator.validateId(id, "tag id");
-
-      const baseQuery = `SELECT 
-       id AS tag_id,
-       name AS tag_name,
-       description AS tag_description,
-       created_at AS tag_created_at
-       FROM tags WHERE id = ?`;
-
-      const result = await this._executeQuery({
-        connection,
-        baseQuery,
-        params: [tagIdNum],
-        mapper: this.tagMapper.dbToDomain,
-      });
-
-      return result.length > 0 ? result[0] : null;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-
-      throw this.errorFactory.createDatabaseError(
-        "Failed to retrieve tag by id",
-        {
-          originalError: error.message,
-          code: error.code,
-          attemptedData: { tagId: tagIdNum },
-          context: "tagDAO.findById",
-        }
-      );
-    } finally {
-      if (connection && !isExternal) {
-        await this.releaseConnection(connection, isExternal);
-      }
-    }
-  }
-
-  // busca tag por nombre
-  async findByName(name, externalConn = null) {
-    const { connection, isExternal } = await this.getConnection(externalConn);
-    try {
-      if (!name || typeof name !== "string") {
-        throw this.errorFactory.createValidationError("Invalid tag name");
-      }
-
-       const baseQuery = `SELECT 
-       id AS tag_id,
-       name AS tag_name,
-       description AS tag_description,
-       created_at AS tag_created_at
-       FROM tags WHERE name = ?`;
-
-    const result = await this._executeQuery({
-      connection,
-      baseQuery,
-      params: [name],
-      mapper: this.tagMapper.dbToDomain
-    });
-
-    return result.length > 0 ? result[0] : null;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-
-      throw this.errorFactory.createDatabaseError(
-        "Failed to retrieve tag by name",
-        {
-          attemptedData: { name },
-          originalError: error.message,
-          code: error.code,
-          context: "tagDAO.findByName",
-        }
-      );
-    } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
   //Metodos compuestos
-  // Busca tags asociados a un usuario (join con user_tag)
+  /**
+   * Retrieves all tags from the database by associated userId with optional pagination, sorting, and filtering.
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {number} [options.userId] -The userId associated to the tags to retrieve.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=TAG_SORT_FIELD.CREATED_AT] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of Tag domain entity.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
   async findAllByUserId({
     userId,
     externalConn = null,
@@ -266,6 +352,7 @@ class TagDAO extends BaseDatabaseHandler {
     limit = null,
     offset = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -295,10 +382,11 @@ class TagDAO extends BaseDatabaseHandler {
         mapper: this.tagMapper.dbToDomain,
       });
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve tags by user id",
         {
@@ -316,13 +404,26 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Busca tags asociadas a una tarea
+  /**
+   * Retrieves all tags from the database by their associated taskId with optional pagination, sorting, and filtering.
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {number} [options.taskId] -The taskId associated to the tags to retrieve.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=TAG_SORT_FIELD.CREATED_AT] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of Tag domain entity.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
   async findAllByTaskId({
     taskId,
     externalConn = null,
@@ -331,6 +432,7 @@ class TagDAO extends BaseDatabaseHandler {
     limit = null,
     offset = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -360,10 +462,12 @@ class TagDAO extends BaseDatabaseHandler {
         mapper: this.tagMapper.dbToDomain,
       });
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve tags by task id",
         {
@@ -381,14 +485,21 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Cuenta todos los tags
+  /**
+   * Count all tags from database
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @returns {Promise<number>} Total number of tags
+   * @throws {DatabaseError} If database operation fails
+   */
   async countAll(externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -400,10 +511,7 @@ class TagDAO extends BaseDatabaseHandler {
       });
       return Number(result[0]?.total) || 0;
     } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-
+      // Handle all database errors
       throw this.errorFactory.createDatabaseError("Failed to count all tags", {
         originalError: error.message,
         code: error.code,
@@ -411,13 +519,21 @@ class TagDAO extends BaseDatabaseHandler {
         context: "tagDAO.countAll",
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
-  // Contar tags por usuario
+  /**
+   * Count all tags from database by their associated userId
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @returns {Promise<number>} Total number of tags matching.
+   * @throws {DatabaseError} If database operation fails
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   */
   async countAllByUserId({ userId, externalConn = null } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -436,10 +552,11 @@ class TagDAO extends BaseDatabaseHandler {
 
       return Number(result[0]?.total) || 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to count tags by user id",
         {
@@ -451,14 +568,22 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Contar tags por tarea
+  /**
+   * Count all tags from database by their associated taskId
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @returns {Promise<number>} Total number of tags matching.
+   * @throws {DatabaseError} If database operation fails
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   */
   async countAllByTaskId({ taskId, externalConn = null } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -477,10 +602,12 @@ class TagDAO extends BaseDatabaseHandler {
 
       return Number(result[0]?.total) || 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to count tags by task id",
         {
@@ -492,6 +619,7 @@ class TagDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }

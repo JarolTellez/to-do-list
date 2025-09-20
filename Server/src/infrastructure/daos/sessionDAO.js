@@ -14,8 +14,22 @@ class SessionDAO extends BaseDatabaseHandler {
     this.inputValidator = inputValidator;
   }
 
-  // Guardar una nueva sesión
+  /**
+   * Creates a new session in the database
+   * @param {Session} session - Session domain entity to persist
+   * @param {number} session.user_id - Id of the user associated with the session
+   * @param {string} session.refreshTokenHash - Hash of the refreshToken
+   * @param {string} session.deviceId - Session device id
+   * @param {string} session.ip - Session ip
+   * @param {Date||string} session.expiresAt - Date when a session expires
+   * @param {string} session.isActive - Session status
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Task>} Persisted Session domain entity with assigned ID and timestamps.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ConflictError} On duplicate deviceId for a active session
+   */
   async create(session, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const [result] = await connection.execute(
@@ -31,13 +45,12 @@ class SessionDAO extends BaseDatabaseHandler {
         ]
       );
 
-      const actualSession = await this.findById(
-        result.insertId,
-        connection
-      );
+      const actualSession = await this.findById(result.insertId, connection);
 
       return actualSession;
     } catch (error) {
+      
+      // Handle duplicated error
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
           "A session already exists for this device",
@@ -49,7 +62,7 @@ class SessionDAO extends BaseDatabaseHandler {
           }
         );
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to create session", {
         attemptedData: {
           userId: session.userId,
@@ -61,14 +74,23 @@ class SessionDAO extends BaseDatabaseHandler {
         code: error.code,
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Desactivar una sesión por ID de la session
+  /**
+   * Deactivates a session by its ID
+   * @param {number} id - ID of the session to deactivate
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if the session was found and deactivated, false otherwise
+   * @throws {ValidationError} If the session ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deactivate(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const sessionIdNum = this.inputValidator.validateId(id, "session id");
@@ -79,6 +101,7 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+         // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -93,14 +116,23 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Desactivar todas las sessions de un usuario
+  /**
+   * Deactivates all sessions for a specific user
+   * @param {number|string} userId - ID of the user whose sessions will be deactivated
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if any sessions were deactivated, false otherwise
+   * @throws {ValidationError} If the user ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deactivateAllByUserId(userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const userIdNum = this.inputValidator.validateId(userId, "user id");
@@ -110,6 +142,7 @@ class SessionDAO extends BaseDatabaseHandler {
       );
       return result.affectedRows > 0;
     } catch (error) {
+         // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -123,17 +156,28 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deactivates all sessions for a specific user and device
+   * @param {number|string} userId - ID of the user
+   * @param {string} deviceId - Device identifier
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if any sessions were deactivated, false otherwise
+   * @throws {ValidationError} If the user ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deactivateAllByUserIdAndDeviceId(
     userId,
     deviceId,
     externalConn = null
   ) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const userIdNum = this.inputValidator.validateId(userId, "user id");
@@ -145,6 +189,7 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+         // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -158,13 +203,23 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deactivates the oldest session for a specific user
+   * @param {number|string} userId - ID of the user
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<boolean>} True if a session was deactivated, false otherwise
+   * @throws {ValidationError} If the user ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async deactivateOldestByUserId(userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const userIdNum = this.inputValidator.validateId(userId, "user id");
@@ -181,6 +236,7 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+         // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -194,13 +250,23 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Finds a session by its ID
+   * @param {number|string} id - ID of the session to find
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<Session|null>} Session entity if found, null otherwise
+   * @throws {ValidationError} If the session ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findById(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -225,6 +291,7 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+         // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -242,13 +309,22 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
-  // Consultar una sesión por refresh token hash
+  /**
+   * Finds a session by refresh token hash
+   * @param {string} refreshTokenHash - Hash of the refresh token to search for
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<Session|null>} Session entity if found, null otherwise
+   * @throws {ValidationError} If the refresh token hash is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findByRefreshTokenHash(refreshTokenHash, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -299,12 +375,24 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Retrieves all sessions from the database with optional pagination and sorting
+   * @param {Object} [options={}] - Configuration options for the query
+   * @param {import('mysql2').Connection} [options.externalConn=null] - External database connection for transactions
+   * @param {string} [options.sortBy=SESSION_SORT_FIELD.CREATED_AT] - Field to sort results by
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC)
+   * @param {number} [options.limit=null] - Maximum number of records to return
+   * @param {number} [options.offset=null] - Number of records to skip for pagination
+   * @returns {Promise<Array<Session>>} Array of session entities
+   * @throws {DatabaseError} On database operation failure
+   */
   async findAll({
     externalConn = null,
     sortBy = SESSION_SORT_FIELD.CREATED_AT,
@@ -312,6 +400,7 @@ class SessionDAO extends BaseDatabaseHandler {
     limit = null,
     offset = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -355,12 +444,25 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
-  // Consultar todas las sessions de un usuario
+  /**
+   * Retrieves all sessions for a specific user with optional pagination and sorting
+   * @param {Object} options - Configuration options for the query
+   * @param {number} options.userId - ID of the user whose sessions to retrieve
+   * @param {import('mysql2').Connection} [options.externalConn=null] - External database connection for transactions
+   * @param {number} [options.offset=null] - Number of records to skip for pagination
+   * @param {number} [options.limit=null] - Maximum number of records to return
+   * @param {string} [options.sortBy=SESSION_SORT_FIELD.CREATED_AT] - Field to sort results by
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC)
+   * @returns {Promise<Array<Session>>} Array of session entities
+   * @throws {ValidationError} If the user ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findAllByUserId({
     userId,
     externalConn = null,
@@ -369,6 +471,7 @@ class SessionDAO extends BaseDatabaseHandler {
     sortBy = SESSION_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -398,6 +501,7 @@ class SessionDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
+         // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -419,12 +523,27 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Retrieves sessions for a specific user filtered by active status
+   * @param {Object} options - Configuration options for the query
+   * @param {number} options.userId - ID of the user whose sessions to retrieve
+   * @param {boolean} options.active - Active status to filter by
+   * @param {import('mysql2').Connection} [options.externalConn=null] - External database connection for transactions
+   * @param {string} [options.sortBy=SESSION_SORT_FIELD.CREATED_AT] - Field to sort results by
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC)
+   * @param {number} [options.limit=null] - Maximum number of records to return
+   * @param {number} [options.offset=null] - Number of records to skip for pagination
+   * @returns {Promise<Array<Session>>} Array of session entities
+   * @throws {ValidationError} If the user ID is invalid or active is not a boolean
+   * @throws {DatabaseError} On database operation failure
+   */
   async findAllByUserIdAndIsActive({
     userId,
     externalConn = null,
@@ -434,6 +553,7 @@ class SessionDAO extends BaseDatabaseHandler {
     limit = null,
     offset = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -468,6 +588,7 @@ class SessionDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
+         // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -492,12 +613,27 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Retrieves active sessions for a specific user and refresh token hash
+   * @param {Object} options - Configuration options for the query
+   * @param {number} options.userId - ID of the user
+   * @param {string} options.refreshTokenHash - Hash of the refresh token
+   * @param {import('mysql2').Connection} [options.externalConn=null] - External database connection for transactions
+   * @param {number} [options.limit=null] - Maximum number of records to return
+   * @param {number} [options.offset=null] - Number of records to skip for pagination
+   * @param {string} [options.sortBy=SESSION_SORT_FIELD.CREATED_AT] - Field to sort results by
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC)
+   * @returns {Promise<Array<Session>>} Array of active session entities
+   * @throws {ValidationError} If the user ID is invalid or refresh token hash is missing
+   * @throws {DatabaseError} On database operation failure
+   */
   async findAllActiveByUserIdAndRtHash({
     userId,
     refreshTokenHash,
@@ -507,6 +643,7 @@ class SessionDAO extends BaseDatabaseHandler {
     sortBy = SESSION_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -543,6 +680,7 @@ class SessionDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
+         // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -564,13 +702,21 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Counts all sessions in the database
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<number>} Total number of sessions
+   * @throws {DatabaseError} On database operation failure
+   */
   async countAll(externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -592,13 +738,22 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
-  // Contar sessions por usuario
+  /**
+   * Counts all sessions for a specific user
+   * @param {number|string} userId - ID of the user
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<number>} Total number of sessions for the user
+   * @throws {ValidationError} If the user ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async countAllByUserId(userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -627,14 +782,24 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Contar sessions por usuario y estado
+  /**
+   * Counts sessions for a specific user filtered by active status
+   * @param {number|string} userId - ID of the user
+   * @param {boolean} active - Active status to filter by
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<number>} Total number of sessions matching the criteria
+   * @throws {ValidationError} If the user ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async countAllByUserIdAndIsActive(userId, active, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -663,21 +828,32 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Contar sessions activas por usuario y hash de refresh token
+  /**
+   * Counts active sessions for a specific user and refresh token hash
+   * @param {number|string} userId - ID of the user
+   * @param {string} refreshTokenHash - Hash of the refresh token
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions
+   * @returns {Promise<number>} Total number of active sessions matching the criteria
+   * @throws {ValidationError} If the user ID is invalid or refresh token hash is missing
+   * @throws {DatabaseError} On database operation failure
+   */
   async countAllActiveByUserIdAndRtHash(
     userId,
     refreshTokenHash,
     externalConn = null
   ) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
+      // Get database connection (new or provided external for transactions)
       const userIdNum = this.inputValidator.validateId(userId, "user id");
 
       if (!refreshTokenHash || typeof refreshTokenHash !== "string") {
@@ -697,6 +873,12 @@ class SessionDAO extends BaseDatabaseHandler {
       });
       return Number(result[0]?.total) || 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to count active sessions by user id and refresh token hash",
         {
@@ -708,6 +890,7 @@ class SessionDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
