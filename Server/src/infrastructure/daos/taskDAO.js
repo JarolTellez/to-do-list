@@ -10,7 +10,22 @@ class TaskDAO extends BaseDatabaseHandler {
     this.inputValidator = inputValidator;
   }
 
+  /**
+   * Creates a new task in the database.
+   * @param {Task} task - Task domain entity to persist.
+   * @param {string} task.name - Task name (required).
+   * @param {string} task.description - Task description
+   * @param {Date|string} task.scheduledDate - Scheduled date for the task.
+   * @param {boolean} task.isCompleted - Completion status of the task.
+   * @param {string} task.priority - Task priority level.
+   * @param {number} task.userId - ID of the user associated with the task.
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Task>} Persisted task domain entity with assigned ID and timestamps.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
   async create(task, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -27,6 +42,7 @@ class TaskDAO extends BaseDatabaseHandler {
       );
 
       const insertedId = result.insertId;
+      // Retrieve the complete created task with generated Id and timestamps
       const createdTask = await this.findWithTagsByIdAndUserId(
         insertedId,
         task.userId,
@@ -35,13 +51,14 @@ class TaskDAO extends BaseDatabaseHandler {
 
       return createdTask;
     } catch (error) {
-      // Duplicated error
+      // Handle duplicated error
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
           "A task with this name already exists for this user",
           { name: task.name, userId: task.userId }
         );
       }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to create task", {
         attemptedData: { userId: task.userId, name: task.name },
         originalError: error.message,
@@ -49,13 +66,31 @@ class TaskDAO extends BaseDatabaseHandler {
         context: "taskDAO.create",
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Updates an existing task in the database.
+   * @param {Task} task
+   * @param {string} task.name - new task name (required).
+   * @param {string} task.description - new task description
+   * @param {Date|string} task.scheduledDate - new scheduled date for the task.
+   * @param {boolean} task.isCompleted -  new completion status of the task.
+   * @param {string} task.priority -  new task priority level.
+   * @param {number} task.id - Id of the task to update
+   * @param {number} task.userId - Id of the user associated with the task.
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Task>} Updated task domain entity with updated timestamps.
+   * @throws {ConflictError} When name already exists or taken.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
   async update(task, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -75,6 +110,7 @@ class TaskDAO extends BaseDatabaseHandler {
         return null;
       }
 
+      // Retrieve the complete updated task with updated timestamps
       const updatedTask = await this.findWithTagsByIdAndUserId(
         task.id,
         task.userId,
@@ -83,6 +119,7 @@ class TaskDAO extends BaseDatabaseHandler {
 
       return updatedTask;
     } catch (error) {
+      // Handle duplicate entry errrors
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
           "Already exists a task with this name",
@@ -91,19 +128,32 @@ class TaskDAO extends BaseDatabaseHandler {
           }
         );
       }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to update task", {
         originalError: error.message,
         code: error.code,
         context: "taskDAO.update",
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Updates isCompleted field in an existing task in the database
+   * @param {numbre} id - Id of the task to update
+   * @param {boolean} isCompleted - new completion status of the task
+   * @param {number} userId - Id of the user associated with the task
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Task>} Updated task domain entity with updated timestamps.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
   async updateCompleted(id, isCompleted, userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
       const taskIdNum = this.inputValidator.validateId(id, "task id");
@@ -123,6 +173,7 @@ class TaskDAO extends BaseDatabaseHandler {
       if (result.affectedRows === 0) {
         return null;
       }
+      // Retrieve the complete updated task with updated timestamps
       const updatedTask = await this.findWithTagsByIdAndUserId(
         id,
         userId,
@@ -131,6 +182,7 @@ class TaskDAO extends BaseDatabaseHandler {
 
       return updatedTask;
     } catch (error) {
+      // Handle all database errors
       throw this.errorFactory.createDatabaseError(
         "Failed update as completed this task",
         {
@@ -141,13 +193,25 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Deletes a task from the database by their id and userId
+   * @param {number} id - The id of the task to delete (require and unique)
+   * @param {number} userId - The userId of the task to delete
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Boolean>} True if the task was successfully deleted, false if the task didn't exist.
+   * @throws {ConflictError} When task has associated data in other tables
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
   async delete(id, userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -161,12 +225,13 @@ class TaskDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
+      // Handle associated data in other tables
       if (error.code === "ER_ROW_IS_REFERENCED" || error.errno === 1451) {
         throw this.errorFactory.createConflictError("Failed to delete task", {
           attemptedData: { taskId: id, userId },
         });
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to delete task", {
         attemptedData: { taskId: id, userId },
         originalError: error.message,
@@ -175,13 +240,22 @@ class TaskDAO extends BaseDatabaseHandler {
       });
     } finally {
       if (connection && !isExternal) {
+        // Release only internal connection (external is managed by caller)
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  //consulta tarea por id
+  /**
+   * Retrieve a task from the database by their id.
+   * @param {number} id - The id of the task to retrieve (require and unique)
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<Task>} Task domain entity if was found, null if the task didn't exist.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If required fields are missing or invalid.
+   */
   async findById(id, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -208,10 +282,12 @@ class TaskDAO extends BaseDatabaseHandler {
       });
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve task by id",
         {
@@ -222,12 +298,25 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
+  /**
+   * Retrieves all tasks from the database with optional pagination, sorting, and filtering.
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=TASK_SORT_FIELD.CREATED_AT] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of Task domain entity.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
   async findAll({
     externalConn = null,
     sortBy = TASK_SORT_FIELD.CREATED_AT,
@@ -235,6 +324,7 @@ class TaskDAO extends BaseDatabaseHandler {
     limit = null,
     offset = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -263,10 +353,11 @@ class TaskDAO extends BaseDatabaseHandler {
         mapper: this.taskMapper.dbToDomain,
       });
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve all tasks",
         {
@@ -283,14 +374,24 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Consulta una tarea con sus etiquetas por id y userId
+  /**
+   * Retrieve a task with their tags from the database by their Id and userId
+   * @param {number} id - The id of the task to retrieve
+   * @param {number} userId - the userId of the task to retrieve
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @returns Task domain entity if was found, null if the task didn't exist.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
   async findWithTagsByIdAndUserId(id, userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -331,10 +432,12 @@ class TaskDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
 
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve task with tags by id and userId",
         {
@@ -345,13 +448,27 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  //Consulta todas las tareas con etiquetas por userId
+  /**
+   * Retrieve all tasks with their tags by their userId from the database.
+   * @param {number} userId - The userId of the tasks to retrieve.
+   * @param {boolean} isCompleted - The completion status of the task.
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=TASK_SORT_FIELD.LAST_UPDATE_DATE] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of Task domain entity.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
   async findAllWithTagsByUserId({
     userId,
     isCompleted = false,
@@ -361,6 +478,7 @@ class TaskDAO extends BaseDatabaseHandler {
     offset = null,
     externalConn = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -372,10 +490,11 @@ class TaskDAO extends BaseDatabaseHandler {
         );
       }
 
+      // Get only the IDs of tasks that match the userId and completion status
+      // Pagination is applied at this select with de ids, not the final result
       const queryIds = `SELECT t.id
        FROM tasks t
        WHERE t.user_id = ? AND t.is_completed = ?`;
-
       const taskIdsResult = await this._executeQuery({
         connection,
         baseQuery: queryIds,
@@ -396,7 +515,7 @@ class TaskDAO extends BaseDatabaseHandler {
       const taskIds = taskIdsResult.map((row) => row.id);
       const placeholders = taskIds.map(() => "?").join(",");
 
-      // Obtener detalles completos con tags solo para las tareas seleccionadas
+      // Get complete task details including tags for the filtered taskIds
       const baseQuery = `SELECT 
           t.id AS task_id,
           t.name AS task_name,
@@ -430,10 +549,11 @@ class TaskDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve tasks with tags by user id",
         {
@@ -452,13 +572,23 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Consulta todas las tareas PENDIENTES por userId
+  /**
+   * Retrieve all pending tasks by userId from the database
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=TASK_SORT_FIELD.LAST_UPDATE_DATE] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of Task domain entity.
+   */
   async findAllPendingByUserId({
     userId,
     sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
@@ -478,7 +608,16 @@ class TaskDAO extends BaseDatabaseHandler {
     });
   }
 
-  // Consulta todas las tareas COMPLETADAS por userId
+  /**
+   * Retrieve all completed tasks by userId from the database
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=TASK_SORT_FIELD.LAST_UPDATE_DATE] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of Task domain entity.
+   */
   async findAllCompleteByUserId({
     userId,
     sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
@@ -498,7 +637,20 @@ class TaskDAO extends BaseDatabaseHandler {
     });
   }
 
-  // Consulta todas las tareas vencidas de un usuario
+  /**
+   * Retrieve all overdue tasks by their userId from the database.
+   * @param {number} userId - The userId of the tasks to retrieve.
+   * @param {boolean} isCompleted - The completion status of the task.
+   * @param {Object} [options={}] - Configuration options for the query.
+   * @param {object} [options.externalConn=null] - External database connection for transaction support.
+   * @param {number} [options.limit=null] - Maximum number of records to return (pagination).
+   * @param {number} [options.offset=null] - Number of records to skip for pagination.
+   * @param {string} [options.sortBy=TASK_SORT_FIELD.SCHEDULED_DATE] - Field to sort results by.
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
+   * @returns {Promise<Array>} Array of Task domain entity.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails.
+   */
   async findAllOverdueByUserId({
     userId,
     sortBy = TASK_SORT_FIELD.SCHEDULED_DATE,
@@ -507,19 +659,20 @@ class TaskDAO extends BaseDatabaseHandler {
     offset = null,
     externalConn = null,
   } = {}) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
       const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-      // Obtener IDs de tareas vencidas con limit y offset
+      // Get only the IDs of tasks that match the userId and is_completed and scheduled_date
+      // Pagination is applied at this select with de ids, not the final result
       const queryIds = `SELECT t.id
        FROM tasks t
        WHERE t.user_id = ? AND t.is_completed = FALSE AND t.scheduled_date < NOW()`;
-
       const taskIdsResult = await this._executeQuery({
         connection,
-        baseQuery:queryIds,
+        baseQuery: queryIds,
         params: [userIdNum],
         sortBy,
         sortOrder,
@@ -537,7 +690,7 @@ class TaskDAO extends BaseDatabaseHandler {
       const taskIds = taskIdsResult.map((row) => row.id);
       const placeholders = taskIds.map(() => "?").join(",");
 
-      // Obtener detalles completos con tags
+      // Get complete task details including tags for the filtered taskIds
       const baseQuery = `SELECT 
           t.id AS task_id,
           t.name AS task_name,
@@ -571,10 +724,11 @@ class TaskDAO extends BaseDatabaseHandler {
 
       return result;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to retrieve overdue tasks by user id",
         {
@@ -592,14 +746,24 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
     }
   }
 
-  // Cuenta todas las tareas de un usuario por estado
+  /**
+   * Count all task by userId and completion status form the database
+   * @param {number} userId - The ID of the user whose tasks will be counted.
+   * @param {boolean} isCompleted - The completion status to filter tasks.
+   * @param {Object} [externalConn=null] - External database connection for transaction support.
+   * @returns {Promise<number>} Total number of tasks matching.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails
+   */
   async countAllByUserIdAndStatus(userId, isCompleted, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -617,6 +781,11 @@ class TaskDAO extends BaseDatabaseHandler {
 
       return Number(result[0]?.total) || 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to count tasks", {
         originalError: error.message,
         code: error.code,
@@ -631,18 +800,43 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 
-  // Cuenta todas las tareas PENDIENTES de un usuario
+  /**
+   * Count all pending task by userId and false completion status form the database
+   * @param {number} userId - The ID of the user whose tasks will be counted.
+   * @param {boolean} isCompleted - The completion status to filter tasks.
+   * @param {Object} [externalConn=null] - External database connection for transaction support.
+   * @returns {Promise<number>} Total number of tasks matching.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails
+   */
   async countAllPendingByUserId(userId, externalConn = null) {
     return this.countAllByUserIdAndStatus(userId, false, externalConn);
   }
 
-  // Cuenta todas las tareas COMPLETADAS de un usuario
+  /**
+   * Count all completed task by userId and true completion status from the database
+   * @param {number} userId - The ID of the user whose tasks will be counted.
+   * @param {boolean} isCompleted - The completion status to filter tasks.
+   * @param {Object} [externalConn=null] - External database connection for transaction support.
+   * @returns {Promise<number>} Total number of tasks matching.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails
+   */
   async countAllCompleteByUserId(userId, externalConn = null) {
     return this.countAllByUserIdAndStatus(userId, true, externalConn);
   }
 
-  // Cuenta todas las tareas vencidas de un usuario
+  /**
+   * Count all overdue task by userId from the database
+   * @param {number} userId - The ID of the user whose tasks will be counted.
+   * @param {boolean} isCompleted - The completion status to filter tasks.
+   * @param {Object} [externalConn=null] - External database connection for transaction support.
+   * @returns {Promise<number>} Total number of tasks matching.
+   * @throws {ValidationError} If invalid sorting parameters are provided.
+   * @throws {DatabaseError} If database operation fails
+   */
   async countAllOverdueByUserId(userId, externalConn = null) {
+    // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
@@ -660,6 +854,11 @@ class TaskDAO extends BaseDatabaseHandler {
 
       return Number(result[0]?.total) || 0;
     } catch (error) {
+      // Re-throw ValidationErrors (input issues)
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+      // Handle all other database errors
       throw this.errorFactory.createDatabaseError(
         "Failed to count overdue tasks",
         {
@@ -670,6 +869,7 @@ class TaskDAO extends BaseDatabaseHandler {
         }
       );
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }

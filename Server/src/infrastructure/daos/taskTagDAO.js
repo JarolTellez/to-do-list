@@ -12,7 +12,12 @@ class TaskTagDAO extends BaseDatabaseHandler {
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;
   }
-
+/**
+ * Creates a ne
+ * @param {*} taskTag 
+ * @param {*} externalConn 
+ * @returns 
+ */
   async create(taskTag, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
