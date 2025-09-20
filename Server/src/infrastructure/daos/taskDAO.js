@@ -18,10 +18,11 @@ class TaskDAO extends BaseDatabaseHandler {
    * @param {Date|string} task.scheduledDate - Scheduled date for the task.
    * @param {boolean} task.isCompleted - Completion status of the task.
    * @param {string} task.priority - Task priority level.
-   * @param {number} task.userId - ID of the user associated with the task.
+   * @param {number} task.userId - Id of the user associated with the task.
    * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
    * @returns {Promise<Task>} Persisted task domain entity with assigned ID and timestamps.
    * @throws {DatabaseError} On database operation failure.
+   * @throws {ConflictError} On duplicate task name error
    * @throws {ValidationError} If required fields are missing or invalid.
    */
   async create(task, externalConn = null) {
@@ -457,7 +458,7 @@ class TaskDAO extends BaseDatabaseHandler {
 
   /**
    * Retrieve all tasks with their tags by their userId from the database.
-   * @param {number} userId - The userId of the tasks to retrieve.
+   * @param {number} userId - The userId associated to the tasks to retrieve.
    * @param {boolean} isCompleted - The completion status of the task.
    * @param {Object} [options={}] - Configuration options for the query.
    * @param {object} [options.externalConn=null] - External database connection for transaction support.
@@ -794,6 +795,7 @@ class TaskDAO extends BaseDatabaseHandler {
         isCompleted,
       });
     } finally {
+      // Release only internal connection (external is managed by caller)
       if (connection && !isExternal) {
         await this.releaseConnection(connection, isExternal);
       }
