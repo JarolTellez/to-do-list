@@ -176,9 +176,9 @@ class UserDAO extends BaseDatabaseHandler {
 
   /**
    * Retrieve a user from the database by their id.
-   * @param {number} id  - The id of the user to find (required and unique).
+   * @param {number} id  - The id of the user to  retrieve (required and unique).
    * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
-   * @returns {Promise<Boolean>} User domain entity if was found, null if the user didn't exist.
+   * @returns {Promise<User>} User domain entity if was found, null if the user didn't exist.
    * @throws {DatabaseError} On database operation failure.
    * @throws {ValidationError} If input validation fails.
    */
@@ -231,7 +231,7 @@ class UserDAO extends BaseDatabaseHandler {
    * Retrieve a user from the database by their username
    * @param {string} userName - The username of the user to found (must be unique)
    * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
-   * @returns {Promise<Boolean>} User domain entity if was found, null if the user didn't exist.
+   * @returns {Promise<User>} User domain entity if was found, null if the user didn't exist.
    * @throws {DatabaseError} On database operation failure.
    * @throws {ValidationError} If input validation fails.
    */
@@ -294,7 +294,7 @@ class UserDAO extends BaseDatabaseHandler {
    * Retrieve a user from the database by their email
    * @param {string} email - The email of the user to found (must be unique)
    * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
-   * @returns {Promise<Boolean>} User domain entity if was found, null if the user didn't exist.
+   * @returns {Promise<User>} User domain entity if was found, null if the user didn't exist.
    * @throws {DatabaseError} On database operation failure.
    * @throws {ValidationError} If input validation fails.
    */
@@ -360,7 +360,7 @@ class UserDAO extends BaseDatabaseHandler {
    * @param {number} [options.offset=null] - Number of records to skip for pagination.
    * @param {string} [options.sortBy=USER_SORT_FIELD.CREATED_AT] - Field to sort results by.
    * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC or DESC).
-   * @returns {Promise<Array>} Array of user domain entity mapped to User domain entity.
+   * @returns {Promise<Array>} Array of User domain entity.
    * @throws {ValidationError} If invalid sorting parameters are provided.
    * @throws {DatabaseError} If database operation fails.
    */
