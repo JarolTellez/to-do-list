@@ -1,135 +1,249 @@
-const {ValidationError}=require('../../utils/appErrors');
-const errorCodes = require('../../utils/errorCodes');
-const TaskTag = require('../entities/taskTag');
-class Task{
+const DomainValidators = require("../utils/domainValidators");
+const TaskTag = require("../entities/taskTag");
+
+class Task {
   #id;
   #name;
   #description;
   #scheduledDate;
   #createdAt;
-  #lastUpdateDate;
+  #updatedAt;
   #isCompleted;
   #userId;
   #priority;
   #taskTags;
+  #validator;
 
-    constructor({id=null,name,description='',scheduledDate=null, createdAt= new Date(),lastUpdateDate= new Date(),isCompleted=false,userId,priority=null, taskTags=[]}){
-        this.#id=id;
-        this.#name= this.#validateName(name);
-        this.#description=description;
-        this.#scheduledDate= scheduledDate instanceof Date ? scheduledDate : new Date(scheduledDate);
-        this.#createdAt= createdAt instanceof Date ? createdAt : new Date(createdAt);
-        this.#lastUpdateDate= lastUpdateDate instanceof Date ? lastUpdateDate : new Date(lastUpdateDate);
-        this.#isCompleted=isCompleted;
-        this.#userId=userId;
-        this.#priority=priority;
-        this.#taskTags = taskTags;
+  constructor(
+    {
+      id = null,
+      name,
+      description = "",
+      scheduledDate = null,
+      createdAt = new Date(),
+      updatedAt = new Date(),
+      isCompleted = false,
+      userId,
+      priority = null,
+      taskTags = [],
+    },
+    errorFactory
+  ) {
+    this.#validator = new DomainValidators(errorFactory);
+
+    this.#validateRequiredFields({ name, userId });
+
+    this.#id = this.#validator.validateId(id, "Task");
+    this.#name = this.#validateName(name);
+    this.#description = this.#validator.validateText(
+      description,
+      "description",
+      {
+        max: 1000,
+        entity: "Task",
+      }
+    );
+    this.#scheduledDate = this.#validateScheduledDate(scheduledDate);
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#updatedAt = this.#validator.validateDate(updatedAt, "updatedAt");
+    this.#isCompleted = this.#validator.validateBoolean(
+      isCompleted,
+      "isCompleted",
+      "Task"
+    );
+    this.#userId = this.#validator.validateId(userId, "User");
+    this.#priority = this.#validatePriority(priority);
+    this.#taskTags = this.#validator.validateCollection(taskTags, "taskTags");
+
+    this.#validateBusinessRules();
+  }
+
+  #validateRequiredFields({ name, userId }) {
+    const missingFields = [];
+
+    if (!name || name.trim().length === 0) {
+      missingFields.push("name");
     }
 
-    complete(){
-      this.#isCompleted = true;
-      this.#lastUpdateDate = new Date();
+    if (!userId) {
+      missingFields.push("userId");
     }
 
-    uncomplete(){
-      this.#isCompleted = false;
-      this.#lastUpdateDate = new Date();
-    }
-
-    updatePriority(newPriority){
-      this.#priority = newPriority;
-      this.#lastUpdateDate = new Date();
-    }
-
-    updateName(newName){
-      this.#name= this.#validateName(newName);
-      this.#lastUpdateDate = new Date();
-    }
-
-    updateDescription(newDescription){
-      this.#description = newDescription;
-      this.#lastUpdateDate = new Date();
-    }
-
-     addTaskTag(taskTag) {
-    if (!(taskTag instanceof TaskTag)) {
-     
-      throw new ValidationError('Must provide an instance of TaskTag')
-    }
-    if (!this.#taskTags.some(tt => tt.id === taskTag.id)) {
-      this.#taskTags.push(taskTag);
-      this.#lastUpdateDate = new Date();
+    if (missingFields.length > 0) {
+      throw this.#validator.error.createValidationError(
+        `Missing required fields: ${missingFields.join(", ")}`,
+        { missingFields },
+        this.#validator.codes.REQUIRED_FIELD
+      );
     }
   }
 
-    removeTaskTag(taskTagId) {
-    this.#taskTags = this.#taskTags.filter(tt => tt.id !== taskTagId);
-    this.#lastUpdateDate = new Date();
+  #validateName(name) {
+    const validated = this.#validator.validateText(name, "name", {
+      min: 1,
+      max: 30,
+      required: true,
+      entity: "Task",
+    });
+    return validated;
+  }
+
+  #validateScheduledDate(scheduledDate) {
+    if (!scheduledDate) return null;
+
+    const date = this.#validator.validateDate(scheduledDate, "scheduledDate");
+
+    if (date < new Date()) {
+      throw this.#validator.error.createValidationError(
+        "Scheduled date cannot be in the past",
+        { field: "scheduledDate", value: date },
+        this.#validator.codes.INVALID_DATE
+      );
+    }
+
+    return date;
+  }
+
+  #validatePriority(priority) {
+    if (priority === null || priority === undefined) return null;
+
+    const validPriorities = ["low", "medium", "high", "urgent"];
+    return this.#validator.validateEnum(
+      priority,
+      "priority",
+      validPriorities,
+      "Task"
+    );
+  }
+
+  #validateBusinessRules() {
+    if (
+      this.#scheduledDate &&
+      this.#scheduledDate < new Date() &&
+      !this.#isCompleted
+    ) {
+      throw this.#validator.error.createValidationError(
+        "Incomplete task cannot have past scheduled date",
+        { field: "scheduledDate", value: this.#scheduledDate },
+        this.#validator.codes.BUSINESS_RULE_VIOLATION
+      );
+    }
+  }
+
+  complete() {
+    this.#isCompleted = true;
+    this.#updatedAt = new Date();
+  }
+
+  uncomplete() {
+    this.#isCompleted = false;
+    this.#updatedAt = new Date();
+  }
+
+  updatePriority(newPriority) {
+    this.#priority = newPriority;
+    this.#updatedAt = new Date();
+  }
+
+  updateName(newName) {
+    this.#name = this.#validateName(newName);
+    this.#updatedAt = new Date();
+  }
+
+  updateDescription(newDescription) {
+    this.#description = this.#validator.validateText(
+      newDescription,
+      "description",
+      {
+        max: 1000,
+        entity: "Task",
+      }
+    );
+    this.#updatedAt = new Date();
+  }
+
+  addTaskTag(taskTag) {
+    if (!(taskTag instanceof TaskTag)) {
+      throw this.#validator.error.createValidationError(
+        "Must provide an instance of TaskTag",
+        null,
+        this.#validator.codes.INVALID_FORMAT
+      );
+    }
+
+    if (!this.#taskTags.some((tt) => tt.id === taskTag.id)) {
+      this.#taskTags.push(taskTag);
+      this.#updatedAt = new Date();
+    }
+  }
+
+  removeTaskTag(taskTagId) {
+    const initialLength = this.#taskTags.length;
+    this.#taskTags = this.#taskTags.filter((tt) => tt.id !== taskTagId);
+
+    if (this.#taskTags.length !== initialLength) {
+      this.#updatedAt = new Date();
+    }
   }
 
   hasTag(tagId) {
-    return this.#taskTags.some(tt => tt.tagId === tagId);
+    return this.#taskTags.some((tt) => tt.tagId === tagId);
   }
 
- // Validations
-  #validateName(name) {
-    if (!name || name.trim().length === 0) {
-      throw new ValidationError('Task name is required', null, errorCodes.REQUIRED_FIELD);
-    }
-    if (name.length > 30) {
-      throw new ValidationError('Task name cannot exceed 30 characters',{ActualTaskNameLength:name.length},errorCodes.INVALID_FORMAT);
-    }
-    return name.trim();
+  //Getters
+  get id() {
+    return this.#id;
   }
-
-  validate() {
-    const errors = [];
-    
-    if (!this.#userId) {
-      errors.push({ field: 'userId', message: 'User ID is required' });
-    }
-    
-    if (this.#scheduledDate && new Date(this.#scheduledDate) < new Date()) {
-      errors.push({ field: 'scheduledDate', message: 'Scheduled date cannot be in the past' });
-    }
-    
-    if (errors.length > 0) {
-      throw new ValidationError("Invalid task data", errors);
-    }
+  get name() {
+    return this.#name;
   }
-
-
-  get id() { return this.#id; }
-  get name() { return this.#name; }
-  get description() { return this.#description; }
-  get scheduledDate() { return this.#scheduledDate; }
-  get createdAt() { return this.#createdAt; }
-  get lastUpdateDate() { return this.#lastUpdateDate; }
-  get isCompleted() { return this.#isCompleted; }
-  get userId() { return this.#userId; }
-  get priority() { return this.#priority; }
-  get taskTags() { return [...this.#taskTags]; }
-
+  get description() {
+    return this.#description;
+  }
+  get scheduledDate() {
+    return this.#scheduledDate;
+  }
+  get createdAt() {
+    return this.#createdAt;
+  }
+  get updatedAt() {
+    return this.#updatedAt;
+  }
+  get isCompleted() {
+    return this.#isCompleted;
+  }
+  get userId() {
+    return this.#userId;
+  }
+  get priority() {
+    return this.#priority;
+  }
+  get taskTags() {
+    return [...this.#taskTags];
+  }
 
   isOverdue() {
-    return this.#scheduledDate && 
-           new Date() > new Date(this.#scheduledDate) && 
-           !this.#isCompleted;
+    return (
+      this.#scheduledDate &&
+      new Date() > new Date(this.#scheduledDate) &&
+      !this.#isCompleted
+    );
   }
 
   isScheduledForToday() {
     if (!this.#scheduledDate) return false;
-    
+
     const today = new Date();
     const scheduled = new Date(this.#scheduledDate);
-    
+
     return scheduled.toDateString() === today.toDateString();
   }
 
   getTags() {
-    return this.#taskTags.map(taskTag => taskTag.tag).filter(tag => tag !== undefined);
+    return this.#taskTags
+      .map((taskTag) => taskTag.tag)
+      .filter((tag) => tag !== undefined);
   }
-
 
   toJSON() {
     return {
@@ -138,44 +252,37 @@ class Task{
       description: this.#description,
       scheduledDate: this.#scheduledDate,
       createdAt: this.#createdAt,
-      lastUpdateDate: this.#lastUpdateDate,
+      updatedAt: this.#updatedAt,
       isCompleted: this.#isCompleted,
       userId: this.#userId,
       priority: this.#priority,
-      taskTags: this.#taskTags.map(taskTag => taskTag.toJSON ? taskTag.toJSON() : taskTag),
+      taskTags: this.#taskTags.map((taskTag) =>
+        taskTag.toJSON ? taskTag.toJSON() : taskTag
+      ),
       isOverdue: this.isOverdue(),
-      isScheduledForToday: this.isScheduledForToday()
+      isScheduledForToday: this.isScheduledForToday(),
     };
   }
 
-
-  static create({ name, description = '', userId, scheduledDate = null, priority = null }) {
-    return new Task({
-      name,
-      description,
-      userId,
-      scheduledDate,
-      priority,
-      isCompleted: false,
-      createdAt: new Date(),
-      lastUpdateDate: new Date()
-    });
+  static create(
+    { name, description = "", userId, scheduledDate = null, priority = null },
+    errorFactory
+  ) {
+    return new Task(
+      {
+        name,
+        description,
+        userId,
+        scheduledDate,
+        priority,
+        isCompleted: false,
+        createdAt: new Date(),
+        lastUpdateDate: new Date(),
+      },
+      errorFactory
+    );
   }
 
-  static fromDatabase(data) {
-    return new Task({
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      scheduledDate: data.scheduled_date,
-      createdAt: data.created_at,
-      lastUpdateDate: data.last_update_date,
-      isCompleted: data.is_completed,
-      userId: data.user_id,
-      priority: data.priority,
-      taskTags: data.task_tags || []
-    });
-  }
 }
 
 module.exports = Task;

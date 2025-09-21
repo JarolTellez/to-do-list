@@ -1,5 +1,4 @@
-const { ValidationError } = require("../../utils/appErrors");
-const errorCodes = require('../../utils/errorCodes');
+const DomainValidators = require("./validators/DomainValidators");
 const crypto = require("crypto");
 
 class Session {
@@ -12,30 +11,98 @@ class Session {
   #createdAt;
   #expiresAt;
   #isActive;
-  constructor({
-    id = null,
-    userId,
-    refreshTokenHash,
-    deviceId = null,
-    userAgent,
-    ip,
-    createdAt = new Date(),
-    expiresAt,
-    isActive = true,
-  }) {
-    this.#id = id;
-    this.#userId = userId;
-    this.#refreshTokenHash = refreshTokenHash;
-    this.#deviceId = deviceId;
-    this.#userAgent = userAgent;
-    this.#ip = ip;
-    this.#createdAt =
-      createdAt instanceof Date ? createdAt : new Date(createdAt);
-    this.#expiresAt =
-      expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
-    this.#isActive = isActive;
+  #validator;
 
-    this.validate();
+  constructor(
+    {
+      id = null,
+      userId,
+      refreshTokenHash,
+      deviceId = null,
+      userAgent,
+      ip,
+      createdAt = new Date(),
+      expiresAt,
+      isActive = true,
+    },
+    errorFactory
+  ) {
+    this.#validator = new DomainValidators(errorFactory);
+
+    this.#id = this.#validator.validateId(id, "Session");
+    this.#userId = this.#validator.validateId(userId, "User");
+    this.#refreshTokenHash = this.#validateRefreshTokenHash(refreshTokenHash);
+    this.#deviceId = this.#validateDeviceId(deviceId);
+    this.#userAgent = this.#validator.validateText(userAgent, "userAgent", {
+      required: true,
+      entity: "Session",
+    });
+    this.#ip = this.#validateIp(ip);
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#expiresAt = this.#validateExpiresAt(expiresAt);
+    this.#isActive = this.#validator.validateBoolean(
+      isActive,
+      "isActive",
+      "Session"
+    );
+
+    this.#validateBusinessRules();
+  }
+
+  #validateRefreshTokenHash(refreshTokenHash) {
+    return this.#validator.validateText(refreshTokenHash, "refreshTokenHash", {
+      required: true,
+      entity: "Session",
+      min: 64,
+      max: 64,
+    });
+  }
+
+  #validateDeviceId(deviceId) {
+    if (deviceId === null || deviceId === undefined) return null;
+    return this.#validator.validateText(deviceId, "deviceId", {
+      max: 100,
+      entity: "Session",
+    });
+  }
+
+  #validateIp(ip) {
+    return this.#validator.validateText(ip, "ip", {
+      required: true,
+      entity: "Session",
+      max: 45,
+    });
+  }
+
+  #validateExpiresAt(expiresAt) {
+    const date = this.#validator.validateDate(expiresAt, "expiresAt", {
+      required: true,
+      entity: "Session",
+    });
+
+    if (date <= new Date()) {
+      throw this.#validator.error.createValidationError(
+        "Expiration date must be in the future",
+        { field: "expiresAt", value: date },
+        this.#validator.codes.INVALID_DATE
+      );
+    }
+
+    return date;
+  }
+
+  #validateBusinessRules() {
+    if (this.#expiresAt <= this.#createdAt) {
+      throw this.#validator.error.createValidationError(
+        "Expiration date must be after creation date",
+        {
+          field: "expiresAt",
+          createdAt: this.#createdAt,
+          expiresAt: this.#expiresAt,
+        },
+        this.#validator.codes.BUSINESS_RULE_VIOLATION
+      );
+    }
   }
 
   invalidate() {
@@ -48,60 +115,29 @@ class Session {
 
   isValid() {
     if (!this.#isActive) {
-      throw new ValidationError(
+      throw this.#validator.error.createValidationError(
         "Session is not active",
         { sessionId: this.#id },
-        errorCodes.SESSION_INVALID
+        this.#validator.codes.SESSION_INVALID
       );
     }
 
     if (this.isExpired()) {
-      throw new ValidationError(
+      throw this.#validator.error.createValidationError(
         "Session expired",
         {
           sessionId: this.#id,
           expiredAt: this.#expiresAt.toISOString(),
           currentTime: new Date().toISOString(),
         },
-        errorCodes.SESSION_EXPIRED
+        this.#validator.codes.SESSION_EXPIRED
       );
     }
 
     return true;
   }
 
-  validate() {
-    const errors = [];
-
-    if (!this.#userId) {
-      errors.push({
-        field: "userId",
-        message: "User ID is required",
-        code: errorCodes.REQUIRED_FIELD,
-      });
-    }
-
-    if (!this.#refreshTokenHash) {
-      errors.push({
-        field: "refreshTokenHash",
-        message: "Refresh token hash is required",
-        code: errorCodes.REQUIRED_FIELD,
-      });
-    }
-
-    if (!this.#expiresAt) {
-      errors.push({
-        field: "expiresAt",
-        message: "Expiration date is required",
-        code: errorCodes.REQUIRED_FIELD,
-      });
-    }
-
-    if (errors.length > 0) {
-      throw new ValidationError("invalid session data", errors, errorCodes.SESSION_VALIDATION_ERROR);
-    }
-  }
-
+  // getters
   get id() {
     return this.#id;
   }
@@ -130,15 +166,19 @@ class Session {
     return this.#isActive;
   }
 
-    static create({
+    timeUntilExpiration() {
+    return this.#expiresAt - new Date();
+  }
+
+ static create({
     userId,
     refreshToken,
     deviceId = null,
     userAgent,
     ip,
-    expiresInHours = 24 * 7, // 7 dias 
-    active
-  }) {
+    expiresInHours = 24 * 7,
+    active = true
+  }, errorFactory) {
     const refreshTokenHash = crypto
       .createHash("sha256")
       .update(refreshToken)
@@ -155,9 +195,10 @@ class Session {
       ip,
       createdAt,
       expiresAt,
-      isActive: active?active:true,
-    });
+      isActive: active,
+    }, errorFactory);
   }
+
 
   toJSON() {
     return {
@@ -169,6 +210,8 @@ class Session {
       createdAt: this.#createdAt.toISOString(),
       expiresAt: this.#expiresAt.toISOString(),
       isActive: this.#isActive,
+      isExpired: this.isExpired(),
+      timeUntilExpiration: this.timeUntilExpiration(),
     };
   }
 }

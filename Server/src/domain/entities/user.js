@@ -1,6 +1,5 @@
-const { ValidationError } = require("../../utils/appErrors");
-const errorCodes = require("../../utils/errorCodes");
 const UserTag = require("../entities/userTag");
+const DomainValidators = require("../utils/domainValidators");
 
 class User {
   #id;
@@ -11,176 +10,183 @@ class User {
   #createdAt;
   #updatedAt;
   #userTags;
+  #validator;
+
   constructor({
     id = null,
     userName,
     email,
     password,
-    rol = "usuario",
+    rol = "user",
     createdAt = new Date(),
     updatedAt = new Date(),
     userTags = [],
-  }) {
-    this.#id = id;
+  }, errorFactory) {
+    this.#validator = new DomainValidators(errorFactory);
+    
+    this.#validateRequiredFields({ userName, email, password });
+    
+    this.#id = this.#validator.validateId(id, 'User');
     this.#userName = this.#validateUserName(userName);
     this.#email = this.#validateEmail(email);
-    this.#password = this.#validatePassword(password);
-    this.#rol = this.#validateRol(rol);
-    this.#createdAt = createdAt;
-    this.#updatedAt = updatedAt;
-    this.#userTags = userTags;
+    this.#password = this.#validator.validateText(password, 'password', { 
+      min: 6, 
+      required: true, 
+      entity: 'User' 
+    });
+    this.#rol = this.#validator.validateEnum(rol, 'role', ['user', 'admin'], 'User');
+    this.#createdAt = this.#validator.validateDate(createdAt, 'createdAt');
+    this.#updatedAt = this.#validator.validateDate(updatedAt, 'updatedAt');
+    this.#userTags = this.#validateUserTags(userTags);
+  }
 
-    this.validate();
+  #validateRequiredFields({ userName, email, password }) {
+    const missingFields = [];
+    
+    if (!userName || userName.trim().length === 0) {
+      missingFields.push('userName');
+    }
+    
+    if (!email || email.trim().length === 0) {
+      missingFields.push('email');
+    }
+    
+    if (!password || password.trim().length === 0) {
+      missingFields.push('password');
+    }
+    
+    if (missingFields.length > 0) {
+      throw this.#validator.error.createValidationError(
+        `Missing required fields: ${missingFields.join(', ')}`,
+        { missingFields },
+        this.#validator.codes.REQUIRED_FIELD
+      );
+    }
+  }
+
+  #validateUserName(userName) {
+    const validated = this.#validator.validateText(userName, 'username', { 
+      min: 3, 
+      max: 30, 
+      required: true, 
+      entity: 'User' 
+    });
+    
+    const invalidChars = /[^a-zA-Z0-9_\-.]/;
+    if (invalidChars.test(validated)) {
+      throw this.#validator.error.createValidationError(
+        "Username can only contain letters, numbers, underscores, hyphens and dots",
+        null,
+        this.#validator.codes.INVALID_FORMAT
+      );
+    }
+    
+    return validated;
+  }
+
+  #validateEmail(email) {
+    const validated = this.#validator.validateText(email, 'email', { 
+      required: true, 
+      entity: 'User' 
+    });
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(validated)) {
+      throw this.#validator.error.createValidationError(
+        "Invalid email format",
+        { email: validated },
+        this.#validator.codes.INVALID_EMAIL
+      );
+    }
+    
+    return validated;
+  }
+
+  #validateUserTags(userTags) {
+    if (!Array.isArray(userTags)) {
+      throw this.#validator.error.createValidationError(
+        "userTags must be an array",
+        { actualType: typeof userTags },
+        this.#validator.codes.INVALID_FORMAT
+      );
+    }
+    
+    const invalidTags = userTags.filter(tag => !(tag instanceof UserTag));
+    if (invalidTags.length > 0) {
+      throw this.#validator.error.createValidationError(
+        "All userTags must be instances of UserTag",
+        { invalidTagsCount: invalidTags.length },
+        this.#validator.codes.INVALID_FORMAT
+      );
+    }
+    
+    return [...userTags];
   }
 
   // business logic
   updateUserName(newUserName) {
     this.#userName = this.#validateUserName(newUserName);
+    this.#updatedAt = new Date();
   }
 
   updateEmail(newEmail) {
     this.#email = this.#validateEmail(newEmail);
+    this.#updatedAt = new Date();
   }
 
   changePassword(newPassword) {
-    this.#password = this.#validatePassword(newPassword);
+    this.#password = this.#validator.validateText(newPassword, 'password', { 
+      min: 6, 
+      required: true, 
+      entity: 'User' 
+    });
+    this.#updatedAt = new Date();
   }
 
   changeRole(newRole) {
-    this.#rol = this.#validateRol(newRole);
+    this.#rol = this.#validator.validateEnum(newRole, 'role', ['user', 'admin'], 'User');
+    this.#updatedAt = new Date();
   }
 
   addUserTag(userTag) {
     if (!(userTag instanceof UserTag)) {
-      throw new ValidationError("Must provide an instance of UserTag");
+      throw this.#validator.error.createValidationError(
+        "Must provide an instance of UserTag",
+        null,
+        this.#validator.codes.INVALID_FORMAT
+      );
     }
+    
     if (!this.#userTags.some((ut) => ut.id === userTag.id)) {
       this.#userTags.push(userTag);
+      this.#updatedAt = new Date();
     }
   }
 
   removeUserTag(userTagId) {
+    const initialLength = this.#userTags.length;
     this.#userTags = this.#userTags.filter((ut) => ut.id !== userTagId);
+    
+    if (this.#userTags.length !== initialLength) {
+      this.#updatedAt = new Date();
+    }
   }
 
   hasTag(tagId) {
     return this.#userTags.some((ut) => ut.tagId === tagId);
   }
 
-  // validations
-  #validateUserName(userName) {
-    if (!userName || userName.trim().length === 0) {
-      throw new ValidationError(
-        "Username is required",
-        null,
-        errorCodes.REQUIRED_FIELD
-      );
-    }
-    if (userName.length < 3) {
-      throw new ValidationError(
-        "Username must be at least 3 characters",
-        { actualUsernameLength: userName.length },
-        errorCodes.INVALID_FORMAT
-      );
-    }
-    if (userName.length > 30) {
-      throw new ValidationError(
-        "Username cannot exceed 30 characters",
-        { actualUsernameLength: userName.length },
-        errorCodes.INVALID_FORMAT
-      );
-    }
-    return userName.trim();
-  }
+  // Getters
+  get id() { return this.#id; }
+  get userName() { return this.#userName; }
+  get email() { return this.#email; }
+  get password() { return this.#password; }
+  get rol() { return this.#rol; }
+  get createdAt() { return this.#createdAt; }
+  get updatedAt() { return this.#updatedAt; }
+  get userTags() { return [...this.#userTags]; }
 
-  #validateEmail(email) {
-    if (!email || email.trim().length === 0) {
-      throw new ValidationError(
-        "Email is required",
-        null,
-        errorCodes.REQUIRED_FIELD
-      );
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new ValidationError(
-        "Invalid email format",
-        null,
-        errorCodes.INVALID_EMAIL
-      );
-    }
-    return email.trim();
-  }
-
-  #validatePassword(password) {
-    if (!password || password.trim().length === 0) {
-      throw new ValidationError(
-        "Password is required",
-        null,
-        errorCodes.REQUIRED_FIELD
-      );
-    }
-    if (password.length < 6) {
-      throw new ValidationError(
-        "Password must be at least 6 characters",
-        { actualPasswordLength: password.length },
-        errorCodes.INVALID_FORMAT
-      );
-    }
-    return password;
-  }
-
-  #validateRol(rol) {
-    const validRoles = ["usuario", "admin", "moderador"];
-    if (!validRoles.includes(rol)) {
-      throw new ValidationError(
-        `Invalid role: ${rol}. Must be one of: ${validRoles.join(", ")}`
-      );
-    }
-    return rol;
-  }
-
-  validate() {
-    const errors = [];
-
-    if (!this.#password) {
-      errors.push({ field: "password", message: "Password is required" });
-    }
-
-    if (errors.length > 0) {
-      throw new ValidationError("Invalid user data", errors);
-    }
-  }
-
-  get id() {
-    return this.#id;
-  }
-  get userName() {
-    return this.#userName;
-  }
-  get email() {
-    return this.#email;
-  }
-  get rol() {
-    return this.#rol;
-  }
-  get createdAt() {
-    return this.#createdAt;
-  }
-   get updatedAt() {
-    return this.#updatedAt;
-  }
-  get userTags() {
-    return [...this.#userTags];
-  }
-
-  isAdmin() {
-    return this.#rol === "admin";
-  }
-
-  isModerator() {
-    return this.#rol === "moderator";
-  }
+  isAdmin() { return this.#rol === "admin"; }
 
   getTags() {
     return this.#userTags
@@ -188,9 +194,7 @@ class User {
       .filter((tag) => tag !== undefined);
   }
 
-  hasAnyTags() {
-    return this.#userTags.length > 0;
-  }
+  hasAnyTags() { return this.#userTags.length > 0; }
 
   toJSON() {
     return {
@@ -208,28 +212,18 @@ class User {
     };
   }
 
-  // statics
-  static create({ userName, email, password, rol = "usuario" }) {
+
+  static create({ userName, email, password, rol = "user" }, errorFactory) {
     return new User({
       userName,
       email,
       password,
       rol,
       createdAt: new Date(),
-    });
+      updatedAt: new Date(),
+    }, errorFactory);
   }
 
-  static fromDatabase(data) {
-    return new User({
-      id: data.id,
-      userName: data.user_name,
-      email: data.email,
-      password: data.password_hash,
-      rol: data.rol,
-      createdAt: data.created_at,
-      userTags: data.user_tags || [],
-    });
-  }
 }
 
 module.exports = User;

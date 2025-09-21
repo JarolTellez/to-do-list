@@ -1,77 +1,131 @@
-const {ValidationError}=require('../../utils/appErrors');
-const errorCodes = require('../../utils/errorCodes');
-const Tag = require('../entities/tag');
-const Task = require('../entities/task');
+const DomainValidators = require("./validators/DomainValidators");
+const Tag = require("../entities/tag");
+const Task = require("../entities/task");
 
-class TaskTag{
+class TaskTag {
   #id;
   #taskId;
   #tagId;
   #createdAt;
   #tag;
   #task;
+  #validator;
 
-    constructor({id=null, taskId, tagId, createdAt= new Date(),tag=null, task=null}) {
-        this.#id = id;
-        this.#taskId = taskId;
-        this.#tagId = tagId;
-        this.#createdAt = createdAt;
-        this.#task = task;
-        this.#tag = tag;
+  constructor(
+    {
+      id = null,
+      taskId,
+      tagId,
+      createdAt = new Date(),
+      tag = null,
+      task = null,
+    },
+    errorFactory
+  ) {
+    this.#validator = new DomainValidators(errorFactory);
 
-        this.validate();
-      }
+    this.#id = this.#validator.validateId(id, "TaskTag");
+    this.#taskId = this.#validator.validateId(taskId, "Task");
+    this.#tagId = this.#validator.validateId(tagId, "Tag");
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#task = this.#validateTask(task);
+    this.#tag = this.#validateTag(tag);
 
-        assignTag(tag) {
+     this.#validateBusinessRules();
+  }
+
+  #validateTag(tag) {
+    if (tag === null || tag === undefined) return null;
+
     if (!(tag instanceof Tag)) {
-      throw new ValidationError('Must provide an instance of Tag');
+      throw this.#validator.error.createValidationError(
+        "Must provide an instance of Tag",
+        null,
+        this.#validator.codes.INVALID_FORMAT
+      );
     }
-      if (this.#tagId && this.#tagId !== tag.id) {
-     throw new ValidationError('The assigned tag does not match the existing tagId');
-  }
-    this.#tag = tag;
-    this.#tagId = tag.id;
+
+    if (this.#tagId && tag.id !== this.#tagId) {
+      throw this.#validator.error.createValidationError(
+        "Assigned tag does not match tagId",
+        { tagId: this.#tagId, tagIdFromObject: tag.id },
+        this.#validator.codes.BUSINESS_RULE_VIOLATION
+      );
+    }
+
+    return tag;
   }
 
-   assignTask(task) {
+  #validateTask(task) {
+    if (task === null || task === undefined) return null;
+
     if (!(task instanceof Task)) {
-    throw new ValidationError('Must provide an instance of Task');
+      throw this.#validator.error.createValidationError(
+        "Must provide an instance of Task",
+        null,
+        this.#validator.codes.INVALID_FORMAT
+      );
     }
-    this.#task = task;
-    this.#taskId = task.id;
+
+    if (this.#taskId && task.id !== this.#taskId) {
+      throw this.#validator.error.createValidationError(
+        "Assigned task does not match taskId",
+        { taskId: this.#taskId, taskIdFromObject: task.id },
+        this.#validator.codes.BUSINESS_RULE_VIOLATION
+      );
+    }
+
+    return task;
   }
 
-  assignCreatedAt(createdAt){
-    this.#createdAt=createdAt;
-  }
-
-
-  // validations
-  validate() {
-    const errors = [];
-    
-    if (!this.#taskId) {
-      errors.push({ field: 'taskId', message: 'Task ID is required' });
-    }
-    
-    if (!this.#tagId) {
-      errors.push({ field: 'tagId', message: 'Tag ID is required' });
-    }
-    
-    if (errors.length > 0) {
-       throw new ValidationError('Invalid TaskTag data', errors);
+  #validateBusinessRules() {
+    if (!this.#taskId || !this.#tagId) {
+      throw this.#validator.error.createValidationError(
+        "TaskId and TagId are required",
+        { taskId: this.#taskId, tagId: this.#tagId },
+        this.#validator.codes.REQUIRED_FIELD
+      );
     }
   }
 
-  // === GETTERS ===
-  get id() { return this.#id; }
-  get taskId() { return this.#taskId; }
-  get tagId() { return this.#tagId; }
-  get createdAt() { return this.#createdAt; }
-  get tag() { return this.#tag; }
-  get task() { return this.#task; }
+  assignTag(tag) {
+    this.#tag = this.#validateTag(tag);
+    if (tag) {
+      this.#tagId = tag.id;
+    }
+  }
 
-  // === MÉTODOS DE CONSULTA ===
+  assignTask(task) {
+    this.#task = this.#validateTask(task);
+    if (task) {
+      this.#taskId = task.id;
+    }
+  }
+
+  updateCreatedAt(createdAt) {
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+  }
+
+  // Getters
+  get id() {
+    return this.#id;
+  }
+  get taskId() {
+    return this.#taskId;
+  }
+  get tagId() {
+    return this.#tagId;
+  }
+  get createdAt() {
+    return this.#createdAt;
+  }
+  get tag() {
+    return this.#tag;
+  }
+  get task() {
+    return this.#task;
+  }
+
   isRecent(hours = 24) {
     const hoursDiff = (new Date() - this.#createdAt) / (1000 * 60 * 60);
     return hoursDiff <= hours;
@@ -91,46 +145,54 @@ class TaskTag{
       taskId: this.#taskId,
       tagId: this.#tagId,
       createdAt: this.#createdAt,
-      tag: this.#tag ? (this.#tag.toJSON ? this.#tag.toJSON() : this.#tag) : null,
-      task: this.#task ? (this.#task.toJSON ? this.#task.toJSON() : this.#task) : null,
-      isRecent: this.isRecent()
+      tag: this.#tag
+        ? this.#tag.toJSON
+          ? this.#tag.toJSON()
+          : this.#tag
+        : null,
+      task: this.#task
+        ? this.#task.toJSON
+          ? this.#task.toJSON()
+          : this.#task
+        : null,
+      isRecent: this.isRecent(),
+      isValid: this.isValid(),
     };
   }
 
-  // statics
-  static create({ taskId, tagId, task = null, tag = null }) {
-    return new TaskTag({
-      taskId,
-      tagId,
-      task,
-      tag,
-      createdAt: new Date()
-    });
+
+  static create({ taskId, tagId, task = null, tag = null }, errorFactory) {
+    return new TaskTag(
+      {
+        taskId,
+        tagId,
+        task,
+        tag,
+        createdAt: new Date(),
+      },
+      errorFactory
+    );
   }
 
-  static fromDatabase(data) {
-    return new TaskTag({
-      id: data.id,
-      taskId: data.task_id,
-      tagId: data.tag_id,
-      createdAt: data.created_at,
-      tag: data.tag || null,
-      task: data.task || null
-    });
-  }
-
-  static assign({ task, tag }) {
+  static assign({ task, tag }, errorFactory) {
     if (!task || !tag) {
-       throw new ValidationError('Task and Tag are required for assignment');
+      throw new ValidationError(
+        "Task and Tag are required for assignment",
+        null,
+        errorCodes.REQUIRED_FIELD
+      );
     }
-    
-    return new TaskTag({
-      taskId: task.id,
-      tagId: tag.id,
-      task,
-      tag,
-      createdAt: new Date()
-    });
+
+    return new TaskTag(
+      {
+        taskId: task.id,
+        tagId: tag.id,
+        task,
+        tag,
+        createdAt: new Date(),
+      },
+      errorFactory
+    );
   }
 }
 
