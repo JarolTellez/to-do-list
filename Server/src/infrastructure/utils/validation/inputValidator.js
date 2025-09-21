@@ -84,4 +84,4 @@ class InputValidator {
   }
 }
 
-module.exports = SortValidator;
+module.exports = InputValidator;

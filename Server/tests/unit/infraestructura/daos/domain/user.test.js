@@ -1,5 +1,5 @@
 const User = require('../../../../../src/domain/entities/user');
-const { ValidationError } = require('../../../../../src/utils/appErrors');
+const { ValidationError } = ("../../src/infrastructure/utils/errors/appErrors.js");
 const UserTag = require('../../../../../src/domain/entities/userTag');
 
 describe('User Class', () => {
