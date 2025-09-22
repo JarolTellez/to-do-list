@@ -10,6 +10,7 @@ class User {
   #createdAt;
   #updatedAt;
   #userTags;
+  #tasks
   #validator;
 
   constructor({
@@ -21,6 +22,7 @@ class User {
     createdAt = new Date(),
     updatedAt = new Date(),
     userTags = [],
+    tasks=[],
   }, errorFactory) {
     this.#validator = new DomainValidators(errorFactory);
     
@@ -38,6 +40,7 @@ class User {
     this.#createdAt = this.#validator.validateDate(createdAt, 'createdAt');
     this.#updatedAt = this.#validator.validateDate(updatedAt, 'updatedAt');
     this.#userTags = this.#validateUserTags(userTags);
+    this.#tasks = this.#validateTasks(tasks);
   }
 
   #validateRequiredFields({ userName, email, password }) {
@@ -123,6 +126,27 @@ class User {
     return [...userTags];
   }
 
+  #validateTasks(tasks) {
+    if (!Array.isArray(tasks)) {
+      throw this.#validator.error.createValidationError(
+        "tasks must be an array",
+        { actualType: typeof tasks },
+        this.#validator.codes.INVALID_FORMAT
+      );
+    }
+    
+    const invalidTasks = tasks.filter(task => !(task instanceof Task));
+    if (invalidTasks.length > 0) {
+      throw this.#validator.error.createValidationError(
+        "All tasks must be instances of Task",
+        { invalidTagsCount: invalidTasks.length },
+        this.#validator.codes.INVALID_FORMAT
+      );
+    }
+    
+    return [...tasks];
+  }
+
   // business logic
   updateUserName(newUserName) {
     this.#userName = this.#validateUserName(newUserName);
@@ -163,6 +187,11 @@ class User {
     }
   }
 
+  addTasks(tasks){
+    this.#validateTasks(tasks);
+    this.#tasks = tasks;
+  }
+
   removeUserTag(userTagId) {
     const initialLength = this.#userTags.length;
     this.#userTags = this.#userTags.filter((ut) => ut.id !== userTagId);
@@ -185,6 +214,7 @@ class User {
   get createdAt() { return this.#createdAt; }
   get updatedAt() { return this.#updatedAt; }
   get userTags() { return [...this.#userTags]; }
+  get tasks() { return [...this.#tasks]; }
 
   isAdmin() { return this.#rol === "admin"; }
 
@@ -209,6 +239,9 @@ class User {
       userTags: this.#userTags.map((userTag) =>
         userTag.toJSON ? userTag.toJSON() : userTag
       ),
+       tasks: this.#tasks.map((task) =>
+        task.toJSON ? task.toJSON() : tasks
+      )
     };
   }
 
