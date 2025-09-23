@@ -128,7 +128,7 @@ class Tag {
       name: this.#name,
       description: this.#description,
       exists: this.#exists,
-      createdAt: this.#createdAt,
+      createdAt: this.#createdAt.toISOString(),
       taskTagsCount: this.#taskTags.length,
       userTagsCount: this.#userTags.length,
     };

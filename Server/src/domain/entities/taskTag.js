@@ -158,7 +158,7 @@ class TaskTag {
       id: this.#id,
       taskId: this.#taskId,
       tagId: this.#tagId,
-      createdAt: this.#createdAt,
+      createdAt: this.#createdAt.toISOString(),
       tag: this.#tag
         ? this.#tag.toJSON
           ? this.#tag.toJSON()
@@ -192,12 +192,12 @@ class TaskTag {
   }
 
   static assign({ task, tag, toDelete = false }, errorFactory) {
-
+    const validator = new DomainValidators(errorFactory);
     if (!task || !tag) {
-      throw errorFactory.createValidationError(
+      throw validator.error.createValidationError(
         "Task and Tag are required for assignment",
         null,
-        errorCodes.REQUIRED_FIELD
+        validator.codes.REQUIRED_FIELD
       );
     }
     return new TaskTag(

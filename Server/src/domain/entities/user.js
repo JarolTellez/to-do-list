@@ -10,57 +10,65 @@ class User {
   #createdAt;
   #updatedAt;
   #userTags;
-  #tasks
+  #tasks;
   #validator;
 
-  constructor({
-    id = null,
-    userName,
-    email,
-    password,
-    rol = "user",
-    createdAt = new Date(),
-    updatedAt = new Date(),
-    userTags = [],
-    tasks=[],
-  }, errorFactory) {
+  constructor(
+    {
+      id = null,
+      userName,
+      email,
+      password,
+      rol = "user",
+      createdAt = new Date(),
+      updatedAt = new Date(),
+      userTags = [],
+      tasks = [],
+    },
+    errorFactory
+  ) {
     this.#validator = new DomainValidators(errorFactory);
-    
+
     this.#validateRequiredFields({ userName, email, password });
-    
-    this.#id = this.#validator.validateId(id, 'User');
+
+    this.#id = this.#validator.validateId(id, "User");
     this.#userName = this.#validateUserName(userName);
     this.#email = this.#validateEmail(email);
-    this.#password = this.#validator.validateText(password, 'password', { 
-      min: 6, 
-      required: true, 
-      entity: 'User' 
+    this.#password = this.#validator.validateText(password, "password", {
+      min: 6,
+      required: true,
+      entity: "User",
     });
-    this.#rol = this.#validator.validateEnum(rol, 'role', ['user', 'admin'], 'User');
-    this.#createdAt = this.#validator.validateDate(createdAt, 'createdAt');
-    this.#updatedAt = this.#validator.validateDate(updatedAt, 'updatedAt');
+    this.#rol = this.#validator.validateEnum(
+      rol,
+      "role",
+      ["user", "admin"],
+      "User"
+    );
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#updatedAt = this.#validator.validateDate(updatedAt, "updatedAt");
     this.#userTags = this.#validateUserTags(userTags);
     this.#tasks = this.#validateTasks(tasks);
   }
 
   #validateRequiredFields({ userName, email, password }) {
     const missingFields = [];
-    
+
     if (!userName || userName.trim().length === 0) {
-      missingFields.push('userName');
+      missingFields.push("userName");
     }
-    
+
     if (!email || email.trim().length === 0) {
-      missingFields.push('email');
+      missingFields.push("email");
     }
-    
+
     if (!password || password.trim().length === 0) {
-      missingFields.push('password');
+      missingFields.push("password");
     }
-    
+
     if (missingFields.length > 0) {
       throw this.#validator.error.createValidationError(
-        `Missing required fields: ${missingFields.join(', ')}`,
+        `Missing required fields: ${missingFields.join(", ")}`,
         { missingFields },
         this.#validator.codes.REQUIRED_FIELD
       );
@@ -68,13 +76,13 @@ class User {
   }
 
   #validateUserName(userName) {
-    const validated = this.#validator.validateText(userName, 'username', { 
-      min: 3, 
-      max: 30, 
-      required: true, 
-      entity: 'User' 
+    const validated = this.#validator.validateText(userName, "username", {
+      min: 3,
+      max: 30,
+      required: true,
+      entity: "User",
     });
-    
+
     const invalidChars = /[^a-zA-Z0-9_\-.]/;
     if (invalidChars.test(validated)) {
       throw this.#validator.error.createValidationError(
@@ -83,16 +91,16 @@ class User {
         this.#validator.codes.INVALID_FORMAT
       );
     }
-    
+
     return validated;
   }
 
   #validateEmail(email) {
-    const validated = this.#validator.validateText(email, 'email', { 
-      required: true, 
-      entity: 'User' 
+    const validated = this.#validator.validateText(email, "email", {
+      required: true,
+      entity: "User",
     });
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(validated)) {
       throw this.#validator.error.createValidationError(
@@ -101,7 +109,7 @@ class User {
         this.#validator.codes.INVALID_EMAIL
       );
     }
-    
+
     return validated;
   }
 
@@ -113,8 +121,8 @@ class User {
         this.#validator.codes.INVALID_FORMAT
       );
     }
-    
-    const invalidTags = userTags.filter(tag => !(tag instanceof UserTag));
+
+    const invalidTags = userTags.filter((tag) => !(tag instanceof UserTag));
     if (invalidTags.length > 0) {
       throw this.#validator.error.createValidationError(
         "All userTags must be instances of UserTag",
@@ -122,7 +130,7 @@ class User {
         this.#validator.codes.INVALID_FORMAT
       );
     }
-    
+
     return [...userTags];
   }
 
@@ -134,8 +142,8 @@ class User {
         this.#validator.codes.INVALID_FORMAT
       );
     }
-    
-    const invalidTasks = tasks.filter(task => !(task instanceof Task));
+
+    const invalidTasks = tasks.filter((task) => !(task instanceof Task));
     if (invalidTasks.length > 0) {
       throw this.#validator.error.createValidationError(
         "All tasks must be instances of Task",
@@ -143,7 +151,7 @@ class User {
         this.#validator.codes.INVALID_FORMAT
       );
     }
-    
+
     return [...tasks];
   }
 
@@ -159,16 +167,21 @@ class User {
   }
 
   changePassword(newPassword) {
-    this.#password = this.#validator.validateText(newPassword, 'password', { 
-      min: 6, 
-      required: true, 
-      entity: 'User' 
+    this.#password = this.#validator.validateText(newPassword, "password", {
+      min: 6,
+      required: true,
+      entity: "User",
     });
     this.#updatedAt = new Date();
   }
 
   changeRole(newRole) {
-    this.#rol = this.#validator.validateEnum(newRole, 'role', ['user', 'admin'], 'User');
+    this.#rol = this.#validator.validateEnum(
+      newRole,
+      "role",
+      ["user", "admin"],
+      "User"
+    );
     this.#updatedAt = new Date();
   }
 
@@ -180,14 +193,14 @@ class User {
         this.#validator.codes.INVALID_FORMAT
       );
     }
-    
+
     if (!this.#userTags.some((ut) => ut.id === userTag.id)) {
       this.#userTags.push(userTag);
       this.#updatedAt = new Date();
     }
   }
 
-  addTasks(tasks){
+  addTasks(tasks) {
     this.#validateTasks(tasks);
     this.#tasks = tasks;
   }
@@ -195,7 +208,7 @@ class User {
   removeUserTag(userTagId) {
     const initialLength = this.#userTags.length;
     this.#userTags = this.#userTags.filter((ut) => ut.id !== userTagId);
-    
+
     if (this.#userTags.length !== initialLength) {
       this.#updatedAt = new Date();
     }
@@ -206,17 +219,37 @@ class User {
   }
 
   // Getters
-  get id() { return this.#id; }
-  get userName() { return this.#userName; }
-  get email() { return this.#email; }
-  get password() { return this.#password; }
-  get rol() { return this.#rol; }
-  get createdAt() { return this.#createdAt; }
-  get updatedAt() { return this.#updatedAt; }
-  get userTags() { return [...this.#userTags]; }
-  get tasks() { return [...this.#tasks]; }
+  get id() {
+    return this.#id;
+  }
+  get userName() {
+    return this.#userName;
+  }
+  get email() {
+    return this.#email;
+  }
+  get password() {
+    return this.#password;
+  }
+  get rol() {
+    return this.#rol;
+  }
+  get createdAt() {
+    return this.#createdAt;
+  }
+  get updatedAt() {
+    return this.#updatedAt;
+  }
+  get userTags() {
+    return [...this.#userTags];
+  }
+  get tasks() {
+    return [...this.#tasks];
+  }
 
-  isAdmin() { return this.#rol === "admin"; }
+  isAdmin() {
+    return this.#rol === "admin";
+  }
 
   getTags() {
     return this.#userTags
@@ -224,7 +257,9 @@ class User {
       .filter((tag) => tag !== undefined);
   }
 
-  hasAnyTags() { return this.#userTags.length > 0; }
+  hasAnyTags() {
+    return this.#userTags.length > 0;
+  }
 
   toJSON() {
     return {
@@ -232,31 +267,30 @@ class User {
       userName: this.#userName,
       email: this.#email,
       rol: this.#rol,
-      createdAt: this.#createdAt,
-      updatedAt: this.#updatedAt,
+      createdAt: this.#createdAt.toISOString(),
+      updatedAt: this.#updatedAt.toISOString(),
       userTagsCount: this.#userTags.length,
       isAdmin: this.isAdmin(),
       userTags: this.#userTags.map((userTag) =>
         userTag.toJSON ? userTag.toJSON() : userTag
       ),
-       tasks: this.#tasks.map((task) =>
-        task.toJSON ? task.toJSON() : tasks
-      )
+      tasks: this.#tasks.map((task) => (task.toJSON ? task.toJSON() : task)),
     };
   }
 
-
   static create({ userName, email, password, rol = "user" }, errorFactory) {
-    return new User({
-      userName,
-      email,
-      password,
-      rol,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }, errorFactory);
+    return new User(
+      {
+        userName,
+        email,
+        password,
+        rol,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      errorFactory
+    );
   }
-
 }
 
 module.exports = User;

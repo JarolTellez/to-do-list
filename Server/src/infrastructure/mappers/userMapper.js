@@ -2,15 +2,19 @@ class UserMapper {
   constructor(
     User,
     UserResponseDTO,
-    UserDetailResponseDTO,
     AuthResponseDTO,
+    CreateUserRequestDTO,
+    UpdateUserRequestDTO,
+    LoginRequestDTO,
     userTagMapper,
     errorFactory
   ) {
     this.User = User;
     this.UserResponseDTO = UserResponseDTO;
-    this.UserDetailResponseDTO = UserDetailResponseDTO;
     this.AuthResponseDTO = AuthResponseDTO;
+    this.CreateUserRequestDTO = CreateUserRequestDTO;
+    this.UpdateUserRequestDTO = UpdateUserRequestDTO;
+    this.LoginRequestDTO = LoginRequestDTO;
     this.userTagMapper = userTagMapper;
     this.errorFactory = errorFactory;
   }
@@ -23,12 +27,8 @@ class UserMapper {
       rol: userDomain.rol,
       createdAt: userDomain.createdAt,
       updatedAt: userDomain.updatedAt,
-    });
-  }
-
-  domainToDetailResponse(userDomain) {
-    return new this.UserDetailResponseDTO({
-      user: this.domainToResponse(userDomain),
+      userTagsCount: userDomain.userTags ? userDomain.userTags.length : 0,
+      tasksCount: userDomain.tasks ? userDomain.tasks.length : 0,
       userTags: userDomain.userTags || [],
       tasks: userDomain.tasks || [],
     });
@@ -39,6 +39,32 @@ class UserMapper {
       user: this.domainToResponse(userDomain),
       token: token,
       expiresIn: expiresIn,
+      tokenType: "Bearer",
+    });
+  }
+
+  requestDataToCreateDTO(requestData) {
+    return new this.CreateUserRequestDTO({
+      userName: requestData.userName,
+      email: requestData.email,
+      password: requestData.password,
+      rol: requestData.rol || "user",
+    });
+  }
+
+  requestDataToUpdateDTO(requestData) {
+    return new this.UpdateUserRequestDTO({
+      userName: requestData.userName,
+      email: requestData.email,
+      password: requestData.password,
+      rol: requestData.rol,
+    });
+  }
+
+  requestDataToLoginDTO(requestData) {
+     return new this.LoginRequestDTO({
+      email: requestData.email,
+      password: requestData.password,
     });
   }
 
@@ -76,8 +102,8 @@ class UserMapper {
             : existingUser.rol,
         createdAt: existingUser.createdAt,
         updatedAt: new Date(),
-        userTags: existingUser.userTags,
-        tasks: existingUser.tasks,
+        userTags: existingUser.userTags || [],
+        tasks: existingUser.tasks || [],
       },
       this.errorFactory
     );
@@ -90,20 +116,9 @@ class UserMapper {
     };
   }
 
-  requestToDomain(userRequest) {
-    return new this.User(
-      {
-        id: userRequest.id,
-        userName: userRequest.userName,
-        email: userRequest.email,
-        password: userRequest.password,
-        rol: userRequest.rol,
-      },
-      this.errorFactory
-    );
-  }
-
   dbToDomain(row) {
+    if (!row) return null;
+
     return new this.User(
       {
         id: row.user_id,
@@ -112,28 +127,32 @@ class UserMapper {
         password: row.password,
         rol: row.rol,
         createdAt: row.user_created_at,
+        updatedAt: row.user_updated_at,
         userTags: [],
+        tasks: [],
       },
       this.errorFactory
     );
   }
 
   dbToDomainWithTags(rows) {
-     if (!rows || rows.length === 0) return null;
+    if (!rows || rows.length === 0) return null;
 
-    //unico usuario en todas las rows
     const user = this.dbToDomain(rows[0]);
 
-    // filter evita null si no hay tags
     const userTags = rows
       .filter((r) => r.user_tag_id)
       .map((r) => this.userTagMapper.dbToDomain(r));
 
+
     userTags.forEach((userTag) => {
       user.addUserTag(userTag);
     });
+
     return user;
   }
+
+  
 }
 
 module.exports = UserMapper;

@@ -1,8 +1,15 @@
 class UserTagMapper {
-  constructor(UserTag, tagMapper, UserTagResponseDTO, errorFactory) {
+  constructor(
+    UserTag,
+    UserTagResponseDTO,
+    UserTagRequestDTO,
+    tagMapper,
+    errorFactory
+  ) {
     this.UserTag = UserTag;
-    this.tagMapper = tagMapper;
     this.UserTagResponseDTO = UserTagResponseDTO;
+    this.UserTagRequestDTO = UserTagRequestDTO;
+    this.tagMapper = tagMapper;
     this.errorFactory = errorFactory;
   }
 
@@ -17,34 +24,45 @@ class UserTagMapper {
         : null,
     });
   }
-  assignmentRequestToDomain(assignmentRequest) {
-    return this.UserTag.create(
-      {
-        userId: assignmentRequest.userId,
-        tagId: assignmentRequest.tagId,
-      },
-      this.errorFactory
-    );
-  }
 
-  userTagAssignmentRequestToDomain(assignmentRequest) {
-    return this.UserTag.create(
-      {
-        userId: assignmentRequest.userId,
-        tagId: assignmentRequest.tagId,
-      },
-      this.errorFactory
-    );
+  requestDataToDTO(requestData) {
+    return new this.UserTagRequestDTO({
+      userId: requestData.userId,
+      tagId: requestData.tagId,
+      toDelete: requestData.toDelete || false,
+    });
   }
 
   dbToDomain(row) {
+    if (!row) return null;
+
+    const tag = row.tag_id ? this.tagMapper.dbToDomain(row) : null;
+
     return new this.UserTag(
       {
         id: row.user_tag_id,
         userId: row.user_id,
         tagId: row.tag_id,
         createdAt: row.user_tag_created_at,
-        tag: row.tag_id ? this.tagMapper.dbToDomain(row) : null,
+        tag: tag,
+        user: null, 
+      },
+      this.errorFactory
+    );
+  }
+
+  dbToDomainWithRelations(row) {
+     if (!row) return null;
+
+    const tag = row.tag_id ? this.tagMapper.dbToDomain(row) : null;
+
+    return new this.UserTag(
+      {
+        id: row.user_tag_id,
+        userId: row.user_id,
+        tagId: row.tag_id,
+        createdAt: row.user_tag_created_at,
+        tag: tag,
       },
       this.errorFactory
     );
