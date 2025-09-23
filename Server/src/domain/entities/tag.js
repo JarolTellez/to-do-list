@@ -5,7 +5,6 @@ class Tag {
   #name;
   #description;
   #exists;
-  #toDelete;
   #createdAt;
   #taskTags;
   #userTags;
@@ -16,7 +15,6 @@ class Tag {
       name,
       description = "",
       exists = false,
-      toDelete = false,
       createdAt = new Date(),
       taskTags = [],
       userTags = [],
@@ -35,11 +33,6 @@ class Tag {
       }
     );
     this.#exists = this.#validator.validateBoolean(exists, "exists", "Tag");
-    this.#toDelete = this.#validator.validateBoolean(
-      toDelete,
-      "toDelete",
-      "Tag"
-    );
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
     this.#taskTags = this.#validator.validateCollection(taskTags, "taskTags");
     this.#userTags = this.#validator.validateCollection(userTags, "userTags");
@@ -56,14 +49,6 @@ class Tag {
   // bussiness logic
   markAsExisting() {
     this.#exists = true;
-  }
-
-  markForDeletion() {
-    this.#toDelete = true;
-  }
-
-  unmarkForDeletion() {
-    this.#toDelete = false;
   }
 
   updateName(newName) {
@@ -114,9 +99,7 @@ class Tag {
   get exists() {
     return this.#exists;
   }
-  get toDelete() {
-    return this.#toDelete;
-  }
+
   get createdAt() {
     return this.#createdAt;
   }
@@ -145,7 +128,6 @@ class Tag {
       name: this.#name,
       description: this.#description,
       exists: this.#exists,
-      toDelete: this.#toDelete,
       createdAt: this.#createdAt,
       taskTagsCount: this.#taskTags.length,
       userTagsCount: this.#userTags.length,
@@ -158,7 +140,6 @@ class Tag {
         name,
         description,
         exists: true,
-        toDelete: false,
         createdAt: new Date(),
       },
       errorFactory

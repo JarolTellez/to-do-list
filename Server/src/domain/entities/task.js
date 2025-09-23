@@ -107,13 +107,15 @@ class Task {
   #validatePriority(priority) {
     if (priority === null || priority === undefined) return null;
 
-    const validPriorities = ["low", "medium", "high", "urgent"];
-    return this.#validator.validateEnum(
-      priority,
-      "priority",
-      validPriorities,
-      "Task"
-    );
+    if (typeof priority !== "number" || priority < 1 || priority > 5) {
+      throw this.#validator.error.createValidationError(
+        "Priority must be a number between 1 and 5",
+        { field: "priority", value: priority, min: 1, max: 5 },
+        this.#validator.codes.INVALID_FORMAT
+      );
+    }
+
+    return priority;
   }
 
   #validateBusinessRules() {
@@ -141,7 +143,7 @@ class Task {
   }
 
   updatePriority(newPriority) {
-    this.#priority = newPriority;
+    this.#priority = this.#validatePriority(newPriority);
     this.#updatedAt = new Date();
   }
 
@@ -278,12 +280,11 @@ class Task {
         isCompleted: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        taskTags: []
+        taskTags: [],
       },
       errorFactory
     );
   }
-
 }
 
 module.exports = Task;

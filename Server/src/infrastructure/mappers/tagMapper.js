@@ -33,38 +33,19 @@ class TagMapper {
     return new this.Tag(
       {
         id: existingTag.id,
-        name:
-          updateTagRequest.name !== undefined
-            ? updateTagRequest.name
-            : existingTag.name,
-        description:
-          updateTagRequest.description !== undefined
-            ? updateTagRequest.description
-            : existingTag.description,
+        name: updateTagRequest.name ?? existingTag.name,
+        description: updateTagRequest.description ?? existingTag.description,
         exists: existingTag.exists,
         toDelete: existingTag.toDelete,
         createdAt: existingTag.createdAt,
-        taskTags: existingTag.taskTags,
-        userTags: existingTag.userTags,
+        taskTags: existingTag.taskTags || [],
+        userTags: existingTag.userTags || [],
       },
       this.errorFactory
     );
   }
 
-  assignmentRequestToDomain(tagAssignmentRequest) {
-    return new this.Tag(
-      {
-        id: tagAssignmentRequest.id || null,
-        name: tagAssignmentRequest.name,
-        description: tagAssignmentRequest.description || "",
-        exists: tagAssignmentRequest.exists || false,
-        toDelete: tagAssignmentRequest.toDelete || false,
-      },
-      this.errorFactory
-    );
-  }
-
-  requestToDomain(tagRequest) {
+  createRequestToDomain(tagRequest) {
     return new this.Tag(
       {
         id: tagRequest.id || null,
