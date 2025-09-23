@@ -1,52 +1,171 @@
 class TaskMapper {
-  constructor(taskFactory, tagMapper, taskTagMapper) {
-    this.taskFactory = taskFactory;
+  constructor(
+    Task,
+    tagMapper,
+    taskTagMapper,
+    TaskResponseDTO,
+    TaskDetailResponseDTO,
+    TasksSummaryResponseDTO,
+    errorFactory,
+    dateParser
+  ) {
+    this.Task = Task;
     this.tagMapper = tagMapper;
     this.taskTagMapper = taskTagMapper;
+    this.TaskResponseDTO = TaskResponseDTO;
+    this.TaskDetailResponseDTO = TaskDetailResponseDTO;
+    this.TasksSummaryResponseDTO = TasksSummaryResponseDTO;
+    this.errorFactory = errorFactory;
+    this.dateParser = dateParser;
+  }
+
+  domainToResponse(taskDomain) {
+    return new this.TaskResponseDTO({
+      id: taskDomain.id,
+      name: taskDomain.name,
+      description: taskDomain.description,
+      scheduledDate: taskDomain.scheduledDate,
+      createdAt: taskDomain.createdAt,
+      updatedAt: taskDomain.updatedAt,
+      isCompleted: taskDomain.isCompleted,
+      userId: taskDomain.userId,
+      priority: taskDomain.priority,
+      taskTags: taskDomain.taskTags || [],
+    });
+  }
+
+  domainToDetailResponse(taskDomain) {
+    return new this.TaskDetailResponseDTO({
+      task: this.domainToResponse(taskDomain),
+      tags: taskDomain.getTags ? taskDomain.getTags() : [],
+    });
+  }
+  toTasksSummary(pending, completed, overdue) {
+    return new this.TasksSummaryResponseDTO({
+      pending: pending,
+      completed: completed,
+      overdue: overdue,
+      total: pending + completed,
+    });
+  }
+
+  createRequestToDomain(createTaskRequest) {
+    const taskTags = (createTaskRequest.tags || []).map((tag) =>
+      this.tagMapper.requestToDomain(tag)
+    );
+
+    return this.Task.create(
+      {
+        name: createTaskRequest.name,
+        description: createTaskRequest.description,
+        scheduledDate: createTaskRequest.scheduledDate,
+        priority: createTaskRequest.priority,
+        userId: createTaskRequest.userId,
+        taskTags: taskTags,
+      },
+      this.errorFactory
+    );
+  }
+
+  updateRequestToDomain(updateTaskRequestDTO, existingTask) {
+    const taskTags = (updateTaskRequestDTO.tags || []).map((tag) =>
+      this.tagMapper.requestToDomain(tag)
+    );
+
+    return new this.Task(
+      {
+        id: updateTaskRequestDTO.id,
+        name:
+          updateTaskRequestDTO.name !== undefined
+            ? updateTaskRequestDTO.name
+            : existingTask.name,
+        description:
+          updateTaskRequestDTO.description !== undefined
+            ? updateTaskRequestDTO.description
+            : existingTask.description,
+        scheduledDate:
+          updateTaskRequestDTO.scheduledDate !== undefined
+            ? this.dateParser.parseToDate(updateTaskRequestDTO.scheduledDate)
+            : existingTask.scheduledDate,
+        priority:
+          updateTaskRequestDTO.priority !== undefined
+            ? updateTaskRequestDTO.priority
+            : existingTask.priority,
+        isCompleted:
+          updateTaskRequestDTO.isCompleted !== undefined
+            ? updateTaskRequestDTO.isCompleted
+            : existingTask.isCompleted,
+        userId: existingTask.userId,
+        createdAt: existingTask.createdAt,
+        updatedAt: new Date(),
+        taskTags: taskTags.length > 0 ? taskTags : existingTask.taskTags || [],
+      },
+      this.errorFactory
+    );
+  }
+
+  completeRequestToDomain(completeTaskRequest, existingTask) {
+    return new this.Task(
+      {
+        ...existingTask.toJSON(),
+        isCompleted: completeTaskRequest.isCompleted,
+        updatedAt: new Date(),
+      },
+      this.errorFactory
+    );
   }
 
   requestToDomain(taskRequest) {
-    try {
-      // Si la Etiqueta existente mandara el objeto tags aue ya contiene el userId y si no mandara el ob
-      //objeto tags y el userId contenido en la task para que se cree con ese userId la tags
-      const tags = (taskRequest.tags || []).map((tags) => {
-        if (tags.userId) {
-          return this.tagMapper.requestToDomain(tags);
-        } else {
-          return this.tagMapper.requestToDomain(tags, taskRequest.userId);
-        }
+     try {
+      const taskTags = (taskRequest.tags || []).map((tag) => {
+        return this.tagMapper.requestToDomain({
+          ...tag,
+          userId: tag.userId || taskRequest.userId,
+        });
       });
 
-      return this.taskFactory.createNewTask({
-        id: taskRequest.id || null,
-        name: taskRequest.name,
-        description: taskRequest.description || null,
-        scheduledDate: taskRequest.scheduledDate || null,
-        createdAt: taskRequest.createdAt || null,
-        lastUpdateDate: taskRequest.lastUpdateDate || null,
-        isCompleted: taskRequest.isCompleted || false,
-        userId: taskRequest.userId,
-        priority: taskRequest.priority || null,
-        tags, //  ya mapeadas como entidades de dominio
-      });
+
+      return new this.Task(
+        {
+          id: taskRequest.id || null,
+          name: taskRequest.name,
+          description: taskRequest.description || null,
+          scheduledDate: taskRequest.scheduledDate ? 
+            this.dateParser.parseToDate(taskRequest.scheduledDate) : null,
+          createdAt: taskRequest.createdAt ? 
+            this.dateParser.parseToDate(taskRequest.createdAt) : new Date(),
+          updatedAt: taskRequest.updatedAt ? 
+            this.dateParser.parseToDate(taskRequest.updatedAt) : new Date(),
+          isCompleted: taskRequest.isCompleted || false,
+          userId: taskRequest.userId,
+          priority: taskRequest.priority || null,
+          taskTags: taskTags, 
+        },
+        this.errorFactory
+      );
     } catch (error) {
       throw new Error("Mapeo fallido: " + error.message);
     }
   }
 
   dbToDomain(row) {
-    return this.taskFactory.newTask({
-      id: row.task_id,
-      name: row.task_name,
-      description: row.task_description,
-      scheduledDate: row.scheduled_date,
-      createdAt: row.task_created_at,
-      lastUpdateDate: row.last_update_date,
-      isCompleted: row.is_completed,
-      userId: row.user_id,
-      priority: row.priority,
-      taskTags: [],
-    });
+    return new this.Task(
+      {
+        id: row.task_id,
+        name: row.task_name,
+        description: row.task_description,
+        scheduledDate: this.dateParser.fromMySQLDateTime(row.scheduled_date),
+        createdAt:
+          this.dateParser.fromMySQLDateTime(row.task_created_at) || new Date(),
+        updatedAt:
+          this.dateParser.fromMySQLDateTime(row.task_updated_at) || new Date(),
+        isCompleted: row.is_completed,
+        userId: row.user_id,
+        priority: row.priority,
+        taskTags: [],
+      },
+      this.errorFactory
+    );
   }
 
   dbToDomainWithTags(rows, isSingle = false) {
@@ -66,95 +185,17 @@ class TaskMapper {
 
       if (row.tag_id) {
         const tag = this.tagMapper.dbToDomain(row);
-        task.taskTags.push(tag);
+        if (task.addTaskTag) {
+          const taskTag = this.taskTagMapper.dbToDomain(row);
+          task.addTaskTag(taskTag);
+        } else {
+          task.taskTags.push(tag);
+        }
       }
     });
 
     const result = Array.from(tasksMap.values());
-
     return isSingle ? result[0] || null : result;
-  }
-  // dbToDomainWithTags(rows){
-  //   if(rows.length===0) return null;
-  //   //Unica tarea en todas las rows
-  //   const task = this.dbToDomain(rows[0]);
-
-  //   task.taskTags= rows.filter(r=>r.task_tag_id).map(r=>taskTagMapper.dbToDomain(r));
-  //   return task;
-  // }
-
-  updateRequestToDominio(taskRequest) {
-    try {
-      return this.taskFactory.createNew({
-        id: taskRequest.id || null,
-        name: taskRequest.name,
-        description: taskRequest.description || null,
-        scheduledDate: taskRequest.scheduledDate || null,
-        createdAt: taskRequest.createdAt || null,
-        lastUpdateDate: taskRequest.lastUpdateDate || null,
-        isCompleted: taskRequest.isCompleted || false,
-        userId: taskRequest.userId,
-        priority: taskRequest.priority || null,
-        tags: taskRequest.tags || [],
-      });
-    } catch (error) {
-      throw new Error("Mapeo fallido: " + error.message);
-    }
-  }
-
-  taskWithTagsDbToDomain(task) {
-    const tags = task.tags
-      ? task.tags.map((tag) => this.tagMapper.dbToDomain(tag))
-      : [];
-
-    const newTask = this.taskFactory.createFromExistingTask(task, tags);
-    return newTask;
-  }
-
-  tasksWithTagsFromJoinResult(joinRows) {
-    if (!joinRows || joinRows.length === 0) {
-      return [];
-    }
-
-    const tasksMap = new Map();
-
-    joinRows.forEach((row) => {
-      if (!tasksMap.has(row.id)) {
-        tasksMap.set(row.id, {
-          id: row.id,
-          name: row.name,
-          description: row.description,
-          scheduled_date: row.scheduled_date,
-          created_at: row.created_at,
-          last_update_date: row.last_update_date,
-          is_completed: row.is_completed,
-          user_id: row.user_id,
-          priority: row.priority,
-          tags: [],
-        });
-      }
-
-      if (row.tag_id) {
-        tasksMap.get(row.id).tags.push({
-          id: row.tag_id,
-          task_tag_id: row.task_tag_id,
-          name: row.tag_name,
-          description: row.tag_description,
-          user_id: row.tag_user_id,
-        });
-      }
-    });
-
-    return Array.from(tasksMap.values())
-      .map((taskData) => {
-        try {
-          return this.taskWithTagsDbToDomain(taskData);
-        } catch (error) {
-          console.error("Error mapping task from join result:", error);
-          return null;
-        }
-      })
-      .filter((task) => task !== null);
   }
 }
 

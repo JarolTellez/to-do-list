@@ -277,7 +277,8 @@ class Task {
         priority,
         isCompleted: false,
         createdAt: new Date(),
-        lastUpdateDate: new Date(),
+        updatedAt: new Date(),
+        taskTags: []
       },
       errorFactory
     );
