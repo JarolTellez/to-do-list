@@ -9,6 +9,7 @@ class TaskTag {
   #createdAt;
   #tag;
   #task;
+  #toDelete;
   #validator;
 
   constructor(
@@ -19,6 +20,7 @@ class TaskTag {
       createdAt = new Date(),
       tag = null,
       task = null,
+      toDelete = false,
     },
     errorFactory
   ) {
@@ -30,8 +32,9 @@ class TaskTag {
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
     this.#task = this.#validateTask(task);
     this.#tag = this.#validateTag(tag);
+    this.#toDelete = !!toDelete;
 
-     this.#validateBusinessRules();
+    this.#validateBusinessRules();
   }
 
   #validateTag(tag) {
@@ -106,6 +109,14 @@ class TaskTag {
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
   }
 
+  markForDeletion() {
+    this.#toDelete = true;
+  }
+
+  unmarkForDeletion() {
+    this.#toDelete = false;
+  }
+
   // Getters
   get id() {
     return this.#id;
@@ -124,6 +135,9 @@ class TaskTag {
   }
   get task() {
     return this.#task;
+  }
+  get toDelete() {
+    return this.#toDelete;
   }
 
   isRecent(hours = 24) {
@@ -155,13 +169,15 @@ class TaskTag {
           ? this.#task.toJSON()
           : this.#task
         : null,
+      toDelete: this.#toDelete,
       isRecent: this.isRecent(),
-      isValid: this.isValid(),
     };
   }
 
-
-  static create({ taskId, tagId, task = null, tag = null }, errorFactory) {
+  static create(
+    { taskId, tagId, task = null, tag = null, toDelete = false },
+    errorFactory
+  ) {
     return new TaskTag(
       {
         taskId,
@@ -169,20 +185,21 @@ class TaskTag {
         task,
         tag,
         createdAt: new Date(),
+        toDelete,
       },
       errorFactory
     );
   }
 
-  static assign({ task, tag }, errorFactory) {
+  static assign({ task, tag, toDelete = false }, errorFactory) {
+
     if (!task || !tag) {
-      throw new ValidationError(
+      throw errorFactory.createValidationError(
         "Task and Tag are required for assignment",
         null,
         errorCodes.REQUIRED_FIELD
       );
     }
-
     return new TaskTag(
       {
         taskId: task.id,
@@ -190,6 +207,7 @@ class TaskTag {
         task,
         tag,
         createdAt: new Date(),
+        toDelete,
       },
       errorFactory
     );

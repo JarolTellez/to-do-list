@@ -18,25 +18,17 @@ class TaskTagMapper {
     });
   }
 
-  assignmentRequestToDomain(assignmentRequest) {
-    return this.TaskTag.create(
+  requestToDomain(taskTagRequest) {
+    return new this.TaskTag(
       {
-        taskId: assignmentRequest.taskId,
-        tagId: assignmentRequest.tagId,
+        taskId: taskTagRequest.taskId,
+        tagId: taskTagRequest.tagId,
+        createdAt: new Date(),
       },
       this.errorFactory
     );
   }
 
-  taskTagAssignmentRequestToDomain(assignmentRequest) {
-    return this.TaskTag.create(
-      {
-        taskId: assignmentRequest.taskId,
-        tagId: assignmentRequest.tagId,
-      },
-      this.errorFactory
-    );
-  }
 
   dbToDomain(row) {
     return new this.TaskTag(
