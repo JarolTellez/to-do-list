@@ -353,6 +353,74 @@ class UserDAO extends BaseDatabaseHandler {
   }
 
   /**
+ * Retrieve a user from the database by both email and username
+ * @param {string} email - The email of the user to find
+ * @param {string} userName - The username of the user to find  
+ * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+ * @returns {Promise<User>} User domain entity if found, null if the user doesn't exist.
+ * @throws {DatabaseError} On database operation failure.
+ * @throws {ValidationError} If input validation fails.
+ */
+async findByEmailAndUsername(email, userName, externalConn = null) {
+    const { connection, isExternal } = await this.getConnection(externalConn);
+
+    try {
+        if (typeof email !== "string" || email.trim().length === 0) {
+            throw this.errorFactory.createValidationError("Invalid email");
+        }
+        if (typeof userName !== "string" || userName.trim().length === 0) {
+            throw this.errorFactory.createValidationError("Invalid user name");
+        }
+
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanUserName = userName.trim();
+
+        const baseQuery = `SELECT  
+            u.id AS user_id,
+            u.user_name,
+            u.email,
+            u.password,
+            u.rol,
+            u.created_at AS user_created_at 
+           FROM users u 
+           WHERE u.email = ? AND u.user_name = ?`;
+
+        const result = await this._executeQuery({
+            connection,
+            baseQuery,
+            params: [cleanEmail, cleanUserName],
+            mapper: this.userMapper.dbToDomain,
+        });
+        
+        return result.length > 0 ? result[0] : null;
+    } catch (error) {
+        // Re-throw ValidationErrors (input issues)
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+            throw error;
+        }
+
+        // Handle all other database errors
+        throw this.errorFactory.createDatabaseError(
+            "Failed to retrieve user by email and username",
+            {
+                attemptedData: {
+                    emailPrefix: email ,
+                    userNameLength: userName ? userName.length : 0,
+                },
+                originalError: error.message,
+                code: error.code,
+                stack: error.stack,
+                context: "userDAO.findByEmailAndUsername",
+            }
+        );
+    } finally {
+        if (connection && !isExternal) {
+            await this.releaseConnection(connection, isExternal);
+        }
+    }
+}
+
+  /**
    * Retrieves all users from the database with optional pagination, sorting, and filtering.
    * @param {Object} [options={}] - Configuration options for the query.
    * @param {object} [options.externalConn=null] - External database connection for transaction support.

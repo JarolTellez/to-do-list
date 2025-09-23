@@ -17,8 +17,8 @@ class TaskFactory {
       description: task.description || null,
       scheduledDate: parseAndValidateDate(task.scheduledDate),
       createdAt: parseAndValidateDate(task.createdAt) || new Date(),
-      lastUpdateDate:
-        parseAndValidateDate(task.lastUpdateDate) || new Date(),
+      updatedAt:
+        parseAndValidateDate(task.updatedAt) || new Date(),
       isCompleted: task.isCompleted,
       userId: task.userId,
       priority: task.priority || null,
@@ -43,7 +43,7 @@ class TaskFactory {
       description: task.description || null,
       scheduledDate: parseAndValidateDate(task.scheduled_date),
       createdAt: parseAndValidateDate(task.created_at) || new Date(),
-      lastUpdateDate:
+      updatedAt:
         parseAndValidateDate(task.last_update_date) || new Date(),
       isCompleted: task.is_completed,
       userId: task.user_id,

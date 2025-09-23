@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       description: taskDescription.value,
       scheduledDate: fechaProgramadaDateTime,
       createdAt: convertToMySQLDateTime(new Date()),
-      lastUpdateDate: convertToMySQLDateTime(new Date()),
+      updatedAt: convertToMySQLDateTime(new Date()),
       isCompleted: false,
       userId: sessionStorage.getItem("userId"),
       priority: valorPrioridad,
@@ -297,7 +297,7 @@ function construirObjetoTareaActualizar() {
     name: nameTask.value,
     description: taskDescription.value,
     scheduledDate: fechaProgramadaProcesada,
-    lastUpdateDate: convertToMySQLDateTime(new Date()),
+    updatedAt: convertToMySQLDateTime(new Date()),
     userId: sessionStorage.getItem("userId"),
     priority: valorPrioridad,
     tags: [...selectedTags] // Copia de las tags actuales

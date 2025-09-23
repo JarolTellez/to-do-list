@@ -5,7 +5,7 @@ export class Task {
     description,
     scheduledDate = null,
     createdAt = null,
-    lastUpdateDate = null,
+    updatedAt = null,
     isCompleted = false,
     userId,
     priority = null,
@@ -16,7 +16,7 @@ export class Task {
     this.description = description;
     this.scheduledDate = scheduledDate ? new Date(scheduledDate) : null;
     this.createdAt = createdAt ? new Date(createdAt) : null;
-    this.lastUpdateDate = lastUpdateDate ? new Date(lastUpdateDate) : null;
+    this.updatedAt = updatedAt ? new Date(updatedAt) : null;
     this.isCompleted = isCompleted;
     this.userId = userId;
     this.priority = priority;
@@ -57,7 +57,7 @@ export class Task {
       name: this.name,
       description: this.description,
       scheduledDate: this.scheduledDate,
-      lastUpdateDate: this.lastUpdateDate,
+      updatedAt: this.updatedAt,
       isCompleted: this.isCompleted,
       userId: this.userId,
       priority: this.priority,
