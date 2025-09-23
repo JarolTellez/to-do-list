@@ -1,5 +1,6 @@
 class UserTagRequestDTO {
-  constructor({ tagId, toDelete }) {
+  constructor({ userId, tagId, toDelete }) {
+    this.userId = userId;
     this.tagId = tagId;
     this.toDelete = toDelete || false;
   }

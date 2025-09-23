@@ -153,7 +153,7 @@ class UserTag {
       id: this.#id,
       userId: this.#userId,
       tagId: this.#tagId,
-      createdAt: this.#createdAt,
+      createdAt: this.#createdAt.toISOString(),
       tag: this.#tag
         ? this.#tag.toJSON
           ? this.#tag.toJSON()

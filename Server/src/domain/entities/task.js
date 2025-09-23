@@ -267,7 +267,7 @@ class Task {
   }
 
   static create(
-    { name, description = "", userId, scheduledDate = null, priority = null },
+    { name, description = "", userId, scheduledDate = null, priority = null, taskTags=[] },
     errorFactory
   ) {
     return new Task(
@@ -280,7 +280,7 @@ class Task {
         isCompleted: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        taskTags: [],
+        taskTags: taskTags,
       },
       errorFactory
     );

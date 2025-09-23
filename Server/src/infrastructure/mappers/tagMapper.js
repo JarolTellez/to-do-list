@@ -1,7 +1,15 @@
 class TagMapper {
-  constructor(Tag, TagResponseDTO, errorFactory) {
+  constructor(
+    Tag,
+    TagResponseDTO,
+    CreateTagRequestDTO,
+    UpdateTagRequestDTO,
+    errorFactory
+  ) {
     this.Tag = Tag;
     this.TagResponseDTO = TagResponseDTO;
+    this.CreateTagRequestDTO = CreateTagRequestDTO;
+    this.UpdateTagRequestDTO = UpdateTagRequestDTO;
     this.errorFactory = errorFactory;
   }
 
@@ -12,9 +20,22 @@ class TagMapper {
       description: tagDomain.description,
       createdAt: tagDomain.createdAt,
       exists: tagDomain.exists,
-      toDelete: tagDomain.toDelete,
       taskTagsCount: tagDomain.taskTags ? tagDomain.taskTags.length : 0,
       userTagsCount: tagDomain.userTags ? tagDomain.userTags.length : 0,
+    });
+  }
+
+  requestDataToCreateDTO(requestData) {
+    return new this.CreateTagRequestDTO({
+      name: requestData.name,
+      description: requestData.description,
+    });
+  }
+
+  requestDataToUpdateDTO(requestData) {
+    return new this.UpdateTagRequestDTO({
+      name: requestData.name,
+      description: requestData.description,
     });
   }
 
@@ -36,23 +57,9 @@ class TagMapper {
         name: updateTagRequest.name ?? existingTag.name,
         description: updateTagRequest.description ?? existingTag.description,
         exists: existingTag.exists,
-        toDelete: existingTag.toDelete,
         createdAt: existingTag.createdAt,
         taskTags: existingTag.taskTags || [],
         userTags: existingTag.userTags || [],
-      },
-      this.errorFactory
-    );
-  }
-
-  createRequestToDomain(tagRequest) {
-    return new this.Tag(
-      {
-        id: tagRequest.id || null,
-        name: tagRequest.name,
-        description: tagRequest.description || null,
-        exists: tagRequest.exists || false,
-        toDelete: tagRequest.toDelete || false,
       },
       this.errorFactory
     );
@@ -68,7 +75,8 @@ class TagMapper {
         description: row.tag_description,
         createdAt: row.tag_created_at,
         exists: true,
-        toDelete: false,
+        taskTags: [],
+        userTags: [],
       },
       this.errorFactory
     );

@@ -4,7 +4,9 @@ class TaskMapper {
     tagMapper,
     taskTagMapper,
     TaskResponseDTO,
-    TaskDetailResponseDTO,
+    CreateTaskRequestDTO,
+    UpdateTaskRequestDTO,
+    CompleteTaskRequestDTO,
     TasksSummaryResponseDTO,
     errorFactory,
     dateParser
@@ -13,86 +15,63 @@ class TaskMapper {
     this.tagMapper = tagMapper;
     this.taskTagMapper = taskTagMapper;
     this.TaskResponseDTO = TaskResponseDTO;
-    this.TaskDetailResponseDTO = TaskDetailResponseDTO;
+    this.CreateTaskRequestDTO = CreateTaskRequestDTO;
+    this.UpdateTaskRequestDTO = UpdateTaskRequestDTO;
+    this.CompleteTaskRequestDTO = CompleteTaskRequestDTO;
     this.TasksSummaryResponseDTO = TasksSummaryResponseDTO;
     this.errorFactory = errorFactory;
     this.dateParser = dateParser;
   }
 
-  domainToResponse(taskDomain) {
-    return new this.TaskResponseDTO({
-      id: taskDomain.id,
-      name: taskDomain.name,
-      description: taskDomain.description,
-      scheduledDate: taskDomain.scheduledDate,
-      createdAt: taskDomain.createdAt,
-      updatedAt: taskDomain.updatedAt,
-      isCompleted: taskDomain.isCompleted,
-      userId: taskDomain.userId,
-      priority: taskDomain.priority,
-      taskTags: (taskDomain.taskTags || []).map((tt) =>
-        this.taskTagMapper.domainToResponse(tt)
-      ),
+  requestDataToCreateDTO(requestData) {
+    return new this.CreateTaskRequestDTO({
+      name: requestData.name,
+      description: requestData.description,
+      scheduledDate: requestData.scheduledDate,
+      priority: requestData.priority,
+      userId: requestData.userId,
+      taskTags: requestData.taskTags || [],
     });
   }
 
-  domainToDetailResponse(taskDomain) {
-    return new this.TaskDetailResponseDTO({
-      task: this.domainToResponse(taskDomain),
-      tags: (taskDomain.taskTags || []).map((tt) =>
-        this.taskTagMapper.domainToResponse(tt)
-      ),
-    });
-  }
-
-  toTasksSummary(pending, completed, overdue) {
-    return new this.TasksSummaryResponseDTO({
-      pending,
-      completed,
-      overdue,
-      total: pending + completed + overdue,
-    });
-  }
-
-  createRequestToDomain(createTaskRequest) {
-    const taskTags = (createTaskRequest.taskTags || []).map((taskTag) =>
-      this.taskTagMapper.requestToDomain({
-        ...taskTag,
-      })
-    );
-
+  createDTOToDomain(createDTO) {
     return this.Task.create(
       {
-        name: createTaskRequest.name,
-        description: createTaskRequest.description,
-        scheduledDate: createTaskRequest.scheduledDate,
-        priority: createTaskRequest.priority,
-        userId: createTaskRequest.userId,
-        taskTags,
+        name: createDTO.name,
+        description: createDTO.description,
+        scheduledDate: createDTO.scheduledDate,
+        priority: createDTO.priority,
+        userId: createDTO.userId,
       },
       this.errorFactory
     );
   }
 
-  updateRequestToDomain(updateTaskRequestDTO, existingTask) {
-    const taskTags = (updateTaskRequestDTO.taskTags || []).map((taskTag) =>
-      this.taskTagMapper.requestToDomain({
-        ...taskTag,
-      })
+  requestDataToUpdateDTO(requestData) {
+    return new this.UpdateTaskRequestDTO({
+      name: requestData.name,
+      description: requestData.description,
+      scheduledDate: requestData.scheduledDate,
+      priority: requestData.priority,
+      taskTags: requestData.taskTags || [],
+    });
+  }
+
+  updateDTOToDomain(updateDTO, existingTask) {
+     const taskTags = (updateDTO.taskTags || []).map((tt) =>
+      this.taskTagMapper.requestDTOToDomain(tt)
     );
 
     return new this.Task(
       {
         id: existingTask.id,
-        name: updateTaskRequestDTO.name ?? existingTask.name,
-        description:
-          updateTaskRequestDTO.description ?? existingTask.description,
-        scheduledDate: updateTaskRequestDTO.scheduledDate
-          ? this.dateParser.parseToDate(updateTaskRequestDTO.scheduledDate)
+        name: updateDTO.name ?? existingTask.name,
+        description: updateDTO.description ?? existingTask.description,
+        scheduledDate: updateDTO.scheduledDate
+          ? this.dateParser.parseToDate(updateDTO.scheduledDate)
           : existingTask.scheduledDate,
-        priority: updateTaskRequestDTO.priority ?? existingTask.priority,
-        isCompleted:
-          updateTaskRequestDTO.isCompleted ?? existingTask.isCompleted,
+        priority: updateDTO.priority ?? existingTask.priority,
+        isCompleted: existingTask.isCompleted,
         userId: existingTask.userId,
         createdAt: existingTask.createdAt,
         updatedAt: new Date(),
@@ -102,12 +81,25 @@ class TaskMapper {
     );
   }
 
-  completeRequestToDomain(completeTaskRequest, existingTask) {
-    return new this.Task(
+  requestDataToCompleteDTO(requestData) {
+    return new this.CompleteTaskRequestDTO({
+      isCompleted: requestData.isCompleted,
+    });
+  }
+
+  completeDTOToDomain(completeDTO, existingTask) {
+      return new this.Task(
       {
-        ...existingTask.toJSON(),
-        isCompleted: completeTaskRequest.isCompleted,
+        id: existingTask.id,
+        name: existingTask.name,
+        description: existingTask.description,
+        scheduledDate: existingTask.scheduledDate,
+        priority: existingTask.priority,
+        isCompleted: completeDTO.isCompleted,
+        userId: existingTask.userId,
+        createdAt: existingTask.createdAt,
         updatedAt: new Date(),
+        taskTags: existingTask.taskTags || [],
       },
       this.errorFactory
     );
@@ -134,15 +126,12 @@ class TaskMapper {
   }
 
   dbToDomainWithTags(rows, isSingle = false) {
-    if (!rows || rows.length === 0) {
-      return isSingle ? null : [];
-    }
+    if (!rows || rows.length === 0) return isSingle ? null : [];
 
     const tasksMap = new Map();
 
     rows.forEach((row) => {
       let task = tasksMap.get(row.task_id);
-
       if (!task) {
         task = this.dbToDomain(row);
         tasksMap.set(row.task_id, task);
@@ -150,11 +139,9 @@ class TaskMapper {
 
       if (row.tag_id) {
         const taskTag = this.taskTagMapper.dbToDomain(row);
-        if (task.addTaskTag) {
-          task.addTaskTag(taskTag);
-        } else {
-          task.taskTags.push(taskTag);
-        }
+        task.addTaskTag
+          ? task.addTaskTag(taskTag)
+          : task.taskTags.push(taskTag);
       }
     });
 

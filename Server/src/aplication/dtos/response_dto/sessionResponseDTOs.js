@@ -1,5 +1,16 @@
 class SessionResponseDTO {
-  constructor({ id, userId, deviceId, userAgent, ip, createdAt, expiresAt, isActive }) {
+  constructor({
+    id,
+    userId,
+    deviceId,
+    userAgent,
+    ip,
+    createdAt,
+    expiresAt,
+    isActive,
+    isExpired,
+    timeUntilExpiration
+  }) {
     this.id = id;
     this.userId = userId;
     this.deviceId = deviceId;
@@ -8,5 +19,7 @@ class SessionResponseDTO {
     this.createdAt = createdAt;
     this.expiresAt = expiresAt;
     this.isActive = isActive;
+    this.isExpired = isExpired;
+    this.timeUntilExpiration = timeUntilExpiration;
   }
 }
