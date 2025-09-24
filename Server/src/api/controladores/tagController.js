@@ -1,5 +1,5 @@
 class TagController {
-  constructor({ tagService, tagMapper }) {
+  constructor({ tagService, tagMapper, }) {
     this.tagService = tagService;
     this.tagMapper = tagMapper;
   }

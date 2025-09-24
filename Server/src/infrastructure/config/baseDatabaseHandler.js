@@ -1,3 +1,4 @@
+const SORT_ORDER = require('../constants/sortConstants');
 class BaseDatabaseHandler {
   constructor(connectionDB) {
     this.connectionDB = connectionDB;

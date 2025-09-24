@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHandler");
+const { LoginRequestDTO } = require("../dtos/request_dto/userRequestDTOs");
 
 class AuthService extends BaseDatabaseHandler {
   constructor({
@@ -27,111 +28,52 @@ class AuthService extends BaseDatabaseHandler {
     this.validator = validator;
   }
 
-  async createUser(user, externalConn = null) {
-    this.validator.validateRequired(["user"], { user });
-    return this.withTransaction(async (connection) => {
-      const newUser = await this.userService.createUser(user, connection);
-      return newUser;
-    }, externalConn);
-  }
-
   //SEPARAR ESTE METODO
-  async loginUser(
+  async loginUser({
     existingRefreshToken,
-    userName,
-    password,
+    loginRequestDTO,
     deviceInfo,
     ip,
-    externalConn = null
-  ) {
-    this.validator.validateRequired(["userName", "password"], {
-      userName,
-      password,
-    });
+    externalConn = null,
+  }) {
+    this.validator.validateRequired(
+      ["loginRequestDTO"],
+      {
+        loginRequestDTO,
+      }
+    );
     return this.withTransaction(async (connection) => {
-      const user = await this.userService.validateCredentials(
-        userName,
-        password,
+      const user = await this.validateCredentials(loginRequestDTO, connection);
+
+      // 2. Delegar gestión de sesión al SessionService
+      const sessionResult = await this.sessionService.manageUserSession(
+        {
+          userId: user.id,
+          existingRefreshToken,
+          deviceInfo,
+          ip,
+        },
         connection
       );
 
-      await this.sessionService.manageSessionLimit(
-        user.id,
-        this.MAX_SESIONES,
-        connection
-      );
+      // 4. Generar access token
+      const accessToken = this.jwtAuth.generateAccessToken({
+        userId: user.id,
+        email: user.email,
+        rol: user.rol,
+      });
 
-      let refreshTokenFinal = null;
-      let refreshTokenHash = null;
-
-      if (existingRefreshToken) {
-        try {
-          const decodificado =
-            this.jwtAuth.verifyRefreshToken(existingRefreshToken);
-
-          if (decodificado.userId !== user.id) {
-            throw new Error("Token inválido");
-          }
-
-          refreshTokenHash = this.jwtAuth.createHash(existingRefreshToken);
-          const sesionValida = await this.sessionService.verifyValidSession(
-            user.id,
-            refreshTokenHash,
-            connection
-          );
-
-          if (!sesionValida) {
-            throw new Error("Sesión no válida en BD");
-          }
-
-          refreshTokenFinal = existingRefreshToken;
-        } catch (error) {
-          existingRefreshToken = null;
-        }
-      }
-
-      const accessToken = this.jwtAuth.createAccessToken(user.id, user.rol);
-
-      if (!existingRefreshToken) {
-        const { refreshToken, refreshTokenHash: newHash } =
-          this.jwtAuth.createRefreshToken(user.id);
-
-        refreshTokenFinal = refreshToken;
-        refreshTokenHash = newHash;
-
-        const dispositivo = `
-        ${deviceInfo.userAgent || "Unknown"}
-        ${deviceInfo.screenWidth || "Unknown"}
-        ${deviceInfo.screenHeight || "Unknown"}
-        ${deviceInfo.timezone || "Unknown"}
-        ${deviceInfo.language || "Unknown"}
-        ${deviceInfo.hardwareConcurrency || "Unknown"}
-        ${user.id}
-      `;
-
-        const deviceId = this.crypto
-          .createHash("sha256")
-          .update(dispositivo)
-          .digest("hex");
-
-        // const entidadSesion = this.sessionFactory.crear(
-        //   user.id,
-        //   refreshTokenHash,
-        //   deviceInfo.userAgent || "Unknown",
-        //   ip,
-        //   deviceId,
-        //   true
-        // );
-
-        await this.sessionService.createSession(entidadSesion, connection);
-        console.log("Nueva sesión registrada");
-      }
-
-      return {
+      // 5. Mapear respuesta
+      const userResponse = this.userMapper.domainToResponse(user);
+      const authResponse = this.userMapper.domainToAuthResponse(
         user,
         accessToken,
-        refreshToken: refreshTokenFinal,
-        expiraEn: process.env.EXP_REFRESH_TOKEN,
+        process.env.JWT_ACCESS_EXPIRE_IN || "15m"
+      );
+
+      return {
+        ...authResponse,
+        refreshToken: session.refreshToken,
       };
     }, externalConn);
   }
@@ -180,43 +122,42 @@ class AuthService extends BaseDatabaseHandler {
 
   async refreshAccessToken(refreshToken, externalConn = null) {
     this.validator.validateRequired(["refreshToken"], { refreshToken });
-    let decoded;
 
     return this.withTransaction(async (connection) => {
-      try {
-        decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
-      } catch (error) {
-        await this.manageVerificationTokenError(
-          error,
-          refreshToken,
-          connection
+      // 1. Validar sesión con SessionService
+      const sessionValidation = await this.sessionService.validateActiveSession(
+        refreshToken,
+        connection
+      );
+
+      if (!sessionValidation.isValid) {
+        throw this.errorFactory.createAuthenticationError(
+          sessionValidation.error || "Sesión inválida"
         );
-        return;
+      }
+      // 2. Obtener usuario
+      const user = await this.userDAO.findById(
+        sessionValidation.session.userId,
+        connection
+      );
+      if (!user) {
+        throw this.errorFactory.createNotFoundError("Usuario no encontrado");
       }
 
-      const user = await this.userService.validateUserExistenceById(
-        decoded.userId,
-        connection
-      );
+      // 3. Generar nuevo access token
+      const accessToken = this.jwtAuth.generateAccessToken({
+        userId: user.id,
+        email: user.email,
+        rol: user.rol,
+      });
 
-      const refreshTokenHashRecibido = this.crypto
-        .createHash("sha256")
-        .update(refreshToken)
-        .digest("hex");
+      const userResponse = this.userMapper.domainToResponse(user);
 
-      await this.sessionService.deactivateSession(
-        user.id,
-        refreshTokenHashRecibido,
-        connection
-      );
-
-      const nuevoAccessToken = this.jwtAuth.createAccessToken(
-        user.id,
-        user.rol
-      );
       return {
-        accessToken: nuevoAccessToken,
-        user: user,
+        user: userResponse,
+        accessToken: accessToken,
+        expiresIn: process.env.JWT_ACCESS_EXPIRE_IN || "15m",
+        tokenType: "Bearer",
       };
     }, externalConn);
   }
@@ -255,6 +196,36 @@ class AuthService extends BaseDatabaseHandler {
         );
       }
     }, externalConn);
+  }
+
+  async validateCredentials(loginRequestDTO, externalConn = null) {
+    // Validar campos requeridos
+    this.validator.validateRequired(["email", "password"], loginRequestDTO);
+    this.validator.validateEmail("email", loginRequestDTO);
+
+    // Buscar usuario por email
+    const user = await this.userDAO.findByEmail(
+      loginRequestDTO.email,
+      externalConn
+    );
+    if (!user) {
+      throw this.errorFactory.createAuthenticationError(
+        "Credenciales inválidas"
+      );
+    }
+
+    // Verificar password
+    const isPasswordValid = await this.bcrypt.compare(
+      loginRequestDTO.password,
+      user.password
+    );
+    if (!isPasswordValid) {
+      throw this.errorFactory.createAuthenticationError(
+        "Credenciales inválidas"
+      );
+    }
+
+    return user;
   }
 }
 

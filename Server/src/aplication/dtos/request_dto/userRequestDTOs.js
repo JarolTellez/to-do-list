@@ -1,6 +1,6 @@
 class CreateUserRequestDTO {
-  constructor({ userName, email, password, rol }) {
-    this.userName = userName;
+  constructor({ username, email, password, rol }) {
+    this.username = username;
     this.email = email;
     this.password = password;
     this.rol = rol || "user";
@@ -8,8 +8,8 @@ class CreateUserRequestDTO {
 }
 
 class UpdateUserRequestDTO {
-  constructor({ userName, email, password, rol }) {
-    this.userName = userName;
+  constructor({ username, email, password, rol }) {
+    this.username = username;
     this.email = email;
     this.password = password;
     this.rol = rol;
