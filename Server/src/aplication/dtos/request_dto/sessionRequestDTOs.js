@@ -14,3 +14,8 @@ class RefreshSessionRequestDTO {
         this.refreshToken = refreshToken;
     }
 }
+
+module.exports ={
+  CreateSessionRequestDTO,
+  RefreshSessionRequestDTO
+}

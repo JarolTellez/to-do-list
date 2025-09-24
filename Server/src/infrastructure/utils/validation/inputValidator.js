@@ -1,7 +1,7 @@
 const { SORT_FIELD_MAPPINGS } = require("../../constants/sortConstants");
 
 class InputValidator {
-  constructor(errorFactory) {
+  constructor({errorFactory}) {
     this.errorFactory = errorFactory;
   }
 

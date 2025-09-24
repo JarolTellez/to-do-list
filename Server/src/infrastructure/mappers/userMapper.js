@@ -1,5 +1,5 @@
 class UserMapper {
-  constructor(
+  constructor({
     User,
     UserResponseDTO,
     AuthResponseDTO,
@@ -8,7 +8,7 @@ class UserMapper {
     LoginRequestDTO,
     userTagMapper,
     errorFactory
-  ) {
+  }) {
     this.User = User;
     this.UserResponseDTO = UserResponseDTO;
     this.AuthResponseDTO = AuthResponseDTO;

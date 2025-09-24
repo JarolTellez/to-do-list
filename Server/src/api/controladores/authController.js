@@ -1,19 +1,19 @@
 class AuthController {
-  constructor({ authService, userMapper, AuthenticationError }) {
+  constructor({ authService, userMapper, errorFactory }) {
     this.authService = authService;
     this.userMapper = userMapper;
-    this.AuthenticationError = AuthenticationError;
+    this.errorFactory=errorFactory;
   }
 // CAMBIAR A QUE CONVIERTA A UN DTO DE REQUEST- CONTROLLER NO MAPEARA A DOMINIO DE ESO SE ENCARGARAN LOS SERVICIOS
   async registerUser(req, res, next) {
     try {
-      const user = this.userMapper.requestToDomain(req.body);
-      const addedUser = await this.authService.createUser(user);
-      const responseUser = this.userMapper.dominioToRespuestaDTO(addedUser);
+        const createUserRequestDTO = this.userMapper.requestDataToCreateDTO(req.body);
+      const addedUser = await this.authService.createUser(createUserRequestDTO);
+   
       
       return res.status(201).json({
          success: true,
-        data: responseUser
+        data: addedUser
       });
     } catch (error) {
       next(error);
@@ -84,7 +84,7 @@ async logOut(req, res, next) {
     const refreshTokenExistente = req.cookies.refreshToken;
 
     if (!refreshTokenExistente) {
-      throw new this.AuthenticationError('No hay token de refresh presente');
+      throw this.errorFactory.createAuthenticationError('No hay token de refresh presente');
     }
 
   

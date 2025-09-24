@@ -1,14 +1,13 @@
 const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class SessionService extends BaseDatabaseHandler {
-  constructor({sessionDAO, JwtAuth, AuthenticationError, connectionDB, NotFoundError, validateRequired,}) {
+  constructor({sessionDAO, JwtAuth,connectionDB,erroFactory, validator}) {
     super(connectionDB);
     this.sessionDAO = sessionDAO;
     this.JwtAuth = JwtAuth;
-    this.AuthenticationError = AuthenticationError;
-    this.NotFoundError=NotFoundError;
-    this.validateRequired=validateRequired;
-    
+    this.erroFactory=erroFactory;
+    this.validator=validator;
+
   }
 
   async createSession(session, externalConn = null) {
@@ -59,7 +58,7 @@ class SessionService extends BaseDatabaseHandler {
       );
 
        if (!result) {
-        throw new this.NotFoundError("Sesion del usuario no encontrada", {
+        throw this.erroFactory.createNotFoundError("Sesion del usuario no encontrada", {
           attemptedData: {userId},
         });
       }

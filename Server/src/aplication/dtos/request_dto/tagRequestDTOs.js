@@ -11,3 +11,8 @@ class UpdateTagRequestDTO {
         this.description = description;
     }
 }
+
+module.exports = {
+    CreateTagRequestDTO,
+    UpdateTagRequestDTO
+};

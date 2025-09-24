@@ -1,10 +1,10 @@
 class SessionMapper {
-  constructor(
+  constructor({
     Session,
     SessionResponseDTO,
     CreateSessionRequestDTO,
     RefreshSessionRequestDTO,
-    errorFactory
+    errorFactory}
   ) {
     this.Session = Session;
     this.SessionResponseDTO = SessionResponseDTO;

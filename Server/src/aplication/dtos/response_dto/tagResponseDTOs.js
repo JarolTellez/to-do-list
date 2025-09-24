@@ -17,3 +17,6 @@ class TagResponseDTO {
     this.userTagsCount = userTagsCount;
   }
 }
+
+
+module.exports =  TagResponseDTO
