@@ -1,11 +1,11 @@
 const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
 
 class TagService extends BaseDatabaseHandler {
-  constructor({tagDAO, connectionDB, NotFoundError, validateRequired}) {
+  constructor({tagDAO, connectionDB, errorFactory, validator}) {
     super(connectionDB);
     this.tagDAO = tagDAO;
-    this.NotFoundError = NotFoundError;
-    this.validateRequired = validateRequired;
+    this.errorFactory=errorFactory;
+    this.validator=validator;
   }
 
 
@@ -48,7 +48,7 @@ class TagService extends BaseDatabaseHandler {
         connection
       );
        if (tag) {
-        throw new this.NotFoundError("Etiqueta no encontrada", {
+        throw this.errorFactory.createNotFoundError("Etiqueta no encontrada", {
           attemptedData: {name},
         });
       }

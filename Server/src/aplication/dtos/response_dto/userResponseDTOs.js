@@ -33,3 +33,8 @@ class AuthResponseDTO {
     this.tokenType = "Bearer";
   }
 }
+
+module.exports={
+  UserResponseDTO,
+  AuthResponseDTO
+}

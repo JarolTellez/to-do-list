@@ -25,3 +25,9 @@ class CompleteTaskRequestDTO {
     this.isCompleted = isCompleted;
   }
 }
+
+module.exports={
+CreateTaskRequestDTO,
+UpdateTaskRequestDTO,
+CompleteTaskRequestDTO
+}

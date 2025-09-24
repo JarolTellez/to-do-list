@@ -23,3 +23,5 @@ class SessionResponseDTO {
     this.timeUntilExpiration = timeUntilExpiration;
   }
 }
+
+module.exports=SessionResponseDTO

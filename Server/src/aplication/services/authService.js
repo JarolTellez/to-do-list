@@ -4,7 +4,6 @@ const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHan
 class AuthService extends BaseDatabaseHandler {
   constructor({
     user,
-    sessionFactory,
     userService,
     sessionService,
     connectionDB,
@@ -12,15 +11,11 @@ class AuthService extends BaseDatabaseHandler {
     jwtAuth,
     bcrypt,
     crypto,
-    NotFoundError,
-    ValidationError,
-    ConflictError,
-    AuthenticationError,
-    validateRequired,
+    errorFactory,
+    validator,
   }) {
     super(connectionDB);
     this.user = user;
-    this.sessionFactory = sessionFactory;
     this.userService = userService;
     this.sessionService = sessionService;
     this.userDAO = userDAO;
@@ -28,15 +23,12 @@ class AuthService extends BaseDatabaseHandler {
     this.bcrypt = bcrypt;
     this.crypto = crypto;
     this.MAX_SESIONES = parseInt(process.env.MAX_SESIONES_ACTIVAS) || 5;
-    this.NotFoundError = NotFoundError;
-    this.ValidationError = ValidationError;
-    this.ConflictError = ConflictError;
-    this.AuthenticationError = AuthenticationError;
-    this.validateRequired = validateRequired;
+    this.errorFactory = errorFactory;
+    this.validator = validator;
   }
 
   async createUser(user, externalConn = null) {
-    this.validateRequired(["user"], { user });
+    this.validator.validateRequired(["user"], { user });
     return this.withTransaction(async (connection) => {
       const newUser = await this.userService.createUser(user, connection);
       return newUser;
@@ -52,7 +44,7 @@ class AuthService extends BaseDatabaseHandler {
     ip,
     externalConn = null
   ) {
-    this.validateRequired(["userName", "password"], {
+    this.validator.validateRequired(["userName", "password"], {
       userName,
       password,
     });
@@ -101,7 +93,6 @@ class AuthService extends BaseDatabaseHandler {
       const accessToken = this.jwtAuth.createAccessToken(user.id, user.rol);
 
       if (!existingRefreshToken) {
-
         const { refreshToken, refreshTokenHash: newHash } =
           this.jwtAuth.createRefreshToken(user.id);
 
@@ -123,14 +114,14 @@ class AuthService extends BaseDatabaseHandler {
           .update(dispositivo)
           .digest("hex");
 
-        const entidadSesion = this.sessionFactory.crear(
-          user.id,
-          refreshTokenHash,
-          deviceInfo.userAgent || "Unknown",
-          ip,
-          deviceId,
-          true
-        );
+        // const entidadSesion = this.sessionFactory.crear(
+        //   user.id,
+        //   refreshTokenHash,
+        //   deviceInfo.userAgent || "Unknown",
+        //   ip,
+        //   deviceId,
+        //   true
+        // );
 
         await this.sessionService.createSession(entidadSesion, connection);
         console.log("Nueva sesión registrada");
@@ -146,7 +137,7 @@ class AuthService extends BaseDatabaseHandler {
   }
 
   async logOutUser(refreshToken, externalConn = null) {
-    this.validateRequired(["refreshToken"], { refreshToken });
+    this.validator.validateRequired(["refreshToken"], { refreshToken });
     let decoded;
     return this.withTransaction(async (connection) => {
       try {
@@ -157,7 +148,9 @@ class AuthService extends BaseDatabaseHandler {
           refreshToken,
           connection
         );
-        throw new this.AuthenticationError("Token de refresh inválido");
+        throw this.errorFactory.createAuthenticationError(
+          "Token de refresh inválido"
+        );
       }
 
       const refreshTokenHashRecibido = this.crypto
@@ -172,7 +165,7 @@ class AuthService extends BaseDatabaseHandler {
       );
 
       if (!deactivatedSession) {
-        throw new this.AuthenticationError(
+        throw this.errorFactory.createAuthenticationError(
           "Sesión no encontrada o ya expirada"
         );
       }
@@ -186,7 +179,7 @@ class AuthService extends BaseDatabaseHandler {
   }
 
   async refreshAccessToken(refreshToken, externalConn = null) {
-    this.validateRequired(["refreshToken"], { refreshToken });
+    this.validator.validateRequired(["refreshToken"], { refreshToken });
     let decoded;
 
     return this.withTransaction(async (connection) => {
@@ -230,7 +223,7 @@ class AuthService extends BaseDatabaseHandler {
 
   async manageVerificationTokenError(error, refreshToken, externalConn = null) {
     try {
-      this.validateRequired(["refreshToken"], { refreshToken });
+      this.validator.validateRequired(["refreshToken"], { refreshToken });
       const decoded = this.jwtAuth.decodeToken(refreshToken);
       await this.deactivateSession(decoded.userId, refreshToken, externalConn);
     } catch (cleanupError) {
@@ -239,7 +232,7 @@ class AuthService extends BaseDatabaseHandler {
   }
 
   async deactivateSession(idUsuario, refreshToken, externalConn = null) {
-    this.validateRequired(["userId", "refreshToken"], {
+    this.validator.validateRequired(["userId", "refreshToken"], {
       idUsuario,
       refreshToken,
     });

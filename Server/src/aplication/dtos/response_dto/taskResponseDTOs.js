@@ -21,3 +21,8 @@ class TasksSummaryResponseDTO {
         this.total = total;
     }
 }
+
+module.exports={
+  TaskResponseDTO,
+  TasksSummaryResponseDTO
+}

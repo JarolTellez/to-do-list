@@ -1,4 +1,4 @@
-const DomainValidators = require("./validators/DomainValidators");
+const DomainValidators = require("../utils/domainValidators");
 const Tag = require("../entities/tag");
 const Task = require("../entities/task");
 

@@ -1,10 +1,11 @@
 class UserTagMapper {
-  constructor(
+  constructor({
     UserTag,
     UserTagResponseDTO,
     UserTagRequestDTO,
     tagMapper,
     errorFactory
+  }
   ) {
     this.UserTag = UserTag;
     this.UserTagResponseDTO = UserTagResponseDTO;

@@ -4,3 +4,5 @@ class TaskTagRequestDTO {
     this.toDelete = toDelete || false;
   }
 }
+
+module.exports =  TaskTagRequestDTO

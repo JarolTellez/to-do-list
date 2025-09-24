@@ -1,6 +1,6 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 const { SORT_ORDER, TASK_SORT_FIELD } = require("../constants/sortConstants");
-const { MAPPER_TYPES } = require("../constants/mapperConstants");
+const MAPPER_TYPES  = require("../constants/mapperConstants");
 
 class TaskDAO extends BaseDatabaseHandler {
   constructor({ taskMapper, connectionDB, errorFactory, inputValidator }) {
@@ -878,3 +878,5 @@ class TaskDAO extends BaseDatabaseHandler {
     }
   }
 }
+
+module.exports=TaskDAO;

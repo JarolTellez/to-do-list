@@ -1,4 +1,4 @@
-const DomainValidators = require("./validators/DomainValidators");
+const DomainValidators = require("../utils/domainValidators");
 const crypto = require("crypto");
 
 class Session {

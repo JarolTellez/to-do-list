@@ -8,7 +8,7 @@ const {
     RateLimitError,
     ServiceUnavailableError,
     ConflictError
-} = require('../../utils/appErrors');
+} = require('../../infrastructure/utils/errors/appErrors');
 
 const isProduction = process.env.NODE_ENV === 'production';
 

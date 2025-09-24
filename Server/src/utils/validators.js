@@ -1,6 +1,6 @@
 class Validator {
-  constructor(ValidationError) {
-    this.ValidationError = ValidationError;
+  constructor(errorFactory) {
+    this.errorFactory = errorFactory;
   }
 
   validateRequired(fields, object) {
@@ -15,7 +15,7 @@ class Validator {
     });
     
     if (missing.length > 0) {
-      throw new this.ValidationError(
+      throw this.errorFactory.createValidationError(
         `Campos requeridos faltantes: ${missing.join(', ')}`,
         { missingFields: details }
       );
@@ -25,7 +25,7 @@ class Validator {
   validateEmail(field, object) {
     const email = object[field];
     if (email && !this.isValidEmail(email)) {
-      throw new this.ValidationError(
+      throw this.errorFactory.createValidationError(
         `Email inválido en campo: ${field}`,
         { [field]: 'Formato de email inválido' }
       );
@@ -38,14 +38,14 @@ validateLength(field, object, { min, max } = {}) {
     const length = value.toString().length;
     
     if (min && length < min) {
-        throw new this.ValidationError(
+        throw this.errorFactory.createValidationError(
             `Campo ${field} debe tener al menos ${min} caracteres`,
             { [field]: `Mínimo ${min} caracteres` }
         );
     }
     
     if (max && length > max) {
-        throw new this.ValidationError(
+        throw this.errorFactory.createValidationError(
             `Campo ${field} no puede tener más de ${max} caracteres`,
             { [field]: `Máximo ${max} caracteres` }
         );

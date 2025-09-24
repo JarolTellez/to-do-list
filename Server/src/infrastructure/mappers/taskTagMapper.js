@@ -1,5 +1,5 @@
 class TaskTagMapper {
-  constructor(TaskTag, tagMapper, TaskTagResponseDTO,  TaskTagRequestDTO, errorFactory) {
+  constructor({TaskTag, tagMapper, TaskTagResponseDTO,  TaskTagRequestDTO, errorFactory}) {
     this.TaskTag = TaskTag;
     this.tagMapper = tagMapper;
     this.TaskTagResponseDTO = TaskTagResponseDTO;

@@ -1,5 +1,5 @@
 class TaskMapper {
-  constructor(
+  constructor({
     Task,
     tagMapper,
     taskTagMapper,
@@ -10,7 +10,7 @@ class TaskMapper {
     TasksSummaryResponseDTO,
     errorFactory,
     dateParser
-  ) {
+  }) {
     this.Task = Task;
     this.tagMapper = tagMapper;
     this.taskTagMapper = taskTagMapper;

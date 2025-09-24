@@ -23,3 +23,8 @@ class LoginRequestDTO {
     }
 }
 
+module.exports={
+  CreateUserRequestDTO,
+  UpdateUserRequestDTO,
+  LoginRequestDTO
+}

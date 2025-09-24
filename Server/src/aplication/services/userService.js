@@ -19,27 +19,22 @@ class UserService extends BaseDatabaseHandler {
     this.userMapper = userMapper;
   }
 
-  async createUser(user, externalConn = null) {
-    this.validator.validateRequired(["userName", "email", "password"], user);
-    this.validator.validateEmail("email", user);
-    this.validator.validateLength("userName", user, { min: 3, max: 30 });
-    this.validator.validateLength("password", user, { min: 6, max: 128 });
+  async createUser(createUserRequestDTO, externalConn = null) {
+    this.validator.validateRequired(["userName", "email", "password"], createUserRequestDTO);
+    this.validator.validateEmail("email", createUserRequestDTO);
+    this.validator.validateLength("userName", createUserRequestDTO, { min: 3, max: 30 });
+    this.validator.validateLength("password", createUserRequestDTO, { min: 6, max: 128 });
 
     return this.withTransaction(async (connection) => {
-      const existingByEmail = await this.userDAO.findByEmail(
-        userData.email,
-        connection
-      );
+     const [existingByEmail, existingByUsername] = await Promise.all([
+      this.userDAO.findByEmail(createUserRequestDTO.email, connection),
+      this.userDAO.findByUserName(createUserRequestDTO.userName, connection)
+     ]);
       if (existingByEmail) {
         throw this.errorFactory.createConflictError(
           "El email ya está registrado"
         );
       }
-
-      const existingByUsername = await this.userDAO.findByUserName(
-        userData.userName,
-        connection
-      );
       if (existingByUsername) {
         throw this.errorFactory.createConflictError(
           "El nombre de usuario ya está en uso"
@@ -47,18 +42,18 @@ class UserService extends BaseDatabaseHandler {
       }
 
      
-      const hashedPassword = await this.bcrypt.hash(userData.password, 10);
+      const hashedPassword = await this.bcrypt.hash(userDomain.password, 10);
 
     
-      const userDomain = this.userMapper.requestToDomain({
-        ...userData,
+      const userDomain = this.userMapper.createRequestToDomain({
+        ...createUserRequestDTO,
         password: hashedPassword,
       });
 
       
       const createdUser = await this.userDAO.create(userDomain, connection);
 
-      return this.userMapper.dominioToRespuestaDTO(createdUser);
+      return this.userMapper.dominioToResponse(createdUser);
     }, externalConn);
   }
 

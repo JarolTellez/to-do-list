@@ -6,19 +6,19 @@ class TaskService extends BaseDatabaseHandler {
     tagService,
     taskTagService,
     connectionDB,
-    NotFoundError,
-    validateRequired,
+    errorFactory,
+    validator
   }) {
     super(connectionDB);
     this.taskDAO = taskDAO;
     this.taskTagService = taskTagService;
     this.tagService = tagService;
-    this.NotFoundError = NotFoundError;
-    this.validateRequired=validateRequired;
+    this.errorFactory =errorFactory;
+    this.validator=validator;
   }
 
   async createTask(task, externalConn = null) {
-    this.validateRequired(["task"], { task });
+    this.validator.validateRequired(["task"], { task });
     return this.withTransaction(async (connection) => {
       const newTask = await this.taskDAO.create(task, connection);
 
@@ -46,11 +46,11 @@ class TaskService extends BaseDatabaseHandler {
   }
 
   async updateTask(task, externalConn = null) {
-    this.validateRequired(["task"], { task });
+    this.validator.validateRequired(["task"], { task });
     return this.withTransaction(async (connection) => {
       const existingTask = await this.taskDAO.findByIdAndUserId(task.id, task.userId, connection);
       if (!existingTask) {
-        throw new this.NotFoundError("Tarea no encontrada", {
+        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
           attemptedData: { taskId: task.id, name: task.name },
         });
       }
@@ -58,7 +58,7 @@ class TaskService extends BaseDatabaseHandler {
       // Actualizar información principal de la tarea
      const result= await this.taskDAO.update(task, connection);
      if(!result){
-      throw new this.NotFoundError("Tarea no encontrada para actualizar",{attemptedData:{taskId:task.taskId,userId:task.userId}})
+      throw this.errorFactory.createNotFoundError("Tarea no encontrada para actualizar",{attemptedData:{taskId:task.taskId,userId:task.userId}})
      }
 
       for (const tag of task.tags) {
@@ -87,7 +87,7 @@ class TaskService extends BaseDatabaseHandler {
       //  Consultar y retornar task actualizada
       const taskResult = await this.taskDAO.findByIdAndUserId(task.id, task.userId, connection);
       if (!taskResult) {
-        throw new this.NotFoundError("Tarea no encontrada", {
+        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
           attemptedData: { taskId: task.id, name: task.name },
         });
       }
@@ -96,7 +96,7 @@ class TaskService extends BaseDatabaseHandler {
   }
 
   async deleteTask(taskId, userId, externalConn = null) {
-    this.validateRequired(["taskId", "userId"], { taskId, userId });
+    this.validator.validateRequired(["taskId", "userId"], { taskId, userId });
     return this.withTransaction(async (connection) => {
       const existingTask = await this.taskDAO.findByIdAndUserId(
         taskId,
@@ -117,7 +117,7 @@ class TaskService extends BaseDatabaseHandler {
       
       const deletedTask = await this.taskDAO.delete(taskId,userId, connection);
       if (!deletedTask) {
-        throw new this.NotFoundError("Tarea no encontrada", {
+        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
           attemptedData: { taskId, userId },
         });
       }
@@ -141,7 +141,7 @@ class TaskService extends BaseDatabaseHandler {
     
       const updatedTask = await this.taskDAO.findByIdAndUserId(taskId, userId, connection);
         if (!updatedTask|| !result) {
-        throw new this.NotFoundError("Tarea no encontrada", {
+        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
           attemptedData: {taskId},
         });
       }
