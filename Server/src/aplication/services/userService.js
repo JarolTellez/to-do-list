@@ -1,4 +1,5 @@
 const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHandler");
+const { CreateTagRequestDTO } = require("../dtos/request_dto/tagRequestDTOs");
 
 class UserService extends BaseDatabaseHandler {
   constructor({
@@ -17,32 +18,33 @@ class UserService extends BaseDatabaseHandler {
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.userMapper = userMapper;
+
   }
 
   async createUser(createUserRequestDTO, externalConn = null) {
-    this.validator.validateRequired(["userName", "email", "password"], createUserRequestDTO);
+    this.validator.validateRequired(["username", "email", "password"], createUserRequestDTO);
     this.validator.validateEmail("email", createUserRequestDTO);
-    this.validator.validateLength("userName", createUserRequestDTO, { min: 3, max: 30 });
+    this.validator.validateLength("username", createUserRequestDTO, { min: 3, max: 30 });
     this.validator.validateLength("password", createUserRequestDTO, { min: 6, max: 128 });
 
     return this.withTransaction(async (connection) => {
-     const [existingByEmail, existingByUsername] = await Promise.all([
+     const [existingByEmail, existingByusername] = await Promise.all([
       this.userDAO.findByEmail(createUserRequestDTO.email, connection),
-      this.userDAO.findByUserName(createUserRequestDTO.userName, connection)
+      this.userDAO.findByusername(createUserRequestDTO.username, connection)
      ]);
       if (existingByEmail) {
         throw this.errorFactory.createConflictError(
           "El email ya está registrado"
         );
       }
-      if (existingByUsername) {
+      if (existingByusername) {
         throw this.errorFactory.createConflictError(
           "El nombre de usuario ya está en uso"
         );
       }
 
      
-      const hashedPassword = await this.bcrypt.hash(userDomain.password, 10);
+      const hashedPassword = await this.bcrypt.hash(createUserRequestDTO.password, 10);
 
     
       const userDomain = this.userMapper.createRequestToDomain({
@@ -53,24 +55,24 @@ class UserService extends BaseDatabaseHandler {
       
       const createdUser = await this.userDAO.create(userDomain, connection);
 
-      return this.userMapper.dominioToResponse(createdUser);
+      return this.userMapper.domainToResponse(createdUser);
     }, externalConn);
   }
 
-  async validateCredentials(userName, password, externalConn = null) {
-    this.validator.validateRequired(["userName", "password"], {
-      userName,
+  async validateCredentials(username, password, externalConn = null) {
+    this.validator.validateRequired(["username", "password"], {
+      username,
       password,
     });
     return this.withTransaction(async (connection) => {
       const user = await this.userDAO.findByNameAndPassword(
-        userName,
+        username,
         password,
         connection
       );
       if (!user) {
         throw new this.NotFoundError("Credenciales invalidas", {
-          attemptedData: { userName },
+          attemptedData: { username },
         });
       }
 

@@ -3,8 +3,6 @@ const { pruebas } = require('./pruebas');
 module.exports = (authController) => {
   const router = express.Router();
 
-  router.route('/').post(authController.registerUser.bind(authController));
-
   router
     .route('/login')
     .post(pruebas, authController.login.bind(authController));

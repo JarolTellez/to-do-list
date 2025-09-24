@@ -22,7 +22,7 @@ class UserMapper {
   domainToResponse(userDomain) {
     return new this.UserResponseDTO({
       id: userDomain.id,
-      userName: userDomain.userName,
+      username: userDomain.username,
       email: userDomain.email,
       rol: userDomain.rol,
       createdAt: userDomain.createdAt,
@@ -45,7 +45,7 @@ class UserMapper {
 
   requestDataToCreateDTO(requestData) {
     return new this.CreateUserRequestDTO({
-      userName: requestData.userName,
+      username: requestData.username,
       email: requestData.email,
       password: requestData.password,
       rol: requestData.rol || "user",
@@ -54,7 +54,7 @@ class UserMapper {
 
   requestDataToUpdateDTO(requestData) {
     return new this.UpdateUserRequestDTO({
-      userName: requestData.userName,
+      username: requestData.username,
       email: requestData.email,
       password: requestData.password,
       rol: requestData.rol,
@@ -71,7 +71,7 @@ class UserMapper {
   createRequestToDomain(createUserRequest) {
     return this.User.create(
       {
-        userName: createUserRequest.userName,
+        username: createUserRequest.username,
         email: createUserRequest.email,
         password: createUserRequest.password,
         rol: createUserRequest.rol,
@@ -84,10 +84,10 @@ class UserMapper {
     return new this.User(
       {
         id: existingUser.id,
-        userName:
-          updateUserRequest.userName !== undefined
-            ? updateUserRequest.userName
-            : existingUser.userName,
+        username:
+          updateUserRequest.username !== undefined
+            ? updateUserRequest.username
+            : existingUser.username,
         email:
           updateUserRequest.email !== undefined
             ? updateUserRequest.email
@@ -122,7 +122,7 @@ class UserMapper {
     return new this.User(
       {
         id: row.user_id,
-        userName: row.user_name,
+        username: row.user_name,
         email: row.email,
         password: row.password,
         rol: row.rol,

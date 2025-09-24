@@ -1,7 +1,7 @@
 class UserResponseDTO {
   constructor({
     id,
-    userName,
+    username,
     email,
     rol,
     createdAt,
@@ -12,7 +12,7 @@ class UserResponseDTO {
     tasks,
   }) {
     this.id = id;
-    this.userName = userName;
+    this.username = username;
     this.email = email;
     this.rol = rol;
     this.createdAt = createdAt;

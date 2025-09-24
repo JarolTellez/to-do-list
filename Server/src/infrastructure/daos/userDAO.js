@@ -1,4 +1,4 @@
-const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
+const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
 const { MAPPER_TYPES } = require("../constants/mapperConstants");
 const { SORT_ORDER, USER_SORT_FIELD } = require("../constants/sortConstants");
 
@@ -17,7 +17,7 @@ class UserDAO extends BaseDatabaseHandler {
   /**
    * Creates a new user in the database.
    * @param {User} user - User domain entity to persist.
-   * @param {string} user.userName - User account username (must be unique).
+   * @param {string} user.username - User account username (must be unique).
    * @param {string} user.email - User account email (must be unique).
    * @param {string} user.password - User account password (should be pre-hashed).
    * @param {string} user.rol - User account rol.
@@ -32,7 +32,7 @@ class UserDAO extends BaseDatabaseHandler {
     try {
       const [result] = await connection.execute(
         "INSERT INTO users (user_name, email, password, rol) VALUES (?, ?, ?, ?)",
-        [user.userName, user.email, user.password, user.rol]
+        [user.username, user.email, user.password, user.rol]
       );
 
       // Retrieve the complete created user with generated Id and timestamps
@@ -44,9 +44,9 @@ class UserDAO extends BaseDatabaseHandler {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         if (error.message.includes("user_name")) {
           throw this.errorFactory.createConflictError(
-            "Username is already taken",
+            "username is already taken",
             {
-              attemptedData: { userName: user.userName },
+              attemptedData: { username: user.username },
             }
           );
         } else if (error.message.includes("email")) {
@@ -61,7 +61,7 @@ class UserDAO extends BaseDatabaseHandler {
 
       // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to create user", {
-        attemptedData: { userId: user.id, userName: user.userName },
+        attemptedData: { userId: user.id, username: user.username },
         originalError: error.message,
         code: error.code,
         context: "userDAO.create",
@@ -78,7 +78,7 @@ class UserDAO extends BaseDatabaseHandler {
    * Updates an existing user in the database.
    * @param {User} user User domain entity with updated data.
    * @param {number} user.id - ID of the user to update (required and unique).
-   * @param {string} user.userName - New username (must be unique).
+   * @param {string} user.username - New username (must be unique).
    * @param {string} user.email - New email (must be unique).
    * @param {string} user.password - New password (should be pre-hashed).
    * @param {string} user.rol - New rol.
@@ -94,7 +94,7 @@ class UserDAO extends BaseDatabaseHandler {
     try {
       const [result] = await connection.execute(
         "UPDATE users SET user_name = ?, email = ?, password = ?, rol=? WHERE id = ?",
-        [user.userName, user.email, user.password, user.rol, user.id]
+        [user.username, user.email, user.password, user.rol, user.id]
       );
 
       // Retrieve the complete updated user with their updated timestamps
@@ -106,9 +106,9 @@ class UserDAO extends BaseDatabaseHandler {
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         if (error.message.includes("user_name")) {
           throw this.errorFactory.createConflictError(
-            "Username already taken",
+            "username already taken",
             {
-              attemptedData: { userName: user.userName },
+              attemptedData: { username: user.username },
             }
           );
         } else if (error.message.includes("email")) {
@@ -119,7 +119,7 @@ class UserDAO extends BaseDatabaseHandler {
       }
       // Handle all other database errors
       throw this.errorFactory.createDatabaseError("Failed to update user", {
-        attemptedData: { userId: user.id, userName: user.userName },
+        attemptedData: { userId: user.id, username: user.username },
         originalError: error.message,
         code: error.code,
         context: "userDAO.update",
@@ -193,7 +193,8 @@ class UserDAO extends BaseDatabaseHandler {
           email,
           password,
           rol,
-          created_at AS user_created_at 
+          created_at AS user_created_at,
+          updated_at AS user_updated_at
           FROM users WHERE id = ?`;
 
       const result = await this._executeQuery({
@@ -229,22 +230,24 @@ class UserDAO extends BaseDatabaseHandler {
 
   /**
    * Retrieve a user from the database by their username
-   * @param {string} userName - The username of the user to found (must be unique)
+   * @param {string} username - The username of the user to found (must be unique)
    * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
    * @returns {Promise<User>} User domain entity if was found, null if the user didn't exist.
    * @throws {DatabaseError} On database operation failure.
    * @throws {ValidationError} If input validation fails.
    */
-  async findByUserName(userName, externalConn = null) {
+  async findByusername(username, externalConn = null) {
+ 
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
+    let cleanUsername;
 
     try {
-      if (typeof userName !== "string" || userName.trim().length === 0) {
+      if (typeof username !== "string" || username.trim().length === 0) {
         throw this.errorFactory.createValidationError("Invalid user name");
       }
 
-      const cleanUserName = userName.trim();
+     cleanUsername = username.trim();
 
       const baseQuery = `SELECT  
         u.id AS user_id,
@@ -252,15 +255,17 @@ class UserDAO extends BaseDatabaseHandler {
         u.email,
         u.password,
         u.rol,
-        u.created_at AS user_created_at 
+        u.created_at AS user_created_at,
+        u.updated_at AS user_updated_at
        FROM users u 
        WHERE u.user_name = ?`;
 
       const result = await this._executeQuery({
         connection,
         baseQuery,
-        params: [cleanUserName],
-        mapper: this.userMapper.dbToDomain,
+        params: [cleanUsername],
+        mapper:  this.userMapper.dbToDomain
+        // mapper: this.userMapper.dbToDomain,
       });
       return result.length > 0 ? result[0] : null;
     } catch (error) {
@@ -274,12 +279,12 @@ class UserDAO extends BaseDatabaseHandler {
         "Failed to retrieve user by username",
         {
           attemptedData: {
-            userNameLength: cleanUserName ? cleanUserName.length : 0,
+            usernameLength: cleanUsername ? cleanUsername.length : 0,
           },
           originalError: error.message,
           code: error.code,
           stack: error.stack,
-          context: "userDAO.findByUserName",
+          context: "userDAO.findByusername",
         }
       );
     } finally {
@@ -315,7 +320,8 @@ class UserDAO extends BaseDatabaseHandler {
         u.email,
         u.password,
         u.rol,
-        u.created_at AS user_created_at 
+        u.created_at AS user_created_at,
+        u.updated_at AS user_updated_at 
        FROM users u 
        WHERE u.email = ?`;
 
@@ -323,8 +329,9 @@ class UserDAO extends BaseDatabaseHandler {
         connection,
         baseQuery,
         params: [cleanEmail],
-        mapper: this.userMapper.dbToDomain,
+        mapper: this.userMapper.dbToDomain
       });
+
       return result.length > 0 ? result[0] : null;
     } catch (error) {
       // Re-throw ValidationErrors (input issues)
@@ -353,29 +360,29 @@ class UserDAO extends BaseDatabaseHandler {
   }
 
   /**
- * Retrieve a user from the database by both email and username
- * @param {string} email - The email of the user to find
- * @param {string} userName - The username of the user to find  
- * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
- * @returns {Promise<User>} User domain entity if found, null if the user doesn't exist.
- * @throws {DatabaseError} On database operation failure.
- * @throws {ValidationError} If input validation fails.
- */
-async findByEmailAndUsername(email, userName, externalConn = null) {
+   * Retrieve a user from the database by both email and username
+   * @param {string} email - The email of the user to find
+   * @param {string} username - The username of the user to find
+   * @param {import('mysql2').Connection} [externalConn=null] - External database connection for transactions.
+   * @returns {Promise<User>} User domain entity if found, null if the user doesn't exist.
+   * @throws {DatabaseError} On database operation failure.
+   * @throws {ValidationError} If input validation fails.
+   */
+  async findByEmailAndusername(email, username, externalConn = null) {
     const { connection, isExternal } = await this.getConnection(externalConn);
 
     try {
-        if (typeof email !== "string" || email.trim().length === 0) {
-            throw this.errorFactory.createValidationError("Invalid email");
-        }
-        if (typeof userName !== "string" || userName.trim().length === 0) {
-            throw this.errorFactory.createValidationError("Invalid user name");
-        }
+      if (typeof email !== "string" || email.trim().length === 0) {
+        throw this.errorFactory.createValidationError("Invalid email");
+      }
+      if (typeof username !== "string" || username.trim().length === 0) {
+        throw this.errorFactory.createValidationError("Invalid user name");
+      }
 
-        const cleanEmail = email.trim().toLowerCase();
-        const cleanUserName = userName.trim();
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanusername = username.trim();
 
-        const baseQuery = `SELECT  
+      const baseQuery = `SELECT  
             u.id AS user_id,
             u.user_name,
             u.email,
@@ -385,40 +392,40 @@ async findByEmailAndUsername(email, userName, externalConn = null) {
            FROM users u 
            WHERE u.email = ? AND u.user_name = ?`;
 
-        const result = await this._executeQuery({
-            connection,
-            baseQuery,
-            params: [cleanEmail, cleanUserName],
-            mapper: this.userMapper.dbToDomain,
-        });
-        
-        return result.length > 0 ? result[0] : null;
-    } catch (error) {
-        // Re-throw ValidationErrors (input issues)
-        if (error instanceof this.errorFactory.Errors.ValidationError) {
-            throw error;
-        }
+      const result = await this._executeQuery({
+        connection,
+        baseQuery,
+        params: [cleanEmail, cleanusername],
+        mapper: this.userMapper.dbToDomain,
+      });
 
-        // Handle all other database errors
-        throw this.errorFactory.createDatabaseError(
-            "Failed to retrieve user by email and username",
-            {
-                attemptedData: {
-                    emailPrefix: email ,
-                    userNameLength: userName ? userName.length : 0,
-                },
-                originalError: error.message,
-                code: error.code,
-                stack: error.stack,
-                context: "userDAO.findByEmailAndUsername",
-            }
-        );
-    } finally {
-        if (connection && !isExternal) {
-            await this.releaseConnection(connection, isExternal);
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      // Re-throw ValidationErrors (input issues)
+      if (error instanceof this.errorFactory.Errors.ValidationError) {
+        throw error;
+      }
+
+      // Handle all other database errors
+      throw this.errorFactory.createDatabaseError(
+        "Failed to retrieve user by email and username",
+        {
+          attemptedData: {
+            emailPrefix: email,
+            usernameLength: username ? username.length : 0,
+          },
+          originalError: error.message,
+          code: error.code,
+          stack: error.stack,
+          context: "userDAO.findByEmailAndusername",
         }
+      );
+    } finally {
+      if (connection && !isExternal) {
+        await this.releaseConnection(connection, isExternal);
+      }
     }
-}
+  }
 
   /**
    * Retrieves all users from the database with optional pagination, sorting, and filtering.

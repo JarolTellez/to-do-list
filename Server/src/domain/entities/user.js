@@ -3,7 +3,7 @@ const DomainValidators = require("../utils/domainValidators");
 
 class User {
   #id;
-  #userName;
+  #username;
   #email;
   #password;
   #rol;
@@ -16,7 +16,7 @@ class User {
   constructor(
     {
       id = null,
-      userName,
+      username,
       email,
       password,
       rol = "user",
@@ -29,10 +29,10 @@ class User {
   ) {
     this.#validator = new DomainValidators(errorFactory);
 
-    this.#validateRequiredFields({ userName, email, password });
+    this.#validateRequiredFields({ username, email, password });
 
     this.#id = this.#validator.validateId(id, "User");
-    this.#userName = this.#validateUserName(userName);
+    this.#username = this.#validateusername(username);
     this.#email = this.#validateEmail(email);
     this.#password = this.#validator.validateText(password, "password", {
       min: 6,
@@ -51,11 +51,11 @@ class User {
     this.#tasks = this.#validateTasks(tasks);
   }
 
-  #validateRequiredFields({ userName, email, password }) {
+  #validateRequiredFields({ username, email, password }) {
     const missingFields = [];
 
-    if (!userName || userName.trim().length === 0) {
-      missingFields.push("userName");
+    if (!username || username.trim().length === 0) {
+      missingFields.push("username");
     }
 
     if (!email || email.trim().length === 0) {
@@ -75,8 +75,8 @@ class User {
     }
   }
 
-  #validateUserName(userName) {
-    const validated = this.#validator.validateText(userName, "username", {
+  #validateusername(username) {
+    const validated = this.#validator.validateText(username, "username", {
       min: 3,
       max: 30,
       required: true,
@@ -86,7 +86,7 @@ class User {
     const invalidChars = /[^a-zA-Z0-9_\-.]/;
     if (invalidChars.test(validated)) {
       throw this.#validator.error.createValidationError(
-        "Username can only contain letters, numbers, underscores, hyphens and dots",
+        "username can only contain letters, numbers, underscores, hyphens and dots",
         null,
         this.#validator.codes.INVALID_FORMAT
       );
@@ -156,8 +156,8 @@ class User {
   }
 
   // business logic
-  updateUserName(newUserName) {
-    this.#userName = this.#validateUserName(newUserName);
+  updateusername(newusername) {
+    this.#username = this.#validateusername(newusername);
     this.#updatedAt = new Date();
   }
 
@@ -222,8 +222,8 @@ class User {
   get id() {
     return this.#id;
   }
-  get userName() {
-    return this.#userName;
+  get username() {
+    return this.#username;
   }
   get email() {
     return this.#email;
@@ -264,7 +264,7 @@ class User {
   toJSON() {
     return {
       id: this.#id,
-      userName: this.#userName,
+      username: this.#username,
       email: this.#email,
       rol: this.#rol,
       createdAt: this.#createdAt.toISOString(),
@@ -278,10 +278,10 @@ class User {
     };
   }
 
-  static create({ userName, email, password, rol = "user" }, errorFactory) {
+  static create({ username, email, password, rol = "user" }, errorFactory) {
     return new User(
       {
-        userName,
+        username,
         email,
         password,
         rol,

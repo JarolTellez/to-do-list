@@ -164,7 +164,7 @@ class UserTag {
           ? this.#user.toJSON()
           : {
               id: this.#user.id,
-              userName: this.#user.userName,
+              username: this.#user.username,
             }
         : null,
       isRecent: this.isRecent(),

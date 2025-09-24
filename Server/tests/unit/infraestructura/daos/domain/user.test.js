@@ -6,12 +6,12 @@ describe('User Class', () => {
   // Test 1: Creacion
   test('should create user with valid data', () => {
     const user = new User({
-      userName: 'testuser',
+      username: 'testuser',
       email: 'test@example.com',
       password: 'password123'
     });
 
-    expect(user.userName).toBe('testuser');
+    expect(user.username).toBe('testuser');
     expect(user.email).toBe('test@example.com');
     expect(user.rol).toBe('usuario');
   });
@@ -20,7 +20,7 @@ describe('User Class', () => {
   test('should throw error for short username', () => {
     expect(() => {
       new User({
-        userName: 'ab',
+        username: 'ab',
         email: 'test@example.com',
         password: 'password123'
       });
@@ -31,7 +31,7 @@ describe('User Class', () => {
   test('should throw error for invalid email', () => {
     expect(() => {
       new User({
-        userName: 'testuser',
+        username: 'testuser',
         email: 'invalid-email',
         password: 'password123'
       });
@@ -42,7 +42,7 @@ describe('User Class', () => {
   test('should throw error for short password', () => {
     expect(() => {
       new User({
-        userName: 'testuser',
+        username: 'testuser',
         email: 'test@example.com',
         password: 'short'
       });
@@ -52,20 +52,20 @@ describe('User Class', () => {
   // Test 5: Actualizacion de username
   test('should update username correctly', () => {
     const user = new User({
-      userName: 'olduser',
+      username: 'olduser',
       email: 'test@example.com',
       password: 'password123'
     });
 
-    user.updateUserName('newuser');
-    expect(user.userName).toBe('newuser');
+    user.updateusername('newuser');
+    expect(user.username).toBe('newuser');
   });
 
   // Test 6: Añadir userTag (CORREGIDO)
   test('should add userTag correctly', () => {
     const user = new User({
       id: 1, 
-      userName: 'testuser',
+      username: 'testuser',
       email: 'test@example.com',
       password: 'password123'
     });
@@ -87,7 +87,7 @@ describe('User Class', () => {
   test('should remove userTag correctly', () => {
     const user = new User({
       id: 1,
-      userName: 'testuser',
+      username: 'testuser',
       email: 'test@example.com',
       password: 'password123'
     });
@@ -110,7 +110,7 @@ describe('User Class', () => {
   // Test 8: Rol por defecto
   test('should have default role "usuario"', () => {
     const user = new User({
-      userName: 'testuser',
+      username: 'testuser',
       email: 'test@example.com',
       password: 'password123'
     });
@@ -122,7 +122,7 @@ describe('User Class', () => {
   // Test 9: Rol admin
   test('should recognize admin role', () => {
     const user = new User({
-      userName: 'adminuser',
+      username: 'adminuser',
       email: 'admin@example.com',
       password: 'password123',
       rol: 'admin'
@@ -134,13 +134,13 @@ describe('User Class', () => {
   // Test 10: Metodo toJSON
   test('should return correct JSON representation', () => {
     const user = new User({
-      userName: 'testuser',
+      username: 'testuser',
       email: 'test@example.com',
       password: 'password123'
     });
 
     const json = user.toJSON();
-    expect(json.userName).toBe('testuser');
+    expect(json.username).toBe('testuser');
     expect(json.email).toBe('test@example.com');
     expect(json.userTagsCount).toBe(0);
   });
@@ -148,7 +148,7 @@ describe('User Class', () => {
   // Validar que no se puede añadir UserTag sin userId
   test('should throw error when adding UserTag without proper userId', () => {
     const user = new User({
-      userName: 'testuser', // Sin id
+      username: 'testuser', // Sin id
       email: 'test@example.com',
       password: 'password123'
     });

@@ -47,6 +47,7 @@ const SessionMapper = require('../mappers/sessionMapper');
 const TaskController = require('../../api/controladores/taskController');
 const TagController = require('../../api/controladores/tagController');
 const AuthController = require('../../api/controladores/authController');
+const UserController = require('../../api/controladores/userController');
 const ConnectionDB = require('./connectionDB');
 
 //Infraestructura
@@ -69,7 +70,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 
-const errorFactory = new ErrorFactory(NotFoundError,ValidationError,DatabaseError,AuthenticationError,ConflictError,RateLimitError,ForbiddenError,ServiceUnavailableError,AppError,ErrorCodes);
+const errorFactory = new ErrorFactory({NotFoundError,ValidationError,DatabaseError,AuthenticationError,ConflictError,RateLimitError,ForbiddenError,ServiceUnavailableError,AppError,ErrorCodes});
 const dateParser = new DateParser();
 const connectionDB = ConnectionDB.getInstance();
 //validator
@@ -79,20 +80,53 @@ const inputValidator = new InputValidator(errorFactory);
 
 // Mappers y Factories
 
-const tagMapper = new TagMapper(Tag, TagResponseDTO, CreateTagRequestDTO, UpdateTagRequestDTO, errorFactory);
-const userTagMapper = new UserTagMapper(UserTag, UserTagResponseDTO, UserTagRequestDTO, tagMapper, errorFactory);
-const userMapper = new UserMapper(User, UserResponseDTO,AuthResponseDTO,CreateUserRequestDTO,UpdateUserRequestDTO,LoginRequestDTO, userTagMapper, errorFactory);
-const taskTagMapper = new TaskTagMapper(TaskTag, tagMapper, TaskTagResponseDTO, TaskTagRequestDTO, errorFactory);
-const taskMapper = new TaskMapper(Task, tagMapper, taskTagMapper,TaskResponseDTO,CreateTaskRequestDTO,UpdateTaskRequestDTO,CompleteTaskRequestDTO,TasksSummaryResponseDTO,errorFactory,dateParser);
-const sessionMapper = new SessionMapper(Session, SessionResponseDTO, CreateSessionRequestDTO, RefreshSessionRequestDTO,errorFactory);
+const tagMapper = new TagMapper({Tag, TagResponseDTO, CreateTagRequestDTO, UpdateTagRequestDTO, errorFactory});
+const userTagMapper = new UserTagMapper({UserTag, UserTagResponseDTO, UserTagRequestDTO, tagMapper, errorFactory});
+const userMapper = new UserMapper({User, UserResponseDTO,AuthResponseDTO,CreateUserRequestDTO,UpdateUserRequestDTO,LoginRequestDTO, userTagMapper, errorFactory});
+const taskTagMapper = new TaskTagMapper({TaskTag, tagMapper, TaskTagResponseDTO, TaskTagRequestDTO, errorFactory});
+const taskMapper = new TaskMapper({Task, tagMapper, taskTagMapper,TaskResponseDTO,CreateTaskRequestDTO,UpdateTaskRequestDTO,CompleteTaskRequestDTO,TasksSummaryResponseDTO,errorFactory,dateParser});
+const sessionMapper = new SessionMapper({Session, SessionResponseDTO, CreateSessionRequestDTO, RefreshSessionRequestDTO,errorFactory});
 
+// Bind solo los métodos que realmente usan los DAOs
+const tagMapperWithBind = {
+  ...tagMapper,
+  dbToDomain: tagMapper.dbToDomain.bind(tagMapper)
+};
+
+const userTagMapperWithBind = {
+  ...userTagMapper,
+  dbToDomain: userTagMapper.dbToDomain.bind(userTagMapper),
+  dbToDomainWithRelations: userTagMapper.dbToDomainWithRelations.bind(userTagMapper)
+};
+
+const userMapperWithBind = {
+  ...userMapper,
+  dbToDomain: userMapper.dbToDomain.bind(userMapper),
+  dbToDomainWithTags: userMapper.dbToDomainWithTags.bind(userMapper)
+};
+
+const taskTagMapperWithBind = {
+  ...taskTagMapper,
+  dbToDomain: taskTagMapper.dbToDomain.bind(taskTagMapper)
+};
+
+const taskMapperWithBind = {
+  ...taskMapper,
+  dbToDomain: taskMapper.dbToDomain.bind(taskMapper),
+  dbToDomainWithTags: taskMapper.dbToDomainWithTags.bind(taskMapper)
+};
+
+const sessionMapperWithBind = {
+  ...sessionMapper,
+  dbToDomain: sessionMapper.dbToDomain.bind(sessionMapper)
+};
 
 // DAOs con sus dependencias
-const taskDAO = new TaskDAO({taskMapper, connectionDB, errorFactory,inputValidator} );
-const taskTagDAO = new TaskTagDAO({taskTagMapper, connectionDB, errorFactory, inputValidator});
-const tagDAO = new TagDAO({tagMapper, connectionDB, errorFactory, inputValidator});
-const userDAO = new UserDAO({userMapper, connectionDB, errorFactory, inputValidator});
-const sessionDAO = new SessionDAO({sessionMapper, connectionDB, errorFactory, inputValidator});
+const taskDAO = new TaskDAO({taskMapper: taskMapperWithBind, connectionDB, errorFactory,inputValidator} );
+const taskTagDAO = new TaskTagDAO({taskTagMapper: taskTagMapperWithBind, connectionDB, errorFactory, inputValidator});
+const tagDAO = new TagDAO({tagMapper: tagMapperWithBind, connectionDB, errorFactory, inputValidator});
+const userDAO = new UserDAO({userMapper: userMapperWithBind, connectionDB, errorFactory, inputValidator});
+const sessionDAO = new SessionDAO({sessionMapper: sessionMapperWithBind, connectionDB, errorFactory, inputValidator});
 
 const jwtAuth = new JwtAuth();
 
@@ -101,30 +135,34 @@ const userService = new UserService({userDAO, taskDAO, connectionDB, bcrypt, err
 const tagService = new TagService({tagDAO, connectionDB, errorFactory, validator});
 const taskTagService = new TaskTagService({taskTagDAO, connectionDB, errorFactory, validator});
 const taskService = new TaskService({taskDAO, tagService, taskTagService, connectionDB, errorFactory, validator});
-const sessionService = new SessionService({sessionDAO,jwtAuth,connectionDB, errorFactory, validator});
+const sessionService = new SessionService({sessionDAO,sessionMapper,jwtAuth,connectionDB, errorFactory, validator});
 const authService = new AuthService({User, userService, sessionService, connectionDB, userDAO, jwtAuth, bcrypt, crypto, errorFactory, validator});
 
 // Controladores
 const taskController = new TaskController({
   taskService,
-  taskMapper
+  taskMapper,
 });
 
 const tagController = new TagController({
   tagService,
-  tagMapper
+  tagMapper,
 });
 
 const authController = new AuthController({
   authService,
   userMapper,
-  AuthenticationError
 });
+const userController = new UserController({
+  userService,
+  userMapper,
+})
 
 module.exports = {
   taskController,
   tagController,
   authController,
+  userController,
   taskService,
   tagService,
   authService,
