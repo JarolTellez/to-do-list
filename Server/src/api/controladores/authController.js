@@ -11,6 +11,7 @@ class AuthController {
       const userAgent = req.get("User-Agent");
       const ip = req.ip;
       const existingRefreshToken = req.cookies.refreshToken;
+      console.log("REFRESH TOKE EXISTENTE: ", existingRefreshToken);
 
       const result = await this.authService.loginUser({
         existingRefreshToken,

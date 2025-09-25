@@ -1,6 +1,6 @@
 class DomainValidators {
   constructor(errorFactory) {
-    this.error = errorFactory;
+    this.errorFactory = errorFactory;
     this.codes = errorFactory.ErrorCodes;
   }
 
@@ -14,7 +14,7 @@ class DomainValidators {
     }
 
     if (id !== null && String(id).trim() === "") {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${entityName} ID cannot be empty`,
         null,
         this.codes.INVALID_FORMAT
@@ -33,7 +33,7 @@ class DomainValidators {
     } = options;
 
     if (required && (!value || String(value).trim() === "")) {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${fieldName} is required`,
         { field: fieldName },
         this.codes.REQUIRED_FIELD
@@ -42,7 +42,7 @@ class DomainValidators {
 
     if (!required && value == null) return value;
     if (typeof value !== "string") {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${fieldName} must be text`,
         { field: fieldName, type: typeof value },
         this.codes.INVALID_FORMAT
@@ -53,7 +53,7 @@ class DomainValidators {
     const length = text.length;
 
     if (length < min) {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${fieldName} too short (min ${min} chars)`,
         { field: fieldName, length, min },
         this.codes.INVALID_FORMAT
@@ -61,7 +61,7 @@ class DomainValidators {
     }
 
     if (length > max) {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${fieldName} too long (max ${max} chars)`,
         { field: fieldName, length, max },
         this.codes.INVALID_FORMAT
@@ -73,7 +73,7 @@ class DomainValidators {
 
   validateEnum(value, fieldName, allowed, entity = "entity") {
     if (!allowed.includes(value)) {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${fieldName} must be: ${allowed.join(", ")}`,
         { field: fieldName, value, allowed },
         this.codes.INVALID_FORMAT
@@ -86,7 +86,7 @@ class DomainValidators {
     const { required = false } = options;
 
     if (required && !date) {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${fieldName} is required`,
         { field: fieldName },
         this.codes.REQUIRED_FIELD
@@ -98,7 +98,7 @@ class DomainValidators {
     const dateObj = date instanceof Date ? date : new Date(date);
 
     if (isNaN(dateObj.getTime())) {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${fieldName} must be valid date`,
         { field: fieldName, value: date },
         this.codes.INVALID_DATE
@@ -125,7 +125,7 @@ class DomainValidators {
     if (value === 0) return false;
   }
 
-  throw this.error.createValidationError(
+  throw this.errorFactory.createValidationError(
     `${fieldName} must be a boolean (true/false, "0"/"1", 0/1)`,
     { field: fieldName, value, type: typeof value },
     this.codes.INVALID_BOOLEAN
@@ -134,7 +134,7 @@ class DomainValidators {
 
   validateCollection(collection, fieldName, entity = "entity") {
     if (!Array.isArray(collection)) {
-      throw this.error.createValidationError(
+      throw this.errorFactory.createValidationError(
         `${fieldName} must be an array`,
         { field: fieldName, type: typeof collection },
         this.codes.INVALID_FORMAT

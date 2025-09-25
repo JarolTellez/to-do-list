@@ -1,4 +1,4 @@
-const SORT_ORDER = require('../constants/sortConstants');
+const SORT_ORDER = require("../constants/sortConstants");
 class BaseDatabaseHandler {
   constructor(connectionDB) {
     this.connectionDB = connectionDB;
@@ -86,19 +86,21 @@ class BaseDatabaseHandler {
 
     const [rows] = await connection.query(query, queryParams);
 
+    let result = rows;
     if (mapper && typeof mapper === "function") {
       if (mapperType === "ALL_ROWS") {
         // toda sa la vez
-        return mapper(rows);
+        result = mapper(rows);
       } else {
         // una row a la vez
-        return Array.isArray(rows) && rows.length > 0
-          ? rows.map((row) => mapper(row))
-          : [];
+
+
+        result = Array.isArray(rows) && rows.length > 0
+            ? rows.map((row) => mapper(row))
+            : [];
       }
     }
-
-    return rows;
+    return result;
   }
 }
 

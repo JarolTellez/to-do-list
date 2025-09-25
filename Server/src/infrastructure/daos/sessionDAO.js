@@ -32,15 +32,15 @@ class SessionDAO extends BaseDatabaseHandler {
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
-      console.log(
-        "VALORES EN DAO: ",
-        session.userId,
-        session.refreshTokenHash,
-        session.userAgent,
-        session.ip,
-        session.expiresAt,
-        session.isActive
-      );
+      // console.log(
+      //   "VALORES EN DAO: ",
+      //   session.userId,
+      //   session.refreshTokenHash,
+      //   session.userAgent,
+      //   session.ip,
+      //   session.expiresAt,
+      //   session.isActive
+      // );
       const [result] = await connection.execute(
         "INSERT INTO sessions (user_id, refresh_token_hash, user_agent, ip, expires_at, is_active) VALUES (?,?,?,?,?,?)",
         [
@@ -352,12 +352,15 @@ class SessionDAO extends BaseDatabaseHandler {
          s.id AS session_id,
          s.user_id,
          s.refresh_token_hash,
-          s.created_at AS session_created_at,
+         s.user_agent,
+         s.ip,
+         s.created_at AS session_created_at,
          s.expires_at AS session_expires_at,
          s.is_active
        FROM sessions s 
-       WHERE s.refresh_token_hash = ?`;
+       WHERE s.refresh_token_hash = ? AND s.is_active = TRUE`;
 
+     
       const result = await this._executeQuery({
         connection,
         baseQuery,
