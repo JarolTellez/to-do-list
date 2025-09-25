@@ -73,6 +73,7 @@ const crypto = require('crypto');
 const errorFactory = new ErrorFactory({NotFoundError,ValidationError,DatabaseError,AuthenticationError,ConflictError,RateLimitError,ForbiddenError,ServiceUnavailableError,AppError,ErrorCodes});
 const dateParser = new DateParser();
 const connectionDB = ConnectionDB.getInstance();
+
 //validator
 const Validator = require('../../utils/validators')
 const validator = new Validator(errorFactory);
@@ -121,6 +122,16 @@ const sessionMapperWithBind = {
   dbToDomain: sessionMapper.dbToDomain.bind(sessionMapper)
 };
 
+
+// Mappers capa aplication
+const userMapperAplicationWithBind = {
+  ...userMapper,
+  domainToResponse: userMapper.domainToResponse.bind(userMapper),
+  domainToAuthResponse: userMapper.domainToAuthResponse.bind(userMapper),
+ 
+};
+
+
 // DAOs con sus dependencias
 const taskDAO = new TaskDAO({taskMapper: taskMapperWithBind, connectionDB, errorFactory,inputValidator} );
 const taskTagDAO = new TaskTagDAO({taskTagMapper: taskTagMapperWithBind, connectionDB, errorFactory, inputValidator});
@@ -136,7 +147,7 @@ const tagService = new TagService({tagDAO, connectionDB, errorFactory, validator
 const taskTagService = new TaskTagService({taskTagDAO, connectionDB, errorFactory, validator});
 const taskService = new TaskService({taskDAO, tagService, taskTagService, connectionDB, errorFactory, validator});
 const sessionService = new SessionService({sessionDAO,sessionMapper,jwtAuth,connectionDB, errorFactory, validator});
-const authService = new AuthService({User, userService, sessionService, connectionDB, userDAO, jwtAuth, bcrypt, crypto, errorFactory, validator});
+const authService = new AuthService({User, userService, userMapper:userMapperAplicationWithBind, sessionService, connectionDB, userDAO, jwtAuth, bcrypt, crypto, errorFactory, validator});
 
 // Controladores
 const taskController = new TaskController({

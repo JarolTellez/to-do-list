@@ -16,7 +16,7 @@ class JwtAuth {
     );
   }
 
-  // Genera Refresh Token + Hash
+  // Genera Refresh Token 
   createRefreshToken(userId) {
     if (!process.env.JWT_REFRESH_SECRET) {
       throw new Error('JWT_REFRESH_SECRET no configurado');
@@ -30,11 +30,8 @@ class JwtAuth {
      { expiresIn: process.env.EXP_REFRESH_TOKEN}
     );
 
-    // Generar hash SHA256 para guardar en DB
-    const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-
     // Devolver ambos, token para cliente y hash para BD
-    return { refreshToken, refreshTokenHash };
+    return refreshToken;
   }
 
   // Verificar Access Token

@@ -32,12 +32,20 @@ class SessionDAO extends BaseDatabaseHandler {
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {
+      console.log(
+        "VALORES EN DAO: ",
+        session.userId,
+        session.refreshTokenHash,
+        session.userAgent,
+        session.ip,
+        session.expiresAt,
+        session.isActive
+      );
       const [result] = await connection.execute(
-        "INSERT INTO sessions (user_id, refresh_token_hash, device_id, user_agent, ip, expires_at, is_active) VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO sessions (user_id, refresh_token_hash, user_agent, ip, expires_at, is_active) VALUES (?,?,?,?,?,?)",
         [
           session.userId,
           session.refreshTokenHash,
-          session.deviceId,
           session.userAgent,
           session.ip,
           session.expiresAt,
@@ -49,7 +57,6 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return actualSession;
     } catch (error) {
-      
       // Handle duplicated error
       if (error.code === "ER_DUP_ENTRY" || error.errno === 1062) {
         throw this.errorFactory.createConflictError(
@@ -101,7 +108,7 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-         // Re-throw ValidationErrors (input issues)
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -142,7 +149,7 @@ class SessionDAO extends BaseDatabaseHandler {
       );
       return result.affectedRows > 0;
     } catch (error) {
-         // Re-throw ValidationErrors (input issues)
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -172,43 +179,43 @@ class SessionDAO extends BaseDatabaseHandler {
    * @throws {ValidationError} If the user ID is invalid
    * @throws {DatabaseError} On database operation failure
    */
-  async deactivateAllByUserIdAndDeviceId(
-    userId,
-    deviceId,
-    externalConn = null
-  ) {
-    // Get database connection (new or provided external for transactions)
-    const { connection, isExternal } = await this.getConnection(externalConn);
-    try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
+  // async deactivateAllByUserIdAndDeviceId(
+  //   userId,
+  //   deviceId,
+  //   externalConn = null
+  // ) {
+  //   // Get database connection (new or provided external for transactions)
+  //   const { connection, isExternal } = await this.getConnection(externalConn);
+  //   try {
+  //     const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-      const [result] = await connection.execute(
-        "UPDATE sessions SET is_active = FALSE WHERE user_id = ? AND device_id = ?",
-        [userIdNum, deviceId]
-      );
+  //     const [result] = await connection.execute(
+  //       "UPDATE sessions SET is_active = FALSE WHERE user_id = ? AND device_id = ?",
+  //       [userIdNum, deviceId]
+  //     );
 
-      return result.affectedRows > 0;
-    } catch (error) {
-         // Re-throw ValidationErrors (input issues)
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-      throw this.errorFactory.createDatabaseError(
-        "Failed to deactivate all sessions by userId and deviceId",
-        {
-          attemptedData: { userId, deviceId },
-          originalError: error.message,
-          code: error.code,
-          context: "sessionDAO.deactivateAllByUserIdAndDeviceId",
-        }
-      );
-    } finally {
-      // Release only internal connection (external is managed by caller)
-      if (connection && !isExternal) {
-        await this.releaseConnection(connection, isExternal);
-      }
-    }
-  }
+  //     return result.affectedRows > 0;
+  //   } catch (error) {
+  //        // Re-throw ValidationErrors (input issues)
+  //     if (error instanceof this.errorFactory.Errors.ValidationError) {
+  //       throw error;
+  //     }
+  //     throw this.errorFactory.createDatabaseError(
+  //       "Failed to deactivate all sessions by userId and deviceId",
+  //       {
+  //         attemptedData: { userId, deviceId },
+  //         originalError: error.message,
+  //         code: error.code,
+  //         context: "sessionDAO.deactivateAllByUserIdAndDeviceId",
+  //       }
+  //     );
+  //   } finally {
+  //     // Release only internal connection (external is managed by caller)
+  //     if (connection && !isExternal) {
+  //       await this.releaseConnection(connection, isExternal);
+  //     }
+  //   }
+  // }
 
   /**
    * Deactivates the oldest session for a specific user
@@ -236,7 +243,7 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.affectedRows > 0;
     } catch (error) {
-         // Re-throw ValidationErrors (input issues)
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -276,8 +283,10 @@ class SessionDAO extends BaseDatabaseHandler {
          s.id AS session_id,
          s.user_id,
          s.refresh_token_hash,
-         s.created_at,
-         s.expires_at,
+         s.user_agent,
+         s.ip,
+         s.created_at AS session_created_at,
+         s.expires_at AS session_expires_at,
          s.is_active
        FROM sessions s 
        WHERE s.id = ?`;
@@ -291,7 +300,7 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return result.length > 0 ? result[0] : null;
     } catch (error) {
-         // Re-throw ValidationErrors (input issues)
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -343,8 +352,8 @@ class SessionDAO extends BaseDatabaseHandler {
          s.id AS session_id,
          s.user_id,
          s.refresh_token_hash,
-         s.created_at,
-         s.expires_at,
+          s.created_at AS session_created_at,
+         s.expires_at AS session_expires_at,
          s.is_active
        FROM sessions s 
        WHERE s.refresh_token_hash = ?`;
@@ -408,8 +417,10 @@ class SessionDAO extends BaseDatabaseHandler {
          s.id AS session_id,
          s.user_id,
          s.refresh_token_hash,
-         s.created_at,
-         s.expires_at,
+         s.user_agent,
+         s.ip,
+          s.created_at AS session_created_at,
+         s.expires_at AS session_expires_at,
          s.is_active  
        FROM sessions s `;
 
@@ -480,8 +491,8 @@ class SessionDAO extends BaseDatabaseHandler {
       const baseQuery = `SELECT 
      s.id AS session_id,
      s.user_id,
-     s.created_at,
-     s.expires_at,
+      s.created_at AS session_created_at,
+         s.expires_at AS session_expires_at,
      s.is_active
      FROM sessions s 
      WHERE s.user_id = ?`;
@@ -501,7 +512,7 @@ class SessionDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
-         // Re-throw ValidationErrors (input issues)
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -567,8 +578,8 @@ class SessionDAO extends BaseDatabaseHandler {
       const baseQuery = `SELECT 
            s.id AS session_id,
            s.user_id,
-           s.created_at,
-           s.expires_at,
+            s.created_at AS session_created_at,
+         s.expires_at AS session_expires_at,
            s.is_active
          FROM sessions s 
          WHERE s.user_id = ? AND s.is_active = ?`;
@@ -588,7 +599,7 @@ class SessionDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
-         // Re-throw ValidationErrors (input issues)
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
@@ -659,8 +670,10 @@ class SessionDAO extends BaseDatabaseHandler {
          s.id AS session_id,
          s.user_id,
          s.refresh_token_hash,
-         s.created_at,
-         s.expires_at,
+         s.user_agent,
+         s.ip,
+          s.created_at AS session_created_at,
+         s.expires_at AS session_expires_at,
          s.is_active
        FROM sessions s 
         WHERE s.user_id = ? AND s.refresh_token_hash = ? AND s.is_active = TRUE`;
@@ -680,7 +693,7 @@ class SessionDAO extends BaseDatabaseHandler {
       });
       return result;
     } catch (error) {
-         // Re-throw ValidationErrors (input issues)
+      // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }

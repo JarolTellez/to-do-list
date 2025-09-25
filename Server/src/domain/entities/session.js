@@ -5,7 +5,6 @@ class Session {
   #id;
   #userId;
   #refreshTokenHash;
-  #deviceId;
   #userAgent;
   #ip;
   #createdAt;
@@ -18,7 +17,6 @@ class Session {
       id = null,
       userId,
       refreshTokenHash,
-      deviceId = null,
       userAgent,
       ip,
       createdAt = new Date(),
@@ -32,7 +30,6 @@ class Session {
     this.#id = this.#validator.validateId(id, "Session");
     this.#userId = this.#validator.validateId(userId, "User");
     this.#refreshTokenHash = this.#validateRefreshTokenHash(refreshTokenHash);
-    this.#deviceId = this.#validateDeviceId(deviceId);
     this.#userAgent = this.#validator.validateText(userAgent, "userAgent", {
       required: true,
       entity: "Session",
@@ -58,13 +55,6 @@ class Session {
     });
   }
 
-  #validateDeviceId(deviceId) {
-    if (deviceId === null || deviceId === undefined) return null;
-    return this.#validator.validateText(deviceId, "deviceId", {
-      max: 100,
-      entity: "Session",
-    });
-  }
 
   #validateIp(ip) {
     return this.#validator.validateText(ip, "ip", {
@@ -147,9 +137,7 @@ class Session {
   get refreshTokenHash() {
     return this.#refreshTokenHash;
   }
-  get deviceId() {
-    return this.#deviceId;
-  }
+ 
   get userAgent() {
     return this.#userAgent;
   }
@@ -173,7 +161,6 @@ class Session {
  static create({
     userId,
     refreshToken,
-    deviceId = null,
     userAgent,
     ip,
     expiresInHours = 24 * 7,
@@ -190,7 +177,6 @@ class Session {
     return new Session({
       userId,
       refreshTokenHash,
-      deviceId,
       userAgent,
       ip,
       createdAt,
@@ -204,7 +190,6 @@ class Session {
     return {
       id: this.#id,
       userId: this.#userId,
-      deviceId: this.#deviceId,
       userAgent: this.#userAgent,
       ip: this.#ip,
       createdAt: this.#createdAt.toISOString(),
