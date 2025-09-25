@@ -63,9 +63,9 @@ class SessionMapper {
     if (!row) {
       return null;
     }
-    return new this.Session(
+   const mappedSession= new this.Session(
       {
-        id: row.id,
+        id: row.session_id,
         userId: row.user_id,
         refreshTokenHash: row.refresh_token_hash,
         userAgent: row.user_agent,
@@ -76,6 +76,7 @@ class SessionMapper {
       },
       this.errorFactory
     );
+    return mappedSession;
   }
 }
 

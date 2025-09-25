@@ -53,7 +53,8 @@ class SessionService extends BaseDatabaseHandler {
 
   async validateExistingSession(userId, refreshToken, externalConn = null) {
     try {
-      const refreshTokenHash = this.jwtAuth.hashRefreshToken(refreshToken);
+      const refreshTokenHash =
+        this.jwtAuth.createHashRefreshToken(refreshToken);
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
         externalConn
@@ -70,38 +71,37 @@ class SessionService extends BaseDatabaseHandler {
 
       return session;
     } catch (error) {
-      return null;
+      throw error;
     }
   }
 
   async createNewSession({ userId, userAgent, ip }, externalConn = null) {
+    return this.withTransaction(async (connection) => {
+      const refreshToken = this.jwtAuth.createRefreshToken(userId);
 
-    const refreshToken = this.jwtAuth.createRefreshToken(userId);
-    console.log("SDEVICE INFO: ", userAgent);
+      const createSessionRequestDTO = this.sessionMapper.requestDataToCreateDTO(
+        {
+          userId: userId,
+          refreshToken: refreshToken,
+          userAgent: userAgent || "Unknown",
+          ip: ip,
+          expiresInHours: 24 * 7, // 7 días
+        }
+      );
 
-    const createSessionRequestDTO = this.sessionMapper.requestDataToCreateDTO({
-      userId: userId,
-      refreshToken: refreshToken,
-      userAgent: userAgent || "Unknown",
-      ip: ip,
-      expiresInHours: 24 * 7, // 7 días
-    });
+      const sessionDomain = this.sessionMapper.createRequestToDomain(
+        createSessionRequestDTO
+      );
 
-
-    const sessionDomain = this.sessionMapper.createRequestToDomain(
-      createSessionRequestDTO
-    );
-
-
-    const createdSession = await this.sessionDAO.create(
-      sessionDomain,
-      externalConn
-    );
-
-    return {
-      ...createdSession,
-      refreshToken, // Devuelve el token plano (no el hash)
-    };
+      const createdSession = await this.sessionDAO.create(
+        sessionDomain,
+        connection
+      );
+      return {
+        ...createdSession,
+        refreshToken, // Devuelve el token plano (no el hash)
+      };
+    }, externalConn);
   }
 
   async validateActiveSession(refreshToken, externalConn = null) {
@@ -126,7 +126,7 @@ class SessionService extends BaseDatabaseHandler {
 
       return { isValid: true, session };
     } catch (error) {
-      return { isValid: false, error: "Error validando sesión" };
+      throw error;
     }
   }
 
@@ -148,39 +148,43 @@ class SessionService extends BaseDatabaseHandler {
   }
 
   async manageSessionLimit(userId, maxSessions = 5, externalConn = null) {
-    const activeCount = await this.sessionDAO.countAllByUserIdAndIsActive(
-      userId,
-      true,
-      externalConn
-    );
-
-    if (activeCount >= maxSessions) {
-      const deactivated = await this.sessionDAO.deactivateOldestByUserId(
+    return this.withTransaction(async (connection) => {
+      const activeCount = await this.sessionDAO.countAllByUserIdAndIsActive(
         userId,
+        true,
         externalConn
       );
 
-      return {
-        deactivated: deactivated,
-        message: deactivated
-          ? "Sesión más antigua desactivada"
-          : "No había sesiones para desactivar",
-      };
-    }
+      if (activeCount >= maxSessions) {
+        const deactivated = await this.sessionDAO.deactivateOldestByUserId(
+          userId,
+          connection
+        );
 
-    return { deactivated: false, message: "Dentro del límite de sesiones" };
+        return {
+          deactivated: deactivated,
+          message: deactivated
+            ? "Sesión más antigua desactivada"
+            : "No había sesiones para desactivar",
+        };
+      }
+
+      return { deactivated: false, message: "Dentro del límite de sesiones" };
+    }, externalConn);
   }
   async deactivateAllUserSessions(userId, externalConn = null) {
-    const result = await this.sessionDAO.deactivateAllByUserId(
-      userId,
-      externalConn
-    );
-    return {
-      deactivated: result,
-      message: result
-        ? "Todas las sesiones desactivadas"
-        : "No se encontraron sesiones activas",
-    };
+    return this.withTransaction(async (connection) => {
+      const result = await this.sessionDAO.deactivateAllByUserId(
+        userId,
+        connection
+      );
+      return {
+        deactivated: result,
+        message: result
+          ? "Todas las sesiones desactivadas"
+          : "No se encontraron sesiones activas",
+      };
+    }, externalConn);
   }
   async refreshAccessToken(refreshToken) {}
 }

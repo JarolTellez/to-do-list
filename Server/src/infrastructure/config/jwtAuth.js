@@ -34,6 +34,16 @@ class JwtAuth {
     return refreshToken;
   }
 
+  createHashRefreshToken(refreshToken){
+    const hash= crypto
+          .createHash("sha256")
+          .update(refreshToken)
+          .digest("hex");
+
+    return hash;
+        
+  }
+
   // Verificar Access Token
   verifyAccessToken(token) {
     try {

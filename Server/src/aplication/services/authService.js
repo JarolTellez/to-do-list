@@ -44,7 +44,6 @@ class AuthService extends BaseDatabaseHandler {
         loginRequestDTO,
       }
     );
-    console.log("DEVICE INFO EN AUTH SERVICE", userAgent);
     return this.withTransaction(async (connection) => {
       const user = await this.validateCredentials(loginRequestDTO, connection);
       const sessionResult = await this.sessionService.manageUserSession(
