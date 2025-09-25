@@ -6,6 +6,7 @@ class AuthService extends BaseDatabaseHandler {
   constructor({
     user,
     userService,
+    userMapper,
     sessionService,
     connectionDB,
     userDAO,
@@ -18,6 +19,7 @@ class AuthService extends BaseDatabaseHandler {
     super(connectionDB);
     this.user = user;
     this.userService = userService;
+    this.userMapper=userMapper;
     this.sessionService = sessionService;
     this.userDAO = userDAO;
     this.jwtAuth = jwtAuth;
@@ -28,42 +30,39 @@ class AuthService extends BaseDatabaseHandler {
     this.validator = validator;
   }
 
-  //SEPARAR ESTE METODO
+  
   async loginUser({
     existingRefreshToken,
     loginRequestDTO,
-    deviceInfo,
-    ip,
+    userAgent,
+    ip},
     externalConn = null,
-  }) {
+  ) {
     this.validator.validateRequired(
       ["loginRequestDTO"],
       {
         loginRequestDTO,
       }
     );
+    console.log("DEVICE INFO EN AUTH SERVICE", userAgent);
     return this.withTransaction(async (connection) => {
       const user = await this.validateCredentials(loginRequestDTO, connection);
-
-      // 2. Delegar gestión de sesión al SessionService
       const sessionResult = await this.sessionService.manageUserSession(
         {
           userId: user.id,
           existingRefreshToken,
-          deviceInfo,
+          userAgent,
           ip,
         },
         connection
       );
 
-      // 4. Generar access token
-      const accessToken = this.jwtAuth.generateAccessToken({
+      const accessToken = this.jwtAuth.createAccessToken({
         userId: user.id,
         email: user.email,
         rol: user.rol,
       });
 
-      // 5. Mapear respuesta
       const userResponse = this.userMapper.domainToResponse(user);
       const authResponse = this.userMapper.domainToAuthResponse(
         user,
@@ -73,7 +72,7 @@ class AuthService extends BaseDatabaseHandler {
 
       return {
         ...authResponse,
-        refreshToken: session.refreshToken,
+        refreshToken: sessionResult.refreshToken,
       };
     }, externalConn);
   }
@@ -124,7 +123,6 @@ class AuthService extends BaseDatabaseHandler {
     this.validator.validateRequired(["refreshToken"], { refreshToken });
 
     return this.withTransaction(async (connection) => {
-      // 1. Validar sesión con SessionService
       const sessionValidation = await this.sessionService.validateActiveSession(
         refreshToken,
         connection
@@ -135,7 +133,6 @@ class AuthService extends BaseDatabaseHandler {
           sessionValidation.error || "Sesión inválida"
         );
       }
-      // 2. Obtener usuario
       const user = await this.userDAO.findById(
         sessionValidation.session.userId,
         connection
@@ -144,8 +141,7 @@ class AuthService extends BaseDatabaseHandler {
         throw this.errorFactory.createNotFoundError("Usuario no encontrado");
       }
 
-      // 3. Generar nuevo access token
-      const accessToken = this.jwtAuth.generateAccessToken({
+      const accessToken = this.jwtAuth.createAccessToken({
         userId: user.id,
         email: user.email,
         rol: user.rol,
@@ -199,11 +195,10 @@ class AuthService extends BaseDatabaseHandler {
   }
 
   async validateCredentials(loginRequestDTO, externalConn = null) {
-    // Validar campos requeridos
+
     this.validator.validateRequired(["email", "password"], loginRequestDTO);
     this.validator.validateEmail("email", loginRequestDTO);
 
-    // Buscar usuario por email
     const user = await this.userDAO.findByEmail(
       loginRequestDTO.email,
       externalConn
@@ -214,7 +209,6 @@ class AuthService extends BaseDatabaseHandler {
       );
     }
 
-    // Verificar password
     const isPasswordValid = await this.bcrypt.compare(
       loginRequestDTO.password,
       user.password

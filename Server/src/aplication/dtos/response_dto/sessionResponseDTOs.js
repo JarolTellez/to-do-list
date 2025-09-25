@@ -2,7 +2,6 @@ class SessionResponseDTO {
   constructor({
     id,
     userId,
-    deviceId,
     userAgent,
     ip,
     createdAt,
@@ -13,7 +12,6 @@ class SessionResponseDTO {
   }) {
     this.id = id;
     this.userId = userId;
-    this.deviceId = deviceId;
     this.userAgent = userAgent;
     this.ip = ip;
     this.createdAt = createdAt;

@@ -109,14 +109,27 @@ class DomainValidators {
   }
 
   validateBoolean(value, fieldName, entity = "entity") {
-    if (typeof value !== "boolean") {
-      throw this.error.createValidationError(
-        `${fieldName} must be true or false`,
-        { field: fieldName, value, type: typeof value },
-        this.codes.INVALID_BOOLEAN
-      );
-    }
+     if (typeof value === "boolean") {
     return value;
+  }
+
+  if (typeof value === "string") {
+    const valLower = value.toLowerCase().trim();
+    if (valLower === "true" || valLower === "1") return true;
+    if (valLower === "false" || valLower === "0") return false;
+  }
+
+
+  if (typeof value === "number") {
+    if (value === 1) return true;
+    if (value === 0) return false;
+  }
+
+  throw this.error.createValidationError(
+    `${fieldName} must be a boolean (true/false, "0"/"1", 0/1)`,
+    { field: fieldName, value, type: typeof value },
+    this.codes.INVALID_BOOLEAN
+  );
   }
 
   validateCollection(collection, fieldName, entity = "entity") {

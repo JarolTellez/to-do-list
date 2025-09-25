@@ -8,16 +8,14 @@ class AuthController {
   async login(req, res, next) {
     try {
       const loginRequestDTO = this.userMapper.requestDataToLoginDTO(req.body);
-      
-
-      const deviceInfo = JSON.parse(req.get("Device-info") || "{}");
+      const userAgent = req.get("User-Agent");
       const ip = req.ip;
       const existingRefreshToken = req.cookies.refreshToken;
 
       const result = await this.authService.loginUser({
         existingRefreshToken,
         loginRequestDTO,
-        deviceInfo,
+        userAgent,
         ip
     });
 
