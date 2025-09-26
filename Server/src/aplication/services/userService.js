@@ -68,23 +68,33 @@ class UserService extends TransactionsHandler {
   }
 
   async validateCredentials(loginRequestDTO, externalConn = null) {
-    this.validator.validateRequired(["email", "password"], loginRequestDTO);
-    this.validator.validateEmail("email", loginRequestDTO);
-
-    const user = await this.userDAO.findByEmail(
-      loginRequestDTO.email,
-      externalConn
+    this.validator.validateRequired(
+      ["identifier", "password"],
+      loginRequestDTO
     );
+
+    const { identifier, password } = loginRequestDTO;
+    const isEmail = this.validator.isValidEmail(identifier);
+
+    let user;
+    if (isEmail) {
+      this.validator.validateEmail("identifier", loginRequestDTO);
+      user = await this.userDAO.findByEmail(identifier, externalConn);
+    } else {
+      this.validator.validateLength("identifier", loginRequestDTO, {
+        min: 3,
+        max: 30,
+      });
+      user = await this.userDAO.findByUsername(identifier, externalConn);
+    }
+
     if (!user) {
       throw this.errorFactory.createAuthenticationError(
         "Credenciales inválidas"
       );
     }
 
-    const isPasswordValid = await this.bcrypt.compare(
-      loginRequestDTO.password,
-      user.password
-    );
+    const isPasswordValid = await this.bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw this.errorFactory.createAuthenticationError(
         "Credenciales inválidas"

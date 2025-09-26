@@ -236,7 +236,7 @@ class UserDAO extends BaseDatabaseHandler {
    * @throws {DatabaseError} On database operation failure.
    * @throws {ValidationError} If input validation fails.
    */
-  async findByusername(username, externalConn = null) {
+  async findByUsername(username, externalConn = null) {
  
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
