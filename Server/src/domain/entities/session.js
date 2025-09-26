@@ -161,16 +161,12 @@ class Session {
 
  static create({
     userId,
-    refreshToken,
+    refreshTokenHash,
     userAgent,
     ip,
     expiresAt="7d",
     active = true
   }, errorFactory) {
-    const refreshTokenHash = crypto
-      .createHash("sha256")
-      .update(refreshToken)
-      .digest("hex");
     
     const createdAt = new Date();
       const expiresInMs = ms(expiresAt); 

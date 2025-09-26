@@ -11,7 +11,6 @@ class AuthController {
       const userAgent = req.get("User-Agent");
       const ip = req.ip;
       const existingRefreshToken = req.cookies.refreshToken;
-      console.log("REFRESH TOKE EXISTENTE: ", existingRefreshToken);
 
       const result = await this.authService.loginUser({
         existingRefreshToken,
@@ -21,7 +20,7 @@ class AuthController {
     });
 
       // Solo se establece cookie si se genero un nuevo refresh token
-      if (result.refreshToken) {
+      if (result.isNewRefreshToken) {
         res.cookie("refreshToken", result.refreshToken, {
           httpOnly: true,
           secure: false,
