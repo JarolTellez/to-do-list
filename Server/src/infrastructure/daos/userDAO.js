@@ -8,7 +8,7 @@ class UserDAO extends BaseDatabaseHandler {
    * @typedef {import('../../types/entities').Connection} Connection
    */
   constructor({ userMapper, connectionDB, errorFactory, inputValidator }) {
-    super(connectionDB);
+    super(connectionDB, inputValidator, errorFactory);
     this.userMapper = userMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;

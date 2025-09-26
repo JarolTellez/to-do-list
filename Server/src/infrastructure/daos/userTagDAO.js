@@ -6,7 +6,7 @@ const {
 
 class UserTagDAO extends BaseDatabaseHandler {
   constructor({ userTagMapper, connectionDB, errorFactory, inputValidator }) {
-    super(connectionDB);
+    super(connectionDB, inputValidator, errorFactory);
     this.userTagMapper = userTagMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;

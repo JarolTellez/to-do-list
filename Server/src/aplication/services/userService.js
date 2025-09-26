@@ -1,7 +1,7 @@
 const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
 const { CreateTagRequestDTO } = require("../dtos/request_dto/tagRequestDTOs");
 
-class UserService extends TransactionsHandler{
+class UserService extends TransactionsHandler {
   constructor({
     userDAO,
     taskDAO,
@@ -18,20 +18,28 @@ class UserService extends TransactionsHandler{
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.userMapper = userMapper;
-
   }
 
   async createUser(createUserRequestDTO, externalConn = null) {
-    this.validator.validateRequired(["username", "email", "password"], createUserRequestDTO);
+    this.validator.validateRequired(
+      ["username", "email", "password"],
+      createUserRequestDTO
+    );
     this.validator.validateEmail("email", createUserRequestDTO);
-    this.validator.validateLength("username", createUserRequestDTO, { min: 3, max: 30 });
-    this.validator.validateLength("password", createUserRequestDTO, { min: 6, max: 128 });
+    this.validator.validateLength("username", createUserRequestDTO, {
+      min: 3,
+      max: 30,
+    });
+    this.validator.validateLength("password", createUserRequestDTO, {
+      min: 6,
+      max: 128,
+    });
 
     return this.withTransaction(async (connection) => {
-     const [existingByEmail, existingByusername] = await Promise.all([
-      this.userDAO.findByEmail(createUserRequestDTO.email, connection),
-      this.userDAO.findByusername(createUserRequestDTO.username, connection)
-     ]);
+      const [existingByEmail, existingByusername] = await Promise.all([
+        this.userDAO.findByEmail(createUserRequestDTO.email, connection),
+        this.userDAO.findByusername(createUserRequestDTO.username, connection),
+      ]);
       if (existingByEmail) {
         throw this.errorFactory.createConflictError(
           "El email ya está registrado"
@@ -43,41 +51,63 @@ class UserService extends TransactionsHandler{
         );
       }
 
-     
-      const hashedPassword = await this.bcrypt.hash(createUserRequestDTO.password, 10);
+      const hashedPassword = await this.bcrypt.hash(
+        createUserRequestDTO.password,
+        10
+      );
 
-    
       const userDomain = this.userMapper.createRequestToDomain({
         ...createUserRequestDTO,
         password: hashedPassword,
       });
 
-      
       const createdUser = await this.userDAO.create(userDomain, connection);
 
       return this.userMapper.domainToResponse(createdUser);
     }, externalConn);
   }
 
-  async validateCredentials(username, password, externalConn = null) {
-    this.validator.validateRequired(["username", "password"], {
-      username,
-      password,
-    });
-    return this.withTransaction(async (connection) => {
-      const user = await this.userDAO.findByNameAndPassword(
-        username,
-        password,
-        connection
-      );
-      if (!user) {
-        throw new this.NotFoundError("Credenciales invalidas", {
-          attemptedData: { username },
-        });
-      }
+  async validateCredentials(loginRequestDTO, externalConn = null) {
+    this.validator.validateRequired(["email", "password"], loginRequestDTO);
+    this.validator.validateEmail("email", loginRequestDTO);
 
-      return user;
-    }, externalConn);
+    const user = await this.userDAO.findByEmail(
+      loginRequestDTO.email,
+      externalConn
+    );
+    if (!user) {
+      throw this.errorFactory.createAuthenticationError(
+        "Credenciales inválidas"
+      );
+    }
+
+    const isPasswordValid = await this.bcrypt.compare(
+      loginRequestDTO.password,
+      user.password
+    );
+    if (!isPasswordValid) {
+      throw this.errorFactory.createAuthenticationError(
+        "Credenciales inválidas"
+      );
+    }
+
+    return user;
+  }
+
+  async validateUserExistenceById(userId, externalConn = null) {
+    const user = await this.userDAO.findById(userId, externalConn);
+    if (!user) {
+      throw this.errorFactory.createNotFoundError("Usuario no encontrado");
+    }
+    return user;
+  }
+
+  async findByEmail(email, externalConn = null) {
+    return await this.userDAO.findByEmail(email, externalConn);
+  }
+
+  async findById(id, externalConn = null) {
+    return await this.userDAO.findById(id, externalConn);
   }
 
   async validateUserExistenceById(userId, externalConn = null) {

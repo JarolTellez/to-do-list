@@ -4,7 +4,7 @@ const MAPPER_TYPES  = require("../constants/mapperConstants");
 
 class TaskDAO extends BaseDatabaseHandler {
   constructor({ taskMapper, connectionDB, errorFactory, inputValidator }) {
-    super(connectionDB);
+    super(connectionDB, inputValidator, errorFactory);
     this.taskMapper = taskMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;

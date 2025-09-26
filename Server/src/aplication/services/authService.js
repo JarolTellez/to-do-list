@@ -19,7 +19,7 @@ class AuthService extends TransactionsHandler {
     super(connectionDB);
     this.user = user;
     this.userService = userService;
-    this.userMapper=userMapper;
+    this.userMapper = userMapper;
     this.sessionService = sessionService;
     this.userDAO = userDAO;
     this.jwtAuth = jwtAuth;
@@ -30,22 +30,18 @@ class AuthService extends TransactionsHandler {
     this.validator = validator;
   }
 
-  
-  async loginUser({
-    existingRefreshToken,
-    loginRequestDTO,
-    userAgent,
-    ip},
-    externalConn = null,
+  async loginUser(
+    { existingRefreshToken, loginRequestDTO, userAgent, ip },
+    externalConn = null
   ) {
-    this.validator.validateRequired(
-      ["loginRequestDTO"],
-      {
-        loginRequestDTO,
-      }
-    );
+    this.validator.validateRequired(["loginRequestDTO"], {
+      loginRequestDTO,
+    });
     return this.withTransaction(async (connection) => {
-      const user = await this.validateCredentials(loginRequestDTO, connection);
+      const user = await this.userService.validateCredentials(
+        loginRequestDTO,
+        connection
+      );
       const sessionResult = await this.sessionService.manageUserSession(
         {
           userId: user.id,
@@ -132,13 +128,10 @@ class AuthService extends TransactionsHandler {
           sessionValidation.error || "Sesión inválida"
         );
       }
-      const user = await this.userDAO.findById(
+      const user = await this.userService.validateUserExistenceById(
         sessionValidation.session.userId,
         connection
       );
-      if (!user) {
-        throw this.errorFactory.createNotFoundError("Usuario no encontrado");
-      }
 
       const accessToken = this.jwtAuth.createAccessToken({
         userId: user.id,
@@ -191,34 +184,6 @@ class AuthService extends TransactionsHandler {
         );
       }
     }, externalConn);
-  }
-
-  async validateCredentials(loginRequestDTO, externalConn = null) {
-
-    this.validator.validateRequired(["email", "password"], loginRequestDTO);
-    this.validator.validateEmail("email", loginRequestDTO);
-
-    const user = await this.userDAO.findByEmail(
-      loginRequestDTO.email,
-      externalConn
-    );
-    if (!user) {
-      throw this.errorFactory.createAuthenticationError(
-        "Credenciales inválidas"
-      );
-    }
-
-    const isPasswordValid = await this.bcrypt.compare(
-      loginRequestDTO.password,
-      user.password
-    );
-    if (!isPasswordValid) {
-      throw this.errorFactory.createAuthenticationError(
-        "Credenciales inválidas"
-      );
-    }
-
-    return user;
   }
 }
 
