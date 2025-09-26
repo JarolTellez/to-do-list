@@ -1,7 +1,7 @@
-const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHandler");
+const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
 const { CreateTagRequestDTO } = require("../dtos/request_dto/tagRequestDTOs");
 
-class UserService extends BaseDatabaseHandler {
+class UserService extends TransactionsHandler{
   constructor({
     userDAO,
     taskDAO,

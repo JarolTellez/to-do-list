@@ -1,7 +1,10 @@
 const SORT_ORDER = require("../constants/sortConstants");
+
 class BaseDatabaseHandler {
-  constructor(connectionDB) {
+  constructor(connectionDB, inputValidator, errorFactory) {
     this.connectionDB = connectionDB;
+    this.inputValidator = inputValidator; 
+    this.errorFactory = errorFactory;
   }
 
   async getConnection(externalConn) {
@@ -13,33 +16,6 @@ class BaseDatabaseHandler {
   async releaseConnection(connection, isExternal) {
     if (!isExternal && connection && typeof connection.release === "function") {
       connection.release();
-    }
-  }
-
-  // Para centralizar el manejo de transacciones (uso en DAO y servicios)
-  async withTransaction(callback, externalConn = null) {
-    const { connection, isExternal } = await this.getConnection(externalConn);
-    const shouldCommit = !isExternal;
-
-    try {
-      if (shouldCommit) {
-        await connection.beginTransaction();
-      }
-
-      const result = await callback(connection);
-
-      if (shouldCommit) {
-        await connection.commit();
-      }
-
-      return result;
-    } catch (error) {
-      if (shouldCommit) {
-        await connection.rollback();
-      }
-      throw error;
-    } finally {
-      await this.releaseConnection(connection, isExternal);
     }
   }
 
@@ -62,16 +38,9 @@ class BaseDatabaseHandler {
 
     if (sortBy && sortConstants) {
       const { safeField } = this.inputValidator.validateSortField(
-        sortBy,
-        sortConstants,
-        entityType,
-        `${entityName} sort field`
+        sortBy, sortConstants, entityType, `${entityName} sort field`
       );
-      const { safeOrder } = this.inputValidator.validateSortOrder(
-        sortOrder,
-        SORT_ORDER
-      );
-
+      const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder, SORT_ORDER);
       query += ` ORDER BY ${safeField} ${safeOrder}`;
     }
 
@@ -89,15 +58,11 @@ class BaseDatabaseHandler {
     let result = rows;
     if (mapper && typeof mapper === "function") {
       if (mapperType === "ALL_ROWS") {
-        // toda sa la vez
         result = mapper(rows);
       } else {
-        // una row a la vez
-
-
         result = Array.isArray(rows) && rows.length > 0
-            ? rows.map((row) => mapper(row))
-            : [];
+          ? rows.map((row) => mapper(row))
+          : [];
       }
     }
     return result;

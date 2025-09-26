@@ -1,5 +1,4 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
-
 const {
   SORT_ORDER,
   SESSION_SORT_FIELD,
