@@ -1,5 +1,6 @@
 const DomainValidators = require("../utils/domainValidators");
 const crypto = require("crypto");
+const ms = require("ms"); 
 
 class Session {
   #id;
@@ -163,7 +164,7 @@ class Session {
     refreshToken,
     userAgent,
     ip,
-    expiresInHours = 24 * 7,
+    expiresAt="7d",
     active = true
   }, errorFactory) {
     const refreshTokenHash = crypto
@@ -172,7 +173,11 @@ class Session {
       .digest("hex");
     
     const createdAt = new Date();
-    const expiresAt = new Date(createdAt.getTime() + expiresInHours * 60 * 60 * 1000);
+      const expiresInMs = ms(expiresAt); 
+  if (!expiresInMs || expiresInMs <= 0) {
+    throw new Error("Invalid expiresAt value");
+  }
+  const expirationDate = new Date(createdAt.getTime() + expiresInMs);
 
     return new Session({
       userId,
@@ -180,7 +185,7 @@ class Session {
       userAgent,
       ip,
       createdAt,
-      expiresAt,
+      expiresAt: expirationDate,
       isActive: active,
     }, errorFactory);
   }

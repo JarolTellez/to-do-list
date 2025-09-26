@@ -1,10 +1,10 @@
 class CreateSessionRequestDTO {
-  constructor({ userId, refreshToken, userAgent, ip, expiresInHours = 24 * 7 }) {
+  constructor({ userId, refreshToken, userAgent, ip, expiresIn = "7d" }) {
     this.userId = userId;
     this.refreshToken = refreshToken;
     this.userAgent = userAgent;
     this.ip = ip;
-    this.expiresInHours = expiresInHours;
+    this.expiresIn = expiresIn;
   }
 }
 

@@ -9,6 +9,7 @@ class SessionService extends TransactionsHandler {
     connectionDB,
     erroFactory,
     validator,
+    appConfig
   }) {
     super(connectionDB);
     this.sessionDAO = sessionDAO;
@@ -16,6 +17,7 @@ class SessionService extends TransactionsHandler {
     this.jwtAuth = jwtAuth;
     this.erroFactory = erroFactory;
     this.validator = validator;
+    this.appConfig=appConfig;
   }
 
   async manageUserSession(
@@ -24,6 +26,7 @@ class SessionService extends TransactionsHandler {
   ) {
     return this.withTransaction(async (connection) => {
       let session = null;
+      let NewRefreshToken =null;
       if (existingRefreshToken) {
         session = await this.validateExistingSession(
           userId,
@@ -33,7 +36,8 @@ class SessionService extends TransactionsHandler {
       }
 
       if (!session) {
-        session = await this.createNewSession(
+     const  {createdSession,
+        refreshToken }=await this.createNewSession(
           {
             userId,
             userAgent,
@@ -41,13 +45,15 @@ class SessionService extends TransactionsHandler {
           },
           connection
         );
+        session = createdSession;
+        
       }
 
-      await this.manageSessionLimit(userId, 5, connection);
+      await this.manageSessionLimit(userId, this.appConfig.session.maxActive, connection);
 
       return {
-        refreshToken: session.refreshToken,
-        sessionId: session.id,
+        refreshToken: NewRefreshToken,
+        session
       };
     }, externalConn);
   }
@@ -86,7 +92,7 @@ class SessionService extends TransactionsHandler {
           refreshToken: refreshToken,
           userAgent: userAgent || "Unknown",
           ip: ip,
-          expiresInHours: 24 * 7, // 7 días
+          expiresIn: this.appConfig.jwt.refresh.expiresIn 
         }
       );
 
@@ -99,7 +105,7 @@ class SessionService extends TransactionsHandler {
         connection
       );
       return {
-        ...createdSession,
+        createdSession,
         refreshToken, // Devuelve el token plano (no el hash)
       };
     }, externalConn);
@@ -148,7 +154,7 @@ class SessionService extends TransactionsHandler {
     }, externalConn);
   }
 
-  async manageSessionLimit(userId, maxSessions = 5, externalConn = null) {
+  async manageSessionLimit(userId, maxSessions = 10, externalConn = null) {
     return this.withTransaction(async (connection) => {
       const activeCount = await this.sessionDAO.countAllByUserIdAndIsActive(
         userId,
@@ -173,6 +179,7 @@ class SessionService extends TransactionsHandler {
       return { deactivated: false, message: "Dentro del límite de sesiones" };
     }, externalConn);
   }
+
   async deactivateAllUserSessions(userId, externalConn = null) {
     return this.withTransaction(async (connection) => {
       const result = await this.sessionDAO.deactivateAllByUserId(

@@ -15,6 +15,7 @@ class AuthService extends TransactionsHandler {
     crypto,
     errorFactory,
     validator,
+    appConfig
   }) {
     super(connectionDB);
     this.user = user;
@@ -25,9 +26,9 @@ class AuthService extends TransactionsHandler {
     this.jwtAuth = jwtAuth;
     this.bcrypt = bcrypt;
     this.crypto = crypto;
-    this.MAX_SESIONES = parseInt(process.env.MAX_SESIONES_ACTIVAS) || 5;
     this.errorFactory = errorFactory;
     this.validator = validator;
+    this.appConfig = appConfig;
   }
 
   async loginUser(
@@ -59,14 +60,15 @@ class AuthService extends TransactionsHandler {
       });
 
       const userResponse = this.userMapper.domainToResponse(user);
-      const authResponse = this.userMapper.domainToAuthResponse(
-        user,
+      const authResponse = this.userMapper.domainToAuthResponse({
+       userDomain: user,
         accessToken,
-        process.env.JWT_ACCESS_EXPIRE_IN || "15m"
-      );
+        expiresIn: this.appConfig.jwt.access.expiresIn,
+        expiresAt: sessionResult.session.expiresAt,
+    });
 
       return {
-        ...authResponse,
+        authResponse,
         refreshToken: sessionResult.refreshToken,
       };
     }, externalConn);
@@ -144,7 +146,7 @@ class AuthService extends TransactionsHandler {
       return {
         user: userResponse,
         accessToken: accessToken,
-        expiresIn: process.env.JWT_ACCESS_EXPIRE_IN || "15m",
+        expiresIn:  this.appConfig.jwt.access.expiresIn,
         tokenType: "Bearer",
       };
     }, externalConn);
