@@ -37,10 +37,11 @@ class SessionMapper {
     return this.Session.create(
       {
         userId: createSessionRequest.userId,
-        refreshToken: createSessionRequest.refreshToken,
+        refreshTokenHash: createSessionRequest.refreshTokenHash,
         userAgent: createSessionRequest.userAgent,
         ip: createSessionRequest.ip,
         expiresAt: createSessionRequest.expiresIn,
+        isActive: createSessionRequest.isActive !== undefined ? createSessionRequest.isActive : true
       },
       this.errorFactory
     );
@@ -50,7 +51,7 @@ class SessionMapper {
     return this.Session.create(
       {
         userId: existingSession.userId,
-        refreshToken: refreshSessionRequest.refreshToken,
+        refreshTokenHash: refreshSessionRequest.refreshTokenHash,
         userAgent: existingSession.userAgent,
         ip: existingSession.ip,
         expiresInHours: 24 * 7,

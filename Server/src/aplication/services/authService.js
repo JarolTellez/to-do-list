@@ -15,7 +15,7 @@ class AuthService extends TransactionsHandler {
     crypto,
     errorFactory,
     validator,
-    appConfig
+    appConfig,
   }) {
     super(connectionDB);
     this.user = user;
@@ -38,18 +38,80 @@ class AuthService extends TransactionsHandler {
     this.validator.validateRequired(["loginRequestDTO"], {
       loginRequestDTO,
     });
+
     return this.withTransaction(async (connection) => {
       const user = await this.userService.validateCredentials(
         loginRequestDTO,
         connection
       );
-      const sessionResult = await this.sessionService.manageUserSession(
-        {
-          userId: user.id,
-          existingRefreshToken,
-          userAgent,
-          ip,
-        },
+
+      let refreshTokenToUse = null;
+      let session = null;
+      let isNewRefreshToken = true;
+
+      if (existingRefreshToken) {
+        try {
+          // Verify jwt
+          const decoded = this.jwtAuth.verifyRefreshToken(existingRefreshToken);
+          const refreshTokenHash =
+            this.jwtAuth.createHashRefreshToken(existingRefreshToken);
+
+          // Verify userId in refreshToken is the same as consulted with validate credentiasl
+          if (decoded.userId === user.id) {
+            // verify refreshtoken session exists and is active
+            const isValidSession = await this.sessionService.validateSession(
+              decoded.userId,
+              refreshTokenHash,
+              connection
+            );
+
+            if (isValidSession) {
+              refreshTokenToUse = existingRefreshToken;
+              session = isValidSession;
+              isNewRefreshToken = false;
+            }
+          } else {
+            await this.sessionService.deactivateSession(
+              decoded.userId,
+              refreshTokenHash,
+              connection
+            );
+          }
+        } catch (error) {
+          const refreshTokenHash =
+            this.jwtAuth.createHashRefreshToken(existingRefreshToken);
+          await this.sessionService.deactivateSessionByTokenHash(
+            refreshTokenHash,
+            connection
+          );
+          // if token is no valid o expired, ignores and creates a new one
+          console.log(
+            "Refresh token existente inválido, creando nuevo:",
+            error.message
+          );
+        }
+      }
+
+      // if there is no valid token, create new one
+      if (!refreshTokenToUse) {
+        refreshTokenToUse = this.jwtAuth.createRefreshToken(user.id);
+        const refreshTokenHash =
+          this.jwtAuth.createHashRefreshToken(refreshTokenToUse);
+
+        session = await this.sessionService.createNewSession(
+          {
+            userId: user.id,
+            refreshTokenHash,
+            userAgent,
+            ip,
+          },
+          connection
+        );
+      }
+
+      await this.sessionService.manageSessionLimit(
+        user.id,
+        this.appConfig.session.maxActive,
         connection
       );
 
@@ -59,17 +121,17 @@ class AuthService extends TransactionsHandler {
         rol: user.rol,
       });
 
-      const userResponse = this.userMapper.domainToResponse(user);
       const authResponse = this.userMapper.domainToAuthResponse({
-       userDomain: user,
+        userDomain: user,
         accessToken,
         expiresIn: this.appConfig.jwt.access.expiresIn,
-        expiresAt: sessionResult.session.expiresAt,
-    });
+        expiresAt: session.expiresAt,
+      });
 
       return {
         authResponse,
-        refreshToken: sessionResult.refreshToken,
+        refreshToken: refreshTokenToUse,
+        isNewRefreshToken: isNewRefreshToken,
       };
     }, externalConn);
   }
@@ -87,14 +149,12 @@ class AuthService extends TransactionsHandler {
           connection
         );
         throw this.errorFactory.createAuthenticationError(
-          "Token de refresh inválido"
+          "Refresh Token inválido"
         );
       }
 
-      const refreshTokenHashRecibido = this.crypto
-        .createHash("sha256")
-        .update(refreshToken)
-        .digest("hex");
+      const refreshTokenHashRecibido =
+        this.jwtAuth.createHashRefreshToken(refreshToken);
 
       const deactivatedSession = await this.sessionService.deactivateSession(
         decoded.userId,
@@ -102,7 +162,7 @@ class AuthService extends TransactionsHandler {
         connection
       );
 
-      if (!deactivatedSession) {
+      if (!deactivatedSession.success) {
         throw this.errorFactory.createAuthenticationError(
           "Sesión no encontrada o ya expirada"
         );
@@ -146,7 +206,7 @@ class AuthService extends TransactionsHandler {
       return {
         user: userResponse,
         accessToken: accessToken,
-        expiresIn:  this.appConfig.jwt.access.expiresIn,
+        expiresIn: this.appConfig.jwt.access.expiresIn,
         tokenType: "Bearer",
       };
     }, externalConn);

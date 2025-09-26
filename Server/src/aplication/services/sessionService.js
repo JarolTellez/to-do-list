@@ -1,67 +1,64 @@
-
 const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
 
 class SessionService extends TransactionsHandler {
   constructor({
     sessionDAO,
     sessionMapper,
-    jwtAuth,
     connectionDB,
     erroFactory,
     validator,
-    appConfig
+    appConfig,
   }) {
     super(connectionDB);
     this.sessionDAO = sessionDAO;
     this.sessionMapper = sessionMapper;
-    this.jwtAuth = jwtAuth;
     this.erroFactory = erroFactory;
     this.validator = validator;
-    this.appConfig=appConfig;
+    this.appConfig = appConfig;
   }
 
-  async manageUserSession(
-    { userId, existingRefreshToken, userAgent, ip },
-    externalConn = null
-  ) {
-    return this.withTransaction(async (connection) => {
-      let session = null;
-      let NewRefreshToken =null;
-      if (existingRefreshToken) {
-        session = await this.validateExistingSession(
-          userId,
-          existingRefreshToken,
-          connection
-        );
-      }
+  // async manageUserSession(
+  //   { userId, existingRefreshToken, userAgent, ip },
+  //   externalConn = null
+  // ) {
+  //   return this.withTransaction(async (connection) => {
+  //     let session = null;
+  //     let NewRefreshToken = null;
+  //     if (existingRefreshToken) {
+  //       session = await this.validateExistingSession(
+  //         userId,
+  //         existingRefreshToken,
+  //         connection
+  //       );
+  //     }
 
-      if (!session) {
-     const  {createdSession,
-        refreshToken }=await this.createNewSession(
-          {
-            userId,
-            userAgent,
-            ip,
-          },
-          connection
-        );
-        session = createdSession;
-        
-      }
+  //     if (!session) {
+  //       const { createdSession, refreshToken } = await this.createNewSession(
+  //         {
+  //           userId,
+  //           userAgent,
+  //           ip,
+  //         },
+  //         connection
+  //       );
+  //       session = createdSession;
+  //     }
 
-      await this.manageSessionLimit(userId, this.appConfig.session.maxActive, connection);
+  //     await this.manageSessionLimit(
+  //       userId,
+  //       this.appConfig.session.maxActive,
+  //       connection
+  //     );
 
-      return {
-        refreshToken: NewRefreshToken,
-        session
-      };
-    }, externalConn);
-  }
+  //     return {
+  //       refreshToken: NewRefreshToken,
+  //       session,
+  //     };
+  //   }, externalConn);
+  // }
 
-  async validateExistingSession(userId, refreshToken, externalConn = null) {
+  async validateExistingSession(userId, refreshTokenHash, externalConn = null) {
     try {
-      const refreshTokenHash =
-        this.jwtAuth.createHashRefreshToken(refreshToken);
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
         externalConn
@@ -82,75 +79,70 @@ class SessionService extends TransactionsHandler {
     }
   }
 
-  async createNewSession({ userId, userAgent, ip }, externalConn = null) {
+  async createNewSession(
+    { userId, refreshTokenHash, userAgent, ip },
+    externalConn = null
+  ) {
     return this.withTransaction(async (connection) => {
-      const refreshToken = this.jwtAuth.createRefreshToken(userId);
-
-      const createSessionRequestDTO = this.sessionMapper.requestDataToCreateDTO(
-        {
-          userId: userId,
-          refreshToken: refreshToken,
-          userAgent: userAgent || "Unknown",
-          ip: ip,
-          expiresIn: this.appConfig.jwt.refresh.expiresIn 
-        }
-      );
-
-      const sessionDomain = this.sessionMapper.createRequestToDomain(
-        createSessionRequestDTO
-      );
+      const sessionDomain = this.sessionMapper.createRequestToDomain({
+        userId: userId,
+        refreshTokenHash: refreshTokenHash,
+        userAgent: userAgent || "Unknown",
+        ip: ip,
+        expiresAt: this.appConfig.jwt.refresh.expiresIn,
+        isActive: true,
+      });
 
       const createdSession = await this.sessionDAO.create(
         sessionDomain,
         connection
       );
-      return {
-        createdSession,
-        refreshToken, // Devuelve el token plano (no el hash)
-      };
+      return createdSession;
     }, externalConn);
   }
 
-  async validateActiveSession(refreshToken, externalConn = null) {
-    try {
-      const refreshTokenHash = this.jwtAuth.hashRefreshToken(refreshToken);
+  async validateSession(userId, refreshTokenHash, externalConn = null) {
+    return this.withTransaction(async (connection) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
-        externalConn
+        connection
       );
+      if (session) {
+        const isValid =
+          session.userId === userId &&
+          session.isActive &&
+          new Date(session.expiresAt) > new Date();
 
-      if (!session) {
-        return { isValid: false, error: "Sesión no encontrada" };
+        if (isValid) {
+          return session; 
+        } else {
+          await this.sessionDAO.deactivate(session.id, connection);
+          return null;
+        }
       }
 
-      if (!session.isActive) {
-        return { isValid: false, error: "Sesión inactiva" };
-      }
-
-      if (new Date() > session.expiresAt) {
-        return { isValid: false, error: "Sesión expirada" };
-      }
-
-      return { isValid: true, session };
-    } catch (error) {
-      throw error;
-    }
+      return null;
+    }, externalConn);
   }
 
-  async logOutSession(refreshToken, externalConn = null) {
+  async deactivateSession(userId, refreshTokenHash, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const refreshTokenHash = this.jwtAuth.hashRefreshToken(refreshToken);
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
         connection
       );
 
       if (session) {
+        if (session.userId !== userId) {
+          throw this.errorFactory.createAuthenticationError(
+            "El token no corresponde al usuario"
+          );
+        }
         await this.sessionDAO.deactivate(session.id, connection);
-        return { message: "Sesión cerrada exitosamente" };
+        return { success: true, userId: session.userId };
       }
 
-      return { message: "Sesión no encontrada" };
+      return { success: false };
     }, externalConn);
   }
 
