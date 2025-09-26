@@ -3,22 +3,25 @@ const crypto = require('crypto');
 const { TokenExpiredError } = jwt;
 
 class JwtAuth {
+ constructor(appConfig) {
+    this.appConfig = appConfig;
+  }
 
   createAccessToken(userId, rol = 'user') {
-    if (!process.env.JWT_ACCESS_SECRET) {
+    if (!this.appConfig.jwt.access.secret) {
       throw new Error('JWT_ACCESS_SECRET no configurado');
     }
 
     return jwt.sign(
       { userId: userId, rol },
-      process.env.JWT_ACCESS_SECRET,
-     { expiresIn: process.env.EXP_ACCESS_TOKEN }
+      this.appConfig.jwt.access.secret,
+     { expiresIn: this.appConfig.jwt.access.expiresIn}
     );
   }
 
   // Genera Refresh Token 
   createRefreshToken(userId) {
-    if (!process.env.JWT_REFRESH_SECRET) {
+    if (!this.appConfig.jwt.refresh.secret) {
       throw new Error('JWT_REFRESH_SECRET no configurado');
     }
 
@@ -26,11 +29,10 @@ class JwtAuth {
     const refreshToken = jwt.sign(
       { userId: userId
        },
-      process.env.JWT_REFRESH_SECRET,
-     { expiresIn: process.env.EXP_REFRESH_TOKEN}
+      this.appConfig.jwt.refresh.secret,
+     { expiresIn:this.appConfig.jwt.refresh.expiresIn}
     );
 
-    // Devolver ambos, token para cliente y hash para BD
     return refreshToken;
   }
 
@@ -47,7 +49,7 @@ class JwtAuth {
   // Verificar Access Token
   verifyAccessToken(token) {
     try {
-      return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+      return jwt.verify(token, this.appConfig.jwt.access.secret);
     } catch (err) {
       if (err instanceof TokenExpiredError) {
         throw new Error('Token de acceso expirado');
@@ -59,7 +61,7 @@ class JwtAuth {
   // Verificar Refresh Token (firma y expiración)
 verifyRefreshToken(token) {
     try {
-        return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+        return jwt.verify(token, this.appConfig.jwt.refresh.secret);
     } catch (err) {
         if (err instanceof jwt.TokenExpiredError) {
             throw new Error('Refresh token expirado');

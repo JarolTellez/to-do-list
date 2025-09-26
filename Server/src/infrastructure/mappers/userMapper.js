@@ -34,11 +34,12 @@ class UserMapper {
     });
   }
 
-  domainToAuthResponse(userDomain, token, expiresIn) {
+  domainToAuthResponse({userDomain, accessToken, expiresIn, expiresAt}) {
     return new this.AuthResponseDTO({
       user: this.domainToResponse(userDomain),
-      token: token,
-      expiresIn: expiresIn,
+      accessToken,
+      expiresIn,
+      expiresAt,
       tokenType: "Bearer",
     });
   }

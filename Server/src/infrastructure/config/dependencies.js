@@ -68,6 +68,7 @@ const InputValidator = require('../utils/validation/inputValidator');
 const JwtAuth = require('./jwtAuth');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const appConfig = require('./appConfig');
 
 
 const errorFactory = new ErrorFactory({NotFoundError,ValidationError,DatabaseError,AuthenticationError,ConflictError,RateLimitError,ForbiddenError,ServiceUnavailableError,AppError,ErrorCodes});
@@ -139,15 +140,15 @@ const tagDAO = new TagDAO({tagMapper: tagMapperWithBind, connectionDB, errorFact
 const userDAO = new UserDAO({userMapper: userMapperWithBind, connectionDB, errorFactory, inputValidator});
 const sessionDAO = new SessionDAO({sessionMapper: sessionMapperWithBind, connectionDB, errorFactory, inputValidator});
 
-const jwtAuth = new JwtAuth();
+const jwtAuth = new JwtAuth(appConfig);
 
 // Servicios
 const userService = new UserService({userDAO, taskDAO, connectionDB, bcrypt, errorFactory,validator,userMapper });
 const tagService = new TagService({tagDAO, connectionDB, errorFactory, validator});
 const taskTagService = new TaskTagService({taskTagDAO, connectionDB, errorFactory, validator});
 const taskService = new TaskService({taskDAO, tagService, taskTagService, connectionDB, errorFactory, validator});
-const sessionService = new SessionService({sessionDAO,sessionMapper,jwtAuth,connectionDB, errorFactory, validator});
-const authService = new AuthService({User, userService, userMapper:userMapperAplicationWithBind, sessionService, connectionDB, userDAO, jwtAuth, bcrypt, crypto, errorFactory, validator});
+const sessionService = new SessionService({sessionDAO,sessionMapper,jwtAuth,connectionDB, errorFactory, validator, appConfig});
+const authService = new AuthService({User, userService, userMapper:userMapperAplicationWithBind, sessionService, connectionDB, userDAO, jwtAuth, bcrypt, crypto, errorFactory, validator, appConfig});
 
 // Controladores
 const taskController = new TaskController({

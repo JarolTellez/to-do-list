@@ -34,10 +34,11 @@ class AuthController {
         console.log("Usando refresh token existente");
       }
 
+  
       return res.status(200).json({
         success: true,
         message: "Success auth",
-        data: result,
+        data: result.authResponse,
       });
     } catch (error) {
       // Limpiar cookies en caso de error

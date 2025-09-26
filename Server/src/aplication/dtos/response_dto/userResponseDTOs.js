@@ -26,10 +26,11 @@ class UserResponseDTO {
 
 
 class AuthResponseDTO {
-  constructor({ user, token, expiresIn }) {
+  constructor({ user, accessToken, expiresIn, expiresAt }) {
     this.user = user;
-    this.token = token;
+    this.accessToken = accessToken;
     this.expiresIn = expiresIn;
+    this.expiresAt = expiresAt;
     this.tokenType = "Bearer";
   }
 }

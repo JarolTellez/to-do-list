@@ -40,7 +40,7 @@ class SessionMapper {
         refreshToken: createSessionRequest.refreshToken,
         userAgent: createSessionRequest.userAgent,
         ip: createSessionRequest.ip,
-        expiresInHours: createSessionRequest.expiresInHours,
+        expiresAt: createSessionRequest.expiresIn,
       },
       this.errorFactory
     );
