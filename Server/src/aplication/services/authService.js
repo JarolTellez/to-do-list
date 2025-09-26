@@ -1,8 +1,8 @@
 const bcrypt = require("bcryptjs");
-const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHandler");
+const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
 const { LoginRequestDTO } = require("../dtos/request_dto/userRequestDTOs");
 
-class AuthService extends BaseDatabaseHandler {
+class AuthService extends TransactionsHandler {
   constructor({
     user,
     userService,

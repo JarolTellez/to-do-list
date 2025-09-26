@@ -1,6 +1,7 @@
-const BaseDatabaseHandler = require("../../infrastructure/config/BaseDatabaseHandler");
 
-class SessionService extends BaseDatabaseHandler {
+const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
+
+class SessionService extends TransactionsHandler {
   constructor({
     sessionDAO,
     sessionMapper,

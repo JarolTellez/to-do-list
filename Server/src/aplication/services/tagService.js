@@ -1,6 +1,6 @@
-const BaseDatabaseHandler = require('../../infrastructure/config/BaseDatabaseHandler');
+const TransactionsHandler = require('../../infrastructure/config/transactionsHandler');
 
-class TagService extends BaseDatabaseHandler {
+class TagService extends TransactionsHandler {
   constructor({tagDAO, connectionDB, errorFactory, validator}) {
     super(connectionDB);
     this.tagDAO = tagDAO;
