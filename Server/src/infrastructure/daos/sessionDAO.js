@@ -7,7 +7,7 @@ const {
 
 class SessionDAO extends BaseDatabaseHandler {
   constructor({ sessionMapper, connectionDB, errorFactory, inputValidator }) {
-    super(connectionDB);
+    super(connectionDB, inputValidator, errorFactory);
     this.sessionMapper = sessionMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;

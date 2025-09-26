@@ -7,7 +7,7 @@ const {
 
 class TaskTagDAO extends BaseDatabaseHandler {
   constructor({taskTagMapper,connectionDB, errorFactory, inputValidator }) {
-    super(connectionDB);
+    super(connectionDB, inputValidator, errorFactory);
     this.taskTagMapper = taskTagMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;

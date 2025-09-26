@@ -5,7 +5,7 @@ const { MAPPER_TYPES } = require("../constants/mapperConstants");
 
 class TagDAO extends BaseDatabaseHandler {
   constructor({ tagMapper, connectionDB, errorFactory, inputValidator }) {
-    super(connectionDB);
+    super(connectionDB, inputValidator, errorFactory);
     this.tagMapper = tagMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;
