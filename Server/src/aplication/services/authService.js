@@ -84,7 +84,7 @@ class AuthService extends TransactionsHandler {
             refreshTokenHash,
             connection
           );
-          // if token is no valid o expired, ignores and creates a new one
+          // if token is no valid o expired ignores it and creates a new one
           console.log(
             "Refresh token existente inválido, creando nuevo:",
             error.message

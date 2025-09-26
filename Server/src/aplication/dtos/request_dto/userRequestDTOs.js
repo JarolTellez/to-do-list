@@ -17,8 +17,8 @@ class UpdateUserRequestDTO {
 }
 
 class LoginRequestDTO {
-    constructor({ email, password }) {
-        this.email = email;
+    constructor({ identifier, password }) {
+        this.identifier = identifier;
         this.password = password;
     }
 }

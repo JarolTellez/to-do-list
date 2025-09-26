@@ -64,7 +64,7 @@ class UserMapper {
 
   requestDataToLoginDTO(requestData) {
      return new this.LoginRequestDTO({
-      email: requestData.email,
+      identifier: requestData.identifier,// email or username
       password: requestData.password,
     });
   }
