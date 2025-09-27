@@ -1,23 +1,31 @@
-const express = require('express');
-const { pruebas } = require('./pruebas');
+const express = require("express");
+const { pruebas } = require("./pruebas");
 module.exports = (authController) => {
   const router = express.Router();
 
   router
-    .route('/login')
+    .route("/login")
     .post(pruebas, authController.login.bind(authController));
 
   router
-    .route('/logout')
+    .route("/logout")
     .post(pruebas, authController.logOut.bind(authController));
 
   router
-    .route('/renovar-access-token')
+    .route("/renovar-access-token")
     .post(authController.refreshAccessToken.bind(authController));
 
   router
-    .route('/renovar-refresh-token')
+    .route("/renovar-refresh-token")
     .post(authController.refreshRefreshToken.bind(authController));
+
+  router
+    .route("/close-all-sessions")
+    .patch(pruebas, authController.closeAllUserSessions.bind(authController));
+
+  // router
+  //   .route("/sessions/:sessionId/close")
+  //   .patch(pruebas, authController.closeSpecificSession.bind(authController));
 
   return router;
 };

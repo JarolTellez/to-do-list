@@ -4,8 +4,8 @@ class SessionMapper {
     SessionResponseDTO,
     CreateSessionRequestDTO,
     RefreshSessionRequestDTO,
-    errorFactory}
-  ) {
+    errorFactory,
+  }) {
     this.Session = Session;
     this.SessionResponseDTO = SessionResponseDTO;
     this.CreateSessionRequestDTO = CreateSessionRequestDTO;
@@ -13,7 +13,10 @@ class SessionMapper {
     this.errorFactory = errorFactory;
   }
 
-  domainToResponse(sessionDomain) {
+  domainToResponse(sessionDomain, currentRefreshTokenHash=null) {
+    if(currentRefreshTokenHash){
+    const isCurrent = (sessionDomain.refreshTokenHash === currentRefreshTokenHash);
+    }
     return new this.SessionResponseDTO({
       id: sessionDomain.id,
       userId: sessionDomain.userId,
@@ -22,6 +25,7 @@ class SessionMapper {
       createdAt: sessionDomain.createdAt,
       expiresAt: sessionDomain.expiresAt,
       isActive: sessionDomain.isActive,
+      isCurren: isCurrent||null,
     });
   }
 
@@ -41,7 +45,10 @@ class SessionMapper {
         userAgent: createSessionRequest.userAgent,
         ip: createSessionRequest.ip,
         expiresAt: createSessionRequest.expiresIn,
-        isActive: createSessionRequest.isActive !== undefined ? createSessionRequest.isActive : true
+        isActive:
+          createSessionRequest.isActive !== undefined
+            ? createSessionRequest.isActive
+            : true,
       },
       this.errorFactory
     );
@@ -64,7 +71,7 @@ class SessionMapper {
     if (!row) {
       return null;
     }
-   const mappedSession= new this.Session(
+    const mappedSession = new this.Session(
       {
         id: row.session_id,
         userId: row.user_id,

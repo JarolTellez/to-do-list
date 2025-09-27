@@ -32,6 +32,7 @@ class AuthResponseDTO {
     this.expiresIn = expiresIn;
     this.expiresAt = expiresAt;
     this.tokenType = "Bearer";
+
   }
 }
 

@@ -114,7 +114,7 @@ class SessionService extends TransactionsHandler {
           new Date(session.expiresAt) > new Date();
 
         if (isValid) {
-          return session; 
+          return session;
         } else {
           await this.sessionDAO.deactivate(session.id, connection);
           return null;
@@ -143,6 +143,22 @@ class SessionService extends TransactionsHandler {
       }
 
       return { success: false };
+    }, externalConn);
+  }
+
+  async deactivateSessionByTokenHash(refreshTokenHash, externalConn = null) {
+    return this.withTransaction(async (connection) => {
+      const session = await this.sessionDAO.findByRefreshTokenHash(
+        refreshTokenHash,
+        connection
+      );
+
+      if (session && session.isActive) {
+        await this.sessionDAO.deactivate(session.id, connection);
+        return { success: true, sessionId: session.id };
+      }
+
+      return { success: false, message: "Sesión no encontrada o ya inactiva" };
     }, externalConn);
   }
 
@@ -186,7 +202,45 @@ class SessionService extends TransactionsHandler {
       };
     }, externalConn);
   }
-  async refreshAccessToken(refreshToken) {}
+
+  async findSessionById(sessionId, connection = null) {
+    this.validator.validateRequired(["sessionId"], { sessionId });
+
+    return await this.sessionDAO.findById(sessionId, connection);
+  }
+
+  async deactivateSpecificSession(sessionId, connection = null) {
+    this.validator.validateRequired(["sessionId"], {
+      sessionId,
+    });
+
+    const result = await this.sessionDAO.deactivate(sessionId, connection);
+
+    return {
+      success: result,
+    };
+  }
+
+  async findAllUserActiveSessions(userId, currentRefreshTokenHash, connection = null) {
+    this.validator.validateRequired(["userId"], { userId });
+
+    const sessions = await this.sessionDAO.findAllByUserIdAndIsActive({
+      userId: userId,
+      active: true,
+      externalConn: connection,
+      sortBy: "created_at",
+      sortOrder: "DESC",
+    });
+
+    const responseSessions = sessions.map((session) =>
+         this.sessionMapper.domainToResponseWithCurrent(
+            session, 
+            currentRefreshTokenHash
+        )
+    );
+
+    return responseSessions;
+  }
 }
 
 module.exports = SessionService;

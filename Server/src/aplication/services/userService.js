@@ -38,7 +38,7 @@ class UserService extends TransactionsHandler {
     return this.withTransaction(async (connection) => {
       const [existingByEmail, existingByusername] = await Promise.all([
         this.userDAO.findByEmail(createUserRequestDTO.email, connection),
-        this.userDAO.findByusername(createUserRequestDTO.username, connection),
+        this.userDAO.findByUsername(createUserRequestDTO.username, connection),
       ]);
       if (existingByEmail) {
         throw this.errorFactory.createConflictError(
