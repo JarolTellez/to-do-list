@@ -8,7 +8,8 @@ class SessionResponseDTO {
     expiresAt,
     isActive,
     isExpired,
-    timeUntilExpiration
+    timeUntilExpiration,
+    isCurrent,
   }) {
     this.id = id;
     this.userId = userId;
@@ -19,7 +20,8 @@ class SessionResponseDTO {
     this.isActive = isActive;
     this.isExpired = isExpired;
     this.timeUntilExpiration = timeUntilExpiration;
+    this.isCurrent = isCurrent;
   }
 }
 
-module.exports=SessionResponseDTO
+module.exports = SessionResponseDTO;

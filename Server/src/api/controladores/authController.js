@@ -16,8 +16,8 @@ class AuthController {
         existingRefreshToken,
         loginRequestDTO,
         userAgent,
-        ip
-    });
+        ip,
+      });
 
       // Solo se establece cookie si se genero un nuevo refresh token
       if (result.isNewRefreshToken) {
@@ -33,7 +33,6 @@ class AuthController {
         console.log("Usando refresh token existente");
       }
 
-  
       return res.status(200).json({
         success: true,
         message: "Success auth",
@@ -56,12 +55,13 @@ class AuthController {
       const refreshTokenExistente = req.cookies.refreshToken;
 
       if (!refreshTokenExistente) {
-        throw this.errorFactory.createAuthenticationError(
-          "No hay token de refresh presente"
-        );
+        return res.status(400).json({
+          success: false,
+          message: "No hay sesión activa",
+        });
       }
 
-      const result = await this.authService.logOutSession(
+      const result = await this.authService.logOutUserSession(
         refreshTokenExistente
       );
 
@@ -73,9 +73,9 @@ class AuthController {
       });
 
       return res.status(200).json({
-        status: "success",
-        message: "Logout exitoso",
-        data: result,
+        success: true,
+        message: result.message,
+        userId: result.userId,
       });
     } catch (error) {
       res.clearCookie("refreshToken", {
@@ -108,6 +108,45 @@ class AuthController {
       });
     } catch (error) {
       res.clearCookie("refreshToken");
+      next(error);
+    }
+  }
+
+  async closeAllUserSessions(req, res, next) {
+    try {
+      const refreshTokenExistente = req.cookies.refreshToken;
+
+      if (!refreshTokenExistente) {
+        return res.status(400).json({
+          success: false,
+          message: "No hay sesión activa",
+        });
+      }
+
+      const result = await this.authService.closeAllUserSessions(
+        refreshTokenExistente
+      );
+
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        userId: result.userId,
+      });
+    } catch (error) {
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+      });
+
       next(error);
     }
   }

@@ -143,7 +143,7 @@ class SessionDAO extends BaseDatabaseHandler {
     try {
       const userIdNum = this.inputValidator.validateId(userId, "user id");
       const [result] = await connection.execute(
-        "UPDATE sessions SET is_active=FALSE WHERE user_id=?",
+        "UPDATE sessions SET is_active=FALSE WHERE user_id=? AND is_active=TRUE",
         [userIdNum]
       );
       return result.affectedRows > 0;
@@ -359,7 +359,6 @@ class SessionDAO extends BaseDatabaseHandler {
        FROM sessions s 
        WHERE s.refresh_token_hash = ? AND s.is_active = TRUE`;
 
-     
       const result = await this._executeQuery({
         connection,
         baseQuery,
