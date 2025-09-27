@@ -1,6 +1,6 @@
 const DomainValidators = require("../utils/domainValidators");
 const crypto = require("crypto");
-const ms = require("ms"); 
+const ms = require("ms");
 
 class Session {
   #id;
@@ -18,8 +18,8 @@ class Session {
       id = null,
       userId,
       refreshTokenHash,
-      userAgent,
-      ip,
+      userAgent = null,
+      ip = null,
       createdAt = new Date(),
       expiresAt,
       isActive = true,
@@ -31,9 +31,10 @@ class Session {
     this.#id = this.#validator.validateId(id, "Session");
     this.#userId = this.#validator.validateId(userId, "User");
     this.#refreshTokenHash = this.#validateRefreshTokenHash(refreshTokenHash);
-    this.#userAgent = this.#validator.validateText(userAgent, "userAgent", {
-      required: true,
+    this.#userAgent = this.#validator.validateText(userAgent, "userAgent",  {
+      required: false,
       entity: "Session",
+      max: 500 
     });
     this.#ip = this.#validateIp(ip);
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
@@ -56,13 +57,15 @@ class Session {
     });
   }
 
-
   #validateIp(ip) {
-    return this.#validator.validateText(ip, "ip", {
-      required: true,
-      entity: "Session",
-      max: 45,
-    });
+    if (ip != null) {
+      return this.#validator.validateText(ip, "ip", {
+        required: true,
+        entity: "Session",
+        max: 45,
+      });
+    }
+    return null;
   }
 
   #validateExpiresAt(expiresAt) {
@@ -138,7 +141,7 @@ class Session {
   get refreshTokenHash() {
     return this.#refreshTokenHash;
   }
- 
+
   get userAgent() {
     return this.#userAgent;
   }
@@ -155,37 +158,41 @@ class Session {
     return this.#isActive;
   }
 
-    timeUntilExpiration() {
+  timeUntilExpiration() {
     return this.#expiresAt - new Date();
   }
 
- static create({
-    userId,
-    refreshTokenHash,
-    userAgent,
-    ip,
-    expiresAt="7d",
-    active = true
-  }, errorFactory) {
-    
-    const createdAt = new Date();
-      const expiresInMs = ms(expiresAt); 
-  if (!expiresInMs || expiresInMs <= 0) {
-    throw new Error("Invalid expiresAt value");
-  }
-  const expirationDate = new Date(createdAt.getTime() + expiresInMs);
-
-    return new Session({
+  static create(
+    {
       userId,
       refreshTokenHash,
       userAgent,
       ip,
-      createdAt,
-      expiresAt: expirationDate,
-      isActive: active,
-    }, errorFactory);
-  }
+      expiresAt = "7d",
+      active = true,
+    },
+    errorFactory
+  ) {
+    const createdAt = new Date();
+    const expiresInMs = ms(expiresAt);
+    if (!expiresInMs || expiresInMs <= 0) {
+      throw new Error("Invalid expiresAt value");
+    }
+    const expirationDate = new Date(createdAt.getTime() + expiresInMs);
 
+    return new Session(
+      {
+        userId,
+        refreshTokenHash,
+        userAgent,
+        ip,
+        createdAt,
+        expiresAt: expirationDate,
+        isActive: active,
+      },
+      errorFactory
+    );
+  }
 
   toJSON() {
     return {

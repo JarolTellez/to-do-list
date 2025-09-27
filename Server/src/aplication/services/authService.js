@@ -87,6 +87,7 @@ class AuthService extends TransactionsHandler {
         userId: user.id,
         email: user.email,
         rol: user.rol,
+        sessionId: session.id 
       });
 
       const authResponse = this.userMapper.domainToAuthResponse({
@@ -167,6 +168,7 @@ class AuthService extends TransactionsHandler {
         userId: user.id,
         email: user.email,
         rol: user.rol,
+        sessionId: sessionValidation.id
       });
 
       return {
@@ -369,7 +371,7 @@ class AuthService extends TransactionsHandler {
     return this.withTransaction(async (connection) => {
       const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       const currentUserId = decoded.userId;
-      // Obtener el hash del token actual para identificar la sesión actual
+      // Obtener el hash del token actual para identificar la sesion actual
       const currentRefreshTokenHash =
         this.jwtAuth.createHashRefreshToken(refreshToken);
 
