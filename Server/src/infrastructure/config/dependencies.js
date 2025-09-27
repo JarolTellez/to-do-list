@@ -78,7 +78,7 @@ const connectionDB = ConnectionDB.getInstance();
 //validator
 const Validator = require('../../utils/validators')
 const validator = new Validator(errorFactory);
-const inputValidator = new InputValidator(errorFactory);
+const inputValidator = new InputValidator({errorFactory});
 
 // Mappers y Factories
 
@@ -177,6 +177,8 @@ module.exports = {
   userController,
   taskService,
   tagService,
+  authService,
+  sessionService,
   authService,
   taskDAO,
   tagDAO,

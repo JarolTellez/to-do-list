@@ -7,13 +7,13 @@ class JwtAuth {
     this.appConfig = appConfig;
   }
 
-  createAccessToken(userId, rol = 'user') {
+  createAccessToken({userId, email,rol = 'user', sessionId}) {
     if (!this.appConfig.jwt.access.secret) {
       throw new Error('JWT_ACCESS_SECRET no configurado');
     }
 
     return jwt.sign(
-      { userId: userId, rol },
+      { userId,email, rol, sessionId},
       this.appConfig.jwt.access.secret,
      { expiresIn: this.appConfig.jwt.access.expiresIn}
     );

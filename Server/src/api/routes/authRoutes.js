@@ -1,5 +1,6 @@
 const express = require("express");
 const { pruebas } = require("./pruebas");
+const {validateAccessToken} = require('../middlewares/validateAccessToken');
 module.exports = (authController) => {
   const router = express.Router();
 
@@ -13,15 +14,19 @@ module.exports = (authController) => {
 
   router
     .route("/renovar-access-token")
-    .post(authController.refreshAccessToken.bind(authController));
+    .post(validateAccessToken,authController.refreshAccessToken.bind(authController));
 
   router
     .route("/renovar-refresh-token")
-    .post(authController.refreshRefreshToken.bind(authController));
+    .post(validateAccessToken,authController.refreshRefreshToken.bind(authController));
+
+  router
+    .route("/sessions")
+    .get(validateAccessToken, authController.findUserActiveSessions.bind(authController));
 
   router
     .route("/close-all-sessions")
-    .patch(pruebas, authController.closeAllUserSessions.bind(authController));
+    .patch(validateAccessToken, authController.closeAllUserSessions.bind(authController));
 
   // router
   //   .route("/sessions/:sessionId/close")

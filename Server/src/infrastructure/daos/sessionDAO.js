@@ -2,7 +2,6 @@ const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 const {
   SORT_ORDER,
   SESSION_SORT_FIELD,
-  TASK_SORT_FIELD,
 } = require("../constants/sortConstants");
 
 class SessionDAO extends BaseDatabaseHandler {
@@ -275,8 +274,9 @@ class SessionDAO extends BaseDatabaseHandler {
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
+    let sessionIdNum;
     try {
-      const sessionIdNum = this.inputValidator.validateId(id, "session id");
+       sessionIdNum = this.inputValidator.validateId(id, "session id");
 
       const baseQuery = `SELECT 
          s.id AS session_id,
@@ -430,9 +430,9 @@ class SessionDAO extends BaseDatabaseHandler {
         baseQuery,
         sortBy,
         sortOrder,
-        sortConstants: TASK_SORT_FIELD,
-        entityType: "USER",
-        entityName: "user",
+        sortConstants: SESSION_SORT_FIELD,
+        entityType: "SESSION",
+        entityName: "session",
         limit,
         offset,
         mapper: this.sessionMapper.dbToDomain,
@@ -504,9 +504,9 @@ class SessionDAO extends BaseDatabaseHandler {
         params: [userIdNum],
         sortBy,
         sortOrder,
-        sortConstants: TASK_SORT_FIELD,
-        entityType: "USER",
-        entityName: "user",
+        sortConstants: SESSION_SORT_FIELD,
+        entityType: "SESSION",
+        entityName: "session",
         limit,
         offset,
         mapper: this.sessionMapper.dbToDomain,
@@ -579,8 +579,11 @@ class SessionDAO extends BaseDatabaseHandler {
       const baseQuery = `SELECT 
            s.id AS session_id,
            s.user_id,
-            s.created_at AS session_created_at,
-         s.expires_at AS session_expires_at,
+           s.refresh_token_hash,
+           s.user_agent,
+           s.ip,
+           s.created_at AS session_created_at,
+           s.expires_at AS session_expires_at,
            s.is_active
          FROM sessions s 
          WHERE s.user_id = ? AND s.is_active = ?`;
@@ -588,12 +591,12 @@ class SessionDAO extends BaseDatabaseHandler {
       const result = await this._executeQuery({
         connection,
         baseQuery,
-        params: [userIdNum],
+        params: [userIdNum, active],
         sortBy,
         sortOrder,
-        sortConstants: TASK_SORT_FIELD,
-        entityType: "USER",
-        entityName: "user",
+        sortConstants: SESSION_SORT_FIELD,
+        entityType: "SESSION",
+        entityName: "session",
         limit,
         offset,
         mapper: this.sessionMapper.dbToDomain,
@@ -679,15 +682,16 @@ class SessionDAO extends BaseDatabaseHandler {
        FROM sessions s 
         WHERE s.user_id = ? AND s.refresh_token_hash = ? AND s.is_active = TRUE`;
 
+        console.log("FINDALLAACTIVEBYUSERID");
       const result = await this._executeQuery({
         connection,
         baseQuery,
         params: [userIdNum, refreshTokenHash],
         sortBy,
         sortOrder,
-        sortConstants: TASK_SORT_FIELD,
-        entityType: "USER",
-        entityName: "user",
+        sortConstants: SESSION_SORT_FIELD,
+        entityType: "SESSION",
+        entityName: "session",
         limit,
         offset,
         mapper: this.sessionMapper.dbToDomain,

@@ -151,6 +151,39 @@ class AuthController {
     }
   }
 
+  async findUserActiveSessions(req, res, next) {
+    try {
+      const refreshTokenExistente = req.cookies.refreshToken;
+
+      if (!refreshTokenExistente) {
+        return res.status(400).json({
+          success: false,
+          message: "No hay sesión activa",
+        });
+      }
+
+      const result = await this.authService.findUserActiveSessions(
+        refreshTokenExistente
+      );
+      
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        sessions: result.sessions,
+        totalSessions: result.total
+      });
+    } catch (error) {
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+      });
+
+      next(error);
+    }
+  }
+
   async refreshRefreshToken(req, res, next) {}
 }
 

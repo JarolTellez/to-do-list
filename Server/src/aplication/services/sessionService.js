@@ -1,4 +1,8 @@
 const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
+const {
+  SORT_ORDER,
+  SESSION_SORT_FIELD,
+} = require("../../infrastructure/constants/sortConstants");
 
 class SessionService extends TransactionsHandler {
   constructor({
@@ -125,6 +129,15 @@ class SessionService extends TransactionsHandler {
     }, externalConn);
   }
 
+  async validateSessionById(userId, sessionId, connection = null) {
+  const session = await this.sessionDAO.findById(sessionId, connection);
+  
+  return session && 
+         session.userId === userId && 
+         session.isActive && 
+         new Date(session.expiresAt) > new Date();
+}
+
   async deactivateSession(userId, refreshTokenHash, externalConn = null) {
     return this.withTransaction(async (connection) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
@@ -228,12 +241,12 @@ class SessionService extends TransactionsHandler {
       userId: userId,
       active: true,
       externalConn: connection,
-      sortBy: "created_at",
-      sortOrder: "DESC",
+      sortBy:SESSION_SORT_FIELD.CREATED_AT,
+      sortOrder:SORT_ORDER.DESC,
     });
 
     const responseSessions = sessions.map((session) =>
-         this.sessionMapper.domainToResponseWithCurrent(
+         this.sessionMapper.domainToResponse(
             session, 
             currentRefreshTokenHash
         )

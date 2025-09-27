@@ -14,9 +14,12 @@ class SessionMapper {
   }
 
   domainToResponse(sessionDomain, currentRefreshTokenHash=null) {
-    if(currentRefreshTokenHash){
-    const isCurrent = (sessionDomain.refreshTokenHash === currentRefreshTokenHash);
+     let isCurrent = null; 
+    
+    if (currentRefreshTokenHash && sessionDomain.refreshTokenHash) {
+        isCurrent = (sessionDomain.refreshTokenHash === currentRefreshTokenHash);
     }
+    
     return new this.SessionResponseDTO({
       id: sessionDomain.id,
       userId: sessionDomain.userId,
@@ -25,7 +28,7 @@ class SessionMapper {
       createdAt: sessionDomain.createdAt,
       expiresAt: sessionDomain.expiresAt,
       isActive: sessionDomain.isActive,
-      isCurren: isCurrent||null,
+      isCurrent: isCurrent||false,
     });
   }
 
