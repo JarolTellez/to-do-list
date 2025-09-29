@@ -13,7 +13,7 @@ class JwtAuth {
     }
 
     return jwt.sign(
-      { userId,email, rol, sessionId},
+      { sub: userId,email, rol, sessionId},
       this.appConfig.jwt.access.secret,
      { expiresIn: this.appConfig.jwt.access.expiresIn}
     );
@@ -27,7 +27,7 @@ class JwtAuth {
 
     // Generar JWT
     const refreshToken = jwt.sign(
-      { userId: userId
+      { sub: userId,
        },
       this.appConfig.jwt.refresh.secret,
      { expiresIn:this.appConfig.jwt.refresh.expiresIn}

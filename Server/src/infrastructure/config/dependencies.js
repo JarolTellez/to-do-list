@@ -185,5 +185,6 @@ module.exports = {
   userDAO,
   taskMapper,
   tagMapper,
-  userMapper
+  userMapper,
+  jwtAuth
 };

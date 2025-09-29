@@ -114,17 +114,17 @@ class AuthController {
 
   async closeAllUserSessions(req, res, next) {
     try {
-      const refreshTokenExistente = req.cookies.refreshToken;
+      const accessToken = req.headers.authorization?.replace('Bearer ', '');
 
-      if (!refreshTokenExistente) {
-        return res.status(400).json({
+      if (!accessToken) {
+        return res.status(401).json({
           success: false,
-          message: "No hay sesión activa",
+          message: "Access token requerido",
         });
       }
 
       const result = await this.authService.closeAllUserSessions(
-        refreshTokenExistente
+        accessToken
       );
 
       res.clearCookie("refreshToken", {
@@ -153,9 +153,9 @@ class AuthController {
 
   async findUserActiveSessions(req, res, next) {
     try {
-      const refreshTokenExistente = req.cookies.refreshToken;
+       const accessToken = req.headers.authorization?.replace('Bearer ', '');
 
-      if (!refreshTokenExistente) {
+      if (!accessToken) {
         return res.status(400).json({
           success: false,
           message: "No hay sesión activa",
@@ -163,7 +163,7 @@ class AuthController {
       }
 
       const result = await this.authService.findUserActiveSessions(
-        refreshTokenExistente
+       accessToken
       );
       
       return res.status(200).json({

@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 
 const validateAccessToken = async (req, res, next) => {
   try {
+   const jwtAuth= req.app.get("jwtAuth")
     const authorizationHeader = req.headers["authorization"];
 
     // Verificar que exista el header y tenga el formato correcto
@@ -20,12 +21,12 @@ const validateAccessToken = async (req, res, next) => {
     }
 
     // Verificar token
-    const decoded = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
+    const decoded =jwtAuth.verifyAccessToken(accessToken);
 
     const sessionService = req.app.get("sessionService");
 
     const isSessionActive = await sessionService.validateSessionById(
-      decoded.userId,
+      decoded.sub,
       decoded.sessionId
     );
 
@@ -37,7 +38,7 @@ const validateAccessToken = async (req, res, next) => {
     }
 
     req.usuario = {
-      userId: decoded.userId,
+      userId: decoded.sub,
       rol: decoded.rol,
     };
 

@@ -234,7 +234,7 @@ class SessionService extends TransactionsHandler {
     };
   }
 
-  async findAllUserActiveSessions(userId, currentRefreshTokenHash, connection = null) {
+  async findAllUserActiveSessions(userId, currentSessionId, connection = null) {
     this.validator.validateRequired(["userId"], { userId });
 
     const sessions = await this.sessionDAO.findAllByUserIdAndIsActive({
@@ -248,7 +248,7 @@ class SessionService extends TransactionsHandler {
     const responseSessions = sessions.map((session) =>
          this.sessionMapper.domainToResponse(
             session, 
-            currentRefreshTokenHash
+            currentSessionId
         )
     );
 

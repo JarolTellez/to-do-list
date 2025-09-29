@@ -13,11 +13,11 @@ class SessionMapper {
     this.errorFactory = errorFactory;
   }
 
-  domainToResponse(sessionDomain, currentRefreshTokenHash=null) {
+  domainToResponse(sessionDomain, currentSessionId=null) {
      let isCurrent = null; 
     
-    if (currentRefreshTokenHash && sessionDomain.refreshTokenHash) {
-        isCurrent = (sessionDomain.refreshTokenHash === currentRefreshTokenHash);
+    if (currentSessionId && sessionDomain.id) {
+        isCurrent = (sessionDomain.id === currentSessionId);
     }
     
     return new this.SessionResponseDTO({
