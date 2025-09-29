@@ -8,6 +8,7 @@ const {
   userController,
   authService,
   sessionService,
+  jwtAuth
 } = require("./src/infrastructure/config/dependencies");
 const { errorHandler } = require("./src/api/middlewares/errorHandler");
 const app = express();
@@ -28,6 +29,7 @@ app.options("*", cors(corsOptions));
 // services
 app.set("sessionService", sessionService);
 app.set("authService", authService);
+app.set("jwtAuth", jwtAuth);
 
 // Middlewares
 app.use(cookieParser());

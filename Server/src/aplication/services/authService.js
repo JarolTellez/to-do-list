@@ -87,7 +87,7 @@ class AuthService extends TransactionsHandler {
         userId: user.id,
         email: user.email,
         rol: user.rol,
-        sessionId: session.id 
+        sessionId: session.id,
       });
 
       const authResponse = this.userMapper.domainToAuthResponse({
@@ -122,7 +122,7 @@ class AuthService extends TransactionsHandler {
         this.jwtAuth.createHashRefreshToken(refreshToken);
 
       const deactivatedSession = await this.sessionService.deactivateSession(
-        decoded.userId,
+        decoded.sub,
         refreshTokenHashRecibido,
         connection
       );
@@ -136,7 +136,7 @@ class AuthService extends TransactionsHandler {
       return {
         success: true,
         message: "Sesión cerrada exitosamente",
-        usuarioId: decoded.userId,
+        usuarioId: decoded.sub,
       };
     }, externalConn);
   }
@@ -149,7 +149,7 @@ class AuthService extends TransactionsHandler {
       const refreshTokenHash =
         this.jwtAuth.createHashRefreshToken(refreshToken);
       const sessionValidation = await this.sessionService.validateSession(
-        decoded.userId,
+        decoded.sub,
         refreshTokenHash,
         connection
       );
@@ -160,7 +160,7 @@ class AuthService extends TransactionsHandler {
         );
       }
       const user = await this.userService.validateUserExistenceById(
-        decoded.userId,
+        decoded.sub,
         connection
       );
 
@@ -168,7 +168,7 @@ class AuthService extends TransactionsHandler {
         userId: user.id,
         email: user.email,
         rol: user.rol,
-        sessionId: sessionValidation.id
+        sessionId: sessionValidation.id,
       });
 
       return {
@@ -218,25 +218,15 @@ class AuthService extends TransactionsHandler {
     }, externalConn);
   }
 
-  async closeAllUserSessions(refreshToken, externalConn = null) {
-    this.validator.validateRequired(["refreshToken"], { refreshToken });
+  async closeAllUserSessions(accessToken, externalConn = null) {
+    this.validator.validateRequired(["accessToken"], { accessToken });
 
     return this.withTransaction(async (connection) => {
-      const userId = this.jwtAuth.decodeToken(refreshToken).userId;
-      const refreshTokenHash = this.jwtAuth.createHashRefreshToken(refreshToken);
-      const isValidSession = await this.sessionService.validateSession(
-        userId,
-        refreshTokenHash,
-        connection
-      );
-
-      if (!isValidSession) {
-        throw this.errorFactory.createAuthenticationError(
-          "Token de refresco inválido o expirado"
-        );
-      }
+      const decoded = this.jwtAuth.verifyAccessToken(accessToken);
+      const userId = decoded.sub;
 
       await this.userService.validateUserExistenceById(userId, connection);
+
       const result = await this.sessionService.deactivateAllUserSessions(
         userId,
         connection
@@ -260,9 +250,9 @@ class AuthService extends TransactionsHandler {
       const refreshTokenHash =
         this.jwtAuth.createHashRefreshToken(existingRefreshToken);
 
-      if (decoded.userId === user.id) {
+      if (decoded.sub === user.id) {
         const isValidSession = await this.sessionService.validateSession(
-          decoded.userId,
+          decoded.sub,
           refreshTokenHash,
           connection
         );
@@ -278,7 +268,7 @@ class AuthService extends TransactionsHandler {
       } else {
         // token belongs to another user deactivating for security
         await this.sessionService.deactivateSession(
-          decoded.userId,
+          decoded.sub,
           refreshTokenHash,
           connection
         );
@@ -313,7 +303,7 @@ class AuthService extends TransactionsHandler {
 
     return this.withTransaction(async (connection) => {
       const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
-      const currentUserId = decoded.userId;
+      const currentUserId = decoded.sub;
 
       await this.userService.validateUserExistenceById(
         currentUserId,
@@ -365,31 +355,31 @@ class AuthService extends TransactionsHandler {
     }, externalConn);
   }
 
-  async findUserActiveSessions(refreshToken, externalConn = null) {
-    this.validator.validateRequired(["refreshToken"], { refreshToken });
+  async findUserActiveSessions(accessToken, externalConn = null) {
+    this.validator.validateRequired(["accessToken"], { accessToken });
 
     return this.withTransaction(async (connection) => {
-      const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
-      const currentUserId = decoded.userId;
-      // Obtener el hash del token actual para identificar la sesion actual
-      const currentRefreshTokenHash =
-        this.jwtAuth.createHashRefreshToken(refreshToken);
+      const decoded = this.jwtAuth.verifyAccessToken(accessToken);
+      const currentUserId = decoded.sub;
 
       await this.userService.validateUserExistenceById(
         currentUserId,
         connection
       );
 
+      const currentSessionId = decoded.sessionId;
+
       const sessionsResponse =
         await this.sessionService.findAllUserActiveSessions(
           currentUserId,
-          currentRefreshTokenHash,
+          currentSessionId,
           connection
         );
 
       return {
         sessions: sessionsResponse,
         total: sessionsResponse.length,
+        message: "Sesiones activas obtenidas correctamente",
       };
     }, externalConn);
   }
