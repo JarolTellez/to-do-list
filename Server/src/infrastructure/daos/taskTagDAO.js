@@ -25,7 +25,6 @@ class TaskTagDAO extends BaseDatabaseHandler {
    * @throws {DatabaseError} On database operation failure
    */
   async create(taskTag, externalConn = null) {
-    console.log("TASK TGA EN DAO", taskTag.toJSON());
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
     try {

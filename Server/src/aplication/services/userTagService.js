@@ -1,14 +1,22 @@
 const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
 
-class UserTagService extends TransactionsHandler{
-    constructor({userTagDAO, connectionBD, NotFoundError, validateRequired}){
-        super(connectionBD);
-        this.userTagDAO=userTagDAO;
-        this.NotFoundError=NotFoundError;
-        this,validateRequired=validateRequired;
-    }
+class UserTagService extends TransactionsHandler {
+  constructor({ userTagDAO, connectionDB, errorFactory, validator }) {
+    super(connectionDB);
+    this.userTagDAO = userTagDAO;
+    this.errorFactory = errorFactory;
+    this.validator = validator;
+  }
 
-      async getAllTagsByUserId(userId, externalConn = null) {
+  async createUserTag(userTag, externalConn = null) {
+    this.validator.validateRequired(["userTag", userTag]);
+    return this.withTransaction(async (connection) => {
+      const result = await this.userTagDAO.create(userTag, connection);
+      return result;
+    }, externalConn);
+  }
+
+  async getAllTagsByUserId(userId, externalConn = null) {
     return this.withTransaction(async (connection) => {
       const tagsResult = await this.userTagDAO.findAllByUserId(
         userId,

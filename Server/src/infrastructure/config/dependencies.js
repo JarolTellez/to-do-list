@@ -50,6 +50,7 @@ const SessionDAO = require("../daos/sessionDAO");
 const UserService = require("../../aplication/services/userService");
 const TaskService = require("../../aplication/services/taskService");
 const TaskTagService = require("../../aplication/services/taskTagService");
+const UserTagService = require("../../aplication/services/userTagService");
 const TagService = require("../../aplication/services/tagService");
 const AuthService = require("../../aplication/services/authService");
 const SessionService = require("../../aplication/services/sessionService");
@@ -255,6 +256,13 @@ const tagService = new TagService({
   errorFactory,
   validator,
 });
+
+const userTagService = new UserTagService({
+  userTagDAO,
+  connectionDB,
+  errorFactory,
+  validator,
+});
 const taskTagService = new TaskTagService({
   taskTagDAO,
   connectionDB,
@@ -265,6 +273,7 @@ const taskService = new TaskService({
   taskDAO,
   taskMapper,
   tagService,
+  userTagService,
   taskTagService,
   connectionDB,
   errorFactory,

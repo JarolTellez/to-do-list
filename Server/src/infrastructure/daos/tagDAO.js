@@ -28,8 +28,8 @@ class TagDAO extends BaseDatabaseHandler {
 
     try {
       const [result] = await connection.execute(
-        "INSERT INTO tags (name, user_id) VALUES(?, ?)",
-        [tag.name, tag.userId]
+        "INSERT INTO tags (name) VALUES(?)",
+        [tag.name]
       );
       const insertedId = result.insertId;
 
