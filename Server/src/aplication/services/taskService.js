@@ -4,8 +4,10 @@ class TaskService extends TransactionsHandler {
   constructor({
     taskDAO,
     taskMapper,
+    userTagMapper,
     tagService,
     taskTagService,
+    userTagService,
     connectionDB,
     errorFactory,
     validator,
@@ -16,6 +18,7 @@ class TaskService extends TransactionsHandler {
     this.taskMapper = taskMapper;
     this.taskTagService = taskTagService;
     this.tagService = tagService;
+    this.userTagService=userTagService;
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.appConfig = appConfig;
@@ -33,7 +36,14 @@ class TaskService extends TransactionsHandler {
       if (Array.isArray(taskDomain.taskTags)) {
         for (const taskTag of taskDomain.taskTags) {
           taskTag.assignTaskId(newTask.id);
+          if (!taskTag.tag.id) {
+            const createdTag = await this.tagService.createTag(taskTag.tag);
+            taskTag.assignTag(createdTag);
+          }
+
+
           await this.taskTagService.createTaskTag(taskTag, connection);
+          await this.userTagService.createUserTag()
         }
       }
 

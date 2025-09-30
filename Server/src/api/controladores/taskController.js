@@ -2,19 +2,20 @@ class TaskController {
   constructor({ taskService, taskMapper }) {
     this.taskService = taskService;
     this.taskMapper = taskMapper;
-   
   }
 
   async createTask(req, res, next) {
     try {
-      console.log("REQ BODY", req.body);
-      const task = this.taskMapper.requestDataToCreateDTO(req.body);
-      // console.log("CREATE TASK CONTROLLER: ", task);
-      console.log("CREATE TASK CONTROLLER: ", JSON.stringify(task,null, 2));
+      const userId = req.user.userId;
+      const taskData = {
+        ...req.body,
+        userId,
+      };
+      const task = this.taskMapper.requestDataToCreateDTO(taskData);
       const updatedTask = await this.taskService.createTask(task);
 
       return res.status(201).json({
-        status: 'success',
+        status: "success",
         message: `Tarea agregada: ${updatedTask}`,
         data: updatedTask,
       });
@@ -45,7 +46,7 @@ class TaskController {
       await this.taskService.deleteTask(taskId, userId);
 
       return res.status(200).json({
-        status: 'success',
+        status: "success",
         message: `Tarea con ID ${taskId} eliminada correctamente.`,
       });
     } catch (error) {
@@ -61,14 +62,14 @@ class TaskController {
 
   async updateTask(req, res, next) {
     try {
-     // const tarea = req.body;
-        const mappedTask = this.taskMapper.requestToDomain(req.body);
+      // const tarea = req.body;
+      const mappedTask = this.taskMapper.requestToDomain(req.body);
 
       //const tarea = this.taskMapper.requestToDomain(req.body);
       const updatedTask = await this.taskService.updateTask(mappedTask);
 
       return res.status(200).json({
-        status: 'success',
+        status: "success",
         message: `Tarea actualizada: ${updatedTask}`,
         data: updatedTask,
       });
@@ -85,12 +86,15 @@ class TaskController {
 
   async completeTask(req, res, next) {
     try {
-      
       const { taskId, isCompleted, userId } = req.body;
-      const updatedTask = await this.taskService.completeTask(taskId, isCompleted, userId);
+      const updatedTask = await this.taskService.completeTask(
+        taskId,
+        isCompleted,
+        userId
+      );
 
       return res.status(200).json({
-        status: 'success',
+        status: "success",
         message: `Estado de tarea actualizado: ${updatedTask}`,
         data: updatedTask,
       });
@@ -108,24 +112,24 @@ class TaskController {
   async findAllTasksByUserId(req, res, next) {
     try {
       const { userId } = req.body;
-             const { 
-            pendingPage = 1, 
-            pendingLimit = 10,
-            completedPage = 1,
-            completedLimit = 10
-        } = req.query;
-      const { pendingTasks, completedTasks } = await this.taskService.getAllTasksByUserId(userId, {
-                pendingPage: parseInt(pendingPage),
-                pendingLimit: parseInt(pendingLimit),
-                completedPage: parseInt(completedPage),
-                completedLimit: parseInt(completedLimit)
-            });
-
+      const {
+        pendingPage = 1,
+        pendingLimit = 10,
+        completedPage = 1,
+        completedLimit = 10,
+      } = req.query;
+      const { pendingTasks, completedTasks } =
+        await this.taskService.getAllTasksByUserId(userId, {
+          pendingPage: parseInt(pendingPage),
+          pendingLimit: parseInt(pendingLimit),
+          completedPage: parseInt(completedPage),
+          completedLimit: parseInt(completedLimit),
+        });
 
       return res.status(200).json({
-        status: 'success',
-        message: 'Tareas consultadas exitosamente',
-        data: { pendingTasks, completedTasks }
+        status: "success",
+        message: "Tareas consultadas exitosamente",
+        data: { pendingTasks, completedTasks },
       });
     } catch (error) {
       // console.error('Error en consultarTareasPoruserId:', error);
