@@ -14,6 +14,7 @@ class TaskMapper {
     this.Task = Task;
     this.tagMapper = tagMapper;
     this.taskTagMapper = taskTagMapper;
+    this.tagMapper = tagMapper;
     this.TaskResponseDTO = TaskResponseDTO;
     this.CreateTaskRequestDTO = CreateTaskRequestDTO;
     this.UpdateTaskRequestDTO = UpdateTaskRequestDTO;
@@ -24,17 +25,20 @@ class TaskMapper {
   }
 
   requestDataToCreateDTO(requestData) {
+    const tags= requestData.tags.map((t)=>this.tagMapper.requestDataToCreateRequestDTO(t))
+ 
     return new this.CreateTaskRequestDTO({
       name: requestData.name,
       description: requestData.description,
       scheduledDate: requestData.scheduledDate,
       priority: requestData.priority,
       userId: requestData.userId,
-      taskTags: requestData.taskTags.map((tt)=>this.taskTagMapper.requestDataToRequestDTO(tt))
-    });
+      tags
+         });
   }
 
-  createDTOToDomain(createDTO) {
+  createRequestDTOToDomain(createDTO) {
+    const taskTags = createDTO.tags.map((tt) =>this.taskTagMapper.createRequestDTOToDomain(tt));
     return this.Task.create(
       {
         name: createDTO.name,
@@ -42,7 +46,7 @@ class TaskMapper {
         scheduledDate: createDTO.scheduledDate,
         priority: createDTO.priority,
         userId: createDTO.userId,
-        taskTags: createDTO.taskTags.map((tt) =>this.taskTagMapper.requestDTOToDomain(tt)),
+        taskTags
       },
       this.errorFactory
     );

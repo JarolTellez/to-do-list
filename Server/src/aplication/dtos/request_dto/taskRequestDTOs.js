@@ -1,11 +1,11 @@
 class CreateTaskRequestDTO {
-  constructor({ name, description, scheduledDate, priority, userId, taskTags=[] }) {
+  constructor({ name, description, scheduledDate, priority, userId, tags=[] }) {
     this.name = name;
     this.description = description;
     this.scheduledDate = scheduledDate;
     this.priority = priority;
     this.userId = userId;
-    this.taskTags = taskTags;
+    this.tags=tags;
   }
 }
 

@@ -12,12 +12,12 @@ class TaskController {
         userId,
       };
       const task = this.taskMapper.requestDataToCreateDTO(taskData);
-      const updatedTask = await this.taskService.createTask(task);
+      const createdTask = await this.taskService.createTask(task);
 
       return res.status(201).json({
         status: "success",
-        message: `Tarea agregada: ${updatedTask}`,
-        data: updatedTask,
+        message: `Tarea agregada: ${createdTask}`,
+        data: createdTask,
       });
     } catch (error) {
       // if (error.message.startsWith('[')) {

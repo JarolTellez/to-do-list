@@ -326,10 +326,12 @@ class UserTagDAO extends BaseDatabaseHandler {
   async findByIdAndUserId(id, userId, externalConn = null) {
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
+    let userTagIdNum;
+    let userIdNum;
 
     try {
-      const userTagIdNum = this.inputValidator.validateId(id, "userTag id");
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
+      userTagIdNum = this.inputValidator.validateId(id, "userTag id");
+      userIdNum = this.inputValidator.validateId(userId, "user id");
 
       const baseQuery = `SELECT 
            ut.id AS user_tag_id,
@@ -384,9 +386,11 @@ class UserTagDAO extends BaseDatabaseHandler {
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
 
+    let userIdNum;
+    let tagIdNum;
     try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
-      const tagIdNum = this.inputValidator.validateId(tagId, "tag id");
+      userIdNum = this.inputValidator.validateId(userId, "user id");
+      tagIdNum = this.inputValidator.validateId(tagId, "tag id");
 
       const baseQuery = `SELECT 
            ut.id AS user_tag_id,

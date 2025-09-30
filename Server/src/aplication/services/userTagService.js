@@ -9,10 +9,22 @@ class UserTagService extends TransactionsHandler {
   }
 
   async createUserTag(userTag, externalConn = null) {
-    this.validator.validateRequired(["userTag", userTag]);
+    this.validator.validateRequired(["userId", "tagId"], {
+      userId: userTag.userId,
+      tagId: userTag.tagId,
+    });
+
     return this.withTransaction(async (connection) => {
-      const result = await this.userTagDAO.create(userTag, connection);
-      return result;
+      const existing = await this.userTagDAO.findByUserIdAndTagId(
+        userTag.userId,
+        userTag.tagId,
+        connection
+      );
+      if (existing) {
+        return existing;
+      }
+      const createdUserTag = await this.userTagDAO.create(userTag, connection);
+      return createdUserTag;
     }, externalConn);
   }
 

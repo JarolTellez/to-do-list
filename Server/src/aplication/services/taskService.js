@@ -16,9 +16,10 @@ class TaskService extends TransactionsHandler {
     super(connectionDB);
     this.taskDAO = taskDAO;
     this.taskMapper = taskMapper;
+    this.userTagMapper=userTagMapper;
     this.taskTagService = taskTagService;
     this.tagService = tagService;
-    this.userTagService=userTagService;
+    this.userTagService = userTagService;
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.appConfig = appConfig;
@@ -30,21 +31,16 @@ class TaskService extends TransactionsHandler {
     });
     return this.withTransaction(async (connection) => {
       const taskDomain =
-        this.taskMapper.createDTOToDomain(createTaskRequestDTO);
+        this.taskMapper.createRequestDTOToDomain(createTaskRequestDTO);
       const newTask = await this.taskDAO.create(taskDomain, connection);
 
       if (Array.isArray(taskDomain.taskTags)) {
-        for (const taskTag of taskDomain.taskTags) {
-          taskTag.assignTaskId(newTask.id);
-          if (!taskTag.tag.id) {
-            const createdTag = await this.tagService.createTag(taskTag.tag);
-            taskTag.assignTag(createdTag);
-          }
-
-
-          await this.taskTagService.createTaskTag(taskTag, connection);
-          await this.userTagService.createUserTag()
-        }
+        await this.#processTaskTags(
+          newTask.id,
+          newTask.userId,
+          taskDomain.taskTags,
+          connection
+        );
       }
 
       const consultedTask = this.taskDAO.findWithTagsByIdAndUserId(
@@ -54,6 +50,29 @@ class TaskService extends TransactionsHandler {
       );
       return consultedTask;
     }, externalConn);
+  }
+
+  async #processTaskTags(taskId, userId, taskTags, connection) {
+    for (const taskTag of taskTags) {
+      taskTag.assignTaskId(taskId);
+
+      if (!taskTag.tag.id) {
+        const createdTag = await this.tagService.createTag(
+          taskTag.tag,
+          connection
+        );
+        taskTag.assignTag(createdTag);
+      }
+
+      const userTag = this.userTagMapper.fromTagAndUserToDomain(
+        taskTag.tag.id,
+        userId
+      );
+
+      await this.userTagService.createUserTag(userTag, connection);
+
+      await this.taskTagService.createTaskTag(taskTag, connection);
+    }
   }
 
   async updateTask(task, externalConn = null) {
@@ -70,7 +89,7 @@ class TaskService extends TransactionsHandler {
         });
       }
 
-      // Actualizar información principal de la tarea
+  
       const result = await this.taskDAO.update(task, connection);
       if (!result) {
         throw this.errorFactory.createNotFoundError(
@@ -85,7 +104,6 @@ class TaskService extends TransactionsHandler {
           continue;
         }
 
-        //Crear nueva tag si no existe
         if (!tag.exists) {
           const createdTag = await this.tagService.createTag(tag, connection);
 
@@ -97,12 +115,10 @@ class TaskService extends TransactionsHandler {
             );
           }
         } else if (!tag.taskTagId) {
-          // Si la tag ya existe pero no está relacionada, se crea la relación
           await this.taskTagService.createTaskTag(task.id, tag.id, connection);
         }
       }
 
-      //  Consultar y retornar task actualizada
       const taskResult = await this.taskDAO.findByIdAndUserId(
         task.id,
         task.userId,
