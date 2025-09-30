@@ -25,7 +25,7 @@ class TagMapper {
     });
   }
 
-  requestDataToCreateDTO(requestData) {
+  requestDataToCreateRequestDTO(requestData) {
     return new this.TagRequestDTO({
       id: requestData.id? requestData.id:null,
       name: requestData.name,
@@ -40,7 +40,7 @@ class TagMapper {
     });
   }
 
-  // Mapea row recibida de los request del cliente a entidad de dominio del backend
+
   createRequestToDomain(createTagRequest) {
     return this.Tag.create(
       {

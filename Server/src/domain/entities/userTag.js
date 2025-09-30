@@ -167,8 +167,6 @@ class UserTag {
               username: this.#user.username,
             }
         : null,
-      isRecent: this.isRecent(),
-      isValid: this.isValid(),
     };
   }
 

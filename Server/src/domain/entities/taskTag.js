@@ -141,7 +141,7 @@ class TaskTag {
   }
 
   static create(
-    { taskId, tag = null, toDelete = false },
+    { taskId=null, tag = null, toDelete = false },
     errorFactory
   ) {
     return new TaskTag(

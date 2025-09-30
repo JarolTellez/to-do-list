@@ -1,5 +1,11 @@
 class TaskTagMapper {
-  constructor({TaskTag, tagMapper, TaskTagResponseDTO,  TaskTagRequestDTO, errorFactory}) {
+  constructor({
+    TaskTag,
+    tagMapper,
+    TaskTagResponseDTO,
+    TaskTagRequestDTO,
+    errorFactory,
+  }) {
     this.TaskTag = TaskTag;
     this.tagMapper = tagMapper;
     this.TaskTagResponseDTO = TaskTagResponseDTO;
@@ -19,30 +25,41 @@ class TaskTagMapper {
     });
   }
 
-   requestDataToRequestDTO(requestData) {
+  requestDataToRequestDTO(requestData) {
     return new this.TaskTagRequestDTO({
-      taskId: requestData.taskId?requestData.taskId:null,
-      tag:this.tagMapper.requestDataToCreateDTO(requestData.tag),
+      taskId: requestData.taskId ? requestData.taskId : null,
+      tag: this.tagMapper.requestDataToCreateDTO(requestData.tag),
       toDelete: requestData.toDelete,
     });
   }
 
-  requestDTOToDomain(taskTagRequestDTO) {
-   return this.TaskTag.create(
+  createRequestDTOToDomain(tagRequestDTO) {
+    const tag = this.tagMapper.createRequestToDomain(tagRequestDTO);
+
+    const taskTag = this.TaskTag.create(
       {
-        taskId: taskTagRequestDTO.taskId? taskTagRequestDTO.taskId:null,
-        tag: this.tagMapper.createRequestToDomain(taskTagRequestDTO.tag),
-        toDelete: taskTagRequestDTO.toDelete || false,
+        tag
+      },
+      this.errorFactory
+    );
+    return taskTag;
+  }
+
+  updateRequestDTOToDomain(tagRequestDTO) {
+    return this.TaskTag.create(
+      {
+        taskId: tagRequestDTO.taskId ? tagRequestDTO.taskId : null,
+        tag: this.tagMapper.createRequestToDomain(tagRequestDTO.tag),
+        toDelete: tagRequestDTO.toDelete || false,
       },
       this.errorFactory
     );
   }
 
-
   dbToDomain(row) {
-     let tag = null;
+    let tag = null;
     if (row.tag_id && row.tag_name) {
-      tag = this.tagMapper.dbToDomain(row); 
+      tag = this.tagMapper.dbToDomain(row);
     }
 
     return new this.TaskTag(
@@ -52,7 +69,7 @@ class TaskTagMapper {
         tagId: row.tag_id,
         createdAt: row.task_tag_created_at,
         tag: tag,
-        task: null, 
+        task: null,
       },
       this.errorFactory
     );
