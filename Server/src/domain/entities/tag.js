@@ -4,7 +4,6 @@ class Tag {
   #id;
   #name;
   #description;
-  #exists;
   #createdAt;
   #taskTags;
   #userTags;
@@ -14,7 +13,6 @@ class Tag {
       id = null,
       name,
       description = "",
-      exists = false,
       createdAt = new Date(),
       taskTags = [],
       userTags = [],
@@ -32,7 +30,6 @@ class Tag {
         entity: "Tag",
       }
     );
-    this.#exists = this.#validator.validateBoolean(exists, "exists", "Tag");
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
     this.#taskTags = this.#validator.validateCollection(taskTags, "taskTags");
     this.#userTags = this.#validator.validateCollection(userTags, "userTags");
@@ -47,9 +44,6 @@ class Tag {
   }
 
   // bussiness logic
-  markAsExisting() {
-    this.#exists = true;
-  }
 
   updateName(newName) {
     this.#name = this.#validateName(newName);
@@ -96,10 +90,6 @@ class Tag {
   get description() {
     return this.#description;
   }
-  get exists() {
-    return this.#exists;
-  }
-
   get createdAt() {
     return this.#createdAt;
   }
@@ -127,19 +117,18 @@ class Tag {
       id: this.#id,
       name: this.#name,
       description: this.#description,
-      exists: this.#exists,
       createdAt: this.#createdAt.toISOString(),
       taskTagsCount: this.#taskTags.length,
       userTagsCount: this.#userTags.length,
     };
   }
 
-  static create({ name, description = "" }, errorFactory) {
+  static create({id=null, name, description = "" }, errorFactory) {
     return new Tag(
       {
+        id,
         name,
         description,
-        exists: true,
         createdAt: new Date(),
       },
       errorFactory

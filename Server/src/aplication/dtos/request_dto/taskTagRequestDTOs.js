@@ -1,8 +1,9 @@
-class TaskTagRequestDTO {
-  constructor({ tagId, toDelete }) {
-    this.tagId = tagId;
+class taskTagRequestDTO {
+  constructor({ taskId=null, tag, toDelete }) {
+    this.taskId = taskId;
+    this.tag = tag;
     this.toDelete = toDelete || false;
   }
 }
 
-module.exports =  TaskTagRequestDTO
+module.exports = taskTagRequestDTO;

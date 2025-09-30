@@ -13,9 +13,8 @@ class TagService extends TransactionsHandler {
   // MUCHOS A MUCHOS
   async createTag(tag, externalConn = null) {
     return this.withTransaction(async (connection) => {
-      const tagResult = await this.tagDAO.findByNameAndUserId(
+      const tagResult = await this.tagDAO.findByName(
         tag.name,
-        tag.userId,
         connection
       );
 

@@ -21,16 +21,17 @@ class TaskTagMapper {
 
    requestDataToRequestDTO(requestData) {
     return new this.TaskTagRequestDTO({
-      tagId: requestData.tagId,
+      taskId: requestData.taskId?requestData.taskId:null,
+      tag:this.tagMapper.requestDataToCreateDTO(requestData.tag),
       toDelete: requestData.toDelete,
     });
   }
 
-  requestDTOToDomain(taskTagRequestDTO, taskId = null) {
+  requestDTOToDomain(taskTagRequestDTO) {
    return this.TaskTag.create(
       {
-        taskId: taskId,
-        tagId: taskTagRequestDTO.tagId,
+        taskId: taskTagRequestDTO.taskId? taskTagRequestDTO.taskId:null,
+        tag: this.tagMapper.createRequestToDomain(taskTagRequestDTO.tag),
         toDelete: taskTagRequestDTO.toDelete || false,
       },
       this.errorFactory

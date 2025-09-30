@@ -9,7 +9,7 @@ class TaskMapper {
     CompleteTaskRequestDTO,
     TasksSummaryResponseDTO,
     errorFactory,
-    dateParser
+    dateParser,
   }) {
     this.Task = Task;
     this.tagMapper = tagMapper;
@@ -30,7 +30,7 @@ class TaskMapper {
       scheduledDate: requestData.scheduledDate,
       priority: requestData.priority,
       userId: requestData.userId,
-      taskTags: requestData.taskTags || [],
+      taskTags: requestData.taskTags.map((tt)=>this.taskTagMapper.requestDataToRequestDTO(tt))
     });
   }
 
@@ -42,6 +42,7 @@ class TaskMapper {
         scheduledDate: createDTO.scheduledDate,
         priority: createDTO.priority,
         userId: createDTO.userId,
+        taskTags: createDTO.taskTags.map((tt) =>this.taskTagMapper.requestDTOToDomain(tt)),
       },
       this.errorFactory
     );
@@ -58,7 +59,7 @@ class TaskMapper {
   }
 
   updateDTOToDomain(updateDTO, existingTask) {
-     const taskTags = (updateDTO.taskTags || []).map((tt) =>
+    const taskTags = (updateDTO.taskTags || []).map((tt) =>
       this.taskTagMapper.requestDTOToDomain(tt)
     );
 
@@ -88,7 +89,7 @@ class TaskMapper {
   }
 
   completeDTOToDomain(completeDTO, existingTask) {
-      return new this.Task(
+    return new this.Task(
       {
         id: existingTask.id,
         name: existingTask.name,

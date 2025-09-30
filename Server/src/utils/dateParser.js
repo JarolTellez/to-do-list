@@ -25,11 +25,31 @@ class DateParser {
    * fromMySQLDateTime('2024-01-15 14:30:00') // Returns Date object
    */
   fromMySQLDateTime(mysqlDateTime) {
-    if (!mysqlDateTime) return null;
-    const isoString = mysqlDateTime.replace(' ', 'T');
-    const date = new Date(isoString);
-    
-    return isNaN(date.getTime()) ? null : date;
+     if (mysqlDateTime instanceof Date) {
+      return isNaN(mysqlDateTime.getTime()) ? null : mysqlDateTime;
+    }
+    if (!mysqlDateTime) {
+      return null;
+    }
+    if (typeof mysqlDateTime === 'string') {
+      let isoString;
+      
+      if (mysqlDateTime.includes(' ')) {
+        isoString = mysqlDateTime.replace(' ', 'T');
+      } else if (mysqlDateTime.includes('T')) {
+        isoString = mysqlDateTime;
+      } else {
+        isoString = mysqlDateTime;
+      }
+      const date = new Date(isoString);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    try {
+      const date = new Date(mysqlDateTime);
+      return isNaN(date.getTime()) ? null : date;
+    } catch (error) {
+      return null;
+    }
   }
 
   /**

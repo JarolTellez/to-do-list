@@ -5,21 +5,17 @@ const Task = require("../entities/task");
 class TaskTag {
   #id;
   #taskId;
-  #tagId;
   #createdAt;
   #tag;
-  #task;
   #toDelete;
   #validator;
 
   constructor(
     {
       id = null,
-      taskId,
-      tagId,
+      taskId=null,
       createdAt = new Date(),
       tag = null,
-      task = null,
       toDelete = false,
     },
     errorFactory
@@ -28,9 +24,7 @@ class TaskTag {
 
     this.#id = this.#validator.validateId(id, "TaskTag");
     this.#taskId = this.#validator.validateId(taskId, "Task");
-    this.#tagId = this.#validator.validateId(tagId, "Tag");
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
-    this.#task = this.#validateTask(task);
     this.#tag = this.#validateTag(tag);
     this.#toDelete = !!toDelete;
 
@@ -45,14 +39,6 @@ class TaskTag {
         "Must provide an instance of Tag",
         null,
         this.#validator.codes.INVALID_FORMAT
-      );
-    }
-
-    if (this.#tagId && tag.id !== this.#tagId) {
-      throw this.#validator.error.createValidationError(
-        "Assigned tag does not match tagId",
-        { tagId: this.#tagId, tagIdFromObject: tag.id },
-        this.#validator.codes.BUSINESS_RULE_VIOLATION
       );
     }
 
@@ -82,28 +68,20 @@ class TaskTag {
   }
 
   #validateBusinessRules() {
-    if (!this.#taskId || !this.#tagId) {
-      throw this.#validator.error.createValidationError(
-        "TaskId and TagId are required",
-        { taskId: this.#taskId, tagId: this.#tagId },
-        this.#validator.codes.REQUIRED_FIELD
-      );
-    }
+
   }
 
   assignTag(tag) {
     this.#tag = this.#validateTag(tag);
     if (tag) {
-      this.#tagId = tag.id;
+      this.#tag = tag;
     }
   }
 
-  assignTask(task) {
-    this.#task = this.#validateTask(task);
-    if (task) {
-      this.#taskId = task.id;
-    }
+    assignTaskId(taskId) {
+    this.#taskId = this.#validator.validateId(taskId, "Task");
   }
+
 
   updateCreatedAt(createdAt) {
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
@@ -124,17 +102,11 @@ class TaskTag {
   get taskId() {
     return this.#taskId;
   }
-  get tagId() {
-    return this.#tagId;
-  }
   get createdAt() {
     return this.#createdAt;
   }
   get tag() {
     return this.#tag;
-  }
-  get task() {
-    return this.#task;
   }
   get toDelete() {
     return this.#toDelete;
@@ -149,25 +121,17 @@ class TaskTag {
     return this.#tag !== null && this.#tag !== undefined;
   }
 
-  hasTask() {
-    return this.#task !== null && this.#task !== undefined;
-  }
+
 
   toJSON() {
     return {
       id: this.#id,
       taskId: this.#taskId,
-      tagId: this.#tagId,
       createdAt: this.#createdAt.toISOString(),
       tag: this.#tag
         ? this.#tag.toJSON
           ? this.#tag.toJSON()
           : this.#tag
-        : null,
-      task: this.#task
-        ? this.#task.toJSON
-          ? this.#task.toJSON()
-          : this.#task
         : null,
       toDelete: this.#toDelete,
       isRecent: this.isRecent(),
@@ -175,14 +139,12 @@ class TaskTag {
   }
 
   static create(
-    { taskId, tagId, task = null, tag = null, toDelete = false },
+    { taskId, tag = null, toDelete = false },
     errorFactory
   ) {
     return new TaskTag(
       {
         taskId,
-        tagId,
-        task,
         tag,
         createdAt: new Date(),
         toDelete,
@@ -191,9 +153,9 @@ class TaskTag {
     );
   }
 
-  static assign({ task, tag, toDelete = false }, errorFactory) {
+  static assign({tag, taskId, toDelete = false }, errorFactory) {
     const validator = new DomainValidators(errorFactory);
-    if (!task || !tag) {
+    if ( !tag) {
       throw validator.error.createValidationError(
         "Task and Tag are required for assignment",
         null,
@@ -202,9 +164,7 @@ class TaskTag {
     }
     return new TaskTag(
       {
-        taskId: task.id,
-        tagId: tag.id,
-        task,
+        taskId,
         tag,
         createdAt: new Date(),
         toDelete,

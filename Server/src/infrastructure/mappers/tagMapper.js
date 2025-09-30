@@ -1,14 +1,14 @@
 class TagMapper {
-  constructor(
+  constructor({
     Tag,
     TagResponseDTO,
-    CreateTagRequestDTO,
+    TagRequestDTO,
     UpdateTagRequestDTO,
     errorFactory
-  ) {
+  }) {
     this.Tag = Tag;
     this.TagResponseDTO = TagResponseDTO;
-    this.CreateTagRequestDTO = CreateTagRequestDTO;
+    this.TagRequestDTO = TagRequestDTO;
     this.UpdateTagRequestDTO = UpdateTagRequestDTO;
     this.errorFactory = errorFactory;
   }
@@ -26,9 +26,10 @@ class TagMapper {
   }
 
   requestDataToCreateDTO(requestData) {
-    return new this.CreateTagRequestDTO({
+    return new this.TagRequestDTO({
+      id: requestData.id? requestData.id:null,
       name: requestData.name,
-      description: requestData.description,
+      description: requestData.description
     });
   }
 
@@ -43,8 +44,9 @@ class TagMapper {
   createRequestToDomain(createTagRequest) {
     return this.Tag.create(
       {
+        id: createTagRequest.id,
         name: createTagRequest.name,
-        description: createTagRequest.description,
+        description: createTagRequest.description? createTagRequest.description:null,
       },
       this.errorFactory
     );
