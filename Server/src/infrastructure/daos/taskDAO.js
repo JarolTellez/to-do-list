@@ -1,6 +1,6 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
 const { SORT_ORDER, TASK_SORT_FIELD } = require("../constants/sortConstants");
-const MAPPER_TYPES  = require("../constants/mapperConstants");
+const MAPPER_TYPES = require("../constants/mapperConstants");
 
 class TaskDAO extends BaseDatabaseHandler {
   constructor({ taskMapper, connectionDB, errorFactory, inputValidator }) {
@@ -43,13 +43,16 @@ class TaskDAO extends BaseDatabaseHandler {
       );
 
       const insertedId = result.insertId;
-      // Retrieve the complete created task with generated Id and timestamps
-      const createdTask = await this.findWithTagsByIdAndUserId(
-        insertedId,
-        task.userId,
-        connection
-      );
+      // // Retrieve the complete created task with generated Id and timestamps
+      // const createdTask = await this.findWithTagsByIdAndUserId(
+      //   insertedId,
+      //   task.userId,
+      //   connection
+      // );
 
+      const createdTask = await this.findById(insertedId, connection);
+
+      // return createdTask;
       return createdTask;
     } catch (error) {
       // Handle duplicated error
@@ -258,10 +261,11 @@ class TaskDAO extends BaseDatabaseHandler {
   async findById(id, externalConn = null) {
     // Get database connection (new or provided external for transactions)
     const { connection, isExternal } = await this.getConnection(externalConn);
-
+    let taskIdNum;
     try {
-      const taskIdNum = this.inputValidator.validateId(id, "task id");
-
+      console.log("ID RECIBIDO:", id);
+      taskIdNum = this.inputValidator.validateId(id, "task id");
+      console.log("TASK IDNUM:", taskIdNum);
       const baseQuery = `SELECT 
         id AS task_id,
         name AS task_name,
@@ -283,6 +287,15 @@ class TaskDAO extends BaseDatabaseHandler {
       });
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+       console.error('🔴 [taskDAO.findById] ERROR DETAILS:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      errno: error.errno,
+      taskIdNum: taskIdNum, // Puede ser undefined
+      originalId: id,
+      stack: error.stack
+    });
       // Re-throw ValidationErrors (input issues)
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -879,4 +892,4 @@ class TaskDAO extends BaseDatabaseHandler {
   }
 }
 
-module.exports=TaskDAO;
+module.exports = TaskDAO;

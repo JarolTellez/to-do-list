@@ -7,7 +7,10 @@ class TaskController {
 
   async createTask(req, res, next) {
     try {
-      const task = this.taskMapper.requestToDomain(req.body);
+      console.log("REQ BODY", req.body);
+      const task = this.taskMapper.requestDataToCreateDTO(req.body);
+      // console.log("CREATE TASK CONTROLLER: ", task);
+      console.log("CREATE TASK CONTROLLER: ", JSON.stringify(task,null, 2));
       const updatedTask = await this.taskService.createTask(task);
 
       return res.status(201).json({

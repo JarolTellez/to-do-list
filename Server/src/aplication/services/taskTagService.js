@@ -8,10 +8,10 @@ class TaskTagService extends TransactionsHandler {
     this.validator=validator;
   }
 
-  async createTaskTag(taskId, tagId, externalConn = null) {
-     this.validator.validateRequired(["taskId","tagId"], { taskId, tagId });
+  async createTaskTag(taskTag, externalConn = null) {
+     this.validator.validateRequired(["taskTag"], { taskTag });
       return this.withTransaction(async (connection) => {
-      const relationId = await this.taskTagDAO.create(taskId, tagId, connection);
+      const relationId = await this.taskTagDAO.create(taskTag, connection);
       return relationId;
          },externalConn);
   }

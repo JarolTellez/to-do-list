@@ -43,8 +43,8 @@ const tagRouter = require("./src/api/routes/tagRoutes")(tagController);
 
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
-app.use("/tarea", taskRouter);
-app.use("/etiqueta", tagRouter);
+app.use("/task", taskRouter);
+app.use("/tag", tagRouter);
 
 // Middleware que se ejecuta solo si hay next(error)
 app.use(errorHandler);
