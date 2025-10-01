@@ -5,11 +5,11 @@ class TaskTagService extends TransactionsHandler {
     taskTagDAO,
     tagService,
     userTagMapper,
-    connectionDB,
+    connectionDb,
     errorFactory,
     validator,
   }) {
-    super(connectionDB);
+    super(connectionDb);
     this.taskTagDAO = taskTagDAO;
     this.tagService=tagService;
     this.userTagMapper=userTagMapper;

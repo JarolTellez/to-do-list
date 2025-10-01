@@ -1,14 +1,13 @@
 const bcrypt = require("bcryptjs");
-const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
 const { LoginRequestDTO } = require("../dtos/request_dto/userRequestDTOs");
 
-class AuthService extends TransactionsHandler {
+class AuthService {
   constructor({
     user,
     userService,
     userMapper,
     sessionService,
-    connectionDB,
+    connectionDb,
     userDAO,
     jwtAuth,
     bcrypt,
@@ -17,7 +16,7 @@ class AuthService extends TransactionsHandler {
     validator,
     appConfig,
   }) {
-    super(connectionDB);
+    this.connectionDb = connectionDb;
     this.user = user;
     this.userService = userService;
     this.userMapper = userMapper;
@@ -39,11 +38,12 @@ class AuthService extends TransactionsHandler {
       loginRequestDTO,
     });
 
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const user = await this.userService.validateCredentials(
         loginRequestDTO,
         connection
       );
+      console.log("RECIBIDO EN AUTH SERVICE", user.toJSON());
       const tokenValidation = await this.validateAndReuseRefreshToken(
         existingRefreshToken,
         user,
@@ -107,7 +107,7 @@ class AuthService extends TransactionsHandler {
 
   async logOutUserSession(refreshToken, externalConn = null) {
     this.validator.validateRequired(["refreshToken"], { refreshToken });
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       let decoded;
       try {
         decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
@@ -144,7 +144,7 @@ class AuthService extends TransactionsHandler {
   async refreshAccessToken(refreshToken, externalConn = null) {
     this.validator.validateRequired(["refreshToken"], { refreshToken });
 
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       const refreshTokenHash =
         this.jwtAuth.createHashRefreshToken(refreshToken);
@@ -197,7 +197,7 @@ class AuthService extends TransactionsHandler {
       idUsuario,
       refreshToken,
     });
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const user = await this.userService.validateUserExistenceById(
         idUsuario,
         connection
@@ -221,7 +221,7 @@ class AuthService extends TransactionsHandler {
   async closeAllUserSessions(accessToken, externalConn = null) {
     this.validator.validateRequired(["accessToken"], { accessToken });
 
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const decoded = this.jwtAuth.verifyAccessToken(accessToken);
       const userId = decoded.sub;
 
@@ -301,7 +301,7 @@ class AuthService extends TransactionsHandler {
       targetSessionId,
     });
 
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       const currentUserId = decoded.sub;
 
@@ -355,30 +355,41 @@ class AuthService extends TransactionsHandler {
     }, externalConn);
   }
 
-  async findUserActiveSessions(accessToken, externalConn = null) {
+  async findUserActiveSessions(accessToken, options = {}) {
     this.validator.validateRequired(["accessToken"], { accessToken });
-
-    return this.withTransaction(async (connection) => {
+    const { page = 1, limit = 10, externalConn = null } = options;
+    
+    return this.connectionDb.executeTransaction(async (connection) => {
       const decoded = this.jwtAuth.verifyAccessToken(accessToken);
       const currentUserId = decoded.sub;
+      const currentSessionId = decoded.sessionId;
 
       await this.userService.validateUserExistenceById(
         currentUserId,
         connection
       );
 
-      const currentSessionId = decoded.sessionId;
-
-      const sessionsResponse =
-        await this.sessionService.findAllUserActiveSessions(
-          currentUserId,
-          currentSessionId,
-          connection
-        );
+      const response = await this.sessionService.findAllUserActiveSessions(
+        currentUserId,
+        currentSessionId,
+        {
+          page,
+          limit,
+          externalTx: connection,
+        }
+      );
 
       return {
-        sessions: sessionsResponse,
-        total: sessionsResponse.length,
+        success: true,
+        data: {
+          sessions: response.sessionsResponse,
+          pagination: {
+            page: response.pagination.page,
+            limit: response.pagination.limit,
+            total: response.pagination.total,
+            totalPages: response.pagination.totalPages,
+          },
+        },
         message: "Sesiones activas obtenidas correctamente",
       };
     }, externalConn);

@@ -70,20 +70,41 @@ class SessionMapper {
     );
   }
 
-  dbToDomain(row) {
+  // dbToDomain(row) {
+  //   if (!row) {
+  //     return null;
+  //   }
+  //   const mappedSession = new this.Session(
+  //     {
+  //       id: row.session_id,
+  //       userId: row.user_id,
+  //       refreshTokenHash: row.refresh_token_hash,
+  //       userAgent: row.user_agent,
+  //       ip: row.ip,
+  //       createdAt: row.session_created_at,
+  //       expiresAt: row.session_expires_at,
+  //       isActive: row.is_active,
+  //     },
+  //     this.errorFactory
+  //   );
+  //   return mappedSession;
+  // }
+
+
+    dbToDomain(row) {
     if (!row) {
       return null;
     }
     const mappedSession = new this.Session(
       {
-        id: row.session_id,
-        userId: row.user_id,
-        refreshTokenHash: row.refresh_token_hash,
-        userAgent: row.user_agent,
+        id: row.id,
+        userId: row.userId,
+        refreshTokenHash: row.refreshTokenHash,
+        userAgent: row.userAgent,
         ip: row.ip,
-        createdAt: row.session_created_at,
-        expiresAt: row.session_expires_at,
-        isActive: row.is_active,
+        createdAt: row.createdAt,
+        expiresAt: row.expiresAt,
+        isActive: row.isActive,
       },
       this.errorFactory
     );

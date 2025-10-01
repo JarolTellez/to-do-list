@@ -117,18 +117,37 @@ class UserMapper {
     };
   }
 
-  dbToDomain(row) {
+  // dbToDomain(row) {
+  //   if (!row) return null;
+
+  //   return new this.User(
+  //     {
+  //       id: row.user_id,
+  //       username: row.user_name,
+  //       email: row.email,
+  //       password: row.password,
+  //       rol: row.rol,
+  //       createdAt: row.user_created_at,
+  //       updatedAt: row.user_updated_at,
+  //       userTags: [],
+  //       tasks: [],
+  //     },
+  //     this.errorFactory
+  //   );
+  // }
+
+    dbToDomain(row) {
     if (!row) return null;
 
     return new this.User(
       {
-        id: row.user_id,
-        username: row.user_name,
+        id: row.id,
+        username: row.username,
         email: row.email,
         password: row.password,
         rol: row.rol,
-        createdAt: row.user_created_at,
-        updatedAt: row.user_updated_at,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
         userTags: [],
         tasks: [],
       },

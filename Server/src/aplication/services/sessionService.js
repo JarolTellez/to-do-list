@@ -1,19 +1,18 @@
-const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
 const {
   SORT_ORDER,
   SESSION_SORT_FIELD,
 } = require("../../infrastructure/constants/sortConstants");
 
-class SessionService extends TransactionsHandler {
+class SessionService {
   constructor({
     sessionDAO,
     sessionMapper,
-    connectionDB,
+    connectionDb,
     erroFactory,
     validator,
     appConfig,
   }) {
-    super(connectionDB);
+    this.connectionDb = connectionDb;
     this.sessionDAO = sessionDAO;
     this.sessionMapper = sessionMapper;
     this.erroFactory = erroFactory;
@@ -87,7 +86,7 @@ class SessionService extends TransactionsHandler {
     { userId, refreshTokenHash, userAgent, ip },
     externalConn = null
   ) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const sessionDomain = this.sessionMapper.createRequestToDomain({
         userId: userId,
         refreshTokenHash: refreshTokenHash,
@@ -106,7 +105,7 @@ class SessionService extends TransactionsHandler {
   }
 
   async validateSession(userId, refreshTokenHash, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
         connection
@@ -130,16 +129,18 @@ class SessionService extends TransactionsHandler {
   }
 
   async validateSessionById(userId, sessionId, connection = null) {
-  const session = await this.sessionDAO.findById(sessionId, connection);
-  
-  return session && 
-         session.userId === userId && 
-         session.isActive && 
-         new Date(session.expiresAt) > new Date();
-}
+    const session = await this.sessionDAO.findById(sessionId, connection);
+
+    return (
+      session &&
+      session.userId === userId &&
+      session.isActive &&
+      new Date(session.expiresAt) > new Date()
+    );
+  }
 
   async deactivateSession(userId, refreshTokenHash, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
         connection
@@ -160,7 +161,7 @@ class SessionService extends TransactionsHandler {
   }
 
   async deactivateSessionByTokenHash(refreshTokenHash, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
         connection
@@ -176,7 +177,7 @@ class SessionService extends TransactionsHandler {
   }
 
   async manageSessionLimit(userId, maxSessions = 10, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const activeCount = await this.sessionDAO.countAllByUserIdAndIsActive(
         userId,
         true,
@@ -202,7 +203,7 @@ class SessionService extends TransactionsHandler {
   }
 
   async deactivateAllUserSessions(userId, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const result = await this.sessionDAO.deactivateAllByUserId(
         userId,
         connection
@@ -234,25 +235,45 @@ class SessionService extends TransactionsHandler {
     };
   }
 
-  async findAllUserActiveSessions(userId, currentSessionId, connection = null) {
+  async findAllUserActiveSessions(userId, currentSessionId, options = {}) {
     this.validator.validateRequired(["userId"], { userId });
+    const { page = 1, limit = 10, externalTx = null } = options;
+    const offset = (page - 1) * limit;
 
+  
+    // get paginated sessions
     const sessions = await this.sessionDAO.findAllByUserIdAndIsActive({
       userId: userId,
       active: true,
-      externalConn: connection,
-      sortBy:SESSION_SORT_FIELD.CREATED_AT,
-      sortOrder:SORT_ORDER.DESC,
+      limit,
+      offset,
+      sortBy: SESSION_SORT_FIELD.CREATED_AT,
+      sortOrder: SORT_ORDER.DESC,
+      externalTx,
     });
 
-    const responseSessions = sessions.map((session) =>
-         this.sessionMapper.domainToResponse(
-            session, 
-            currentSessionId
-        )
+      // Get total sessions
+    const total = await this.sessionDAO.countAllByUserIdAndIsActive(
+      userId, 
+      true, 
+      externalTx
     );
 
-    return responseSessions;
+    const sessionsResponse = sessions.map((session) =>
+      this.sessionMapper.domainToResponse(session, currentSessionId)
+    );
+
+    return {
+      sessionsResponse,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      },
+    };
   }
 }
 

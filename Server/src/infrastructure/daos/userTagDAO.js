@@ -5,8 +5,8 @@ const {
 } = require("../constants/sortConstants");
 
 class UserTagDAO extends BaseDatabaseHandler {
-  constructor({ userTagMapper, connectionDB, errorFactory, inputValidator }) {
-    super(connectionDB, inputValidator, errorFactory);
+  constructor({ userTagMapper, connectionDb, errorFactory, inputValidator }) {
+    super({connectionDb, inputValidator, errorFactory});
     this.userTagMapper = userTagMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;

@@ -1,6 +1,4 @@
-const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
-
-class TaskService extends TransactionsHandler {
+class TaskService {
   constructor({
     taskDAO,
     taskMapper,
@@ -8,12 +6,12 @@ class TaskService extends TransactionsHandler {
     tagService,
     taskTagService,
     userTagService,
-    connectionDB,
+    connectionDb,
     errorFactory,
     validator,
     appConfig,
   }) {
-    super(connectionDB);
+    this.connectionDb=connectionDb;
     this.taskDAO = taskDAO;
     this.taskMapper = taskMapper;
     this.userTagMapper=userTagMapper;
@@ -25,11 +23,11 @@ class TaskService extends TransactionsHandler {
     this.appConfig = appConfig;
   }
 
-  async createTask(createTaskRequestDTO, externalConn = null) {
+  async createTask(createTaskRequestDTO) {
     this.validator.validateRequired(["createTaskRequestDTO"], {
       createTaskRequestDTO,
     });
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const taskDomain =
         this.taskMapper.createRequestDTOToDomain(createTaskRequestDTO);
       const newTask = await this.taskDAO.create(taskDomain, connection);
@@ -77,7 +75,7 @@ class TaskService extends TransactionsHandler {
 
   async updateTask(task, externalConn = null) {
     this.validator.validateRequired(["task"], { task });
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const existingTask = await this.taskDAO.findByIdAndUserId(
         task.id,
         task.userId,
@@ -135,7 +133,7 @@ class TaskService extends TransactionsHandler {
 
   async deleteTask(taskId, userId, externalConn = null) {
     this.validator.validateRequired(["taskId", "userId"], { taskId, userId });
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const existingTask = await this.taskDAO.findByIdAndUserId(
         taskId,
         userId,
@@ -164,7 +162,7 @@ class TaskService extends TransactionsHandler {
   }
 
   async completeTask(taskId, completed, userId, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       // const existingTask = await this.taskDAO.findById(taskId, connection);
       // if (!existingTask) {
       //   throw new Error(`No se encontró la task con el id: ${taskId}.`);
@@ -193,7 +191,7 @@ class TaskService extends TransactionsHandler {
   }
 
   async getAllTasksByUserId(userId, options = {}, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const {
         pendingPage = 1,
         pendingLimit = 2,
