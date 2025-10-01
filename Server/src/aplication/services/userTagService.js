@@ -1,8 +1,8 @@
 const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
 
 class UserTagService extends TransactionsHandler {
-  constructor({ userTagDAO, connectionDB, errorFactory, validator }) {
-    super(connectionDB);
+  constructor({ userTagDAO, connectionDb, errorFactory, validator }) {
+    super(connectionDb);
     this.userTagDAO = userTagDAO;
     this.errorFactory = errorFactory;
     this.validator = validator;

@@ -1,8 +1,8 @@
 const TransactionsHandler = require('../../infrastructure/config/transactionsHandler');
 
-class TagService extends TransactionsHandler {
-  constructor({tagDAO, connectionDB, errorFactory, validator}) {
-    super(connectionDB);
+class TagService  {
+  constructor({tagDAO, connectionDb, errorFactory, validator}) {
+    this.connectionDb=connectionDb;
     this.tagDAO = tagDAO;
     this.errorFactory=errorFactory;
     this.validator=validator;
@@ -12,7 +12,7 @@ class TagService extends TransactionsHandler {
   // MODIFICAR LA DAO Y SUS METODO PARA QUE HAYA UNA TABLA INTERMEDIA CON LAS ETIQUETAS Y USUARIOS CON RELACION
   // MUCHOS A MUCHOS
   async createTag(tag, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const tagResult = await this.tagDAO.findByName(
         tag.name,
         connection
@@ -31,7 +31,7 @@ class TagService extends TransactionsHandler {
   }
 
   async getAllTagsByUserId(userId, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const tagsResult = await this.userTagDAO.findAllByUserId(
         userId,
         connection
@@ -41,7 +41,7 @@ class TagService extends TransactionsHandler {
   }
 
   async getTagByName(name, externalConn = null) {
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const tag = await this.tagDAO.findByName(
         name,
         connection

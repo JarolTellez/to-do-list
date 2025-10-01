@@ -1,4 +1,3 @@
-// utils/errors/ErrorFactory.js
 class ErrorFactory {
   constructor({
     NotFoundError,
@@ -12,7 +11,6 @@ class ErrorFactory {
     AppError,
     ErrorCodes
   }) {
-    // Inyectar todas las dependencias
     this.Errors = {
       NotFoundError,
       ValidationError,

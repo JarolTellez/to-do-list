@@ -1,52 +1,74 @@
-const { SORT_FIELD_MAPPINGS } = require("../../constants/sortConstants");
+const { SORT_FIELD_MAPPINGS, SORT_ORDER } = require("../../constants/sortConstants");
 
 class InputValidator {
   constructor({errorFactory}) {
     this.errorFactory = errorFactory;
   }
 
-  validateSortField(value, validFields, entityType, fieldName = "sort field") {
-    if (typeof value !== "string") {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} must be a string`
-      );
-    }
+  // validateSortField(value, validFields, entityType, fieldName = "sort field") {
+  //   if (typeof value !== "string") {
+  //     throw this.errorFactory.createValidationError(
+  //       `${fieldName} must be a string`
+  //     );
+  //   }
 
-    const normalizedValue = value.toLowerCase();
+  //   const normalizedValue = value.toLowerCase();
 
-    const validField = Object.values(validFields).find(
-      (field) => field.toLowerCase() === normalizedValue
-    );
+  //   const validField = Object.values(validFields).find(
+  //     (field) => field.toLowerCase() === normalizedValue
+  //   );
 
-    if (!validField) {
-      throw this.errorFactory.createValidationError(
-        `Invalid ${fieldName}. Valid values: ${Object.values(validFields).join(
-          ", "
-        )}`
-      );
-    }
+  //   if (!validField) {
+  //     throw this.errorFactory.createValidationError(
+  //       `Invalid ${fieldName}. Valid values: ${Object.values(validFields).join(
+  //         ", "
+  //       )}`
+  //     );
+  //   }
 
-    const entityMapping = SORT_FIELD_MAPPINGS[entityType];
-    if (!entityMapping) {
-      throw this.errorFactory.createValidationError(
-        `Invalid entity type: ${entityType}`
-      );
-    }
+  //   const entityMapping = SORT_FIELD_MAPPINGS[entityType];
+  //   if (!entityMapping) {
+  //     throw this.errorFactory.createValidationError(
+  //       `Invalid entity type: ${entityType}`
+  //     );
+  //   }
 
-    const safeField = entityMapping[validField];
-    if (!safeField) {
-      throw this.errorFactory.createValidationError(
-        `No safe mapping found for field '${validField}' in entity '${entityType}'`
-      );
-    }
+  //   const safeField = entityMapping[validField];
+  //   if (!safeField) {
+  //     throw this.errorFactory.createValidationError(
+  //       `No safe mapping found for field '${validField}' in entity '${entityType}'`
+  //     );
+  //   }
 
-    return {
-      originalField: validField,
-      safeField: safeField,
-    };
+  //   return {
+  //     originalField: validField,
+  //     safeField: safeField,
+  //   };
+  // }
+
+  validateSortField(value, validFields, fieldName = "sort field") {
+  if (typeof value !== "string") {
+    throw this.errorFactory.createValidationError(`${fieldName} must be a string`);
   }
 
-  validateSortOrder(value, validOrders) {
+  const normalizedValue = value.toLowerCase();
+  const validField = Object.values(validFields).find(
+    field => field.toLowerCase() === normalizedValue
+  );
+
+  if (!validField) {
+    throw this.errorFactory.createValidationError(
+      `Invalid ${fieldName}. Valid values: ${Object.values(validFields).join(", ")}`
+    );
+  }
+
+  return {
+    originalField: validField,
+    safeField: validField, // ← Mismo valor, sin mapeo
+  };
+}
+
+  validateSortOrder(value) {
     if (typeof value !== "string") {
       throw this.errorFactory.createValidationError(
         "Sort order must be a string"
@@ -54,13 +76,13 @@ class InputValidator {
     }
 
     const normalizedValue = value.toLowerCase();
-    const validOrder = Object.values(validOrders).find(
+    const validOrder = Object.values(SORT_ORDER).find(
       (order) => order.toLowerCase() === normalizedValue
     );
 
     if (!validOrder) {
       throw this.errorFactory.createValidationError(
-        `Invalid sort order. Valid values: ${Object.values(validOrders).join(
+        `Invalid sort order. Valid values: ${Object.values(SORT_ORDER).join(
           ", "
         )}`
       );

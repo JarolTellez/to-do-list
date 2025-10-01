@@ -114,7 +114,7 @@ class AuthController {
 
   async closeAllUserSessions(req, res, next) {
     try {
-      const accessToken = req.headers.authorization?.replace('Bearer ', '');
+      const accessToken = req.headers.authorization?.replace("Bearer ", "");
 
       if (!accessToken) {
         return res.status(401).json({
@@ -123,9 +123,7 @@ class AuthController {
         });
       }
 
-      const result = await this.authService.closeAllUserSessions(
-        accessToken
-      );
+      const result = await this.authService.closeAllUserSessions(accessToken);
 
       res.clearCookie("refreshToken", {
         httpOnly: true,
@@ -153,8 +151,12 @@ class AuthController {
 
   async findUserActiveSessions(req, res, next) {
     try {
-       const accessToken = req.headers.authorization?.replace('Bearer ', '');
+      const accessToken = req.headers.authorization?.replace("Bearer ", "");
 
+      const { page, limit } = req.query; 
+
+      const pageNum = Math.max(1, parseInt(page) || 1);
+      const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 10));
       if (!accessToken) {
         return res.status(400).json({
           success: false,
@@ -163,15 +165,11 @@ class AuthController {
       }
 
       const result = await this.authService.findUserActiveSessions(
-       accessToken
+        accessToken,
+        { page: pageNum, limit: limitNum }
       );
-      
-      return res.status(200).json({
-        success: true,
-        message: result.message,
-        sessions: result.sessions,
-        totalSessions: result.total
-      });
+
+      return res.status(200).json(result);
     } catch (error) {
       res.clearCookie("refreshToken", {
         httpOnly: true,

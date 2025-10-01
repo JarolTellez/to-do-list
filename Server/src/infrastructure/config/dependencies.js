@@ -68,7 +68,6 @@ const TaskController = require("../../api/controladores/taskController");
 const TagController = require("../../api/controladores/tagController");
 const AuthController = require("../../api/controladores/authController");
 const UserController = require("../../api/controladores/userController");
-const ConnectionDB = require("./connectionDB");
 
 //Infraestructura
 const {
@@ -105,7 +104,9 @@ const errorFactory = new ErrorFactory({
   ErrorCodes,
 });
 const dateParser = new DateParser();
-const connectionDB = ConnectionDB.getInstance();
+
+const PrismaConnection = require("./prismaConnection");
+const prismaConnection = PrismaConnection.getInstance();
 
 //validator
 const Validator = require("../../utils/validators");
@@ -210,37 +211,37 @@ const userMapperAplicationWithBind = {
 // DAOs con sus dependencias
 const taskDAO = new TaskDAO({
   taskMapper: taskMapperWithBind,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   inputValidator,
 });
 const taskTagDAO = new TaskTagDAO({
   taskTagMapper: taskTagMapperWithBind,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   inputValidator,
 });
 const tagDAO = new TagDAO({
   tagMapper: tagMapperWithBind,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   inputValidator,
 });
 const userDAO = new UserDAO({
   userMapper: userMapperWithBind,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   inputValidator,
 });
 const userTagDAO = new UserTagDAO({
   userTagMapper: userTagMapperWithBind,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   inputValidator,
-})
+});
 const sessionDAO = new SessionDAO({
   sessionMapper: sessionMapperWithBind,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   inputValidator,
 });
@@ -251,7 +252,7 @@ const jwtAuth = new JwtAuth(appConfig);
 const userService = new UserService({
   userDAO,
   taskDAO,
-  connectionDB,
+  connectionDb: prismaConnection,
   bcrypt,
   errorFactory,
   validator,
@@ -259,21 +260,21 @@ const userService = new UserService({
 });
 const tagService = new TagService({
   tagDAO,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   validator,
 });
 
 const userTagService = new UserTagService({
   userTagDAO,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   validator,
 });
 const taskTagService = new TaskTagService({
   taskTagDAO,
   userTagMapper,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   validator,
 });
@@ -284,7 +285,7 @@ const taskService = new TaskService({
   tagService,
   userTagService,
   taskTagService,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   validator,
 });
@@ -292,7 +293,7 @@ const sessionService = new SessionService({
   sessionDAO,
   sessionMapper,
   jwtAuth,
-  connectionDB,
+  connectionDb: prismaConnection,
   errorFactory,
   validator,
   appConfig,
@@ -302,7 +303,7 @@ const authService = new AuthService({
   userService,
   userMapper: userMapperAplicationWithBind,
   sessionService,
-  connectionDB,
+  connectionDb: prismaConnection,
   userDAO,
   jwtAuth,
   bcrypt,

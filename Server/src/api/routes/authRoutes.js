@@ -10,7 +10,7 @@ module.exports = (authController) => {
 
   router
     .route("/logout")
-    .post(pruebas, authController.logOut.bind(authController));
+    .post(validateAccessToken, authController.logOut.bind(authController));
 
   router
     .route("/renovar-access-token")
@@ -21,7 +21,7 @@ module.exports = (authController) => {
     .post(validateAccessToken,authController.refreshRefreshToken.bind(authController));
 
   router
-    .route("/sessions")
+    .route("/active-sessions")
     .get(validateAccessToken, authController.findUserActiveSessions.bind(authController));
 
   router

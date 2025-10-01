@@ -1,17 +1,14 @@
-const TransactionsHandler = require("../../infrastructure/config/transactionsHandler");
-const { CreateTagRequestDTO } = require("../dtos/request_dto/tagRequestDTOs");
-
-class UserService extends TransactionsHandler {
+class UserService {
   constructor({
     userDAO,
     taskDAO,
-    connectionDB,
+    connectionDb,
     bcrypt,
     errorFactory,
     validator,
     userMapper,
   }) {
-    super(connectionDB);
+    this.connectionDb = connectionDb;
     this.userDAO = userDAO;
     this.taskDAO = taskDAO;
     this.bcrypt = bcrypt;
@@ -20,7 +17,7 @@ class UserService extends TransactionsHandler {
     this.userMapper = userMapper;
   }
 
-  async createUser(createUserRequestDTO, externalConn = null) {
+  async createUser(createUserRequestDTO) {
     this.validator.validateRequired(
       ["username", "email", "password"],
       createUserRequestDTO
@@ -35,39 +32,47 @@ class UserService extends TransactionsHandler {
       max: 128,
     });
 
-    return this.withTransaction(async (connection) => {
-      const [existingByEmail, existingByusername] = await Promise.all([
-        this.userDAO.findByEmail(createUserRequestDTO.email, connection),
-        this.userDAO.findByUsername(createUserRequestDTO.username, connection),
-      ]);
-      if (existingByEmail) {
-        throw this.errorFactory.createConflictError(
-          "El email ya está registrado"
+    return this.connectionDb.executeTransaction(async (connection) => {
+      try {
+        const [existingByEmail, existingByusername] = await Promise.all([
+          this.userDAO.findByEmail(createUserRequestDTO.email, connection),
+          this.userDAO.findByUsername(
+            createUserRequestDTO.username,
+            connection
+          ),
+        ]);
+        if (existingByEmail) {
+          throw this.errorFactory.createConflictError(
+            "El email ya está registrado"
+          );
+        }
+        if (existingByusername) {
+          throw this.errorFactory.createConflictError(
+            "El nombre de usuario ya está en uso"
+          );
+        }
+
+        const hashedPassword = await this.bcrypt.hash(
+          createUserRequestDTO.password,
+          10
         );
+
+        const userDomain = this.userMapper.createRequestToDomain({
+          ...createUserRequestDTO,
+          password: hashedPassword,
+        });
+
+        const createdUser = await this.userDAO.create(userDomain, connection);
+
+        return this.userMapper.domainToResponse(createdUser);
+      } catch (error) {
+        throw error;
       }
-      if (existingByusername) {
-        throw this.errorFactory.createConflictError(
-          "El nombre de usuario ya está en uso"
-        );
-      }
-
-      const hashedPassword = await this.bcrypt.hash(
-        createUserRequestDTO.password,
-        10
-      );
-
-      const userDomain = this.userMapper.createRequestToDomain({
-        ...createUserRequestDTO,
-        password: hashedPassword,
-      });
-
-      const createdUser = await this.userDAO.create(userDomain, connection);
-
-      return this.userMapper.domainToResponse(createdUser);
-    }, externalConn);
+    });
   }
 
   async validateCredentials(loginRequestDTO, externalConn = null) {
+    console.log("DTO: ",loginRequestDTO);
     this.validator.validateRequired(
       ["identifier", "password"],
       loginRequestDTO
@@ -87,7 +92,7 @@ class UserService extends TransactionsHandler {
       });
       user = await this.userDAO.findByUsername(identifier, externalConn);
     }
-
+console.log("USER EN USERSERVICE: ", user.toJSON());
     if (!user) {
       throw this.errorFactory.createAuthenticationError(
         "Credenciales inválidas"
@@ -122,7 +127,7 @@ class UserService extends TransactionsHandler {
 
   async validateUserExistenceById(userId, externalConn = null) {
     this.validator.validateRequired(["userId"], { userId });
-    return this.withTransaction(async (connection) => {
+    return this.connectionDb.executeTransaction(async (connection) => {
       const user = await this.userDAO.findById(userId, connection);
       if (!user) {
         throw new this.NotFoundError("Usuario no encontrado", {
