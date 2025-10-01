@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const { LoginRequestDTO } = require("../dtos/request_dto/userRequestDTOs");
+const PAGINATION_CONFIG = require("../../infrastructure/config/paginationConfig");
 
 class AuthService {
   constructor({
@@ -15,6 +16,7 @@ class AuthService {
     errorFactory,
     validator,
     appConfig,
+    paginationHelper
   }) {
     this.connectionDb = connectionDb;
     this.user = user;
@@ -28,6 +30,7 @@ class AuthService {
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.appConfig = appConfig;
+    this.paginationHelper=paginationHelper;
   }
 
   async loginUser(
@@ -43,7 +46,6 @@ class AuthService {
         loginRequestDTO,
         connection
       );
-      console.log("RECIBIDO EN AUTH SERVICE", user.toJSON());
       const tokenValidation = await this.validateAndReuseRefreshToken(
         existingRefreshToken,
         user,
@@ -218,7 +220,7 @@ class AuthService {
     }, externalConn);
   }
 
-  async closeAllUserSessions(accessToken, externalConn = null) {
+  async deactivateAllUserSessions(accessToken, externalConn = null) {
     this.validator.validateRequired(["accessToken"], { accessToken });
 
     return this.connectionDb.executeTransaction(async (connection) => {
@@ -233,8 +235,6 @@ class AuthService {
       );
 
       return {
-        success: true,
-        message: `Todas las sesiones cerradas (${result.deactivated} sesiones)`,
         deactivated: result.deactivated,
         userId: userId,
       };
@@ -357,8 +357,8 @@ class AuthService {
 
   async findUserActiveSessions(accessToken, options = {}) {
     this.validator.validateRequired(["accessToken"], { accessToken });
-    const { page = 1, limit = 10, externalConn = null } = options;
-    
+    const { externalConn = null } = options;
+
     return this.connectionDb.executeTransaction(async (connection) => {
       const decoded = this.jwtAuth.verifyAccessToken(accessToken);
       const currentUserId = decoded.sub;
@@ -369,27 +369,28 @@ class AuthService {
         connection
       );
 
+      const pagination = this.paginationHelper.calculatePagination(
+        options.page,
+        options.limit,
+        PAGINATION_CONFIG.ENTITY_LIMITS.SESSIONS,
+        PAGINATION_CONFIG.DEFAULT_PAGE,
+        PAGINATION_CONFIG.DEFAULT_LIMIT
+      );
+
       const response = await this.sessionService.findAllUserActiveSessions(
         currentUserId,
         currentSessionId,
         {
-          page,
-          limit,
+          page: pagination.page,
+          limit: pagination.limit,
+          offset: pagination.offset,
           externalTx: connection,
         }
       );
 
       return {
         success: true,
-        data: {
-          sessions: response.sessionsResponse,
-          pagination: {
-            page: response.pagination.page,
-            limit: response.pagination.limit,
-            total: response.pagination.total,
-            totalPages: response.pagination.totalPages,
-          },
-        },
+        data: response,
         message: "Sesiones activas obtenidas correctamente",
       };
     }, externalConn);

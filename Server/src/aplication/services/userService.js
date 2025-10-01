@@ -7,6 +7,7 @@ class UserService {
     errorFactory,
     validator,
     userMapper,
+    paginationHelper
   }) {
     this.connectionDb = connectionDb;
     this.userDAO = userDAO;
@@ -15,6 +16,7 @@ class UserService {
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.userMapper = userMapper;
+    this.paginationHelper=paginationHelper;
   }
 
   async createUser(createUserRequestDTO) {
@@ -72,7 +74,6 @@ class UserService {
   }
 
   async validateCredentials(loginRequestDTO, externalConn = null) {
-    console.log("DTO: ",loginRequestDTO);
     this.validator.validateRequired(
       ["identifier", "password"],
       loginRequestDTO
@@ -92,7 +93,6 @@ class UserService {
       });
       user = await this.userDAO.findByUsername(identifier, externalConn);
     }
-console.log("USER EN USERSERVICE: ", user.toJSON());
     if (!user) {
       throw this.errorFactory.createAuthenticationError(
         "Credenciales inválidas"

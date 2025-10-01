@@ -1,3 +1,4 @@
+const PAGINATION_CONFIG = require('../../infrastructure/config/paginationConfig');
 class AuthController {
   constructor({ authService, userMapper, errorFactory }) {
     this.authService = authService;
@@ -123,7 +124,7 @@ class AuthController {
         });
       }
 
-      const result = await this.authService.closeAllUserSessions(accessToken);
+      const result = await this.authService.deactivateAllUserSessions(accessToken);
 
       res.clearCookie("refreshToken", {
         httpOnly: true,
@@ -134,7 +135,9 @@ class AuthController {
 
       return res.status(200).json({
         success: true,
-        message: result.message,
+        deactivatedSessions: result.deactivated,
+        message: result.deactivated? "Todas las sesiones han sido desactivadas correctamente"
+        : "No se encontraron sesiones activas para desactivar",
         userId: result.userId,
       });
     } catch (error) {
@@ -154,9 +157,6 @@ class AuthController {
       const accessToken = req.headers.authorization?.replace("Bearer ", "");
 
       const { page, limit } = req.query; 
-
-      const pageNum = Math.max(1, parseInt(page) || 1);
-      const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 10));
       if (!accessToken) {
         return res.status(400).json({
           success: false,
@@ -166,7 +166,7 @@ class AuthController {
 
       const result = await this.authService.findUserActiveSessions(
         accessToken,
-        { page: pageNum, limit: limitNum }
+        { page, limit }
       );
 
       return res.status(200).json(result);

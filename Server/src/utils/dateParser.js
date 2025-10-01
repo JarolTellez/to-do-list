@@ -22,7 +22,7 @@ class DateParser {
    * @param {string} mysqlDateTime - Date in MySQL format (YYYY-MM-DD HH:mm:ss)
    * @returns {Date|null} JavaScript Date object or null if invalid
    * @example
-   * fromMySQLDateTime('2024-01-15 14:30:00') // Returns Date object
+   * fromMySQLDateTime('2024-01-15 14:30:00')
    */
   fromMySQLDateTime(mysqlDateTime) {
      if (mysqlDateTime instanceof Date) {

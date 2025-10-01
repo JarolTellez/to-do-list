@@ -187,7 +187,7 @@
 //     const { connection, isExternal } = await this.getConnection(externalConn);
 //     try {
 //       const userIdNum = this.inputValidator.validateId(id, "user id");
-//       const baseQuery = `SELECT  
+//       const baseQuery = `SELECT
 //           id AS user_id,
 //           username,
 //           email,
@@ -237,7 +237,7 @@
 //    * @throws {ValidationError} If input validation fails.
 //    */
 //   async findByUsername(username, externalConn = null) {
- 
+
 //     // Get database connection (new or provided external for transactions)
 //     const { connection, isExternal } = await this.getConnection(externalConn);
 //     let cleanUsername;
@@ -249,7 +249,7 @@
 
 //      cleanUsername = username.trim();
 
-//       const baseQuery = `SELECT  
+//       const baseQuery = `SELECT
 //         u.id AS user_id,
 //         u.username,
 //         u.email,
@@ -257,7 +257,7 @@
 //         u.rol,
 //         u.created_at AS user_created_at,
 //         u.updated_at AS user_updated_at
-//        FROM users u 
+//        FROM users u
 //        WHERE u.username = ?`;
 
 //       const result = await this._executeQuery({
@@ -314,15 +314,15 @@
 
 //       const cleanEmail = email.trim().toLowerCase();
 
-//       const baseQuery = `SELECT  
+//       const baseQuery = `SELECT
 //         u.id AS user_id,
 //         u.username,
 //         u.email,
 //         u.password,
 //         u.rol,
 //         u.created_at AS user_created_at,
-//         u.updated_at AS user_updated_at 
-//        FROM users u 
+//         u.updated_at AS user_updated_at
+//        FROM users u
 //        WHERE u.email = ?`;
 
 //       const result = await this._executeQuery({
@@ -382,14 +382,14 @@
 //       const cleanEmail = email.trim().toLowerCase();
 //       const cleanusername = username.trim();
 
-//       const baseQuery = `SELECT  
+//       const baseQuery = `SELECT
 //             u.id AS user_id,
 //             u.username,
 //             u.email,
 //             u.password,
 //             u.rol,
-//             u.created_at AS user_created_at 
-//            FROM users u 
+//             u.created_at AS user_created_at
+//            FROM users u
 //            WHERE u.email = ? AND u.username = ?`;
 
 //       const result = await this._executeQuery({
@@ -450,7 +450,7 @@
 //     const { connection, isExternal } = await this.getConnection(externalConn);
 
 //     try {
-//       const baseQuery = `SELECT 
+//       const baseQuery = `SELECT
 //      u.id AS user_id,
 //      u.username,
 //      u.email,
@@ -516,7 +516,7 @@
 //     try {
 //       const userIdNum = this.inputValidator.validateId(id, "user id");
 //       const baseQuery = `
-//         SELECT 
+//         SELECT
 //         u.id AS user_id,
 //         u.username,
 //         u.email,
@@ -572,38 +572,38 @@
 // infrastructure/daos/userDAO.js
 
 const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
-const {SORT_ORDER, USER_SORT_FIELD } = require("../constants/sortConstants");
+const { SORT_ORDER, USER_SORT_FIELD } = require("../constants/sortConstants");
 
 class UserDAO extends BaseDatabaseHandler {
   constructor({ userMapper, connectionDb, errorFactory, inputValidator }) {
-    super({connectionDb, inputValidator, errorFactory});
+    super({ connectionDb, inputValidator, errorFactory });
     this.userMapper = userMapper;
   }
 
   async create(user, externalTx = null) {
     const prisma = await this.getPrisma(externalTx);
-    
+
     try {
       const createdUser = await prisma.user.create({
         data: {
           username: user.username,
           email: user.email.toLowerCase().trim(),
           password: user.password,
-          rol: user.rol || 'user'
-        }
+          rol: user.rol || "user",
+        },
       });
 
       return this.userMapper.dbToDomain(createdUser);
     } catch (error) {
-      this._handlePrismaError(error, 'userDAO.create', {
-        attemptedData: { username: user.username, email: user.email }
+      this._handlePrismaError(error, "userDAO.create", {
+        attemptedData: { username: user.username, email: user.email },
       });
     }
   }
 
   async findByUsername(username, externalTx = null) {
     const prisma = await this.getPrisma(externalTx);
-    
+
     try {
       if (typeof username !== "string" || username.trim().length === 0) {
         throw this.errorFactory.createValidationError("Invalid username");
@@ -611,23 +611,21 @@ class UserDAO extends BaseDatabaseHandler {
 
       const cleanUsername = username.trim();
       const user = await prisma.user.findUnique({
-        where: { username: cleanUsername }
+        where: { username: cleanUsername },
       });
-
-      console.log("USER EN DOMINIO: ", user);
 
       return user ? this.userMapper.dbToDomain(user) : null;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      this._handlePrismaError(error, 'userDAO.findByUsername', { username });
+      this._handlePrismaError(error, "userDAO.findByUsername", { username });
     }
   }
 
   async findByEmail(email, externalTx = null) {
     const prisma = await this.getPrisma(externalTx);
-    
+
     try {
       if (typeof email !== "string" || email.trim().length === 0) {
         throw this.errorFactory.createValidationError("Invalid email");
@@ -635,7 +633,7 @@ class UserDAO extends BaseDatabaseHandler {
 
       const cleanEmail = email.trim().toLowerCase();
       const user = await prisma.user.findUnique({
-        where: { email: cleanEmail }
+        where: { email: cleanEmail },
       });
 
       return user ? this.userMapper.dbToDomain(user) : null;
@@ -643,17 +641,17 @@ class UserDAO extends BaseDatabaseHandler {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      this._handlePrismaError(error, 'userDAO.findByEmail', { email });
+      this._handlePrismaError(error, "userDAO.findByEmail", { email });
     }
   }
 
   async findById(id, externalTx = null) {
     const prisma = await this.getPrisma(externalTx);
-    
+
     try {
       const userIdNum = this.inputValidator.validateId(id, "user id");
       const user = await prisma.user.findUnique({
-        where: { id: userIdNum }
+        where: { id: userIdNum },
       });
 
       return user ? this.userMapper.dbToDomain(user) : null;
@@ -661,13 +659,13 @@ class UserDAO extends BaseDatabaseHandler {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      this._handlePrismaError(error, 'userDAO.findById', { userId: id });
+      this._handlePrismaError(error, "userDAO.findById", { userId: id });
     }
   }
 
   async findByIdWithUserTags(id, externalTx = null) {
     const prisma = await this.getPrisma(externalTx);
-    
+
     try {
       const userIdNum = this.inputValidator.validateId(id, "user id");
       const user = await prisma.user.findUnique({
@@ -675,10 +673,10 @@ class UserDAO extends BaseDatabaseHandler {
         include: {
           userTags: {
             include: {
-              tag: true
-            }
-          }
-        }
+              tag: true,
+            },
+          },
+        },
       });
 
       return user ? this.userMapper.dbToDomainWithTags(user) : null;
@@ -686,7 +684,9 @@ class UserDAO extends BaseDatabaseHandler {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      this._handlePrismaError(error, 'userDAO.findByIdWithUserTags', { userId: id });
+      this._handlePrismaError(error, "userDAO.findByIdWithUserTags", {
+        userId: id,
+      });
     }
   }
 
@@ -698,42 +698,49 @@ class UserDAO extends BaseDatabaseHandler {
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
     const prisma = await this.getPrisma(externalTx);
-    
+
     try {
-      const sortOptions = this._buildSortOptions(sortBy, sortOrder, USER_SORT_FIELD);
+      const sortOptions = this._buildSortOptions(
+        sortBy,
+        sortOrder,
+        USER_SORT_FIELD
+      );
       const paginationOptions = this._buildPaginationOptions(limit, offset);
 
       const users = await prisma.user.findMany({
         ...sortOptions,
-        ...paginationOptions
+        ...paginationOptions,
       });
 
-      return users.map(user => this.userMapper.dbToDomain(user));
+      return users.map((user) => this.userMapper.dbToDomain(user));
     } catch (error) {
-      this._handlePrismaError(error, 'userDAO.findAll', {
-        limit, offset, sortBy, sortOrder
+      this._handlePrismaError(error, "userDAO.findAll", {
+        limit,
+        offset,
+        sortBy,
+        sortOrder,
       });
     }
   }
 
   async delete(id, externalTx = null) {
     const prisma = await this.getPrisma(externalTx);
-    
+
     try {
       const userIdNum = this.inputValidator.validateId(id, "user id");
       const result = await prisma.user.delete({
-        where: { id: userIdNum }
+        where: { id: userIdNum },
       });
 
       return true;
     } catch (error) {
-      if (error.code === 'P2003') {
+      if (error.code === "P2003") {
         throw this.errorFactory.createConflictError(
           "Cannot delete user: user has associated tasks or sessions",
           { attemptedData: { userId: id } }
         );
       }
-      this._handlePrismaError(error, 'userDAO.delete', { userId: id });
+      this._handlePrismaError(error, "userDAO.delete", { userId: id });
     }
   }
 
@@ -741,20 +748,20 @@ class UserDAO extends BaseDatabaseHandler {
   //   if (error.code === 'P2002') {
   //     const target = error.meta?.target;
   //     let message = 'Duplicate entry';
-      
+
   //     if (target?.includes('username')) {
   //       message = 'Username already taken';
   //     } else if (target?.includes('email')) {
   //       message = 'Email already registered';
   //     }
-      
+
   //     throw this.errorFactory.createConflictError(message, {
   //       ...metadata,
   //       prismaCode: error.code,
   //       target
   //     });
   //   }
-    
+
   //   if (error.code === 'P2025') {
   //     throw this.errorFactory.createNotFoundError('Record not found', {
   //       ...metadata,

@@ -64,7 +64,7 @@ class InputValidator {
 
   return {
     originalField: validField,
-    safeField: validField, // ← Mismo valor, sin mapeo
+    safeField: validField, 
   };
 }
 

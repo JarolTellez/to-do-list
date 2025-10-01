@@ -11,6 +11,7 @@ class SessionService {
     erroFactory,
     validator,
     appConfig,
+    paginationHelper,
   }) {
     this.connectionDb = connectionDb;
     this.sessionDAO = sessionDAO;
@@ -18,6 +19,7 @@ class SessionService {
     this.erroFactory = erroFactory;
     this.validator = validator;
     this.appConfig = appConfig;
+    this.paginationHelper = paginationHelper;
   }
 
   // async manageUserSession(
@@ -208,11 +210,9 @@ class SessionService {
         userId,
         connection
       );
-      return {
+
+      return{
         deactivated: result,
-        message: result
-          ? "Todas las sesiones desactivadas"
-          : "No se encontraron sesiones activas",
       };
     }, externalConn);
   }
@@ -237,10 +237,8 @@ class SessionService {
 
   async findAllUserActiveSessions(userId, currentSessionId, options = {}) {
     this.validator.validateRequired(["userId"], { userId });
-    const { page = 1, limit = 10, externalTx = null } = options;
-    const offset = (page - 1) * limit;
+    const { page = 1, limit = 10, offset = 0, externalTx = null } = options;
 
-  
     // get paginated sessions
     const sessions = await this.sessionDAO.findAllByUserIdAndIsActive({
       userId: userId,
@@ -252,10 +250,10 @@ class SessionService {
       externalTx,
     });
 
-      // Get total sessions
+    // get total sessions
     const total = await this.sessionDAO.countAllByUserIdAndIsActive(
-      userId, 
-      true, 
+      userId,
+      true,
       externalTx
     );
 
@@ -263,17 +261,13 @@ class SessionService {
       this.sessionMapper.domainToResponse(session, currentSessionId)
     );
 
-    return {
+    const response = this.paginationHelper.buildPaginationResponse(
       sessionsResponse,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1,
-      },
-    };
+      { page, limit, maxLimit: 50 },
+      total,
+      "sessionsResponse"
+    );
+    return response;
   }
 }
 
