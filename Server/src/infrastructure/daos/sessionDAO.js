@@ -934,7 +934,6 @@ class SessionDAO extends BaseDatabaseHandler {
   }
 
   async create(session, externalTx = null) {
-    console.log("SESSION RECIBIDA: ", session.toJSON());
     const prisma = await this.getPrisma(externalTx);
 
     try {
@@ -1102,7 +1101,7 @@ class SessionDAO extends BaseDatabaseHandler {
         data: { isActive: false },
       });
 
-      return result.count > 0;
+      return result.count;
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
@@ -1204,17 +1203,6 @@ class SessionDAO extends BaseDatabaseHandler {
 
       return sessions.map((session) => this.sessionMapper.dbToDomain(session));
     } catch (error) {
-      console.error("Error in findAllByUserIdAndIsActive:", {
-        method: "sessionDAO.findAllByUserIdAndIsActive",
-        userId: userId,
-        active: active,
-        limit: limit,
-        offset: offset,
-        errorName: error.name,
-        errorMessage: error.message,
-        errorStack: error.stack,
-        timestamp: new Date().toISOString(),
-      });
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }

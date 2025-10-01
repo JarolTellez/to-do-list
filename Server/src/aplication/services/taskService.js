@@ -10,6 +10,7 @@ class TaskService {
     errorFactory,
     validator,
     appConfig,
+    paginationHelper
   }) {
     this.connectionDb=connectionDb;
     this.taskDAO = taskDAO;
@@ -21,6 +22,7 @@ class TaskService {
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.appConfig = appConfig;
+    this.paginationHelper=paginationHelper;
   }
 
   async createTask(createTaskRequestDTO) {

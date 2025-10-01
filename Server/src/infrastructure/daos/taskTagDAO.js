@@ -1,5 +1,5 @@
 const BaseDatabaseHandler = require("../config/BaseDatabaseHandler");
-const PAGINATION_CONFIG = require("../config/pagination");
+const PAGINATION_CONFIG = require("../config/paginationConfig");
 const {
   SORT_ORDER,
   TASK_TAG_SORT_FIELD,

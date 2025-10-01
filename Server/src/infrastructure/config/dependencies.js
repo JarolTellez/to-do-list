@@ -85,11 +85,16 @@ const ErrorCodes = require("../../infrastructure/utils/errors/errorCodes");
 const ErrorFactory = require("../../infrastructure/utils/errors/errorFactory");
 const DateParser = require("../../utils/dateParser");
 const InputValidator = require("../utils/validation/inputValidator");
-// No inyectar
+
+
 const JwtAuth = require("./jwtAuth");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const appConfig = require("./appConfig");
+const PAGINATION_CONFIG = require("./paginationConfig");
+const PaginationHelper = require("../utils/paginationHelper");
+const paginationHelper = new PaginationHelper(PAGINATION_CONFIG);
+
 
 const errorFactory = new ErrorFactory({
   NotFoundError,
@@ -257,12 +262,14 @@ const userService = new UserService({
   errorFactory,
   validator,
   userMapper,
+  paginationHelper
 });
 const tagService = new TagService({
   tagDAO,
   connectionDb: prismaConnection,
   errorFactory,
   validator,
+  paginationHelper
 });
 
 const userTagService = new UserTagService({
@@ -288,6 +295,7 @@ const taskService = new TaskService({
   connectionDb: prismaConnection,
   errorFactory,
   validator,
+  paginationHelper
 });
 const sessionService = new SessionService({
   sessionDAO,
@@ -297,6 +305,7 @@ const sessionService = new SessionService({
   errorFactory,
   validator,
   appConfig,
+  paginationHelper
 });
 const authService = new AuthService({
   User,
@@ -311,6 +320,7 @@ const authService = new AuthService({
   errorFactory,
   validator,
   appConfig,
+  paginationHelper
 });
 
 // Controladores

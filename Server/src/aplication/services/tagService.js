@@ -1,11 +1,10 @@
-const TransactionsHandler = require('../../infrastructure/config/transactionsHandler');
-
 class TagService  {
-  constructor({tagDAO, connectionDb, errorFactory, validator}) {
+  constructor({tagDAO, connectionDb, errorFactory, validator, paginationHelper}) {
     this.connectionDb=connectionDb;
     this.tagDAO = tagDAO;
     this.errorFactory=errorFactory;
     this.validator=validator;
+    this.paginationHelper=paginationHelper;
   }
 
 
