@@ -168,7 +168,7 @@
 //     try {
 //       const tagIdNum = this.inputValidator.validateId(id, "tag id");
 
-//       const baseQuery = `SELECT 
+//       const baseQuery = `SELECT
 //        id AS tag_id,
 //        name AS tag_name,
 //        description AS tag_description,
@@ -222,7 +222,7 @@
 //         throw this.errorFactory.createValidationError("Invalid tag name");
 //       }
 
-//       const baseQuery = `SELECT 
+//       const baseQuery = `SELECT
 //        id AS tag_id,
 //        name AS tag_name,
 //        description AS tag_description,
@@ -283,7 +283,7 @@
 //     const { connection, isExternal } = await this.getConnection(externalConn);
 
 //     try {
-//       const baseQuery = `SELECT 
+//       const baseQuery = `SELECT
 //        id AS tag_id,
 //        name AS tag_name,
 //        description AS tag_description,
@@ -359,7 +359,7 @@
 //       const userIdNum = this.inputValidator.validateId(userId, "user id");
 
 //       const baseQuery = `
-//       SELECT 
+//       SELECT
 //         t.id AS tag_id,
 //         t.name AS tag_name,
 //         t.description AS tag_description,
@@ -439,7 +439,7 @@
 //       const taskIdNum = this.inputValidator.validateId(taskId, "task id");
 
 //       const baseQuery = `
-//       SELECT 
+//       SELECT
 //         t.id AS tag_id,
 //         t.name AS tag_name,
 //         t.description AS tag_description,
@@ -666,92 +666,99 @@ const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
 const { TAG_SORT_FIELD } = require("../constants/sortConstants");
 
 class TagDAO extends BaseDatabaseHandler {
-  constructor({ tagMapper, connectionDb, errorFactory, inputValidator }) {
-    super({connectionDb, inputValidator, errorFactory});
+  constructor({ tagMapper, dbManager, errorFactory, inputValidator }) {
+    super({ dbManager, inputValidator, errorFactory });
     this.tagMapper = tagMapper;
   }
 
-  async create(tag, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
-    
-    try {
-      const createdTag = await prisma.tag.create({
-        data: {
-          name: tag.name,
-          description: tag.description
-        }
-      });
+  async create(tag, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const createdTag = await dbClient.tag.create({
+          data: {
+            name: tag.name,
+            description: tag.description,
+          },
+        });
 
-      return this.tagMapper.dbToDomain(createdTag);
-    } catch (error) {
-      if (error.code === 'P2002') {
-        throw this.errorFactory.createConflictError(
-          "A tag with this name already exists",
-          { name: tag.name }
-        );
+        return this.tagMapper.dbToDomain(createdTag);
+      } catch (error) {
+        if (error.code === "P2002") {
+          throw this.errorFactory.createConflictError(
+            "A tag with this name already exists",
+            { name: tag.name }
+          );
+        }
+        this._handlePrismaError(error, "tagDAO.create", { name: tag.name });
       }
-      this._handlePrismaError(error, 'tagDAO.create', { name: tag.name });
-    }
+    }, externalDbClient);
   }
 
-  async findByName(name, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
-    
-    try {
-      if (!name || typeof name !== "string") {
-        throw this.errorFactory.createValidationError("Invalid tag name");
-      }
+  async findByName(name, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        if (!name || typeof name !== "string") {
+          throw this.errorFactory.createValidationError("Invalid tag name");
+        }
 
-      const tag = await prisma.tag.findUnique({
-        where: { name: name.trim() }
-      });
+        const tag = await dbClient.tag.findUnique({
+          where: { name: name.trim() },
+        });
 
-      return tag ? this.tagMapper.dbToDomain(tag) : null;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
+        return tag ? this.tagMapper.dbToDomain(tag) : null;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "tagDAO.findByName", { name });
       }
-      this._handlePrismaError(error, 'tagDAO.findByName', { name });
-    }
+    }, externalDbClient);
   }
 
   async findAllByUserId({
     userId,
-    externalTx = null,
+    externalDbClient = null,
     limit = null,
     offset = null,
     sortBy = TAG_SORT_FIELD.CREATED_AT,
-    sortOrder = 'desc',
+    sortOrder = "desc",
   } = {}) {
-    const prisma = await this.getPrisma(externalTx);
-    
+    return this.dbManager.forRead(async (dbClient) => {
+
     try {
       const userIdNum = this.inputValidator.validateId(userId, "user id");
-      
-      const sortOptions = this._buildSortOptions(sortBy, sortOrder, TAG_SORT_FIELD);
+
+      const sortOptions = this._buildSortOptions(
+        sortBy,
+        sortOrder,
+        TAG_SORT_FIELD
+      );
       const paginationOptions = this._buildPaginationOptions(limit, offset);
 
-      const tags = await prisma.tag.findMany({
+      const tags = await dbClient.tag.findMany({
         where: {
           userTags: {
             some: {
-              userId: userIdNum
-            }
-          }
+              userId: userIdNum,
+            },
+          },
         },
         ...sortOptions,
-        ...paginationOptions
+        ...paginationOptions,
       });
 
-      return tags.map(tag => this.tagMapper.dbToDomain(tag));
+      return tags.map((tag) => this.tagMapper.dbToDomain(tag));
     } catch (error) {
       if (error instanceof this.errorFactory.Errors.ValidationError) {
         throw error;
       }
-      this._handlePrismaError(error, 'tagDAO.findAllByUserId', {
-        userId, limit, offset
+      this._handlePrismaError(error, "tagDAO.findAllByUserId", {
+        userId,
+        limit,
+        offset,
       });
     }
+       }, externalDbClient);
   }
 }
 

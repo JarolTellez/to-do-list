@@ -6,8 +6,8 @@ const {
 } = require("../constants/sortConstants");
 
 class TaskTagDAO extends BaseDatabaseHandler {
-  constructor({taskTagMapper,connectionDb, errorFactory, inputValidator }) {
-    super({connectionDb, inputValidator, errorFactory});
+  constructor({taskTagMapper,dbManager, errorFactory, inputValidator }) {
+    super({dbManager, inputValidator, errorFactory});
     this.taskTagMapper = taskTagMapper;
     this.errorFactory = errorFactory;
     this.inputValidator = inputValidator;

@@ -17,15 +17,15 @@ class TaskTagService extends TransactionsHandler {
     this.validator = validator;
   }
 
-  async createTaskTag(taskTag, externalConn = null) {
+  async createTaskTag(taskTag, transactionClient = null) {
     this.validator.validateRequired(["taskTag"], { taskTag });
     return this.withTransaction(async (connection) => {
       const result = await this.taskTagDAO.create(taskTag, connection);
       return result;
-    }, externalConn);
+    }, transactionClient);
   }
 
-  async deleteAllByTaskId(taskId, externalConn = null) {
+  async deleteAllByTaskId(taskId, transactionClient = null) {
     this.validator.validateRequired(["taskId"], { taskId });
     return this.withTransaction(async (connection) => {
       const deleted = await this.taskTagDAO.deleteByTaskId(taskId, connection);
@@ -38,10 +38,10 @@ class TaskTagService extends TransactionsHandler {
         );
       }
       return deleted;
-    }, externalConn);
+    }, transactionClient);
   }
 
-  async getAllByTaskId(taskId, externalConn = null) {
+  async getAllByTaskId(taskId, transactionClient = null) {
     this.validator.validateRequired(["taskId"], { taskId });
     return this.withTransaction(async (connection) => {
       const tarea = await this.taskTagDAO.findByTaskId(taskId, connection);
@@ -54,10 +54,10 @@ class TaskTagService extends TransactionsHandler {
         );
       }
       return tarea;
-    }, externalConn);
+    }, transactionClient);
   }
 
-  async deleteById(taskTagId, externalConn = null) {
+  async deleteById(taskTagId, transactionClient = null) {
     this.validator.validateRequired(["taskTagId"], { taskTagId });
     return this.withTransaction(async (connection) => {
       const result = await this.taskTagDAO.delete(taskTagId, connection);
@@ -70,7 +70,7 @@ class TaskTagService extends TransactionsHandler {
         );
       }
       return result;
-    }, externalConn);
+    }, transactionClient);
   }
 
   async processTaskTagCreation(taskTag, connection) {
