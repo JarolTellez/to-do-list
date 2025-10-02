@@ -35,21 +35,21 @@ class AuthService {
 
   async loginUser(
     { existingRefreshToken, loginRequestDTO, userAgent, ip },
-    transactionClient = null
+    externalTransactionDbClient = null
   ) {
     this.validator.validateRequired(["loginRequestDTO"], {
       loginRequestDTO,
     });
 
-    return this.dbManager.withTransaction(async (tx) => {
+    return this.dbManager.withTransaction(async (transactionDbClient) => {
       const user = await this.userService.validateCredentials(
         loginRequestDTO,
-        tx
+        transactionDbClient
       );
       const tokenValidation = await this.validateAndReuseRefreshToken(
         existingRefreshToken,
         user,
-        tx
+        transactionDbClient
       );
 
       let refreshTokenToUse = null;
@@ -75,14 +75,14 @@ class AuthService {
             userAgent,
             ip,
           },
-          tx
+          transactionDbClient
         );
       }
 
       await this.sessionService.manageSessionLimit(
         user.id,
         this.appConfig.session.maxActive,
-        tx
+        transactionDbClient
       );
 
       const accessToken = this.jwtAuth.createAccessToken({
@@ -104,17 +104,17 @@ class AuthService {
         refreshToken: refreshTokenToUse,
         isNewRefreshToken: isNewRefreshToken,
       };
-    },transactionClient);
+    },externalTransactionDbClient);
   }
 
   async logOutUserSession(refreshToken, transactionClient = null) {
     this.validator.validateRequired(["refreshToken"], { refreshToken });
-    return this.dbManager.withTransaction(async (tx) => {
+    return this.dbManager.withTransaction(async (dbClient) => {
       let decoded;
       try {
         decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       } catch (error) {
-        await this.cleanupInvalidSession(refreshToken, tx);
+        await this.cleanupInvalidSession(refreshToken, dbClient);
         throw this.errorFactory.createAuthenticationError(
           "Refresh Token inválido"
         );
@@ -126,7 +126,7 @@ class AuthService {
       const deactivatedSession = await this.sessionService.deactivateSession(
         decoded.sub,
         refreshTokenHashRecibido,
-        tx
+        dbClient
       );
 
       if (!deactivatedSession.success) {
@@ -144,14 +144,14 @@ class AuthService {
   async refreshAccessToken(refreshToken, transactionClient = null) {
     this.validator.validateRequired(["refreshToken"], { refreshToken });
 
-    return this.dbManager.withTransaction(async (tx) => {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       const refreshTokenHash =
         this.jwtAuth.createHashRefreshToken(refreshToken);
       const sessionValidation = await this.sessionService.validateSession(
         decoded.sub,
         refreshTokenHash,
-        tx
+        dbClient
       );
 
       if (!sessionValidation) {
@@ -161,7 +161,7 @@ class AuthService {
       }
       const user = await this.userService.validateUserExistenceById(
         decoded.sub,
-        tx
+        dbClient
       );
 
       const accessToken = this.jwtAuth.createAccessToken({
@@ -179,13 +179,13 @@ class AuthService {
     }, transactionClient);
   }
 
-  async cleanupInvalidSession(refreshToken, tx) {
+  async cleanupInvalidSession(refreshToken, dbClient) {
     try {
       const refreshTokenHash =
         this.jwtAuth.createHashRefreshToken(refreshToken);
       await this.sessionService.deactivateSessionByTokenHash(
         refreshTokenHash,
-        tx
+        dbClient
       );
     } catch (error) {
       console.error("Error limpiando sesión inválida:", error.message);
@@ -197,10 +197,10 @@ class AuthService {
       idUsuario,
       refreshToken,
     });
-    return this.dbManager.withTransaction(async (tx) => {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const user = await this.userService.validateUserExistenceById(
         idUsuario,
-        tx
+        dbClient
       );
 
       if (user) {
@@ -212,7 +212,7 @@ class AuthService {
         await this.sessionService.deactivateSession(
           user.id,
           refreshTokenHashRecibido,
-          tx
+          dbClient
         );
       }
     }, transactionClient);
@@ -221,15 +221,15 @@ class AuthService {
   async deactivateAllUserSessions(accessToken, transactionClient = null) {
     this.validator.validateRequired(["accessToken"], { accessToken });
 
-    return this.dbManager.withTransaction(async (tx) => {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const decoded = this.jwtAuth.verifyAccessToken(accessToken);
       const userId = decoded.sub;
 
-      await this.userService.validateUserExistenceById(userId, tx);
+      await this.userService.validateUserExistenceById(userId, dbClient);
 
       const result = await this.sessionService.deactivateAllUserSessions(
         userId,
-        tx
+        dbClient
       );
 
       return {
@@ -239,7 +239,7 @@ class AuthService {
     }, transactionClient);
   }
 
-  async validateAndReuseRefreshToken(existingRefreshToken, user, tx) {
+  async validateAndReuseRefreshToken(existingRefreshToken, user, dbClient) {
     if (!existingRefreshToken) {
       return { isValid: false, refreshToken: null, session: null };
     }
@@ -252,7 +252,7 @@ class AuthService {
         const isValidSession = await this.sessionService.validateSession(
           decoded.sub,
           refreshTokenHash,
-          tx
+          dbClient
         );
 
         if (isValidSession) {
@@ -268,7 +268,7 @@ class AuthService {
         await this.sessionService.deactivateSession(
           decoded.sub,
           refreshTokenHash,
-          tx
+          dbClient
         );
       }
     } catch (error) {
@@ -277,7 +277,7 @@ class AuthService {
         this.jwtAuth.createHashRefreshToken(existingRefreshToken);
       await this.sessionService.deactivateSessionByTokenHash(
         refreshTokenHash,
-        tx
+        dbClient
       );
     }
 
@@ -299,18 +299,18 @@ class AuthService {
       targetSessionId,
     });
 
-    return this.dbManager.withTransaction(async (tx) => {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       const currentUserId = decoded.sub;
 
       await this.userService.validateUserExistenceById(
         currentUserId,
-        tx
+        dbClient
       );
 
       const targetSession = await this.sessionService.findSessionById(
         targetSessionId,
-        tx
+        dbClient
       );
 
       if (!targetSession) {
@@ -335,7 +335,7 @@ class AuthService {
       const result = await this.sessionService.deactivateSpecificSession(
         targetSessionId,
         currentUserId,
-        tx
+        dbClient
       );
 
       if (!result.success) {
