@@ -164,7 +164,7 @@ class AuthController {
         });
       }
 
-      const result = await this.authService.findUserActiveSessions(
+      const result = await this.authService.getUserActiveSessions(
         accessToken,
         { page, limit }
       );

@@ -24,16 +24,16 @@ class SessionService {
 
   // async manageUserSession(
   //   { userId, existingRefreshToken, userAgent, ip },
-  //   transactionDbClient = null
+  //   externalDbClient = null
   // ) {
-  //   return this.withTransaction(async (externalTransactionDbClient) => {
+  //   return this.withTransaction(async (dbClient) => {
   //     let session = null;
   //     let NewRefreshToken = null;
   //     if (existingRefreshToken) {
   //       session = await this.validateExistingSession(
   //         userId,
   //         existingRefreshToken,
-  //         externalTransactionDbClient
+  //         dbClient
   //       );
   //     }
 
@@ -44,7 +44,7 @@ class SessionService {
   //           userAgent,
   //           ip,
   //         },
-  //         externalTransactionDbClient
+  //         dbClient
   //       );
   //       session = createdSession;
   //     }
@@ -52,25 +52,25 @@ class SessionService {
   //     await this.manageSessionLimit(
   //       userId,
   //       this.appConfig.session.maxActive,
-  //       externalTransactionDbClient
+  //       dbClient
   //     );
 
   //     return {
   //       refreshToken: NewRefreshToken,
   //       session,
   //     };
-  //   }, transactionDbClient);
+  //   }, externalDbClient);
   // }
 
   async validateExistingSession(
     userId,
     refreshTokenHash,
-    transactionDbClient = null
+    externalDbClient = null
   ) {
-    try {
+    return this.dbManager.forRead(async (dbClient) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
-        transactionDbClient
+        dbClient
       );
 
       if (
@@ -83,16 +83,14 @@ class SessionService {
       }
 
       return session;
-    } catch (error) {
-      throw error;
-    }
+    }, externalDbClient);
   }
 
   async createNewSession(
     { userId, refreshTokenHash, userAgent, ip },
-    transactionDbClient = null
+    externalDbClient = null
   ) {
-    return this.dbManager.withTransaction(async (externalTransactionDbClient) => {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const sessionDomain = this.sessionMapper.createRequestToDomain({
         userId: userId,
         refreshTokenHash: refreshTokenHash,
@@ -102,16 +100,19 @@ class SessionService {
         isActive: true,
       });
 
-      const createdSession = await this.sessionDAO.create(sessionDomain, externalTransactionDbClient);
+      const createdSession = await this.sessionDAO.create(
+        sessionDomain,
+        dbClient
+      );
       return createdSession;
-    }, transactionDbClient);
+    }, externalDbClient);
   }
 
-  async validateSession(userId, refreshTokenHash, transactionDbClient = null) {
-    return this.dbManager.withTransaction(async (externalTransactionDbClient) => {
+  async validateSession(userId, refreshTokenHash, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
-        externalTransactionDbClient
+        dbClient
       );
       if (session) {
         const isValid =
@@ -122,31 +123,33 @@ class SessionService {
         if (isValid) {
           return session;
         } else {
-          await this.sessionDAO.deactivate(session.id, externalTransactionDbClient);
+          await this.sessionDAO.deactivate(session.id, dbClient);
           return null;
         }
       }
 
       return null;
-    }, transactionDbClient);
+    }, externalDbClient);
   }
 
-  async validateSessionById(userId, sessionId, externalTransactionDbClient = null) {
-    const session = await this.sessionDAO.findById(sessionId, externalTransactionDbClient);
+  async validateSessionById(userId, sessionId, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      const session = await this.sessionDAO.findById(sessionId, dbClient);
 
-    return (
-      session &&
-      session.userId === userId &&
-      session.isActive &&
-      new Date(session.expiresAt) > new Date()
-    );
+      return (
+        session &&
+        session.userId === userId &&
+        session.isActive &&
+        new Date(session.expiresAt) > new Date()
+      );
+    }, externalDbClient);
   }
 
-  async deactivateSession(userId, refreshTokenHash, transactionDbClient = null) {
-    return this.dbManager.withTransaction(async (externalTransactionDbClient) => {
+  async deactivateSession(userId, refreshTokenHash, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
-        externalTransactionDbClient
+        dbClient
       );
 
       if (session) {
@@ -155,45 +158,45 @@ class SessionService {
             "El token no corresponde al usuario"
           );
         }
-        await this.sessionDAO.deactivate(session.id, externalTransactionDbClient);
+        await this.sessionDAO.deactivate(session.id, dbClient);
         return { success: true, userId: session.userId };
       }
 
       return { success: false };
-    }, transactionDbClient);
+    }, externalDbClient);
   }
 
   async deactivateSessionByTokenHash(
     refreshTokenHash,
-    transactionDbClient = null
+    externalDbClient = null
   ) {
-    return this.dbManager.withTransaction(async (externalTransactionDbClient) => {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const session = await this.sessionDAO.findByRefreshTokenHash(
         refreshTokenHash,
-        externalTransactionDbClient
+        dbClient
       );
 
       if (session && session.isActive) {
-        await this.sessionDAO.deactivate(session.id, externalTransactionDbClient);
+        await this.sessionDAO.deactivate(session.id, dbClient);
         return { sessionId: session.id };
       }
 
       return { sessionId: session.id };
-    }, transactionDbClient);
+    }, externalDbClient);
   }
 
-  async manageSessionLimit(userId, maxSessions = 10, transactionDbClient = null) {
-    return this.dbManager.withTransaction(async (externalTransactionDbClient) => {
+  async manageSessionLimit(userId, maxSessions = 10, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const activeCount = await this.sessionDAO.countAllByUserIdAndIsActive(
         userId,
         true,
-        externalTransactionDbClient
+        dbClient
       );
 
       if (activeCount >= maxSessions) {
         const deactivated = await this.sessionDAO.deactivateOldestByUserId(
           userId,
-          externalTransactionDbClient
+          dbClient
         );
 
         return {
@@ -210,43 +213,49 @@ class SessionService {
         maxSessions: maxSessions,
         hadToDeactivate: false,
       };
-    }, transactionDbClient);
+    }, externalDbClient);
   }
 
-  async deactivateAllUserSessions(userId, transactionDbClient = null) {
-    return this.dbManager.withTransaction(async (externalTransactionDbClient) => {
-      const result = await this.sessionDAO.deactivateAllByUserId(userId, externalTransactionDbClient);
+  async deactivateAllUserSessions(userId, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      const result = await this.sessionDAO.deactivateAllByUserId(
+        userId,
+        dbClient
+      );
 
       return {
         deactivated: result,
       };
-    }, transactionDbClient);
+    }, externalDbClient);
   }
 
-  async findSessionById(sessionId, externalTransactionDbClient = null) {
+  async getSessionById(sessionId, externalDbClient = null) {
     this.validator.validateRequired(["sessionId"], { sessionId });
 
-    return await this.sessionDAO.findById(sessionId, externalTransactionDbClient);
+    return this.dbManager.forRead(async (dbClient) => {
+      return await this.sessionDAO.findById(sessionId, dbClient);
+    }, externalDbClient);
   }
 
-  async deactivateSpecificSession(sessionId, externalTransactionDbClient = null) {
+  async deactivateSpecificSession(sessionId, externalDbClient = null) {
     this.validator.validateRequired(["sessionId"], {
       sessionId,
     });
 
-    const result = await this.sessionDAO.deactivate(sessionId, externalTransactionDbClient);
+    return this.dbManager.withTransaction(async (dbClient) => {
+      const result = await this.sessionDAO.deactivate(sessionId, dbClient);
 
-    return {
-      success: result,
-    };
+      return {
+        success: result,
+      };
+    }, externalDbClient);
   }
 
-  async findAllUserActiveSessions(userId, currentSessionId, options = {}) {
+  async getAllUserActiveSessions(userId, currentSessionId, options = {}) {
     this.validator.validateRequired(["userId"], { userId });
-    const { page = 1, limit = 10, offset = 0, dbClient = null } = options;
+    const { page = 1, limit = 10, offset = 0, externalDbClient = null } = options;
 
-    return this.dbManager.forRead(async (internalClient) => {
-      const clientToUse = dbClient || internalClient;
+    return this.dbManager.forRead(async (dbClient) => {
       // get paginated sessions
       const sessions = await this.sessionDAO.findAllByUserIdAndIsActive({
         userId: userId,
@@ -255,15 +264,16 @@ class SessionService {
         offset,
         sortBy: SESSION_SORT_FIELD.CREATED_AT,
         sortOrder: SORT_ORDER.DESC,
-        externalDbClient: clientToUse,
+        externalDbClient: dbClient,
       });
 
       // get total sessions
-      const total = await this.sessionDAO.countAllByUserIdAndIsActive({
+      const total = await this.sessionDAO.countAllByUserIdAndIsActive(
         userId,
-        active: true,
-        externalDbClient: clientToUse,
-      });
+        true,
+         dbClient,
+      );
+          const totalPages = this.paginationHelper.calculateTotalPages(total, limit);
 
       const sessionsResponse = sessions.map((session) =>
         this.sessionMapper.domainToResponse(session, currentSessionId)
@@ -273,10 +283,11 @@ class SessionService {
         sessionsResponse,
         { page, limit, maxLimit: 50 },
         total,
-        "sessionsResponse"
+        totalPages,
+        "sessions"
       );
       return response;
-    }, dbClient);
+    }, externalDbClient);
   }
 }
 
