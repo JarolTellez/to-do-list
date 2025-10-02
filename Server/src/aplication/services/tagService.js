@@ -1,6 +1,6 @@
 class TagService  {
-  constructor({tagDAO, connectionDb, errorFactory, validator, paginationHelper}) {
-    this.connectionDb=connectionDb;
+  constructor({tagDAO, dbManager, errorFactory, validator, paginationHelper}) {
+    this.dbManager=dbManager;
     this.tagDAO = tagDAO;
     this.errorFactory=errorFactory;
     this.validator=validator;
@@ -10,11 +10,11 @@ class TagService  {
 
   // MODIFICAR LA DAO Y SUS METODO PARA QUE HAYA UNA TABLA INTERMEDIA CON LAS ETIQUETAS Y USUARIOS CON RELACION
   // MUCHOS A MUCHOS
-  async createTag(tag, externalConn = null) {
-    return this.connectionDb.executeTransaction(async (connection) => {
+  async createTag(tag, transactionClient = null) {
+    return this.dbManager.withTransaction(async (tx) => {
       const tagResult = await this.tagDAO.findByName(
         tag.name,
-        connection
+        tx
       );
 
       if (tagResult) {
@@ -23,27 +23,27 @@ class TagService  {
 
       const createdTag = await this.tagDAO.create(
         tag,
-        connection
+        tx
       );
       return createdTag;
-    }, externalConn);
+    }, transactionClient);
   }
 
-  async getAllTagsByUserId(userId, externalConn = null) {
-    return this.connectionDb.executeTransaction(async (connection) => {
+  async getAllTagsByUserId(userId, transactionClient = null) {
+    return this.dbManager.withTransaction(async (tx) => {
       const tagsResult = await this.userTagDAO.findAllByUserId(
         userId,
-        connection
+        tx
       );
       return tagsResult;
-    }, externalConn);
+    }, transactionClient);
   }
 
-  async getTagByName(name, externalConn = null) {
-    return this.connectionDb.executeTransaction(async (connection) => {
+  async getTagByName(name, transactionClient = null) {
+    return this.dbManager.withTransaction(async (tx) => {
       const tag = await this.tagDAO.findByName(
         name,
-        connection
+        tx
       );
        if (tag) {
         throw this.errorFactory.createNotFoundError("Etiqueta no encontrada", {
@@ -51,7 +51,7 @@ class TagService  {
         });
       }
       return tag;
-    }, externalConn);
+    }, transactionClient);
   }
 }
 

@@ -920,235 +920,234 @@
 
 // infrastructure/daos/sessionDAO.js
 const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
-const { SESSION_SORT_FIELD, SORT_ORDER } = require("../constants/sortConstants");
+const {
+  SESSION_SORT_FIELD,
+  SORT_ORDER,
+} = require("../constants/sortConstants");
 
 class SessionDAO extends BaseDatabaseHandler {
-  constructor({
-    sessionMapper,
-    connectionDb,
-    errorFactory,
-    inputValidator,
-  }) {
-    super({connectionDb, inputValidator, errorFactory});
+  constructor({ sessionMapper, dbManager, errorFactory, inputValidator }) {
+    super({ dbManager, inputValidator, errorFactory });
     this.sessionMapper = sessionMapper;
   }
 
-  async create(session, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async create(session, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const createdSession = await dbClient.session.create({
+          data: {
+            refreshTokenHash: session.refreshTokenHash,
+            userAgent: session.userAgent,
+            ip: session.ip,
+            expiresAt: session.expiresAt,
+            isActive: session.isActive !== false,
+            userId: session.userId,
+          },
+        });
 
-    try {
-      const createdSession = await prisma.session.create({
-        data: {
-          refreshTokenHash: session.refreshTokenHash,
-          userAgent: session.userAgent,
-          ip: session.ip,
-          expiresAt: session.expiresAt,
-          isActive: session.isActive !== false,
-          userId: session.userId,
-        },
-      });
-
-      return this.sessionMapper.dbToDomain(createdSession);
-    } catch (error) {
-      this._handlePrismaError(error, "sessionDAO.create", {
-        attemptedData: { userId: session.userId },
-      });
-    }
+        return this.sessionMapper.dbToDomain(createdSession);
+      } catch (error) {
+        this._handlePrismaError(error, "sessionDAO.create", {
+          attemptedData: { userId: session.userId },
+        });
+      }
+    }, externalDbClient);
   }
 
-  /**
-   * Finds a session by its ID
-   * @param {number|string} id - ID of the session to find
-   * @param {Object} externalTx - External Prisma transaction client
-   * @returns {Promise<Session|null>} Session entity if found, null otherwise
-   * @throws {ValidationError} If the session ID is invalid
-   * @throws {DatabaseError} On database operation failure
-   */
-  async findById(id, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async deactivate(id, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const sessionIdNum = this.inputValidator.validateId(id, "session id");
 
-    try {
-      const sessionIdNum = this.inputValidator.validateId(id, "session id");
+        const session = await dbClient.session.update({
+          where: { id: sessionIdNum },
+          data: { isActive: false },
+        });
 
-      const session = await prisma.session.findUnique({
-        where: { id: sessionIdNum },
-      });
-
-      return session ? this.sessionMapper.dbToDomain(session) : null;
-    } catch (error) {
-      // Re-throw ValidationErrors (input issues)
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
+        return !!session;
+      } catch (error) {
+        if (error.code === "P2025") {
+          return false; // Session not found
+        }
+        this._handlePrismaError(error, "sessionDAO.deactivate", {
+          sessionId: id,
+        });
       }
-
-      this._handlePrismaError(error, "sessionDAO.findById", {
-        attemptedData: { sessionId: id },
-      });
-    }
-  }
-
-  async findByRefreshTokenHash(refreshTokenHash, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
-
-    try {
-      if (
-        typeof refreshTokenHash !== "string" ||
-        refreshTokenHash.trim().length === 0
-      ) {
-        throw this.errorFactory.createValidationError(
-          "Invalid refresh token hash"
-        );
-      }
-
-      const session = await prisma.session.findFirst({
-        where: {
-          refreshTokenHash: refreshTokenHash.trim(),
-          isActive: true,
-        },
-      });
-
-      return session ? this.sessionMapper.dbToDomain(session) : null;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-      this._handlePrismaError(error, "sessionDAO.findByRefreshTokenHash", {
-        hashLength: refreshTokenHash?.length,
-      });
-    }
-  }
-
-  async deactivate(id, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
-
-    try {
-      const sessionIdNum = this.inputValidator.validateId(id, "session id");
-
-      const session = await prisma.session.update({
-        where: { id: sessionIdNum },
-        data: { isActive: false },
-      });
-
-      return !!session;
-    } catch (error) {
-      if (error.code === "P2025") {
-        return false; // Session not found
-      }
-      this._handlePrismaError(error, "sessionDAO.deactivate", {
-        sessionId: id,
-      });
-    }
+    }, externalDbClient);
   }
 
   /**
    * Deactivates the oldest session for a specific user
    * @param {number|string} userId - ID of the user
-   * @param {Object} externalTx - External Prisma transaction client
+   * @param {Object} externalDbClient - External Prisma transaction client
    * @returns {Promise<boolean>} True if a session was deactivated, false otherwise
    * @throws {ValidationError} If the user ID is invalid
    * @throws {DatabaseError} On database operation failure
    */
-  async deactivateOldestByUserId(userId, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async deactivateOldestByUserId(userId, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(userId, "user id");
+        const oldestSession = await dbClient.session.findFirst({
+          where: {
+            userId: userIdNum,
+            isActive: true,
+          },
+          orderBy: { createdAt: "asc" },
+          select: { id: true },
+        });
 
-    try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
-      const oldestSession = await prisma.session.findFirst({
-        where: {
-          userId: userIdNum,
-          isActive: true,
-        },
-        orderBy: { createdAt: "asc" },
-        select: { id: true },
-      });
+        if (!oldestSession) {
+          return false;
+        }
 
-      if (!oldestSession) {
-        return false;
+        await dbClient.session.update({
+          where: { id: oldestSession.id },
+          data: { isActive: false },
+        });
+
+        return true;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+
+        if (error.code === "P2025") {
+          return false;
+        }
+
+        this._handlePrismaError(error, "sessionDAO.deactivateOldestByUserId", {
+          userId,
+        });
       }
-
-      await prisma.session.update({
-        where: { id: oldestSession.id },
-        data: { isActive: false },
-      });
-
-      return true;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-
-      if (error.code === "P2025") {
-        return false; // Sesión no encontrada (raro pero posible)
-      }
-
-      this._handlePrismaError(error, "sessionDAO.deactivateOldestByUserId", {
-        userId,
-      });
-    }
+    }, externalDbClient);
   }
 
-  async deactivateAllByUserId(userId, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async deactivateAllByUserId(userId, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-    try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
+        const result = await dbClient.session.updateMany({
+          where: {
+            userId: userIdNum,
+            isActive: true,
+          },
+          data: { isActive: false },
+        });
 
-      const result = await prisma.session.updateMany({
-        where: {
-          userId: userIdNum,
-          isActive: true,
-        },
-        data: { isActive: false },
-      });
-
-      return result.count;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
+        return result.count;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "sessionDAO.deactivateAllByUserId", {
+          userId,
+        });
       }
-      this._handlePrismaError(error, "sessionDAO.deactivateAllByUserId", {
-        userId,
-      });
-    }
+    }, externalDbClient);
+  }
+  /**
+   * Finds a session by its ID
+   * @param {number|string} id - ID of the session to find
+   * @param {Object} externalDbClient - External Prisma transaction client
+   * @returns {Promise<Session|null>} Session entity if found, null otherwise
+   * @throws {ValidationError} If the session ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
+  async findById(id, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        const sessionIdNum = this.inputValidator.validateId(id, "session id");
+
+        const session = await dbClient.session.findUnique({
+          where: { id: sessionIdNum },
+        });
+
+        return session ? this.sessionMapper.dbToDomain(session) : null;
+      } catch (error) {
+        // Re-throw ValidationErrors (input issues)
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+
+        this._handlePrismaError(error, "sessionDAO.findById", {
+          attemptedData: { sessionId: id },
+        });
+      }
+    }, externalDbClient);
+  }
+
+  async findByRefreshTokenHash(refreshTokenHash, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        if (
+          typeof refreshTokenHash !== "string" ||
+          refreshTokenHash.trim().length === 0
+        ) {
+          throw this.errorFactory.createValidationError(
+            "Invalid refresh token hash"
+          );
+        }
+
+        const session = await dbClient.session.findFirst({
+          where: {
+            refreshTokenHash: refreshTokenHash.trim(),
+            isActive: true,
+          },
+        });
+
+        return session ? this.sessionMapper.dbToDomain(session) : null;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "sessionDAO.findByRefreshTokenHash", {
+          hashLength: refreshTokenHash?.length,
+        });
+      }
+    }, externalDbClient);
   }
 
   async findAllByUserId({
     userId,
-    externalTx = null,
+    externalDbClient = null,
     limit = null,
     offset = null,
     sortBy = SESSION_SORT_FIELD.CREATED_AT,
     sortOrder = "desc",
   } = {}) {
-    const prisma = await this.getPrisma(externalTx);
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-    try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
+        const sortOptions = this._buildSortOptions(
+          sortBy,
+          sortOrder,
+          SESSION_SORT_FIELD
+        );
+        const paginationOptions = this._buildPaginationOptions(limit, offset);
 
-      const sortOptions = this._buildSortOptions(
-        sortBy,
-        sortOrder,
-        SESSION_SORT_FIELD
-      );
-      const paginationOptions = this._buildPaginationOptions(limit, offset);
+        const sessions = await dbClient.session.findMany({
+          where: { userId: userIdNum },
+          ...sortOptions,
+          ...paginationOptions,
+        });
 
-      const sessions = await prisma.session.findMany({
-        where: { userId: userIdNum },
-        ...sortOptions,
-        ...paginationOptions,
-      });
-
-      return sessions.map((session) => this.sessionMapper.dbToDomain(session));
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
+        return sessions.map((session) =>
+          this.sessionMapper.dbToDomain(session)
+        );
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "sessionDAO.findAllByUserId", {
+          userId,
+          limit,
+          offset,
+        });
       }
-      this._handlePrismaError(error, "sessionDAO.findAllByUserId", {
-        userId,
-        limit,
-        offset,
-      });
-    }
+    }, externalDbClient);
   }
 
   /**
@@ -1156,7 +1155,7 @@ class SessionDAO extends BaseDatabaseHandler {
    * @param {Object} options - Configuration options for the query
    * @param {number} options.userId - ID of the user whose sessions to retrieve
    * @param {boolean} options.active - Active status to filter by
-   * @param {Object} options.externalTx - External Prisma transaction client
+   * @param {Object} options.externalDbClient - External Prisma transaction client
    * @param {string} options.sortBy - Field to sort results by
    * @param {string} options.sortOrder - Sort order (ASC or DESC)
    * @param {number} options.limit - Maximum number of records to return
@@ -1167,86 +1166,96 @@ class SessionDAO extends BaseDatabaseHandler {
    */
   async findAllByUserIdAndIsActive({
     userId,
-    externalTx = null,
+    externalDbClient = null,
     sortBy = SESSION_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
     active = true,
     limit = null,
     offset = null,
   } = {}) {
-    const prisma = await this.getPrisma(externalTx);
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-    try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
+        if (typeof active !== "boolean") {
+          throw this.errorFactory.createValidationError(
+            "Active must be a boolean"
+          );
+        }
 
-      if (typeof active !== "boolean") {
-        throw this.errorFactory.createValidationError(
-          "Active must be a boolean"
+        const sortOptions = this._buildSortOptions(
+          sortBy,
+          sortOrder,
+          SESSION_SORT_FIELD
+        );
+        const paginationOptions = this._buildPaginationOptions(limit, offset);
+
+        const sessions = await dbClient.session.findMany({
+          where: {
+            userId: userIdNum,
+            isActive: active,
+          },
+          ...sortOptions,
+          ...paginationOptions,
+        });
+
+        return sessions.map((session) =>
+          this.sessionMapper.dbToDomain(session)
+        );
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(
+          error,
+          "sessionDAO.findAllByUserIdAndIsActive",
+          {
+            userId,
+            active,
+            limit,
+            offset,
+          }
         );
       }
-
-      const sortOptions = this._buildSortOptions(
-        sortBy,
-        sortOrder,
-        SESSION_SORT_FIELD
-      );
-      const paginationOptions = this._buildPaginationOptions(limit, offset);
-
-      const sessions = await prisma.session.findMany({
-        where: {
-          userId: userIdNum,
-          isActive: active,
-        },
-        ...sortOptions,
-        ...paginationOptions,
-      });
-
-      return sessions.map((session) => this.sessionMapper.dbToDomain(session));
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-      this._handlePrismaError(error, "sessionDAO.findAllByUserIdAndIsActive", {
-        userId,
-        active,
-        limit,
-        offset,
-      });
-    }
+    }, externalDbClient);
   }
 
   /**
    * Counts sessions for a specific user filtered by active status
    * @param {number|string} userId - ID of the user
    * @param {boolean} active - Active status to filter by
-   * @param {Object} externalTx - External Prisma transaction client
+   * @param {Object} externalDbClient - External Prisma transaction client
    * @returns {Promise<number>} Total number of sessions matching the criteria
    * @throws {ValidationError} If the user ID is invalid
    * @throws {DatabaseError} On database operation failure
    */
-  async countAllByUserIdAndIsActive(userId, active, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async countAllByUserIdAndIsActive(userId, active, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-    try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
+        const count = await dbClient.session.count({
+          where: {
+            userId: userIdNum,
+            isActive: active,
+          },
+        });
 
-      const count = await prisma.session.count({
-        where: {
-          userId: userIdNum,
-          isActive: active,
-        },
-      });
-
-      return count;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
+        return count;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(
+          error,
+          "sessionDAO.countAllByUserIdAndIsActive",
+          {
+            userId,
+            active,
+          }
+        );
       }
-      this._handlePrismaError(error, "sessionDAO.countAllByUserIdAndIsActive", {
-        userId,
-        active,
-      });
-    }
+    }, externalDbClient);
   }
 }
 

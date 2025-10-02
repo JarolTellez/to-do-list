@@ -575,173 +575,173 @@ const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
 const { SORT_ORDER, USER_SORT_FIELD } = require("../constants/sortConstants");
 
 class UserDAO extends BaseDatabaseHandler {
-  constructor({ userMapper, connectionDb, errorFactory, inputValidator }) {
-    super({ connectionDb, inputValidator, errorFactory });
+  constructor({ userMapper, dbManager, errorFactory, inputValidator }) {
+    super({ dbManager, inputValidator, errorFactory });
     this.userMapper = userMapper;
   }
 
-  async create(user, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async create(user, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const createdUser = await dbClient.user.create({
+          data: {
+            username: user.username,
+            email: user.email.toLowerCase().trim(),
+            password: user.password,
+            rol: user.rol || "user",
+          },
+        });
 
-    try {
-      const createdUser = await prisma.user.create({
-        data: {
-          username: user.username,
-          email: user.email.toLowerCase().trim(),
-          password: user.password,
-          rol: user.rol || "user",
-        },
-      });
-
-      return this.userMapper.dbToDomain(createdUser);
-    } catch (error) {
-      this._handlePrismaError(error, "userDAO.create", {
-        attemptedData: { username: user.username, email: user.email },
-      });
-    }
+        return this.userMapper.dbToDomain(createdUser);
+      } catch (error) {
+        this._handlePrismaError(error, "userDAO.create", {
+          attemptedData: { username: user.username, email: user.email },
+        });
+      }
+    }, externalDbClient);
   }
 
-  async findByUsername(username, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async delete(id, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(id, "user id");
+        const result = await dbClient.user.delete({
+          where: { id: userIdNum },
+        });
 
-    try {
-      if (typeof username !== "string" || username.trim().length === 0) {
-        throw this.errorFactory.createValidationError("Invalid username");
+        return true;
+      } catch (error) {
+        if (error.code === "P2003") {
+          throw this.errorFactory.createConflictError(
+            "Cannot delete user: user has associated tasks or sessions",
+            { attemptedData: { userId: id } }
+          );
+        }
+        this._handlePrismaError(error, "userDAO.delete", { userId: id });
       }
-
-      const cleanUsername = username.trim();
-      const user = await prisma.user.findUnique({
-        where: { username: cleanUsername },
-      });
-
-      return user ? this.userMapper.dbToDomain(user) : null;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-      this._handlePrismaError(error, "userDAO.findByUsername", { username });
-    }
+    }, externalDbClient);
   }
 
-  async findByEmail(email, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async findByUsername(username, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        if (typeof username !== "string" || username.trim().length === 0) {
+          throw this.errorFactory.createValidationError("Invalid username");
+        }
 
-    try {
-      if (typeof email !== "string" || email.trim().length === 0) {
-        throw this.errorFactory.createValidationError("Invalid email");
+        const cleanUsername = username.trim();
+        const user = await dbClient.user.findUnique({
+          where: { username: cleanUsername },
+        });
+
+        return user ? this.userMapper.dbToDomain(user) : null;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "userDAO.findByUsername", { username });
       }
-
-      const cleanEmail = email.trim().toLowerCase();
-      const user = await prisma.user.findUnique({
-        where: { email: cleanEmail },
-      });
-
-      return user ? this.userMapper.dbToDomain(user) : null;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
-      }
-      this._handlePrismaError(error, "userDAO.findByEmail", { email });
-    }
+    }, externalDbClient);
   }
 
-  async findById(id, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async findByEmail(email, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        if (typeof email !== "string" || email.trim().length === 0) {
+          throw this.errorFactory.createValidationError("Invalid email");
+        }
 
-    try {
-      const userIdNum = this.inputValidator.validateId(id, "user id");
-      const user = await prisma.user.findUnique({
-        where: { id: userIdNum },
-      });
+        const cleanEmail = email.trim().toLowerCase();
+        const user = await dbClient.user.findUnique({
+          where: { email: cleanEmail },
+        });
 
-      return user ? this.userMapper.dbToDomain(user) : null;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
+        return user ? this.userMapper.dbToDomain(user) : null;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "userDAO.findByEmail", { email });
       }
-      this._handlePrismaError(error, "userDAO.findById", { userId: id });
-    }
+    }, externalDbClient);
   }
 
-  async findByIdWithUserTags(id, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async findById(id, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(id, "user id");
+        const user = await dbClient.user.findUnique({
+          where: { id: userIdNum },
+        });
 
-    try {
-      const userIdNum = this.inputValidator.validateId(id, "user id");
-      const user = await prisma.user.findUnique({
-        where: { id: userIdNum },
-        include: {
-          userTags: {
-            include: {
-              tag: true,
+        return user ? this.userMapper.dbToDomain(user) : null;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "userDAO.findById", { userId: id });
+      }
+    }, externalDbClient);
+  }
+
+  async findByIdWithUserTags(id, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(id, "user id");
+        const user = await dbClient.user.findUnique({
+          where: { id: userIdNum },
+          include: {
+            userTags: {
+              include: {
+                tag: true,
+              },
             },
           },
-        },
-      });
+        });
 
-      return user ? this.userMapper.dbToDomainWithTags(user) : null;
-    } catch (error) {
-      if (error instanceof this.errorFactory.Errors.ValidationError) {
-        throw error;
+        return user ? this.userMapper.dbToDomainWithTags(user) : null;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "userDAO.findByIdWithUserTags", {
+          userId: id,
+        });
       }
-      this._handlePrismaError(error, "userDAO.findByIdWithUserTags", {
-        userId: id,
-      });
-    }
+    }, externalDbClient);
   }
 
   async findAll({
-    externalTx = null,
+    externalDbClient = null,
     limit = null,
     offset = null,
     sortBy = USER_SORT_FIELD.CREATED_AT,
     sortOrder = SORT_ORDER.DESC,
   } = {}) {
-    const prisma = await this.getPrisma(externalTx);
-
-    try {
-      const sortOptions = this._buildSortOptions(
-        sortBy,
-        sortOrder,
-        USER_SORT_FIELD
-      );
-      const paginationOptions = this._buildPaginationOptions(limit, offset);
-
-      const users = await prisma.user.findMany({
-        ...sortOptions,
-        ...paginationOptions,
-      });
-
-      return users.map((user) => this.userMapper.dbToDomain(user));
-    } catch (error) {
-      this._handlePrismaError(error, "userDAO.findAll", {
-        limit,
-        offset,
-        sortBy,
-        sortOrder,
-      });
-    }
-  }
-
-  async delete(id, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
-
-    try {
-      const userIdNum = this.inputValidator.validateId(id, "user id");
-      const result = await prisma.user.delete({
-        where: { id: userIdNum },
-      });
-
-      return true;
-    } catch (error) {
-      if (error.code === "P2003") {
-        throw this.errorFactory.createConflictError(
-          "Cannot delete user: user has associated tasks or sessions",
-          { attemptedData: { userId: id } }
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        const sortOptions = this._buildSortOptions(
+          sortBy,
+          sortOrder,
+          USER_SORT_FIELD
         );
+        const paginationOptions = this._buildPaginationOptions(limit, offset);
+
+        const users = await dbClient.user.findMany({
+          ...sortOptions,
+          ...paginationOptions,
+        });
+
+        return users.map((user) => this.userMapper.dbToDomain(user));
+      } catch (error) {
+        this._handlePrismaError(error, "userDAO.findAll", {
+          limit,
+          offset,
+          sortBy,
+          sortOrder,
+        });
       }
-      this._handlePrismaError(error, "userDAO.delete", { userId: id });
-    }
+    }, externalDbClient);
   }
 
   // _handlePrismaError(error, context, metadata = {}) {

@@ -899,16 +899,16 @@ const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
 const { TASK_SORT_FIELD } = require("../constants/sortConstants");
 
 class TaskDAO extends BaseDatabaseHandler {
-  constructor({ taskMapper, connectionDb, errorFactory, inputValidator }) {
-    super({connectionDb, inputValidator, errorFactory});
+  constructor({ taskMapper, dbManager, errorFactory, inputValidator }) {
+    super({dbManager, inputValidator, errorFactory});
     this.taskMapper = taskMapper;
   }
 
-  async create(task, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async create(task, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
     
     try {
-      const createdTask = await prisma.task.create({
+      const createdTask = await dbClient.task.create({
         data: {
           name: task.name,
           description: task.description,
@@ -924,15 +924,71 @@ class TaskDAO extends BaseDatabaseHandler {
       this._handlePrismaError(error, 'taskDAO.create', {
         attemptedData: { name: task.name, userId: task.userId }
       });
-    }
+    }  }, externalDbClient);
   }
 
-  async findById(id, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  
+  async updateCompleted(id, isCompleted, userId, externalDbClient = null) {
+     return this.dbManager.withTransaction(async (dbClient) => {
     
     try {
       const taskIdNum = this.inputValidator.validateId(id, "task id");
-      const task = await prisma.task.findUnique({
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
+
+      if (typeof isCompleted !== "boolean") {
+        throw this.errorFactory.createValidationError("isCompleted must be a boolean");
+      }
+
+      const updatedTask = await dbClient.task.update({
+        where: { 
+          id: taskIdNum,
+          userId: userIdNum 
+        },
+        data: { isCompleted }
+      });
+
+      return this.taskMapper.dbToDomain(updatedTask);
+    } catch (error) {
+      if (error.code === 'P2025') {
+        return null; // Task not found
+      }
+      this._handlePrismaError(error, 'taskDAO.updateCompleted', {
+        taskId: id, userId, isCompleted
+      });
+    }
+     }, externalDbClient);
+  }
+
+  async delete(id, userId, externalDbClient = null) {
+     return this.dbManager.withTransaction(async (dbClient) => {
+    
+    try {
+      const taskIdNum = this.inputValidator.validateId(id, "task id");
+      const userIdNum = this.inputValidator.validateId(userId, "user id");
+
+      await dbClient.task.delete({
+        where: { 
+          id: taskIdNum,
+          userId: userIdNum 
+        }
+      });
+
+      return true;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        return false; // Task not found
+      }
+      this._handlePrismaError(error, 'taskDAO.delete', { taskId: id, userId });
+    } }, externalDbClient);
+  }
+
+
+  async findById(id, externalDbClient = null) {
+     return this.dbManager.forRead(async (dbClient) => {
+    
+    try {
+      const taskIdNum = this.inputValidator.validateId(id, "task id");
+      const task = await dbClient.task.findUnique({
         where: { id: taskIdNum }
       });
 
@@ -942,17 +998,17 @@ class TaskDAO extends BaseDatabaseHandler {
         throw error;
       }
       this._handlePrismaError(error, 'taskDAO.findById', { taskId: id });
-    }
+    } }, externalDbClient);
   }
 
-  async findWithTagsByIdAndUserId(id, userId, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
+  async findWithTagsByIdAndUserId(id, userId, externalDbClient = null) {
+       return this.dbManager.forRead(async (dbClient) => {
     
     try {
       const taskIdNum = this.inputValidator.validateId(id, "task id");
       const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-      const task = await prisma.task.findUnique({
+      const task = await dbClient.task.findUnique({
         where: { 
           id: taskIdNum,
           userId: userIdNum 
@@ -975,6 +1031,7 @@ class TaskDAO extends BaseDatabaseHandler {
         taskId: id, userId
       });
     }
+     }, externalDbClient);
   }
 
   async findAllByUserId({
@@ -984,9 +1041,9 @@ class TaskDAO extends BaseDatabaseHandler {
     sortOrder = 'desc',
     limit = null,
     offset = null,
-    externalTx = null,
+    externalDbClient = null,
   } = {}) {
-    const prisma = await this.getPrisma(externalTx);
+     return this.dbManager.forRead(async (dbClient) => {
     
     try {
       const userIdNum = this.inputValidator.validateId(userId, "user id");
@@ -994,7 +1051,7 @@ class TaskDAO extends BaseDatabaseHandler {
       const sortOptions = this._buildSortOptions(sortBy, sortOrder, TASK_SORT_FIELD);
       const paginationOptions = this._buildPaginationOptions(limit, offset);
 
-      const tasks = await prisma.task.findMany({
+      const tasks = await dbClient.task.findMany({
         where: {
           userId: userIdNum,
           isCompleted: isCompleted
@@ -1019,61 +1076,8 @@ class TaskDAO extends BaseDatabaseHandler {
         userId, isCompleted, limit, offset
       });
     }
+     }, externalDbClient);
   }
-
-  async updateCompleted(id, isCompleted, userId, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
-    
-    try {
-      const taskIdNum = this.inputValidator.validateId(id, "task id");
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
-
-      if (typeof isCompleted !== "boolean") {
-        throw this.errorFactory.createValidationError("isCompleted must be a boolean");
-      }
-
-      const updatedTask = await prisma.task.update({
-        where: { 
-          id: taskIdNum,
-          userId: userIdNum 
-        },
-        data: { isCompleted }
-      });
-
-      return this.taskMapper.dbToDomain(updatedTask);
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return null; // Task not found
-      }
-      this._handlePrismaError(error, 'taskDAO.updateCompleted', {
-        taskId: id, userId, isCompleted
-      });
-    }
-  }
-
-  async delete(id, userId, externalTx = null) {
-    const prisma = await this.getPrisma(externalTx);
-    
-    try {
-      const taskIdNum = this.inputValidator.validateId(id, "task id");
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
-
-      await prisma.task.delete({
-        where: { 
-          id: taskIdNum,
-          userId: userIdNum 
-        }
-      });
-
-      return true;
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return false; // Task not found
-      }
-      this._handlePrismaError(error, 'taskDAO.delete', { taskId: id, userId });
-    }
-  }
-
   // Métodos auxiliares reutilizables
   async findAllPendingByUserId(options = {}) {
     return this.findAllByUserId({ ...options, isCompleted: false });

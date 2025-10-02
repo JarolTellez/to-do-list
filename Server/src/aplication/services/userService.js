@@ -2,14 +2,14 @@ class UserService {
   constructor({
     userDAO,
     taskDAO,
-    connectionDb,
+    dbManager,
     bcrypt,
     errorFactory,
     validator,
     userMapper,
     paginationHelper
   }) {
-    this.connectionDb = connectionDb;
+    this.dbManager = dbManager;
     this.userDAO = userDAO;
     this.taskDAO = taskDAO;
     this.bcrypt = bcrypt;
@@ -34,13 +34,13 @@ class UserService {
       max: 128,
     });
 
-    return this.connectionDb.executeTransaction(async (connection) => {
+    return this.dbManager.withTransaction(async (tx) => {
       try {
         const [existingByEmail, existingByusername] = await Promise.all([
-          this.userDAO.findByEmail(createUserRequestDTO.email, connection),
+          this.userDAO.findByEmail(createUserRequestDTO.email, tx),
           this.userDAO.findByUsername(
             createUserRequestDTO.username,
-            connection
+            tx
           ),
         ]);
         if (existingByEmail) {
@@ -64,7 +64,7 @@ class UserService {
           password: hashedPassword,
         });
 
-        const createdUser = await this.userDAO.create(userDomain, connection);
+        const createdUser = await this.userDAO.create(userDomain, tx);
 
         return this.userMapper.domainToResponse(createdUser);
       } catch (error) {
@@ -73,7 +73,7 @@ class UserService {
     });
   }
 
-  async validateCredentials(loginRequestDTO, externalConn = null) {
+  async validateCredentials(loginRequestDTO, transactionClient = null) {
     this.validator.validateRequired(
       ["identifier", "password"],
       loginRequestDTO
@@ -85,13 +85,13 @@ class UserService {
     let user;
     if (isEmail) {
       this.validator.validateEmail("identifier", loginRequestDTO);
-      user = await this.userDAO.findByEmail(identifier, externalConn);
+      user = await this.userDAO.findByEmail(identifier, transactionClient);
     } else {
       this.validator.validateLength("identifier", loginRequestDTO, {
         min: 3,
         max: 30,
       });
-      user = await this.userDAO.findByUsername(identifier, externalConn);
+      user = await this.userDAO.findByUsername(identifier, transactionClient);
     }
     if (!user) {
       throw this.errorFactory.createAuthenticationError(
@@ -109,33 +109,33 @@ class UserService {
     return user;
   }
 
-  async validateUserExistenceById(userId, externalConn = null) {
-    const user = await this.userDAO.findById(userId, externalConn);
+  async validateUserExistenceById(userId, transactionClient = null) {
+    const user = await this.userDAO.findById(userId, transactionClient);
     if (!user) {
       throw this.errorFactory.createNotFoundError("Usuario no encontrado");
     }
     return user;
   }
 
-  async findByEmail(email, externalConn = null) {
-    return await this.userDAO.findByEmail(email, externalConn);
+  async findByEmail(email, transactionClient = null) {
+    return await this.userDAO.findByEmail(email, transactionClient);
   }
 
-  async findById(id, externalConn = null) {
-    return await this.userDAO.findById(id, externalConn);
+  async findById(id, transactionClient = null) {
+    return await this.userDAO.findById(id, transactionClient);
   }
 
-  async validateUserExistenceById(userId, externalConn = null) {
+  async validateUserExistenceById(userId, transactionClient = null) {
     this.validator.validateRequired(["userId"], { userId });
-    return this.connectionDb.executeTransaction(async (connection) => {
-      const user = await this.userDAO.findById(userId, connection);
+    return this.dbManager.withTransaction(async (tx) => {
+      const user = await this.userDAO.findById(userId, tx);
       if (!user) {
         throw new this.NotFoundError("Usuario no encontrado", {
           attemptedData: { userId },
         });
       }
       return user;
-    }, externalConn);
+    }, transactionClient);
   }
 }
 

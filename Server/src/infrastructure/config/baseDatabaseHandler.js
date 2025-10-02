@@ -1,6 +1,6 @@
 class BaseDatabaseHandler {
-  constructor({connectionDb, inputValidator, errorFactory}) {
-    this.connectionDb = connectionDb;
+  constructor({dbManager, inputValidator, errorFactory}) {
+    this.dbManager = dbManager;
     this.inputValidator = inputValidator;
     this.errorFactory = errorFactory;
   }
@@ -8,7 +8,7 @@ class BaseDatabaseHandler {
 
   async getPrisma(externalTx = null) {
     if (externalTx) return externalTx;
-    return this.connectionDb.getClient();
+    return this.dbManager.getClient();
   }
 
 
