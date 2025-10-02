@@ -22,18 +22,18 @@ class PrismaManager {
     return this.prisma.$transaction(callback);
   }
 
-  async withTransaction(callback, transactionClient = null) {
-    if (transactionClient) {
-      return callback(transactionClient);
+  async withTransaction(callback, externalDbClient = null) {
+    if (externalDbClient) {
+      return callback(externalDbClient);
     }
-    return this.prisma.$transaction(async (tx) => {
-      return callback(tx);
+    return this.prisma.$transaction(async (dbClient) => {
+      return callback(dbClient);
     });
   }
 
-  async forRead(callback, readClient = null) {
-    if (readClient) {
-      return callback(readClient);
+  async forRead(callback, externalDbClient = null) {
+    if (externalDbClient) {
+      return callback(externalDbClient);
     }
     return callback(this.prisma);
   }

@@ -1,57 +1,71 @@
-class TagService  {
-  constructor({tagDAO, dbManager, errorFactory, validator, paginationHelper}) {
-    this.dbManager=dbManager;
+class TagService {
+  constructor({
+    tagDAO,
+    dbManager,
+    errorFactory,
+    validator,
+    paginationHelper,
+  }) {
+    this.dbManager = dbManager;
     this.tagDAO = tagDAO;
-    this.errorFactory=errorFactory;
-    this.validator=validator;
-    this.paginationHelper=paginationHelper;
+    this.errorFactory = errorFactory;
+    this.validator = validator;
+    this.paginationHelper = paginationHelper;
   }
 
-
-  // MODIFICAR LA DAO Y SUS METODO PARA QUE HAYA UNA TABLA INTERMEDIA CON LAS ETIQUETAS Y USUARIOS CON RELACION
-  // MUCHOS A MUCHOS
-  async createTag(tag, transactionClient = null) {
-    return this.dbManager.withTransaction(async (tx) => {
-      const tagResult = await this.tagDAO.findByName(
-        tag.name,
-        tx
-      );
+  async createTag(tag, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      const tagResult = await this.tagDAO.findByName(tag.name, dbClient);
 
       if (tagResult) {
         return tagResult;
       }
 
-      const createdTag = await this.tagDAO.create(
-        tag,
-        tx
-      );
+      const createdTag = await this.tagDAO.create(tag, dbClient);
       return createdTag;
-    }, transactionClient);
+    }, externalDbClient);
   }
 
-  async getAllTagsByUserId(userId, transactionClient = null) {
-    return this.dbManager.withTransaction(async (tx) => {
-      const tagsResult = await this.userTagDAO.findAllByUserId(
+  async getAllTagsByUserId(userId, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      const tagsResult = await this.tagDAO.findAllByUserId(
         userId,
-        tx
+        dbClient
       );
       return tagsResult;
-    }, transactionClient);
+    }, externalDbClient);
   }
 
-  async getTagByName(name, transactionClient = null) {
-    return this.dbManager.withTransaction(async (tx) => {
-      const tag = await this.tagDAO.findByName(
-        name,
-        tx
-      );
-       if (tag) {
+  async getTagByName(name, externalDbClient = null) {
+    this.validator.validateRequired(["name"], { name });
+
+    return this.dbManager.forRead(async (dbClient) => {
+      const tag = await this.tagDAO.findByName(name, dbClient);
+
+      if (!tag) {
         throw this.errorFactory.createNotFoundError("Etiqueta no encontrada", {
-          attemptedData: {name},
+          attemptedData: { name },
         });
       }
+
       return tag;
-    }, transactionClient);
+    }, externalDbClient);
+  }
+
+  async getTagById(tagId, externalDbClient = null) {
+    this.validator.validateRequired(["tagId"], { tagId });
+
+    return this.dbManager.forRead(async (dbClient) => {
+      const tag = await this.tagDAO.findById(tagId, dbClient);
+
+      if (!tag) {
+        throw this.errorFactory.createNotFoundError("Etiqueta no encontrada", {
+          attemptedData: { tagId },
+        });
+      }
+
+      return tag;
+    }, externalDbClient);
   }
 }
 

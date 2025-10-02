@@ -35,21 +35,21 @@ class AuthService {
 
   async loginUser(
     { existingRefreshToken, loginRequestDTO, userAgent, ip },
-    externalTransactionDbClient = null
+    externalDbClient = null
   ) {
     this.validator.validateRequired(["loginRequestDTO"], {
       loginRequestDTO,
     });
 
-    return this.dbManager.withTransaction(async (transactionDbClient) => {
+    return this.dbManager.withTransaction(async (dbClient) => {
       const user = await this.userService.validateCredentials(
         loginRequestDTO,
-        transactionDbClient
+        dbClient
       );
       const tokenValidation = await this.validateAndReuseRefreshToken(
         existingRefreshToken,
         user,
-        transactionDbClient
+        dbClient
       );
 
       let refreshTokenToUse = null;
@@ -75,14 +75,14 @@ class AuthService {
             userAgent,
             ip,
           },
-          transactionDbClient
+          dbClient
         );
       }
 
       await this.sessionService.manageSessionLimit(
         user.id,
         this.appConfig.session.maxActive,
-        transactionDbClient
+        dbClient
       );
 
       const accessToken = this.jwtAuth.createAccessToken({
@@ -104,10 +104,10 @@ class AuthService {
         refreshToken: refreshTokenToUse,
         isNewRefreshToken: isNewRefreshToken,
       };
-    },externalTransactionDbClient);
+    }, externalDbClient);
   }
 
-  async logOutUserSession(refreshToken, transactionClient = null) {
+  async logOutUserSession(refreshToken, externalDbClient = null) {
     this.validator.validateRequired(["refreshToken"], { refreshToken });
     return this.dbManager.withTransaction(async (dbClient) => {
       let decoded;
@@ -138,10 +138,10 @@ class AuthService {
       return {
         usuarioId: decoded.sub,
       };
-    }, transactionClient);
+    }, externalDbClient);
   }
 
-  async refreshAccessToken(refreshToken, transactionClient = null) {
+  async refreshAccessToken(refreshToken, externalDbClient = null) {
     this.validator.validateRequired(["refreshToken"], { refreshToken });
 
     return this.dbManager.withTransaction(async (dbClient) => {
@@ -176,30 +176,30 @@ class AuthService {
         expiresIn: this.appConfig.jwt.access.expiresIn,
         tokenType: "Bearer",
       };
-    }, transactionClient);
+    }, externalDbClient);
   }
 
-  async cleanupInvalidSession(refreshToken, dbClient) {
-    try {
-      const refreshTokenHash =
-        this.jwtAuth.createHashRefreshToken(refreshToken);
+  async cleanupInvalidSession(refreshToken, externalDbClient=null) {
+    const refreshTokenHash = this.jwtAuth.createHashRefreshToken(refreshToken);
+    return this.dbManager.withTransaction(async (dbClient) => {
       await this.sessionService.deactivateSessionByTokenHash(
         refreshTokenHash,
         dbClient
       );
-    } catch (error) {
-      console.error("Error limpiando sesión inválida:", error.message);
-    }
+    }, externalDbClient);
   }
 
-  async deactivateSession({idUsuario, refreshToken}, transactionClient = null) {
+  async deactivateSession(
+    { userId, refreshToken },
+    externalDbClient = null
+  ) {
     this.validator.validateRequired(["userId", "refreshToken"], {
-      idUsuario,
+      userId,
       refreshToken,
     });
     return this.dbManager.withTransaction(async (dbClient) => {
       const user = await this.userService.validateUserExistenceById(
-        idUsuario,
+        userId,
         dbClient
       );
 
@@ -215,10 +215,10 @@ class AuthService {
           dbClient
         );
       }
-    }, transactionClient);
+    }, externalDbClient);
   }
 
-  async deactivateAllUserSessions(accessToken, transactionClient = null) {
+  async deactivateAllUserSessions(accessToken, externalDbClient = null) {
     this.validator.validateRequired(["accessToken"], { accessToken });
 
     return this.dbManager.withTransaction(async (dbClient) => {
@@ -236,63 +236,70 @@ class AuthService {
         deactivated: result.deactivated,
         userId: userId,
       };
-    }, transactionClient);
+    }, externalDbClient);
   }
 
-  async validateAndReuseRefreshToken(existingRefreshToken, user, dbClient) {
+  async validateAndReuseRefreshToken(
+    existingRefreshToken,
+    user,
+    externalDbClient = null
+  ) {
     if (!existingRefreshToken) {
       return { isValid: false, refreshToken: null, session: null };
     }
-    try {
-      const decoded = this.jwtAuth.verifyRefreshToken(existingRefreshToken);
-      const refreshTokenHash =
-        this.jwtAuth.createHashRefreshToken(existingRefreshToken);
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const decoded = this.jwtAuth.verifyRefreshToken(existingRefreshToken);
+        const refreshTokenHash =
+          this.jwtAuth.createHashRefreshToken(existingRefreshToken);
 
-      if (decoded.sub === user.id) {
-        const isValidSession = await this.sessionService.validateSession(
-          decoded.sub,
-          refreshTokenHash,
-          dbClient
-        );
+        if (decoded.sub === user.id) {
+          const isValidSession = await this.sessionService.validateSession(
+            decoded.sub,
+            refreshTokenHash,
+            dbClient
+          );
 
-        if (isValidSession) {
+          if (isValidSession) {
+            return {
+              isValid: true,
+              refreshToken: existingRefreshToken,
+              session: isValidSession,
+              isNewToken: false,
+            };
+          }
+        } else {
+          // token belongs to another user deactivating for security
+          await this.sessionService.deactivateSession(
+            decoded.sub,
+            refreshTokenHash,
+            dbClient
+          );
           return {
-            isValid: true,
-            refreshToken: existingRefreshToken,
-            session: isValidSession,
-            isNewToken: false,
-          };
+              isValid: false,
+          }
         }
-      } else {
-        // token belongs to another user deactivating for security
-        await this.sessionService.deactivateSession(
-          decoded.sub,
+      } catch (error) {
+        // invalid refreshtoken clean session
+        const refreshTokenHash =
+          this.jwtAuth.createHashRefreshToken(existingRefreshToken);
+        await this.sessionService.deactivateSessionByTokenHash(
           refreshTokenHash,
           dbClient
         );
+        return {
+          isValid: false,
+          refreshToken: null,
+          session: null,
+          isNewToken: true,
+        };
       }
-    } catch (error) {
-      // invalid refreshtoken clean session
-      const refreshTokenHash =
-        this.jwtAuth.createHashRefreshToken(existingRefreshToken);
-      await this.sessionService.deactivateSessionByTokenHash(
-        refreshTokenHash,
-        dbClient
-      );
-    }
-
-    return {
-      isValid: false,
-      refreshToken: null,
-      session: null,
-      isNewToken: true,
-    };
+    }, externalDbClient);
   }
 
   async closeSpecificUserSession(
-    {refreshToken,
-    targetSessionId},
-    transactionClient = null
+    { refreshToken, targetSessionId },
+    externalDbClient = null
   ) {
     this.validator.validateRequired(["refreshToken", "targetSessionId"], {
       refreshToken,
@@ -303,12 +310,9 @@ class AuthService {
       const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
       const currentUserId = decoded.sub;
 
-      await this.userService.validateUserExistenceById(
-        currentUserId,
-        dbClient
-      );
+      await this.userService.validateUserExistenceById(currentUserId, dbClient);
 
-      const targetSession = await this.sessionService.findSessionById(
+      const targetSession = await this.sessionService.getSessionById(
         targetSessionId,
         dbClient
       );
@@ -348,10 +352,10 @@ class AuthService {
         sessionId: targetSessionId,
         userId: currentUserId,
       };
-    }, transactionClient);
+    }, externalDbClient);
   }
 
-  async findUserActiveSessions(accessToken, options = {}) {
+  async getUserActiveSessions(accessToken, options = {}) {
     this.validator.validateRequired(["accessToken"], { accessToken });
     const decoded = this.jwtAuth.verifyAccessToken(accessToken);
     const currentUserId = decoded.sub;
@@ -365,27 +369,24 @@ class AuthService {
       PAGINATION_CONFIG.DEFAULT_LIMIT
     );
 
-    return this.dbManager.forRead(async (dbClient)=> {
-      await this.userService.validateUserExistenceById(
-        currentUserId,
-        dbClient
-      );
+    return this.dbManager.forRead(async (dbClient) => {
+      await this.userService.validateUserExistenceById(currentUserId, dbClient);
 
-      const response = await this.sessionService.findAllUserActiveSessions(
+      const response = await this.sessionService.getAllUserActiveSessions(
         currentUserId,
         currentSessionId,
         {
           page: pagination.page,
           limit: pagination.limit,
           offset: pagination.offset,
-          dbClient: dbClient,
+          externalDbClient: dbClient,
         }
       );
 
       return {
         data: response,
       };
-    });
+    }, options.externalDbClient);
   }
 }
 
