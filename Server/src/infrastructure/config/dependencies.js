@@ -14,7 +14,6 @@ const {
 } = require("../../aplication/dtos/request_dto/userRequestDTOs");
 const {
   TagRequestDTO,
-  UpdateTagRequestDTO,
 } = require("../../aplication/dtos/request_dto/tagRequestDTOs");
 const {
   CreateTaskRequestDTO,
@@ -124,7 +123,6 @@ const tagMapper = new TagMapper({
   Tag,
   TagResponseDTO,
   TagRequestDTO,
-  UpdateTagRequestDTO,
   errorFactory,
 });
 const userTagMapper = new UserTagMapper({
@@ -254,21 +252,22 @@ const sessionDAO = new SessionDAO({
 const jwtAuth = new JwtAuth(appConfig);
 
 // Servicios
-const userService = new UserService({
-  userDAO,
-  taskDAO,
-  dbManager: prismaManager,
-  bcrypt,
-  errorFactory,
-  validator,
-  userMapper,
-  paginationHelper
-});
 const tagService = new TagService({
   tagDAO,
   dbManager: prismaManager,
   errorFactory,
   validator,
+  paginationHelper
+});
+const userService = new UserService({
+  userDAO,
+  taskDAO,
+  tagService,
+  dbManager: prismaManager,
+  bcrypt,
+  errorFactory,
+  validator,
+  userMapper,
   paginationHelper
 });
 
@@ -281,6 +280,7 @@ const userTagService = new UserTagService({
 const taskTagService = new TaskTagService({
   taskTagDAO,
   userTagMapper,
+  tagService,
   dbManager: prismaManager,
   errorFactory,
   validator,
@@ -288,8 +288,10 @@ const taskTagService = new TaskTagService({
 const taskService = new TaskService({
   taskDAO,
   taskMapper,
+  taskTagMapper,
   userTagMapper,
   tagService,
+  userService,
   userTagService,
   taskTagService,
   dbManager: prismaManager,
@@ -299,6 +301,7 @@ const taskService = new TaskService({
 });
 const sessionService = new SessionService({
   sessionDAO,
+  userService,
   sessionMapper,
   jwtAuth,
   dbManager: prismaManager,

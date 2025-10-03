@@ -13,13 +13,13 @@ class SessionMapper {
     this.errorFactory = errorFactory;
   }
 
-  domainToResponse(sessionDomain, currentSessionId=null) {
-     let isCurrent = null; 
-    
+  domainToResponse(sessionDomain, currentSessionId = null) {
+    let isCurrent = null;
+
     if (currentSessionId && sessionDomain.id) {
-        isCurrent = (sessionDomain.id === currentSessionId);
+      isCurrent = sessionDomain.id === currentSessionId;
     }
-    
+
     return new this.SessionResponseDTO({
       id: sessionDomain.id,
       userId: sessionDomain.userId,
@@ -28,7 +28,7 @@ class SessionMapper {
       createdAt: sessionDomain.createdAt,
       expiresAt: sessionDomain.expiresAt,
       isActive: sessionDomain.isActive,
-      isCurrent: isCurrent||false,
+      isCurrent: isCurrent || false,
     });
   }
 
@@ -69,29 +69,7 @@ class SessionMapper {
       this.errorFactory
     );
   }
-
-  // dbToDomain(row) {
-  //   if (!row) {
-  //     return null;
-  //   }
-  //   const mappedSession = new this.Session(
-  //     {
-  //       id: row.session_id,
-  //       userId: row.user_id,
-  //       refreshTokenHash: row.refresh_token_hash,
-  //       userAgent: row.user_agent,
-  //       ip: row.ip,
-  //       createdAt: row.session_created_at,
-  //       expiresAt: row.session_expires_at,
-  //       isActive: row.is_active,
-  //     },
-  //     this.errorFactory
-  //   );
-  //   return mappedSession;
-  // }
-
-
-    dbToDomain(row) {
+  dbToDomain(row) {
     if (!row) {
       return null;
     }

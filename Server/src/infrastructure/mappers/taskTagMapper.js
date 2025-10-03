@@ -13,15 +13,15 @@ class TaskTagMapper {
     this.errorFactory = errorFactory;
   }
 
-  domainToResponse(taskTagDomain) {
+  domainToResponseDTO(taskTagDomain) {
+    const tag=taskTagDomain.tag
+        ? this.tagMapper.domainToResponse(taskTagDomain.tag)
+        : null;
     return new this.TaskTagResponseDTO({
       id: taskTagDomain.id,
       taskId: taskTagDomain.taskId,
-      tagId: taskTagDomain.tagId,
       createdAt: taskTagDomain.createdAt,
-      tag: taskTagDomain.tag
-        ? this.tagMapper.domainToResponse(taskTagDomain.tag)
-        : null,
+      tag
     });
   }
 
@@ -34,11 +34,19 @@ class TaskTagMapper {
   }
 
   createRequestDTOToDomain(tagRequestDTO) {
-    const tag = this.tagMapper.createRequestToDomain(tagRequestDTO);
+    if (!tagRequestDTO.name) {
+      throw this.errorFactory.createValidationError("Tag name is required");
+    }
+
+    const tag = this.tagMapper.createRequestToDomain({
+      id: tagRequestDTO.id || null,
+      name: tagRequestDTO.name,
+      description: tagRequestDTO.description || null,
+    });
 
     const taskTag = this.TaskTag.create(
       {
-        tag
+        tag,
       },
       this.errorFactory
     );
@@ -57,22 +65,34 @@ class TaskTagMapper {
   }
 
   dbToDomain(row) {
+  
     let tag = null;
-    if (row.tag_id && row.tag_name) {
-      tag = this.tagMapper.dbToDomain(row);
+    if (row.tag.id && row.tag.name) {
+      tag = this.tagMapper.dbToDomain(row.tag);
     }
 
     return new this.TaskTag(
       {
-        id: row.task_tag_id,
-        taskId: row.task_id,
-        tagId: row.tag_id,
-        createdAt: row.task_tag_created_at,
+        id: row.id,
+        taskId: row.taskId,
+        tagId: row.tagId,
+        createdAt: row.createdAt,
         tag: tag,
         task: null,
       },
       this.errorFactory
     );
   }
+
+createFromTagId({ taskId = null, tagId }, errorFactory) {
+  const taskTag = this.TaskTag.create(
+    { 
+      taskId, 
+      tagId 
+    },
+    errorFactory
+  );
+  return taskTag;
+}
 }
 module.exports = TaskTagMapper;

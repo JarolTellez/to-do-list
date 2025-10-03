@@ -5,47 +5,6 @@ class InputValidator {
     this.errorFactory = errorFactory;
   }
 
-  // validateSortField(value, validFields, entityType, fieldName = "sort field") {
-  //   if (typeof value !== "string") {
-  //     throw this.errorFactory.createValidationError(
-  //       `${fieldName} must be a string`
-  //     );
-  //   }
-
-  //   const normalizedValue = value.toLowerCase();
-
-  //   const validField = Object.values(validFields).find(
-  //     (field) => field.toLowerCase() === normalizedValue
-  //   );
-
-  //   if (!validField) {
-  //     throw this.errorFactory.createValidationError(
-  //       `Invalid ${fieldName}. Valid values: ${Object.values(validFields).join(
-  //         ", "
-  //       )}`
-  //     );
-  //   }
-
-  //   const entityMapping = SORT_FIELD_MAPPINGS[entityType];
-  //   if (!entityMapping) {
-  //     throw this.errorFactory.createValidationError(
-  //       `Invalid entity type: ${entityType}`
-  //     );
-  //   }
-
-  //   const safeField = entityMapping[validField];
-  //   if (!safeField) {
-  //     throw this.errorFactory.createValidationError(
-  //       `No safe mapping found for field '${validField}' in entity '${entityType}'`
-  //     );
-  //   }
-
-  //   return {
-  //     originalField: validField,
-  //     safeField: safeField,
-  //   };
-  // }
-
   validateSortField(value, validFields, fieldName = "sort field") {
   if (typeof value !== "string") {
     throw this.errorFactory.createValidationError(`${fieldName} must be a string`);

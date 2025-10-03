@@ -1,28 +1,33 @@
 class CreateTaskRequestDTO {
-  constructor({ name, description, scheduledDate, priority, userId, tags=[] }) {
+  constructor({ name, description, scheduledDate, priority, userId, tags}) {
     this.name = name;
     this.description = description;
     this.scheduledDate = scheduledDate;
     this.priority = priority;
     this.userId = userId;
-    this.tags=tags;
+    this.tags=tags||[];
   }
 }
 
 class UpdateTaskRequestDTO {
-  constructor({ name, description, scheduledDate, priority, taskTags }) {
+  constructor({id, name, description, scheduledDate, priority, userId, tags }) {
+    this.id = id;
     this.name = name;
     this.description = description;
     this.scheduledDate = scheduledDate;
     this.priority = priority;
-    this.taskTags = taskTags || [];
+    this.userId=userId;
+    this.tags = tags || [];
   }
 }
 
 
 class CompleteTaskRequestDTO {
-  constructor({ isCompleted }) {
-    this.isCompleted = isCompleted;
+  constructor({ isCompleted, taskId, userId }) {
+    this.taskId=taskId,
+    this.userI=userId,
+    this.isCompleted = isCompleted||true;
+  
   }
 }
 
