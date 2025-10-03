@@ -172,11 +172,49 @@ class Task {
         this.#validator.codes.INVALID_FORMAT
       );
     }
-
-    if (!this.#taskTags.some((tt) => tt.id === taskTag.id)) {
+    if (!this.#taskTags.some((tt) => tt.tagId === taskTag.tagId)) {
       this.#taskTags.push(taskTag);
       this.#updatedAt = new Date();
     }
+  }
+
+  addTagsByIds(tagIds = []) {
+    tagIds.forEach((tagId) => this.addTagById(tagId));
+  }
+  addTagById(tagId) {
+    const taskTag = TaskTag.createFromTagId(
+      {
+        taskId: this.#id,
+        tagId: tagId,
+      },
+      this.#validator.errorFactory
+    );
+    this.addTaskTag(taskTag);
+  }
+  addTagsByIds(tagIds = []) {
+    tagIds.forEach((tagId) => this.addTagById(tagId));
+  }
+
+  setTaskTags(newTaskTags) {
+    if (!Array.isArray(newTaskTags)) {
+      throw this.#validator.error.createValidationError(
+        "taskTags must be an array",
+        null,
+        this.#validator.codes.INVALID_FORMAT
+      );
+    }
+    newTaskTags.forEach((taskTag) => {
+      if (!(taskTag instanceof TaskTag)) {
+        throw this.#validator.error.createValidationError(
+          "All taskTags must be instances of TaskTag",
+          null,
+          this.#validator.codes.INVALID_FORMAT
+        );
+      }
+    });
+
+    this.#taskTags = [...newTaskTags];
+    this.#updatedAt = new Date();
   }
 
   removeTaskTag(taskTagId) {
@@ -267,7 +305,14 @@ class Task {
   }
 
   static create(
-    { name, description = "", userId, scheduledDate = null, priority = null, taskTags=[] },
+    {
+      name,
+      description = "",
+      userId,
+      scheduledDate = null,
+      priority = null,
+      taskTags = [],
+    },
     errorFactory
   ) {
     return new Task(

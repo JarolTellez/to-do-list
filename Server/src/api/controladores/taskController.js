@@ -14,10 +14,13 @@ class TaskController {
       const task = this.taskMapper.requestDataToCreateDTO(taskData);
       const createdTask = await this.taskService.createTask(task);
 
+      const responseTask= this.taskMapper.domainToResponseDTO(createdTask);
+      console.log("RESPONSE TASK: ", responseTask);
+
       return res.status(201).json({
-        status: "success",
-        message: `Tarea agregada: ${createdTask}`,
-        data: createdTask,
+        success: true,
+        message: `Tarea agregada exitosamente`,
+        data: responseTask,
       });
     } catch (error) {
       // if (error.message.startsWith('[')) {
@@ -62,16 +65,24 @@ class TaskController {
 
   async updateTask(req, res, next) {
     try {
+      const userId = req.user.userId;
+      const taskData = {
+        ...req.body,
+        userId,
+      }
+      console.log("TASK DATA EN UPDATE: ", taskData);
       // const tarea = req.body;
-      const mappedTask = this.taskMapper.requestToDomain(req.body);
+      const mappedTask = this.taskMapper.requestDataToUpdateDTO(taskData);
+      console.log("TASK MAPEADA A DTO TO UPDATE: ", mappedTask);
 
       //const tarea = this.taskMapper.requestToDomain(req.body);
       const updatedTask = await this.taskService.updateTask(mappedTask);
+      const responseTask= this.taskMapper.domainToResponseDTO(updatedTask);
 
       return res.status(200).json({
-        status: "success",
-        message: `Tarea actualizada: ${updatedTask}`,
-        data: updatedTask,
+        success:true,
+        message: `Tarea actualizada`,
+        data: responseTask,
       });
     } catch (error) {
       // console.error('Error en actualizarTarea:', error);

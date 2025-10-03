@@ -7,7 +7,7 @@ class UserMapper {
     UpdateUserRequestDTO,
     LoginRequestDTO,
     userTagMapper,
-    errorFactory
+    errorFactory,
   }) {
     this.User = User;
     this.UserResponseDTO = UserResponseDTO;
@@ -34,7 +34,7 @@ class UserMapper {
     });
   }
 
-  domainToAuthResponse({userDomain, accessToken, expiresIn, expiresAt}) {
+  domainToAuthResponse({ userDomain, accessToken, expiresIn, expiresAt }) {
     return new this.AuthResponseDTO({
       user: this.domainToResponse(userDomain),
       accessToken,
@@ -63,8 +63,8 @@ class UserMapper {
   }
 
   requestDataToLoginDTO(requestData) {
-     return new this.LoginRequestDTO({
-      identifier: requestData.identifier,// email or username
+    return new this.LoginRequestDTO({
+      identifier: requestData.identifier,
       password: requestData.password,
     });
   }
@@ -117,26 +117,7 @@ class UserMapper {
     };
   }
 
-  // dbToDomain(row) {
-  //   if (!row) return null;
-
-  //   return new this.User(
-  //     {
-  //       id: row.user_id,
-  //       username: row.user_name,
-  //       email: row.email,
-  //       password: row.password,
-  //       rol: row.rol,
-  //       createdAt: row.user_created_at,
-  //       updatedAt: row.user_updated_at,
-  //       userTags: [],
-  //       tasks: [],
-  //     },
-  //     this.errorFactory
-  //   );
-  // }
-
-    dbToDomain(row) {
+  dbToDomain(row) {
     if (!row) return null;
 
     return new this.User(
@@ -155,24 +136,27 @@ class UserMapper {
     );
   }
 
-  dbToDomainWithTags(rows) {
-    if (!rows || rows.length === 0) return null;
+  dbToDomainWithTags(dbUser) {
+    if (!dbUser) return null;
 
-    const user = this.dbToDomain(rows[0]);
+    try {
+      const user = this.dbToDomain(dbUser);
 
-    const userTags = rows
-      .filter((r) => r.user_tag_id)
-      .map((r) => this.userTagMapper.dbToDomain(r));
+      if (dbUser.userTags && Array.isArray(dbUser.userTags)) {
+        dbUser.userTags
+          .filter((userTag) => userTag && userTag.id)
+          .map((userTag) => this.userTagMapper.dbToDomain(userTag))
+          .forEach((userTag) => {
+            user.addUserTag(userTag);
+          });
+      }
 
-
-    userTags.forEach((userTag) => {
-      user.addUserTag(userTag);
-    });
-
-    return user;
+      return user;
+    } catch (error) {
+      console.error("Error in dbToDomainWithTags:", error);
+      throw error;
+    }
   }
-
-  
 }
 
 module.exports = UserMapper;

@@ -47,10 +47,10 @@ class UserTagMapper {
     if (!row) return null;
     return new this.UserTag(
       {
-        id: row.user_tag_id,
-        userId: row.user_id,
-        tagId: row.tag_id,
-        createdAt: row.user_tag_created_at,
+        id: row.id,
+        userId: row.userId,
+        tagId: row.tagId,
+        createdAt: row.createdAt,
         tag: null,
         user: null, 
       },

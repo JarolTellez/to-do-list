@@ -19,13 +19,11 @@ class JwtAuth {
     );
   }
 
-  // Genera Refresh Token 
+   
   createRefreshToken(userId) {
     if (!this.appConfig.jwt.refresh.secret) {
       throw new Error('JWT_REFRESH_SECRET no configurado');
     }
-
-    // Generar JWT
     const refreshToken = jwt.sign(
       { sub: userId,
        },
@@ -46,7 +44,6 @@ class JwtAuth {
         
   }
 
-  // Verificar Access Token
   verifyAccessToken(token) {
     try {
       return jwt.verify(token, this.appConfig.jwt.access.secret);
@@ -58,7 +55,7 @@ class JwtAuth {
     }
   }
 
-  // Verificar Refresh Token (firma y expiración)
+
 verifyRefreshToken(token) {
     try {
         return jwt.verify(token, this.appConfig.jwt.refresh.secret);
@@ -70,12 +67,12 @@ verifyRefreshToken(token) {
     }
 }
 
-  // Decodificar token sin verificar
+
   decodeToken(token) {
     return jwt.decode(token);
   }
 
-  // Generar hash de un token
+
   createHash(token) {
     return crypto.createHash('sha256').update(token).digest('hex');
   }

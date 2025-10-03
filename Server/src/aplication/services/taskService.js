@@ -2,157 +2,181 @@ class TaskService {
   constructor({
     taskDAO,
     taskMapper,
+    taskTagMapper,
     userTagMapper,
     tagService,
+    userService,
     taskTagService,
     userTagService,
     dbManager,
     errorFactory,
     validator,
     appConfig,
-    paginationHelper
+    paginationHelper,
   }) {
-    this.dbManager=dbManager;
+    this.dbManager = dbManager;
     this.taskDAO = taskDAO;
+    this.taskTagMapper = taskTagMapper;
     this.taskMapper = taskMapper;
-    this.userTagMapper=userTagMapper;
+    this.userTagMapper = userTagMapper;
     this.taskTagService = taskTagService;
     this.tagService = tagService;
+    this.userService = userService;
     this.userTagService = userTagService;
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.appConfig = appConfig;
-    this.paginationHelper=paginationHelper;
+    this.paginationHelper = paginationHelper;
   }
 
-  async createTask(createTaskRequestDTO, externalDbClient=null) {
+  async createTask(createTaskRequestDTO, externalDbClient = null) {
     this.validator.validateRequired(["createTaskRequestDTO"], {
       createTaskRequestDTO,
     });
+
     return this.dbManager.withTransaction(async (dbClient) => {
       const taskDomain =
         this.taskMapper.createRequestDTOToDomain(createTaskRequestDTO);
-      const newTask = await this.taskDAO.create(taskDomain, dbClient);
+      console.log(
+        "Task domain inicial:",
+        JSON.stringify(taskDomain.toJSON(), null, 2)
+      );
 
-      if (Array.isArray(taskDomain.taskTags)) {
-        await this.#processTaskTags(
-          newTask.id,
-          newTask.userId,
-          taskDomain.taskTags,
+      // Extracts tags
+      const mixedTags = taskDomain.taskTags
+        .map((taskTag) => taskTag.tag)
+        .filter((tag) => tag.name && typeof tag.name === "string");
+
+      // Process mixed tags (existing and new) and return final tag ids
+      const tagIds = await this.userService.processMixedTagsForTask(
+        taskDomain.userId,
+        mixedTags,
+        dbClient
+      );
+
+      taskDomain.setTaskTags([]);
+      // Create complete taskTag  with their ids
+      tagIds.forEach((tagId) => {
+        const taskTag = this.taskTagMapper.createFromTagId(
+          {
+            taskId: null,
+            tagId: tagId,
+          },
+          this.errorFactory
+        );
+        taskDomain.addTaskTag(taskTag);
+      });
+
+      console.log(
+        "Task domain después de reconstruir tags:",
+        JSON.stringify(taskDomain.toJSON(), null, 2)
+      );
+
+      // save task in db
+      const newTask = await this.taskDAO.createWithTags(taskDomain, dbClient);
+
+      return newTask;
+    }, externalDbClient);
+  }
+
+  async updateTask(updateTaskRequestDTO, externalDbClient = null) {
+    this.validator.validateRequired(["updateTaskRequestDTO"], {
+      updateTaskRequestDTO,
+    });
+
+    return this.dbManager.withTransaction(async (dbClient) => {
+      const existingTask = await this.taskDAO.findWithTagsByIdAndUserId(
+        updateTaskRequestDTO.id,
+        updateTaskRequestDTO.userId,
+        dbClient
+      );
+
+      if (!existingTask) {
+        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
+          attemptedData: {
+            taskId: updateTaskRequestDTO.id,
+            userId: updateTaskRequestDTO.userId,
+          },
+        });
+      }
+      const taskDomain = this.taskMapper.updateDTOToDomain(
+        updateTaskRequestDTO,
+        existingTask
+      );
+
+      // get only the tags(mixed because can be existing or not)
+      const mixedTags = taskDomain.taskTags
+        .map((tt) => tt.tag)
+        .filter((tag) => tag.name && typeof tag.name === "string");
+
+      // Process mixed tags (existing and new) and return final tag ids
+      const tagIds = await this.userService.processMixedTagsForTask(
+        taskDomain.userId,
+        mixedTags,
+        dbClient
+      );
+
+      const currentTagIds = existingTask.taskTags.map((tt) => tt.tagId);
+      const newTagIds = tagIds;
+
+      const tagsToAdd = newTagIds.filter(
+        (tagId) => !currentTagIds.includes(tagId)
+      );
+      const tagsToRemove = currentTagIds.filter(
+        (tagId) => !newTagIds.includes(tagId)
+      );
+
+      if (tagsToRemove.length > 0) {
+        await this.taskDAO.removeTaskTags(
+          taskDomain.id,
+          tagsToRemove,
           dbClient
         );
       }
 
-      const consultedTask = await this.taskDAO.findWithTagsByIdAndUserId(
-        newTask.id,
-        newTask.userId,
+      if (tagsToAdd.length > 0) {
+        await this.taskDAO.addTaskTags(taskDomain.id, tagsToAdd, dbClient);
+      }
+      const updatedTask = await this.taskDAO.updateBasicInfo(
+        taskDomain,
         dbClient
       );
-      return consultedTask;
-    }, externalDbClient);
-  }
 
-  async #processTaskTags(taskId, userId, taskTags, externalDbClient = null) {
-    for (const taskTag of taskTags) {
-      taskTag.assignTaskId(taskId);
-
-      if (!taskTag.tag.id) {
-        const createdTag = await this.tagService.createTag(
-          taskTag.tag,
-          externalDbClient
-        );
-        taskTag.assignTag(createdTag);
-      }
-
-      const userTag = this.userTagMapper.fromTagAndUserToDomain(
-        taskTag.tag.id,
-        userId
-      );
-
-      await this.userTagService.createUserTag(userTag, externalDbClient);
-
-      await this.taskTagService.createTaskTag(taskTag, externalDbClient);
-    }
-
-  }
-
-  async updateTask(task, externalDbClient = null) {
-    this.validator.validateRequired(["task"], { task });
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const existingTask = await this.taskDAO.findByIdAndUserId(
-        task.id,
-        task.userId,
-        dbClient
-      );
-      if (!existingTask) {
-        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId: task.id, name: task.name },
-        });
-      }
-
-  
-      const result = await this.taskDAO.update(task, dbClient);
-      if (!result) {
+      if (!updatedTask) {
         throw this.errorFactory.createNotFoundError(
           "Tarea no encontrada para actualizar",
-          { attemptedData: { taskId: task.taskId, userId: task.userId } }
+          {
+            attemptedData: {
+              taskId: updateTaskRequestDTO.id,
+              userId: updateTaskRequestDTO.userId,
+            },
+          }
         );
       }
-
-      for (const tag of task.tags) {
-        if (tag.toDelete === true && tag.taskTagId) {
-          await this.taskTagService.deleteById(tag.taskTagId, dbClient);
-          continue;
-        }
-
-        if (!tag.exists) {
-          const createdTag = await this.tagService.createTag(tag, dbClient);
-
-          if (createdTag && createdTag.id) {
-            await this.taskTagService.createTaskTag(
-              task.id,
-              createdTag.id,
-              dbClient
-            );
-          }
-        } else if (!tag.taskTagId) {
-          await this.taskTagService.createTaskTag(task.id, tag.id, dbClient);
-        }
-      }
-
-      const taskResult = await this.taskDAO.findByIdAndUserId(
-        task.id,
-        task.userId,
+      const finalTask = await this.taskDAO.findWithTagsByIdAndUserId(
+        taskDomain.id,
+        taskDomain.userId,
         dbClient
       );
-      if (!taskResult) {
-        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId: task.id, name: task.name },
-        });
-      }
-      return taskResult;
+
+      return finalTask;
     }, externalDbClient);
   }
 
   async deleteTask(taskId, userId, externalDbClient = null) {
     this.validator.validateRequired(["taskId", "userId"], { taskId, userId });
     return this.dbManager.withTransaction(async (dbClient) => {
-      const existingTask = await this.taskDAO.findByIdAndUserId(
+      const existingTask = await this.taskDAO.findWithTagsByIdAndUserId(
         taskId,
         userId,
         dbClient
       );
-      // if(existingTask.tags.length>0){
-      // const deletedTaskTag = await this.taskTagService.deleteAllByTaskId(
-      //   taskId,
-      //   dbClient
-      // );
-      // if (!deletedTaskTag) {
-      //   throw new this.NotFoundError("Tarea no encontrada", {
-      //     attemptedData: { taskId, userId },
-      //   });
-      // }
-      // }
+
+      if (!existingTask) {
+        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
+          attemptedData: { taskId, userId },
+        });
+      }
 
       const deletedTask = await this.taskDAO.delete(taskId, userId, dbClient);
       if (!deletedTask) {
@@ -160,17 +184,13 @@ class TaskService {
           attemptedData: { taskId, userId },
         });
       }
+
       return deletedTask;
     }, externalDbClient);
   }
 
   async completeTask(taskId, completed, userId, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
-      // const existingTask = await this.taskDAO.findById(taskId, dbClient);
-      // if (!existingTask) {
-      //   throw new Error(`No se encontró la task con el id: ${taskId}.`);
-      // }
-
       const result = await this.taskDAO.updateCompleted(
         taskId,
         completed,
@@ -178,18 +198,64 @@ class TaskService {
         dbClient
       );
 
-      const updatedTask = await this.taskDAO.findByIdAndUserId(
-        taskId,
-        userId,
-        dbClient
-      );
-      if (!updatedTask || !result) {
+      if (!result) {
         throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
           attemptedData: { taskId },
         });
       }
 
+      const updatedTask = await this.taskDAO.findWithTagsByIdAndUserId(
+        taskId,
+        userId,
+        dbClient
+      );
+
       return updatedTask;
+    }, externalDbClient);
+  }
+
+  async getTaskById(taskId, userId, externalDbClient = null) {
+    this.validator.validateRequired(["taskId", "userId"], { taskId, userId });
+
+    return this.dbManager.forRead(async (dbClient) => {
+      const task = await this.taskDAO.findWithTagsByIdAndUserId(
+        taskId,
+        userId,
+        dbClient
+      );
+
+      if (!task) {
+        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
+          attemptedData: { taskId, userId },
+        });
+      }
+
+      return task;
+    }, externalDbClient);
+  }
+
+  async getTasksByTags(
+    userId,
+    tagNames,
+    options = {},
+    externalDbClient = null
+  ) {
+    return this.dbManager.forRead(async (dbClient) => {
+      const allTasks = await this.taskDAO.findAllByUserId(
+        {
+          userId,
+          ...options,
+        },
+        dbClient
+      );
+
+      if (tagNames && tagNames.length > 0) {
+        return allTasks.filter((task) =>
+          task.taskTags.some((taskTag) => tagNames.includes(taskTag.tag.name))
+        );
+      }
+
+      return allTasks;
     }, externalDbClient);
   }
 

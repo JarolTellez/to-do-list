@@ -200,6 +200,18 @@ class User {
     }
   }
 
+  addUserTagById(tagId) {
+    const userTag = UserTag.create(
+      { userId: this.#id, tagId },
+      this.#validator.error
+    );
+    this.addUserTag(userTag);
+  }
+
+  addUserTagsByIds(tagIds = []) {
+    tagIds.forEach((tagId) => this.addUserTagById(tagId));
+  }
+
   addTasks(tasks) {
     this.#validateTasks(tasks);
     this.#tasks = tasks;

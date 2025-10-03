@@ -1,6 +1,11 @@
+const {
+  SORT_ORDER,
+  TAG_SORT_FIELD,
+} = require("../../infrastructure/constants/sortConstants");
 class TagService {
   constructor({
     tagDAO,
+    tagMapper,
     dbManager,
     errorFactory,
     validator,
@@ -8,6 +13,7 @@ class TagService {
   }) {
     this.dbManager = dbManager;
     this.tagDAO = tagDAO;
+    this.tagMapper = tagMapper;
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.paginationHelper = paginationHelper;
@@ -26,13 +32,86 @@ class TagService {
     }, externalDbClient);
   }
 
-  async getAllTagsByUserId(userId, externalDbClient = null) {
+  async createMultipleTags(tagsDomain, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      if (!tagsDomain || tagsDomain.length === 0) {
+        return [];
+      }
+
+      // Extracts only names to search
+      const tagNames = tagsDomain.map((tag) => tag.name);
+
+      // Search existing tags by name
+      const existingTags = await this.tagDAO.findByNames(tagNames, dbClient);
+      const existingTagNames = existingTags.map((t) => t.name);
+
+      // Identify new tags
+      const newTagDomains = tagsDomain.filter(
+        (tag) => !existingTagNames.includes(tag.name)
+      );
+
+      let allTags = [...existingTags];
+
+      // Crate new tags
+      if (newTagDomains.length > 0) {
+        const createdTags = await this.tagDAO.createMultiple(
+          newTagDomains,
+          dbClient
+        );
+        allTags = [...allTags, ...createdTags];
+      }
+
+      return allTags;
+    }, externalDbClient);
+  }
+
+  async processMixedTags(mixedTags, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      if (!mixedTags || mixedTags.length === 0) {
+        return [];
+      }
+      const tagDomains = mixedTags;
+      // create new tags if exists
+      const tags = await this.createMultipleTags(tagDomains, dbClient);
+      const tagIds = tags.map((tag) => tag.id);
+
+      // new set deletes duplicate
+      return [...new Set(tagIds)];
+    }, externalDbClient);
+  }
+
+  async getTagsByIds(tagIds, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
-      const tagsResult = await this.tagDAO.findAllByUserId(
-        userId,
+      if (!tagIds || tagIds.length === 0) {
+        return [];
+      }
+
+      const tags = await this.tagDAO.findByIds(tagIds, dbClient);
+      return tags;
+    }, externalDbClient);
+  }
+
+  async getAllTagsByUserId(userId, options = {}, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      const {
+        limit = null,
+        offset = null,
+        sortBy = TAG_SORT_FIELD.CREATED_AT,
+        sortOrder = SORT_ORDER.DESC,
+      } = options;
+
+      const tags = await this.tagDAO.findAllByUserId(
+        {
+          userId,
+          limit,
+          offset,
+          sortBy,
+          sortOrder,
+        },
         dbClient
       );
-      return tagsResult;
+
+      return tags;
     }, externalDbClient);
   }
 
@@ -65,6 +144,28 @@ class TagService {
       }
 
       return tag;
+    }, externalDbClient);
+  }
+
+  async getByNames(tagNames, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      if (!tagNames || tagNames.length === 0) {
+        return [];
+      }
+
+      const tags = await this.tagDAO.findByNames(tagNames, dbClient);
+      return tags;
+    }, externalDbClient);
+  }
+
+  async validateTagsExist(tagIds, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      if (!tagIds || tagIds.length === 0) {
+        return true;
+      }
+
+      const tags = await this.tagDAO.findByIds(tagIds, dbClient);
+      return tags.length === tagIds.length;
     }, externalDbClient);
   }
 }

@@ -6,6 +6,7 @@ const {
 class SessionService {
   constructor({
     sessionDAO,
+    userService,
     sessionMapper,
     dbManager,
     erroFactory,
@@ -15,6 +16,7 @@ class SessionService {
   }) {
     this.dbManager = dbManager;
     this.sessionDAO = sessionDAO;
+    this.userService = userService;
     this.sessionMapper = sessionMapper;
     this.erroFactory = erroFactory;
     this.validator = validator;
@@ -91,6 +93,7 @@ class SessionService {
     externalDbClient = null
   ) {
     return this.dbManager.withTransaction(async (dbClient) => {
+      await this.userService.getById(userId, dbClient);
       const sessionDomain = this.sessionMapper.createRequestToDomain({
         userId: userId,
         refreshTokenHash: refreshTokenHash,
@@ -233,7 +236,13 @@ class SessionService {
     this.validator.validateRequired(["sessionId"], { sessionId });
 
     return this.dbManager.forRead(async (dbClient) => {
-      return await this.sessionDAO.findById(sessionId, dbClient);
+      const session = await this.sessionDAO.findById(sessionId, dbClient);
+      if (!session) {
+        throw this.errorFactory.createNotFoundError("Sesión no encontrada", {
+          attemptedData: { sessionId },
+        });
+      }
+      return session;
     }, externalDbClient);
   }
 
@@ -253,7 +262,12 @@ class SessionService {
 
   async getAllUserActiveSessions(userId, currentSessionId, options = {}) {
     this.validator.validateRequired(["userId"], { userId });
-    const { page = 1, limit = 10, offset = 0, externalDbClient = null } = options;
+    const {
+      page = 1,
+      limit = 10,
+      offset = 0,
+      externalDbClient = null,
+    } = options;
 
     return this.dbManager.forRead(async (dbClient) => {
       // get paginated sessions
@@ -271,9 +285,12 @@ class SessionService {
       const total = await this.sessionDAO.countAllByUserIdAndIsActive(
         userId,
         true,
-         dbClient,
+        dbClient
       );
-          const totalPages = this.paginationHelper.calculateTotalPages(total, limit);
+      const totalPages = this.paginationHelper.calculateTotalPages(
+        total,
+        limit
+      );
 
       const sessionsResponse = sessions.map((session) =>
         this.sessionMapper.domainToResponse(session, currentSessionId)

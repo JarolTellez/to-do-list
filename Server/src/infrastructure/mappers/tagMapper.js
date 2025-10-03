@@ -1,15 +1,8 @@
 class TagMapper {
-  constructor({
-    Tag,
-    TagResponseDTO,
-    TagRequestDTO,
-    UpdateTagRequestDTO,
-    errorFactory
-  }) {
+  constructor({ Tag, TagResponseDTO, TagRequestDTO, errorFactory }) {
     this.Tag = Tag;
     this.TagResponseDTO = TagResponseDTO;
     this.TagRequestDTO = TagRequestDTO;
-    this.UpdateTagRequestDTO = UpdateTagRequestDTO;
     this.errorFactory = errorFactory;
   }
 
@@ -19,40 +12,31 @@ class TagMapper {
       name: tagDomain.name,
       description: tagDomain.description,
       createdAt: tagDomain.createdAt,
-      exists: tagDomain.exists,
-      taskTagsCount: tagDomain.taskTags ? tagDomain.taskTags.length : 0,
-      userTagsCount: tagDomain.userTags ? tagDomain.userTags.length : 0,
     });
   }
 
   requestDataToCreateRequestDTO(requestData) {
     return new this.TagRequestDTO({
-      id: requestData.id? requestData.id:null,
-      name: requestData.name,
-      description: requestData.description
-    });
-  }
-
-  requestDataToUpdateDTO(requestData) {
-    return new this.UpdateTagRequestDTO({
+      id: requestData.id ? requestData.id : null,
       name: requestData.name,
       description: requestData.description,
     });
   }
-
 
   createRequestToDomain(createTagRequest) {
     return this.Tag.create(
       {
         id: createTagRequest.id,
         name: createTagRequest.name,
-        description: createTagRequest.description? createTagRequest.description:null,
+        description: createTagRequest.description
+          ? createTagRequest.description
+          : null,
       },
       this.errorFactory
     );
   }
 
-  updateRequestToDomain(updateTagRequest, existingTag) {
+  requestToDomain(updateTagRequest, existingTag) {
     return new this.Tag(
       {
         id: existingTag.id,
@@ -72,10 +56,10 @@ class TagMapper {
 
     return new this.Tag(
       {
-        id: row.tag_id,
-        name: row.tag_name,
-        description: row.tag_description,
-        createdAt: row.tag_created_at,
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        createdAt: row.createdAt,
         exists: true,
         taskTags: [],
         userTags: [],

@@ -1,5 +1,4 @@
 class DateParser {
-  
   /**
    * Converts a date from frontend format to MySQL datetime format
    * @param {string|Date} frontendDate - Date from frontend (ISO string, Date object, or any valid date format)
@@ -10,11 +9,11 @@ class DateParser {
    */
   toMySQLDateTime(frontendDate) {
     if (!frontendDate) return null;
-    
+
     const date = new Date(frontendDate);
     if (isNaN(date.getTime())) return null;
-    
-    return date.toISOString().slice(0, 19).replace('T', ' ');
+
+    return date.toISOString().slice(0, 19).replace("T", " ");
   }
 
   /**
@@ -25,18 +24,18 @@ class DateParser {
    * fromMySQLDateTime('2024-01-15 14:30:00')
    */
   fromMySQLDateTime(mysqlDateTime) {
-     if (mysqlDateTime instanceof Date) {
+    if (mysqlDateTime instanceof Date) {
       return isNaN(mysqlDateTime.getTime()) ? null : mysqlDateTime;
     }
     if (!mysqlDateTime) {
       return null;
     }
-    if (typeof mysqlDateTime === 'string') {
+    if (typeof mysqlDateTime === "string") {
       let isoString;
-      
-      if (mysqlDateTime.includes(' ')) {
-        isoString = mysqlDateTime.replace(' ', 'T');
-      } else if (mysqlDateTime.includes('T')) {
+
+      if (mysqlDateTime.includes(" ")) {
+        isoString = mysqlDateTime.replace(" ", "T");
+      } else if (mysqlDateTime.includes("T")) {
         isoString = mysqlDateTime;
       } else {
         isoString = mysqlDateTime;
@@ -53,6 +52,34 @@ class DateParser {
   }
 
   /**
+   * Parses any date string to JavaScript Date object
+   * @param {string|Date} dateInput - Date in ISO format, MySQL format, or Date object
+   * @returns {Date|null} JavaScript Date object or null if invalid
+   * @example
+   * parseToDate('2025-10-25T15:45:00.000-05:00') // Returns Date object
+   * parseToDate('2025-10-25 15:45:00') // Returns Date object
+   * parseToDate(new Date()) // Returns the same Date object
+   */
+  parseToDate(dateInput) {
+    if (!dateInput) return null;
+
+    if (dateInput instanceof Date) {
+      return isNaN(dateInput.getTime()) ? null : dateInput;
+    }
+
+    if (typeof dateInput !== "string") {
+      return null;
+    }
+
+    const date = new Date(dateInput);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+
+    return null;
+  }
+
+  /**
    * Validates if a string is in MySQL datetime format
    * @param {string} dateString - String to validate
    * @returns {boolean} True if valid MySQL datetime format
@@ -60,8 +87,8 @@ class DateParser {
    * isValidMySQLFormat('2024-01-15 14:30:00') // Returns true
    */
   isValidMySQLFormat(dateString) {
-    if (typeof dateString !== 'string') return false;
-    
+    if (typeof dateString !== "string") return false;
+
     const mysqlRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
     return mysqlRegex.test(dateString);
   }

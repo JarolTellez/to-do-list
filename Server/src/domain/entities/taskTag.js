@@ -5,6 +5,7 @@ const Task = require("../entities/task");
 class TaskTag {
   #id;
   #taskId;
+  #tagId;
   #createdAt;
   #tag;
   #toDelete;
@@ -13,7 +14,8 @@ class TaskTag {
   constructor(
     {
       id = null,
-      taskId=null,
+      taskId = null,
+      tagId = null,
       createdAt = new Date(),
       tag = null,
       toDelete = false,
@@ -23,11 +25,11 @@ class TaskTag {
     this.#validator = new DomainValidators(errorFactory);
 
     this.#id = this.#validator.validateId(id, "TaskTag");
-    this.#taskId = this.#validator.validateId(taskId, "Task");
+    this.#taskId = taskId ? this.#validator.validateId(taskId, "Task") : null;
+    this.#tagId = tagId ? this.#validator.validateId(tagId, "Tag") : null;
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
     this.#tag = this.#validateTag(tag);
     this.#toDelete = !!toDelete;
-
     this.#validateBusinessRules();
   }
 
@@ -67,9 +69,7 @@ class TaskTag {
     return task;
   }
 
-  #validateBusinessRules() {
-
-  }
+  #validateBusinessRules() {}
 
   assignTag(tag) {
     this.#tag = this.#validateTag(tag);
@@ -78,12 +78,9 @@ class TaskTag {
     }
   }
 
-    assignTaskId(taskId) {
+  assignTaskId(taskId) {
     this.#taskId = this.#validator.validateId(taskId, "Task");
   }
-
-
-
 
   updateCreatedAt(createdAt) {
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
@@ -104,6 +101,9 @@ class TaskTag {
   get taskId() {
     return this.#taskId;
   }
+  get tagId() {
+  return this.#tagId; 
+}
   get createdAt() {
     return this.#createdAt;
   }
@@ -123,8 +123,6 @@ class TaskTag {
     return this.#tag !== null && this.#tag !== undefined;
   }
 
-
-
   toJSON() {
     return {
       id: this.#id,
@@ -141,12 +139,13 @@ class TaskTag {
   }
 
   static create(
-    { taskId=null, tag = null, toDelete = false },
+    { taskId = null, tagId = null, tag = null, toDelete = false },
     errorFactory
   ) {
     return new TaskTag(
       {
         taskId,
+        tagId,
         tag,
         createdAt: new Date(),
         toDelete,
@@ -155,9 +154,9 @@ class TaskTag {
     );
   }
 
-  static assign({tag, taskId, toDelete = false }, errorFactory) {
+  static assign({ tag, taskId, toDelete = false }, errorFactory) {
     const validator = new DomainValidators(errorFactory);
-    if ( !tag) {
+    if (!tag) {
       throw validator.error.createValidationError(
         "Task and Tag are required for assignment",
         null,

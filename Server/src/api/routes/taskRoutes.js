@@ -15,7 +15,7 @@ module.exports = (taskController) => {
     .post(validateAccessToken,taskController.deleteTask.bind(taskController))
     .patch(validateAccessToken,taskController.completeTask.bind(taskController));
 
-  router.route('/actualizar')
+  router.route('/update')
     .patch(validateAccessToken,taskController.updateTask.bind(taskController));
 
   return router;
