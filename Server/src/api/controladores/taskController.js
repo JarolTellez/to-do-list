@@ -14,8 +14,7 @@ class TaskController {
       const task = this.taskMapper.requestDataToCreateDTO(taskData);
       const createdTask = await this.taskService.createTask(task);
 
-      const responseTask= this.taskMapper.domainToResponseDTO(createdTask);
-      console.log("RESPONSE TASK: ", responseTask);
+      const responseTask = this.taskMapper.domainToResponseDTO(createdTask);
 
       return res.status(201).json({
         success: true,
@@ -44,13 +43,16 @@ class TaskController {
 
   async deleteTask(req, res, next) {
     try {
-      console.log("tarea recibida para eliminar", req.body);
-      const { taskId, userId } = req.body;
+      const userId = req.user.userId;
+      const { taskId } = req.body;
       await this.taskService.deleteTask(taskId, userId);
 
       return res.status(200).json({
-        status: "success",
+        success: true,
         message: `Tarea con ID ${taskId} eliminada correctamente.`,
+        data: {
+          taskId: taskId,
+        },
       });
     } catch (error) {
       // console.error('Error en eliminarTarea:', error);
@@ -69,18 +71,14 @@ class TaskController {
       const taskData = {
         ...req.body,
         userId,
-      }
-      console.log("TASK DATA EN UPDATE: ", taskData);
-      // const tarea = req.body;
-      const mappedTask = this.taskMapper.requestDataToUpdateDTO(taskData);
-      console.log("TASK MAPEADA A DTO TO UPDATE: ", mappedTask);
+      };
 
-      //const tarea = this.taskMapper.requestToDomain(req.body);
+      const mappedTask = this.taskMapper.requestDataToUpdateDTO(taskData);
       const updatedTask = await this.taskService.updateTask(mappedTask);
-      const responseTask= this.taskMapper.domainToResponseDTO(updatedTask);
+      const responseTask = this.taskMapper.domainToResponseDTO(updatedTask);
 
       return res.status(200).json({
-        success:true,
+        success: true,
         message: `Tarea actualizada`,
         data: responseTask,
       });
@@ -97,30 +95,28 @@ class TaskController {
 
   async completeTask(req, res, next) {
     try {
-      const { taskId, isCompleted, userId } = req.body;
-      const updatedTask = await this.taskService.completeTask(
+      const userId = req.user.userId;
+      const { taskId, isCompleted } = req.body;
+      const updatedTask = await this.taskService.completeTask({
         taskId,
         isCompleted,
-        userId
-      );
+        userId,
+      });
 
       return res.status(200).json({
-        status: "success",
-        message: `Estado de tarea actualizado: ${updatedTask}`,
-        data: updatedTask,
+        success: true,
+        message: `Estado de tarea actualizado: ${updatedTask.isCompleted}`,
+        data: {
+          taskId: updatedTask.id,
+          isCompleted: updatedTask.isCompleted,
+        },
       });
     } catch (error) {
-      // console.error('Error en actualizarTareaCompletada:', error);
-      // return res.status(500).json({
-      //   status: 'error',
-      //   message: 'Ocurrió un error al intentar actualizar el estado de la tarea.',
-      //   error: error.message,
-      // });
       next(error);
     }
   }
 
-  async findAllTasksByUserId(req, res, next) {
+  async getAllTasksByUserId(req, res, next) {
     try {
       const { userId } = req.body;
       const {
