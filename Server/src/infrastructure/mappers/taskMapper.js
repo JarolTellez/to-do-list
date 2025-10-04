@@ -142,22 +142,52 @@ class TaskMapper {
     );
   }
 
+  // dbToDomainWithTags(dbTask) {
+  //   if (!dbTask) return null;
+
+  //   const task = this.dbToDomain(dbTask);
+
+  //   if (dbTask.taskTags && Array.isArray(dbTask.taskTags)) {
+  //     dbTask.taskTags.forEach((taskTagData, index) => {
+  //       if (taskTagData && taskTagData.id) {
+  //         const taskTag = this.taskTagMapper.dbToDomain(taskTagData);
+  //         console.log("TASK TAG A AGREGAR: ", taskTag.toJSON());
+  //         task.addTaskTag(taskTag);
+  //       }
+  //     });
+  //   }
+
+  //   return task;
+  // }
+
   dbToDomainWithTags(dbTask) {
-    if (!dbTask) return null;
-
-    const task = this.dbToDomain(dbTask);
-
-    if (dbTask.taskTags && Array.isArray(dbTask.taskTags)) {
-      dbTask.taskTags.forEach((taskTagData, index) => {
-        if (taskTagData && taskTagData.id) {
-          const taskTag = this.taskTagMapper.dbToDomain(taskTagData);
-          task.addTaskTag(taskTag);
-        }
-      });
-    }
-
-    return task;
+  if (!dbTask) return null;
+  const taskTags = [];
+  if (dbTask.taskTags && Array.isArray(dbTask.taskTags)) {
+    dbTask.taskTags.forEach((taskTagData) => {
+      if (taskTagData && taskTagData.id) {
+        const taskTag = this.taskTagMapper.dbToDomain(taskTagData);
+        taskTags.push(taskTag);
+      }
+    });
   }
+
+  return new this.Task(
+    {
+      id: dbTask.id,
+      name: dbTask.name,
+      description: dbTask.description,
+      scheduledDate: this.dateParser.fromMySQLDateTime(dbTask.scheduledDate),
+      createdAt: this.dateParser.fromMySQLDateTime(dbTask.createdAt) || new Date(),
+      updatedAt: this.dateParser.fromMySQLDateTime(dbTask.updatedAt) || new Date(),
+      isCompleted: dbTask.isCompleted,
+      userId: dbTask.userId,
+      priority: dbTask.priority,
+      taskTags: taskTags,  
+    },
+    this.errorFactory
+  );
+}
 
   domainToResponseDTO(taskDomain) {
     const domainTaskTags = taskDomain.taskTags;

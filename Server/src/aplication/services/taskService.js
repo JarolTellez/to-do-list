@@ -37,10 +37,6 @@ class TaskService {
     return this.dbManager.withTransaction(async (dbClient) => {
       const taskDomain =
         this.taskMapper.createRequestDTOToDomain(createTaskRequestDTO);
-      console.log(
-        "Task domain inicial:",
-        JSON.stringify(taskDomain.toJSON(), null, 2)
-      );
 
       // Extracts tags
       const mixedTags = taskDomain.taskTags
@@ -66,11 +62,6 @@ class TaskService {
         );
         taskDomain.addTaskTag(taskTag);
       });
-
-      console.log(
-        "Task domain después de reconstruir tags:",
-        JSON.stringify(taskDomain.toJSON(), null, 2)
-      );
 
       // save task in db
       const newTask = await this.taskDAO.createWithTags(taskDomain, dbClient);
@@ -189,26 +180,21 @@ class TaskService {
     }, externalDbClient);
   }
 
-  async completeTask(taskId, completed, userId, externalDbClient = null) {
+  async completeTask({taskId, completed, userId}, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
-      const result = await this.taskDAO.updateCompleted(
-        taskId,
-        completed,
-        userId,
-        dbClient
-      );
+    const task = await this.taskDAO.findWithTagsByIdAndUserId(
+      taskId, userId, dbClient
+    );
 
-      if (!result) {
-        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId },
-        });
-      }
+    if (!task) {
+      throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
+        attemptedData: { taskId, userId },
+      });
+    }
 
-      const updatedTask = await this.taskDAO.findWithTagsByIdAndUserId(
-        taskId,
-        userId,
-        dbClient
-      );
+    task.complete(completed);  
+
+    const updatedTask = await this.taskDAO.updateBasicInfo(task, dbClient);
 
       return updatedTask;
     }, externalDbClient);

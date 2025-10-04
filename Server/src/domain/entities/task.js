@@ -70,7 +70,7 @@ class Task {
     }
 
     if (missingFields.length > 0) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         `Missing required fields: ${missingFields.join(", ")}`,
         { missingFields },
         this.#validator.codes.REQUIRED_FIELD
@@ -133,6 +133,15 @@ class Task {
   }
 
   complete() {
+
+     if (this.#isCompleted) {
+    throw this.#validator.errorFactory.createValidationError(
+      "Task is already completed",
+      { taskId: this.#id },
+      this.#validator.codes.BUSINESS_RULE_VIOLATION
+    );
+  }
+
     this.#isCompleted = true;
     this.#updatedAt = new Date();
   }
@@ -166,7 +175,7 @@ class Task {
 
   addTaskTag(taskTag) {
     if (!(taskTag instanceof TaskTag)) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "Must provide an instance of TaskTag",
         null,
         this.#validator.codes.INVALID_FORMAT
@@ -197,7 +206,7 @@ class Task {
 
   setTaskTags(newTaskTags) {
     if (!Array.isArray(newTaskTags)) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "taskTags must be an array",
         null,
         this.#validator.codes.INVALID_FORMAT
@@ -205,7 +214,7 @@ class Task {
     }
     newTaskTags.forEach((taskTag) => {
       if (!(taskTag instanceof TaskTag)) {
-        throw this.#validator.error.createValidationError(
+        throw this.#validator.errorFactory.createValidationError(
           "All taskTags must be instances of TaskTag",
           null,
           this.#validator.codes.INVALID_FORMAT

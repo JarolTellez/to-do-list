@@ -102,8 +102,11 @@ class TaskTag {
     return this.#taskId;
   }
   get tagId() {
-  return this.#tagId; 
-}
+    if (this.#tag && this.#tag.id) {
+      return this.#tag.id;
+    }
+    return this.#tagId;
+  }
   get createdAt() {
     return this.#createdAt;
   }

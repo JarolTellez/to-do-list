@@ -239,39 +239,39 @@ async addTaskTags(taskId, tagIds, externalDbClient = null) {
   }, externalDbClient);
 }
 
-  async updateCompleted(id, isCompleted, userId, externalDbClient = null) {
-    return this.dbManager.withTransaction(async (dbClient) => {
-      try {
-        const taskIdNum = this.inputValidator.validateId(id, "task id");
-        const userIdNum = this.inputValidator.validateId(userId, "user id");
+  // async updateCompleted(id, isCompleted, userId, externalDbClient = null) {
+  //   return this.dbManager.withTransaction(async (dbClient) => {
+  //     try {
+  //       const taskIdNum = this.inputValidator.validateId(id, "task id");
+  //       const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-        if (typeof isCompleted !== "boolean") {
-          throw this.errorFactory.createValidationError(
-            "isCompleted must be a boolean"
-          );
-        }
+  //       if (typeof isCompleted !== "boolean") {
+  //         throw this.errorFactory.createValidationError(
+  //           "isCompleted must be a boolean"
+  //         );
+  //       }
 
-        const updatedTask = await dbClient.task.update({
-          where: {
-            id: taskIdNum,
-            userId: userIdNum,
-          },
-          data: { isCompleted },
-        });
+  //       const updatedTask = await dbClient.task.update({
+  //         where: {
+  //           id: taskIdNum,
+  //           userId: userIdNum,
+  //         },
+  //         data: { isCompleted },
+  //       });
 
-        return this.taskMapper.dbToDomain(updatedTask);
-      } catch (error) {
-        if (error.code === "P2025") {
-          return null; 
-        }
-        this._handlePrismaError(error, "taskDAO.updateCompleted", {
-          taskId: id,
-          userId,
-          isCompleted,
-        });
-      }
-    }, externalDbClient);
-  }
+  //       return this.taskMapper.dbToDomain(updatedTask);
+  //     } catch (error) {
+  //       if (error.code === "P2025") {
+  //         return null; 
+  //       }
+  //       this._handlePrismaError(error, "taskDAO.updateCompleted", {
+  //         taskId: id,
+  //         userId,
+  //         isCompleted,
+  //       });
+  //     }
+  //   }, externalDbClient);
+  // }
 
   async delete(id, userId, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
@@ -336,8 +336,8 @@ async addTaskTags(taskId, tagIds, externalDbClient = null) {
             },
           },
         });
-
-        return task ? this.taskMapper.dbToDomainWithTags(task) : null;
+        const mappedTask= task ? this.taskMapper.dbToDomainWithTags(task) : null;
+        return mappedTask;
       } catch (error) {
         if (error instanceof this.errorFactory.Errors.ValidationError) {
           throw error;

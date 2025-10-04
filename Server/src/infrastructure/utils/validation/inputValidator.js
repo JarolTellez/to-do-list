@@ -46,8 +46,6 @@ class InputValidator {
         )}`
       );
     }
-
-    // Convertir a uppercase para SQL
     const safeOrder = validOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     return {
