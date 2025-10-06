@@ -1,7 +1,3 @@
-const bcrypt = require("bcryptjs");
-const { LoginRequestDTO } = require("../dtos/request_dto/userRequestDTOs");
-const PAGINATION_CONFIG = require("../../infrastructure/config/paginationConfig");
-
 class AuthService {
   constructor({
     user,
@@ -17,6 +13,7 @@ class AuthService {
     validator,
     appConfig,
     paginationHelper,
+    paginationConfig,
   }) {
     this.dbManager = dbManager;
     this.user = user;
@@ -31,6 +28,7 @@ class AuthService {
     this.validator = validator;
     this.appConfig = appConfig;
     this.paginationHelper = paginationHelper;
+    this.paginationConfig = paginationConfig;
   }
 
   async loginUser(
@@ -179,7 +177,7 @@ class AuthService {
     }, externalDbClient);
   }
 
-  async cleanupInvalidSession(refreshToken, externalDbClient=null) {
+  async cleanupInvalidSession(refreshToken, externalDbClient = null) {
     const refreshTokenHash = this.jwtAuth.createHashRefreshToken(refreshToken);
     return this.dbManager.withTransaction(async (dbClient) => {
       await this.sessionService.deactivateSessionByTokenHash(
@@ -189,10 +187,7 @@ class AuthService {
     }, externalDbClient);
   }
 
-  async deactivateSession(
-    { userId, refreshToken },
-    externalDbClient = null
-  ) {
+  async deactivateSession({ userId, refreshToken }, externalDbClient = null) {
     this.validator.validateRequired(["userId", "refreshToken"], {
       userId,
       refreshToken,
@@ -276,8 +271,8 @@ class AuthService {
             dbClient
           );
           return {
-              isValid: false,
-          }
+            isValid: false,
+          };
         }
       } catch (error) {
         // invalid refreshtoken clean session
@@ -364,9 +359,9 @@ class AuthService {
     const pagination = this.paginationHelper.calculatePagination(
       options.page,
       options.limit,
-      PAGINATION_CONFIG.ENTITY_LIMITS.SESSIONS,
-      PAGINATION_CONFIG.DEFAULT_PAGE,
-      PAGINATION_CONFIG.DEFAULT_LIMIT
+      this.paginationConfig.ENTITY_LIMITS.SESSIONS,
+      this.paginationConfig.DEFAULT_PAGE,
+      this.paginationConfig.DEFAULT_LIMIT
     );
 
     return this.dbManager.forRead(async (dbClient) => {

@@ -2,6 +2,7 @@ const {
   SORT_ORDER,
   SESSION_SORT_FIELD,
 } = require("../../infrastructure/constants/sortConstants");
+const PAGINATION_CONFIG = require("../../infrastructure/config/paginationConfig");
 
 class SessionService {
   constructor({
@@ -13,6 +14,7 @@ class SessionService {
     validator,
     appConfig,
     paginationHelper,
+    paginationConfig
   }) {
     this.dbManager = dbManager;
     this.sessionDAO = sessionDAO;
@@ -22,6 +24,7 @@ class SessionService {
     this.validator = validator;
     this.appConfig = appConfig;
     this.paginationHelper = paginationHelper;
+    this.paginationConfig = paginationConfig;
   }
 
   // async manageUserSession(
@@ -262,20 +265,23 @@ class SessionService {
 
   async getAllUserActiveSessions(userId, currentSessionId, options = {}) {
     this.validator.validateRequired(["userId"], { userId });
-    const {
-      page = 1,
-      limit = 10,
-      offset = 0,
-      externalDbClient = null,
-    } = options;
+    const { page, limit, offset, externalDbClient = null } = options;
+
+    const pagination = this.paginationHelper.calculatePagination(
+      page,
+      limit,
+      this.paginationConfig.ENTITY_LIMITS.SESSIONS,
+      this.paginationConfig.DEFAULT_PAGE,
+      this.paginationConfig.DEFAULT_LIMIT
+    );
 
     return this.dbManager.forRead(async (dbClient) => {
       // get paginated sessions
       const sessions = await this.sessionDAO.findAllByUserIdAndIsActive({
         userId: userId,
         active: true,
-        limit,
-        offset,
+        limit: pagination.limit,
+        offset: pagination.offset,
         sortBy: SESSION_SORT_FIELD.CREATED_AT,
         sortOrder: SORT_ORDER.DESC,
         externalDbClient: dbClient,
@@ -289,7 +295,7 @@ class SessionService {
       );
       const totalPages = this.paginationHelper.calculateTotalPages(
         total,
-        limit
+        pagination.limit
       );
 
       const sessionsResponse = sessions.map((session) =>
@@ -298,7 +304,7 @@ class SessionService {
 
       const response = this.paginationHelper.buildPaginationResponse(
         sessionsResponse,
-        { page, limit, maxLimit: 50 },
+        pagination,
         total,
         totalPages,
         "sessions"

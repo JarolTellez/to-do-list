@@ -1,4 +1,5 @@
-const PAGINATION_CONFIG = require('../../infrastructure/config/paginationConfig');
+const PAGINATION_CONFIG = require("../../infrastructure/config/paginationConfig");
+const { COOKIE_OPTIONS, CLEAR_COOKIE_OPTIONS } = require('../config/cookiesConfig');
 class AuthController {
   constructor({ authService, userMapper, errorFactory }) {
     this.authService = authService;
@@ -19,16 +20,8 @@ class AuthController {
         userAgent,
         ip,
       });
-
-      // Solo se establece cookie si se genero un nuevo refresh token
       if (result.isNewRefreshToken) {
-        res.cookie("refreshToken", result.refreshToken, {
-          httpOnly: true,
-          secure: false,
-          sameSite: "lax",
-          path: "/",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+         res.cookie("refreshToken", result.refreshToken, COOKIE_OPTIONS);
         console.log("Nuevo refresh token establecido en cookies");
       } else {
         console.log("Usando refresh token existente");
@@ -40,13 +33,7 @@ class AuthController {
         data: result.authResponse,
       });
     } catch (error) {
-      // Limpiar cookies en caso de error
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-      });
+      this._clearAuthCookies(res);
       next(error);
     }
   }
@@ -66,12 +53,7 @@ class AuthController {
         refreshTokenExistente
       );
 
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-      });
+      this._clearAuthCookies(res);
 
       return res.status(200).json({
         success: true,
@@ -79,12 +61,7 @@ class AuthController {
         userId: result.userId,
       });
     } catch (error) {
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-      });
+      this._clearAuthCookies(res);
 
       next(error);
     }
@@ -108,7 +85,7 @@ class AuthController {
         data: result,
       });
     } catch (error) {
-      res.clearCookie("refreshToken");
+      this._clearAuthCookies(res);
       next(error);
     }
   }
@@ -124,30 +101,24 @@ class AuthController {
         });
       }
 
-      const result = await this.authService.deactivateAllUserSessions(accessToken);
+      const result = await this.authService.deactivateAllUserSessions(
+        accessToken
+      );
 
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-      });
+      this._clearAuthCookies(res);
 
       return res.status(200).json({
         success: true,
-        deactivatedSessions: result.deactivated,
-        message: result.deactivated? "Todas las sesiones han sido desactivadas correctamente"
-        : "No se encontraron sesiones activas para desactivar",
-        userId: result.userId,
+        message: result.deactivated
+          ? "Todas las sesiones han sido desactivadas correctamente"
+          : "No se encontraron sesiones activas para desactivar",
+        data: {
+          deactivatedSessions: result.deactivated,
+          userId: result.userId,
+        },
       });
     } catch (error) {
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-      });
-
+      this._clearAuthCookies(res);
       next(error);
     }
   }
@@ -156,30 +127,28 @@ class AuthController {
     try {
       const accessToken = req.headers.authorization?.replace("Bearer ", "");
 
-      const { page, limit } = req.query; 
+      const { page, limit } = req.query;
       if (!accessToken) {
-        return res.status(400).json({
+        return res.status(401).json({
           success: false,
           message: "No hay sesión activa",
         });
       }
 
-      const result = await this.authService.getUserActiveSessions(
-        accessToken,
-        { page, limit }
-      );
+      const result = await this.authService.getUserActiveSessions(accessToken, {
+        page,
+        limit,
+      });
 
       return res.status(200).json(result);
     } catch (error) {
-      res.clearCookie("refreshToken", {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        path: "/",
-      });
-
+      this._clearAuthCookies(res);
       next(error);
     }
+  }
+
+  _clearAuthCookies(res) {
+    res.clearCookie("refreshToken", CLEAR_COOKIE_OPTIONS);
   }
 
   async refreshRefreshToken(req, res, next) {}
