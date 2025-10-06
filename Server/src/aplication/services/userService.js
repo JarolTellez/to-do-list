@@ -9,6 +9,7 @@ class UserService {
     validator,
     userMapper,
     paginationHelper,
+    
   }) {
     this.dbManager = dbManager;
     this.userDAO = userDAO;
@@ -68,29 +69,6 @@ class UserService {
     }, externalDbClient);
   }
 
- 
-  //   this.validator.validateRequired(["userId", "tagNames"], {
-  //     userId,
-  //     tagNames,
-  //   });
-
-  //   return this.dbManager.withTransaction(async (dbClient) => {
-  //     // Delegar a TagService la creación de tags
-  //     const tags = await this.tagService.createMultipleTags(tagNames, dbClient);
-  //     const tagIds = tags.map((t) => t.id);
-
-  //     // Usar UserDAO para asignar tags al usuario
-  //     const userWithTags = await this.userDAO.assignTags(
-  //       userId,
-  //       tagIds,
-  //       dbClient
-  //     );
-  //     return userWithTags;
-  //   }, externalDbClient);
-  // }
-
-  // En UserService - método assignTagsToUser CORREGIDO
-  // En UserService - método assignTagsToUser CORREGIDO
   async assignTagsToUser(userId, tagNames, externalDbClient = null) {
     this.validator.validateRequired(["userId", "tagNames"], {
       userId,

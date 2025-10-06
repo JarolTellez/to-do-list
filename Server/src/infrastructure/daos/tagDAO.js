@@ -210,6 +210,33 @@ async findByIds(tagIds = [], externalDbClient = null) {
       }
     }, externalDbClient);
   }
+
+   async countByUserId(userId, externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(userId, "user id");
+
+        const count = await dbClient.tag.count({
+          where: {
+            userTags: {
+              some: {
+                userId: userIdNum,
+              },
+            },
+          },
+        });
+
+        return count;
+      } catch (error) {
+        if (error instanceof this.errorFactory.Errors.ValidationError) {
+          throw error;
+        }
+        this._handlePrismaError(error, "tagDAO.countByUserId", {
+          userId,
+        });
+      }
+    }, externalDbClient);
+  }
 }
 
 module.exports = TagDAO;

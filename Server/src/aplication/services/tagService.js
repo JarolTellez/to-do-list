@@ -10,6 +10,7 @@ class TagService {
     errorFactory,
     validator,
     paginationHelper,
+    paginationConfig
   }) {
     this.dbManager = dbManager;
     this.tagDAO = tagDAO;
@@ -17,6 +18,7 @@ class TagService {
     this.errorFactory = errorFactory;
     this.validator = validator;
     this.paginationHelper = paginationHelper;
+    this.paginationConfig=paginationConfig;
   }
 
   async createTag(tag, externalDbClient = null) {
@@ -94,24 +96,44 @@ class TagService {
   async getAllTagsByUserId(userId, options = {}, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       const {
-        limit = null,
-        offset = null,
+        limit,
+        offset,
         sortBy = TAG_SORT_FIELD.CREATED_AT,
         sortOrder = SORT_ORDER.DESC,
       } = options;
 
+      const pagination = this.paginationHelper.calculatePagination(
+        options.page,
+        limit,
+        this.paginationConfig.ENTITY_LIMITS.TAGS,
+        this.paginationConfig.DEFAULT_PAGE,
+        this.paginationConfig.DEFAULT_LIMIT
+      );
+
       const tags = await this.tagDAO.findAllByUserId(
         {
           userId,
-          limit,
-          offset,
+          limit: pagination.limit,
+          offset: pagination.offset,
           sortBy,
           sortOrder,
         },
         dbClient
       );
 
-      return tags;
+      const total = await this.tagDAO.countByUserId(userId, dbClient);
+      const totalPages = this.paginationHelper.calculateTotalPages(
+        total,
+        pagination.limit
+      );
+
+      return this.paginationHelper.buildPaginationResponse(
+        tags,
+        pagination,
+        total,
+        totalPages,
+        "tags"
+      );
     }, externalDbClient);
   }
 

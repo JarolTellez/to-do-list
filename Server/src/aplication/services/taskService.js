@@ -13,6 +13,7 @@ class TaskService {
     validator,
     appConfig,
     paginationHelper,
+    paginationConfig,
   }) {
     this.dbManager = dbManager;
     this.taskDAO = taskDAO;
@@ -27,6 +28,7 @@ class TaskService {
     this.validator = validator;
     this.appConfig = appConfig;
     this.paginationHelper = paginationHelper;
+    this.paginationConfig = paginationConfig;
   }
 
   async createTask(createTaskRequestDTO, externalDbClient = null) {
@@ -180,21 +182,23 @@ class TaskService {
     }, externalDbClient);
   }
 
-  async completeTask({taskId, completed, userId}, externalDbClient = null) {
+  async completeTask({ taskId, completed, userId }, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
-    const task = await this.taskDAO.findWithTagsByIdAndUserId(
-      taskId, userId, dbClient
-    );
+      const task = await this.taskDAO.findWithTagsByIdAndUserId(
+        taskId,
+        userId,
+        dbClient
+      );
 
-    if (!task) {
-      throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-        attemptedData: { taskId, userId },
-      });
-    }
+      if (!task) {
+        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
+          attemptedData: { taskId, userId },
+        });
+      }
 
-    task.complete(completed);  
+      task.complete(completed);
 
-    const updatedTask = await this.taskDAO.updateBasicInfo(task, dbClient);
+      const updatedTask = await this.taskDAO.updateBasicInfo(task, dbClient);
 
       return updatedTask;
     }, externalDbClient);
@@ -248,25 +252,104 @@ class TaskService {
   async getAllTasksByUserId(userId, options = {}, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       const {
-        pendingPage = 1,
-        pendingLimit = 2,
-        completedPage = 1,
-        completedLimit = 2,
-      } = options;
-      const pendingTasks = await this.taskDAO.findPendingByUserId(
-        userId,
         pendingPage,
         pendingLimit,
-        dbClient
-      );
-      const completedTasks = await this.taskDAO.findCompletedByUserId(
-        userId,
         completedPage,
         completedLimit,
-        dbClient
+        overduePage,
+        overdueLimit,
+      } = options;
+
+      const pendingPagination = this.paginationHelper.calculatePagination(
+        pendingPage,
+        pendingLimit,
+        this.paginationConfig.ENTITY_LIMITS.TASKS,
+        this.paginationConfig.DEFAULT_PAGE,
+        this.paginationConfig.DEFAULT_LIMIT
       );
 
-      return { pendingTasks, completedTasks };
+      const completedPagination = this.paginationHelper.calculatePagination(
+        completedPage,
+        completedLimit,
+        this.paginationConfig.ENTITY_LIMITS.TASKS,
+        this.paginationConfig.DEFAULT_PAGE,
+        this.paginationConfig.DEFAULT_LIMIT
+      );
+
+      const overduePagination = this.paginationHelper.calculatePagination(
+        overduePage,
+        overdueLimit,
+        this.paginationConfig.ENTITY_LIMITS.TASKS,
+        this.paginationConfig.DEFAULT_PAGE,
+        this.paginationConfig.DEFAULT_LIMIT
+      );
+
+      const [pendingTasks, completedTasks, overdueTasks] = await Promise.all([
+        this.taskDAO.findAllPendingByUserId(
+          {
+            userId,
+            limit: pendingPagination.limit,
+            offset: pendingPagination.offset,
+          },
+          dbClient
+        ),
+        await this.taskDAO.findAllCompletedByUserId(
+          {
+            userId,
+            limit: completedPagination.limit,
+            offset: completedPagination.offset,
+          },
+          dbClient
+        ),
+
+        this.taskDAO.findAllOverdueByUserId(
+          {
+            userId,
+            limit: overduePagination.limit,
+            offset: overduePagination.offset,
+          },
+          dbClient
+        ),
+      ]);
+
+      const [pendingTotal, completedTotal, overdueTotal] = await Promise.all([
+        this.taskDAO.countByUserId({ userId, isCompleted: false }, dbClient),
+        this.taskDAO.countByUserId({ userId, isCompleted: true }, dbClient),
+        this.taskDAO.countOverdueByUserId(userId, dbClient),
+      ]);
+
+      return {
+        pendingTasks: this.paginationHelper.buildPaginationResponse(
+          pendingTasks,
+          pendingPagination,
+          pendingTotal,
+          this.paginationHelper.calculateTotalPages(
+            pendingTotal,
+            pendingPagination.limit
+          ),
+          "tasks"
+        ),
+        completedTasks: this.paginationHelper.buildPaginationResponse(
+          completedTasks,
+          completedPagination,
+          completedTotal,
+          this.paginationHelper.calculateTotalPages(
+            completedTotal,
+            completedPagination.limit
+          ),
+          "tasks"
+        ),
+        overdueTasks: this.paginationHelper.buildPaginationResponse(
+          overdueTasks,
+          overduePagination,
+          overdueTotal,
+          this.paginationHelper.calculateTotalPages(
+            overdueTotal,
+            overduePagination.limit
+          ),
+          "tasks"
+        ),
+      };
     }, externalDbClient);
   }
 }

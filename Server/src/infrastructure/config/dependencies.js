@@ -257,7 +257,8 @@ const tagService = new TagService({
   dbManager: prismaManager,
   errorFactory,
   validator,
-  paginationHelper
+  paginationHelper,
+  paginationConfig: PAGINATION_CONFIG
 });
 const userService = new UserService({
   userDAO,
@@ -297,7 +298,8 @@ const taskService = new TaskService({
   dbManager: prismaManager,
   errorFactory,
   validator,
-  paginationHelper
+  paginationHelper,
+  paginationConfig: PAGINATION_CONFIG
 });
 const sessionService = new SessionService({
   sessionDAO,
@@ -308,7 +310,8 @@ const sessionService = new SessionService({
   errorFactory,
   validator,
   appConfig,
-  paginationHelper
+  paginationHelper,
+  paginationConfig: PAGINATION_CONFIG
 });
 const authService = new AuthService({
   User,
@@ -323,7 +326,9 @@ const authService = new AuthService({
   errorFactory,
   validator,
   appConfig,
-  paginationHelper
+  paginationHelper,
+  paginationConfig: PAGINATION_CONFIG
+  
 });
 
 // Controladores

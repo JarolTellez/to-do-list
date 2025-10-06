@@ -83,12 +83,6 @@ class TaskController {
         data: responseTask,
       });
     } catch (error) {
-      // console.error('Error en actualizarTarea:', error);
-      // return res.status(500).json({
-      //   status: 'error',
-      //   message: 'Ocurrió un error al intentar actualizar la tarea.',
-      //   error: error.message,
-      // });
       next(error);
     }
   }
@@ -118,33 +112,31 @@ class TaskController {
 
   async getAllTasksByUserId(req, res, next) {
     try {
-      const { userId } = req.body;
+      const userId = req.user.userId;
       const {
         pendingPage = 1,
         pendingLimit = 10,
         completedPage = 1,
         completedLimit = 10,
+        overduePage = 1,
+        overdueLimit = 10,
       } = req.query;
-      const { pendingTasks, completedTasks } =
+      const result=
         await this.taskService.getAllTasksByUserId(userId, {
           pendingPage: parseInt(pendingPage),
           pendingLimit: parseInt(pendingLimit),
           completedPage: parseInt(completedPage),
           completedLimit: parseInt(completedLimit),
+          overduePage: parseInt(overduePage),
+          overdueLimit: parseInt(overdueLimit),
         });
 
       return res.status(200).json({
-        status: "success",
+        success: true,
         message: "Tareas consultadas exitosamente",
-        data: { pendingTasks, completedTasks },
+        data: result,
       });
     } catch (error) {
-      // console.error('Error en consultarTareasPoruserId:', error);
-      // return res.status(500).json({
-      //   status: 'error',
-      //   message: 'Ocurrió un error al intentar consultar las tareas.',
-      //   error: error.message,
-      // });
       next(error);
     }
   }
