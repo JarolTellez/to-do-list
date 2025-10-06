@@ -213,12 +213,10 @@ class AuthService {
     }, externalDbClient);
   }
 
-  async deactivateAllUserSessions(accessToken, externalDbClient = null) {
-    this.validator.validateRequired(["accessToken"], { accessToken });
+  async deactivateAllUserSessions(userId, externalDbClient = null) {
+    this.validator.validateRequired(["userId"], { userId });
 
     return this.dbManager.withTransaction(async (dbClient) => {
-      const decoded = this.jwtAuth.verifyAccessToken(accessToken);
-      const userId = decoded.sub;
 
       await this.userService.validateUserExistenceById(userId, dbClient);
 

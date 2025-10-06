@@ -55,9 +55,9 @@ class UserMapper {
 
   requestDataToUpdateDTO(requestData) {
     return new this.UpdateUserRequestDTO({
+      id: requestData.userId,
       username: requestData.username,
       email: requestData.email,
-      password: requestData.password,
       rol: requestData.rol,
     });
   }
@@ -81,33 +81,15 @@ class UserMapper {
     );
   }
 
-  updateRequestToDomain(updateUserRequest, existingUser) {
-    return new this.User(
-      {
-        id: existingUser.id,
-        username:
-          updateUserRequest.username !== undefined
-            ? updateUserRequest.username
-            : existingUser.username,
-        email:
-          updateUserRequest.email !== undefined
-            ? updateUserRequest.email
-            : existingUser.email,
-        password:
-          updateUserRequest.password !== undefined
-            ? updateUserRequest.password
-            : existingUser.password,
-        rol:
-          updateUserRequest.rol !== undefined
-            ? updateUserRequest.rol
-            : existingUser.rol,
-        createdAt: existingUser.createdAt,
-        updatedAt: new Date(),
-        userTags: existingUser.userTags || [],
-        tasks: existingUser.tasks || [],
-      },
-      this.errorFactory
-    );
+
+   updateRequestToDomain(updateRequestDTO) {
+    return this.User.toUpdate({
+      id: updateRequestDTO.id,
+      username: updateRequestDTO.username,
+      email: updateRequestDTO.email,
+      rol: updateRequestDTO.rol
+    }, this.errorFactory);
+  
   }
 
   loginRequestToDomain(loginRequest) {

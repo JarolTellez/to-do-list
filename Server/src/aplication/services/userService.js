@@ -3,17 +3,18 @@ class UserService {
     userDAO,
     taskDAO,
     tagService,
+    authService,
     dbManager,
     bcrypt,
     errorFactory,
     validator,
     userMapper,
     paginationHelper,
-    
   }) {
     this.dbManager = dbManager;
     this.userDAO = userDAO;
     this.tagService = tagService;
+    this.authService = authService;
     this.taskDAO = taskDAO;
     this.bcrypt = bcrypt;
     this.errorFactory = errorFactory;
@@ -66,6 +67,163 @@ class UserService {
       const createdUser = await this.userDAO.create(userDomain, dbClient);
 
       return this.userMapper.domainToResponse(createdUser);
+    }, externalDbClient);
+  }
+
+  async updateUser(updateUserRequestDTO, externalDbClient = null) {
+    this.validator.validateRequired(["id"], updateUserRequestDTO);
+
+    return this.dbManager.withTransaction(async (dbClient) => {
+      const existingUser = await this.userDAO.findById(
+        updateUserRequestDTO.id,
+        dbClient
+      );
+
+      if (!existingUser) {
+        throw this.errorFactory.createNotFoundError("Usuario no encontrado", {
+          attemptedData: { userId: updateUserRequestDTO.id },
+        });
+      }
+      if (
+        updateUserRequestDTO.email &&
+        updateUserRequestDTO.email !== existingUser.email
+      ) {
+        const existingByEmail = await this.userDAO.findByEmail(
+          updateUserRequestDTO.email,
+          dbClient
+        );
+        if (existingByEmail) {
+          throw this.errorFactory.createConflictError(
+            "El email ya está registrado"
+          );
+        }
+      }
+
+      if (
+        updateUserRequestDTO.username &&
+        updateUserRequestDTO.username !== existingUser.username
+      ) {
+        const existingByUsername = await this.userDAO.findByUsername(
+          updateUserRequestDTO.username,
+          dbClient
+        );
+        if (existingByUsername) {
+          throw this.errorFactory.createConflictError(
+            "El nombre de usuario ya está en uso"
+          );
+        }
+      }
+
+      const criticalChanges = this.detectCriticalChanges(
+        existingUser,
+        updateUserRequestDTO
+      );
+
+      const userDomain =
+        this.userMapper.updateRequestToDomain(updateUserRequestDTO);
+      const updatedUser = await this.userDAO.update(userDomain, dbClient);
+
+      if (!updatedUser) {
+        throw this.errorFactory.createNotFoundError(
+          "Usuario no encontrado para actualizar"
+        );
+      }
+
+      let sessionsClosed = false;
+      if (criticalChanges.hasCriticalChanges) {
+        await this.authService.deactivateAllUserSessions(updatedUser.id, dbClient);
+        sessionsClosed = true;
+      }
+
+      return {
+        user: updatedUser,
+        criticalChanges,
+        sessionsClosed,
+      };
+    }, externalDbClient);
+  }
+
+   detectCriticalChanges(existingUser, updateData) {
+    const changes = {
+      emailChanged: updateData.email && updateData.email !== existingUser.email,
+      usernameChanged: updateData.username && updateData.username !== existingUser.username,
+      roleChanged: updateData.rol && updateData.rol !== existingUser.rol,
+      hasCriticalChanges: false
+    };
+
+    changes.hasCriticalChanges = changes.emailChanged || changes.usernameChanged || changes.roleChanged;
+    return changes;
+  }
+
+ async updateUserPassword(updatePasswordRequestDTO, externalDbClient = null) {
+    this.validator.validateRequired(
+      ["userId", "currentPassword", "newPassword"],
+      updatePasswordRequestDTO
+    );
+
+    return this.dbManager.withTransaction(async (dbClient) => {
+      const user = await this.validateUserExistenceById(
+        updatePasswordRequestDTO.userId,
+        dbClient
+      );
+
+      const isCurrentPasswordValid = await this.bcrypt.compare(
+        updatePasswordRequestDTO.currentPassword,
+        user.password
+      );
+
+      if (!isCurrentPasswordValid) {
+        throw this.errorFactory.createAuthenticationError(
+          "Contraseña actual incorrecta"
+        );
+      }
+
+      const hashedNewPassword = await this.bcrypt.hash(
+        updatePasswordRequestDTO.newPassword,
+        10
+      );
+
+      const updatedUser = await this.userDAO.updatePassword(
+        updatePasswordRequestDTO.userId,
+        hashedNewPassword,
+        dbClient
+      );
+
+      if (!updatedUser) {
+        throw this.errorFactory.createNotFoundError("Usuario no encontrado");
+      }
+
+      // ✅ Cerrar todas las sesiones después de cambiar contraseña
+      await this.authService.deactivateAllUserSessions(updatedUser.id, dbClient);
+
+      return { 
+        success: true,
+        sessionsClosed: true
+      };
+    }, externalDbClient);
+  }
+
+  async deleteUser(userId, requestingUserId, externalDbClient = null) {
+    this.validator.validateRequired(["userId", "requestingUserId"], {
+      userId,
+      requestingUserId,
+    });
+    if (userId !== requestingUserId) {
+      throw this.errorFactory.createAuthorizationError(
+        "No tienes permisos para eliminar este usuario"
+      );
+    }
+
+    return this.dbManager.withTransaction(async (dbClient) => {
+      await this.validateUserExistenceById(userId, dbClient);
+
+      const result = await this.userDAO.delete(userId, dbClient);
+
+      if (!result) {
+        throw this.errorFactory.createNotFoundError("Usuario no encontrado");
+      }
+
+      return { success: true, message: "Usuario eliminado correctamente" };
     }, externalDbClient);
   }
 
@@ -212,7 +370,6 @@ class UserService {
     }, externalDbClient);
   }
 
-
   async ensureUserHasTags(userId, tagIds, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       if (!tagIds || tagIds.length === 0) {
@@ -279,7 +436,7 @@ class UserService {
 
       const userTagIds = await this.userDAO.hasTags(userId, tagIds, dbClient);
 
-      // Verify user has all tags defined in tagIds in userTag db 
+      // Verify user has all tags defined in tagIds in userTag db
       const missingTags = tagIds.filter((tagId) => !userTagIds.includes(tagId));
 
       if (missingTags.length > 0) {

@@ -142,24 +142,6 @@ class TaskMapper {
     );
   }
 
-  // dbToDomainWithTags(dbTask) {
-  //   if (!dbTask) return null;
-
-  //   const task = this.dbToDomain(dbTask);
-
-  //   if (dbTask.taskTags && Array.isArray(dbTask.taskTags)) {
-  //     dbTask.taskTags.forEach((taskTagData, index) => {
-  //       if (taskTagData && taskTagData.id) {
-  //         const taskTag = this.taskTagMapper.dbToDomain(taskTagData);
-  //         console.log("TASK TAG A AGREGAR: ", taskTag.toJSON());
-  //         task.addTaskTag(taskTag);
-  //       }
-  //     });
-  //   }
-
-  //   return task;
-  // }
-
   dbToDomainWithTags(dbTask) {
   if (!dbTask) return null;
   const taskTags = [];

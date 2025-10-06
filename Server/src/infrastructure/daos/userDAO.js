@@ -28,6 +28,58 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  async update(userDomain, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(
+          userDomain.id,
+          "user id"
+        );
+
+        const updatedUser = await dbClient.user.update({
+          where: { id: userIdNum },
+          data: {
+            username: userDomain.username,
+            email: userDomain.email?.toLowerCase().trim(),
+          },
+        });
+
+        return this.userMapper.dbToDomain(updatedUser);
+      } catch (error) {
+        if (error.code === "P2025") {
+          return null;
+        }
+        this._handlePrismaError(error, "userDAO.update", {
+          userId: userDomain.id,
+        });
+      }
+    }, externalDbClient);
+  }
+
+  async updatePassword(userId, hashedPassword, externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(userId, "user id");
+
+        const updatedUser = await dbClient.user.update({
+          where: { id: userIdNum },
+          data: {
+            password: hashedPassword,
+          },
+        });
+
+        return this.userMapper.dbToDomain(updatedUser);
+      } catch (error) {
+        if (error.code === "P2025") {
+          return null;
+        }
+        this._handlePrismaError(error, "userDAO.updatePassword", {
+          userId,
+        });
+      }
+    }, externalDbClient);
+  }
+
   async delete(id, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       try {
@@ -73,22 +125,42 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  async assignTags(userId, tagIds = [], externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-async assignTags(userId, tagIds = [], externalDbClient = null) {
-  return this.dbManager.withTransaction(async (dbClient) => {
-    try {
-      const userIdNum = this.inputValidator.validateId(userId, "user id");
+        if (!Array.isArray(tagIds)) {
+          throw new Error("tagIds must be an array");
+        }
 
-      if (!Array.isArray(tagIds)) {
-        throw new Error("tagIds must be an array");
-      }
+        const validTagIds = tagIds.filter(
+          (tagId) => Number.isInteger(tagId) && tagId > 0
+        );
 
-      const validTagIds = tagIds.filter(tagId => 
-        Number.isInteger(tagId) && tagId > 0
-      );
+        if (validTagIds.length === 0) {
+          const user = await dbClient.user.findUnique({
+            where: { id: userIdNum },
+            include: {
+              userTags: {
+                include: {
+                  tag: true,
+                },
+              },
+            },
+          });
+          return this.userMapper.dbToDomainWithTags(user);
+        }
 
-      if (validTagIds.length === 0) {
-        const user = await dbClient.user.findUnique({
+        await dbClient.userTag.createMany({
+          data: validTagIds.map((tagId) => ({
+            userId: userIdNum,
+            tagId: tagId,
+          })),
+          skipDuplicates: true,
+        });
+
+        const userWithTags = await dbClient.user.findUnique({
           where: { id: userIdNum },
           include: {
             userTags: {
@@ -98,39 +170,17 @@ async assignTags(userId, tagIds = [], externalDbClient = null) {
             },
           },
         });
-        return this.userMapper.dbToDomainWithTags(user);
+
+        return this.userMapper.dbToDomainWithTags(userWithTags);
+      } catch (error) {
+        console.error("Error en assignTags:", error);
+        this._handlePrismaError(error, "userDAO.assignTags", {
+          userId,
+          tagIds,
+        });
       }
-
-      await dbClient.userTag.createMany({
-        data: validTagIds.map(tagId => ({
-          userId: userIdNum,
-          tagId: tagId,
-        })),
-        skipDuplicates: true, 
-      });
-
-
-      const userWithTags = await dbClient.user.findUnique({
-        where: { id: userIdNum },
-        include: {
-          userTags: {
-            include: {
-              tag: true,
-            },
-          },
-        },
-      });
-
-      return this.userMapper.dbToDomainWithTags(userWithTags);
-    } catch (error) {
-      console.error("Error en assignTags:", error);
-      this._handlePrismaError(error, "userDAO.assignTags", {
-        userId,
-        tagIds,
-      });
-    }
-  }, externalDbClient);
-}
+    }, externalDbClient);
+  }
 
   async hasTags(userId, tagIds = [], externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {

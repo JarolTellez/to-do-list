@@ -49,8 +49,6 @@ const SessionDAO = require("../daos/sessionDAO");
 const UserTagDAO = require("../daos/userTagDAO");
 const UserService = require("../../aplication/services/userService");
 const TaskService = require("../../aplication/services/taskService");
-const TaskTagService = require("../../aplication/services/taskTagService");
-const UserTagService = require("../../aplication/services/userTagService");
 const TagService = require("../../aplication/services/tagService");
 const AuthService = require("../../aplication/services/authService");
 const SessionService = require("../../aplication/services/sessionService");
@@ -272,20 +270,6 @@ const userService = new UserService({
   paginationHelper
 });
 
-const userTagService = new UserTagService({
-  userTagDAO,
-  dbManager: prismaManager,
-  errorFactory,
-  validator,
-});
-const taskTagService = new TaskTagService({
-  taskTagDAO,
-  userTagMapper,
-  tagService,
-  dbManager: prismaManager,
-  errorFactory,
-  validator,
-});
 const taskService = new TaskService({
   taskDAO,
   taskMapper,
@@ -293,8 +277,6 @@ const taskService = new TaskService({
   userTagMapper,
   tagService,
   userService,
-  userTagService,
-  taskTagService,
   dbManager: prismaManager,
   errorFactory,
   validator,
@@ -331,6 +313,7 @@ const authService = new AuthService({
   
 });
 
+userService.authService = authService;
 // Controladores
 const taskController = new TaskController({
   taskService,

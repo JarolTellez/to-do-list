@@ -6,7 +6,6 @@ class TaskService {
     userTagMapper,
     tagService,
     userService,
-    taskTagService,
     userTagService,
     dbManager,
     errorFactory,
@@ -20,7 +19,6 @@ class TaskService {
     this.taskTagMapper = taskTagMapper;
     this.taskMapper = taskMapper;
     this.userTagMapper = userTagMapper;
-    this.taskTagService = taskTagService;
     this.tagService = tagService;
     this.userService = userService;
     this.userTagService = userTagService;

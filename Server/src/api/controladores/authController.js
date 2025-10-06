@@ -1,4 +1,4 @@
-const PAGINATION_CONFIG = require("../../infrastructure/config/paginationConfig");
+
 const { COOKIE_OPTIONS, CLEAR_COOKIE_OPTIONS } = require('../config/cookiesConfig');
 class AuthController {
   constructor({ authService, userMapper, errorFactory }) {
@@ -92,17 +92,10 @@ class AuthController {
 
   async closeAllUserSessions(req, res, next) {
     try {
-      const accessToken = req.headers.authorization?.replace("Bearer ", "");
-
-      if (!accessToken) {
-        return res.status(401).json({
-          success: false,
-          message: "Access token requerido",
-        });
-      }
+         const userId = req.user.userId;
 
       const result = await this.authService.deactivateAllUserSessions(
-        accessToken
+       userId
       );
 
       this._clearAuthCookies(res);
@@ -151,7 +144,6 @@ class AuthController {
     res.clearCookie("refreshToken", CLEAR_COOKIE_OPTIONS);
   }
 
-  async refreshRefreshToken(req, res, next) {}
 }
 
 module.exports = AuthController;
