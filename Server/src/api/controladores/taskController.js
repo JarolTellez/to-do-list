@@ -22,21 +22,6 @@ class TaskController {
         data: responseTask,
       });
     } catch (error) {
-      // if (error.message.startsWith('[')) {
-      //   const errors = JSON.parse(error.message);
-      //   return res.status(400).json({
-      //     status: 'error',
-      //     message: 'Errores de validación',
-      //     error: errores,
-      //   });
-      // }
-
-      // console.error('Error en agregarTarea:', error);
-      // return res.status(500).json({
-      //   status: 'error',
-      //   message: 'Ocurrió un error al intentar guardar la tarea.',
-      //   error: error.message,
-      // });
       next(error);
     }
   }
@@ -55,12 +40,6 @@ class TaskController {
         },
       });
     } catch (error) {
-      // console.error('Error en eliminarTarea:', error);
-      // return res.status(500).json({
-      //   status: 'error',
-      //   message: 'Ocurrió un error al intentar eliminar la tarea.',
-      //   error: error.message,
-      // });
       next(error);
     }
   }
@@ -121,24 +100,42 @@ class TaskController {
         overduePage = 1,
         overdueLimit = 10,
       } = req.query;
-      const result=
-        await this.taskService.getAllTasksByUserId(userId, {
-          pendingPage: parseInt(pendingPage),
-          pendingLimit: parseInt(pendingLimit),
-          completedPage: parseInt(completedPage),
-          completedLimit: parseInt(completedLimit),
-          overduePage: parseInt(overduePage),
-          overdueLimit: parseInt(overdueLimit),
-        });
+      const result = await this.taskService.getAllTasksByUserId(userId, {
+        pendingPage: parseInt(pendingPage),
+        pendingLimit: parseInt(pendingLimit),
+        completedPage: parseInt(completedPage),
+        completedLimit: parseInt(completedLimit),
+        overduePage: parseInt(overduePage),
+        overdueLimit: parseInt(overdueLimit),
+      });
+
+      const mappedResult = {
+        pendingTasks: this._mapPaginationResponse(result.pendingTasks),
+        completedTasks: this._mapPaginationResponse(result.completedTasks),
+        overdueTasks: this._mapPaginationResponse(result.overdueTasks),
+      };
 
       return res.status(200).json({
         success: true,
         message: "Tareas consultadas exitosamente",
-        data: result,
+        data: mappedResult,
       });
     } catch (error) {
       next(error);
     }
+  }
+
+  _mapPaginationResponse(paginationResponse) {
+    if (!paginationResponse || !paginationResponse.tasks) {
+      return paginationResponse;
+    }
+
+    return {
+      ...paginationResponse,
+      tasks: paginationResponse.tasks.map((task) =>
+        this.taskMapper.domainToResponseDTO(task)
+      ),
+    };
   }
 }
 

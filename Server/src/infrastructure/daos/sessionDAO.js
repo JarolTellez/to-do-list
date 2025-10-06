@@ -46,7 +46,7 @@ class SessionDAO extends BaseDatabaseHandler {
         return !!session;
       } catch (error) {
         if (error.code === "P2025") {
-          return false; // Session not found
+          return false; 
         }
         this._handlePrismaError(error, "sessionDAO.deactivate", {
           sessionId: id,

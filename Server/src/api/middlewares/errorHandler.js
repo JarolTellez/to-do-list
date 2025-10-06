@@ -32,14 +32,14 @@ const errorHandler = (error, req, res, next) => {
     let appError;
     let retryAfter = null;
 
-    // Si el error ya es una instancia de AppError
+    
     if (error instanceof AppError) {
         appError = error;
         if (error instanceof RateLimitError) {
             retryAfter = '60';
         }
     } else {
-        // Mapear errores que no son instancias de AppError
+        // Mapped no AppError instance 
         if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
             appError = new ConflictError(
                 'Recurso duplicado',
@@ -147,7 +147,7 @@ const errorHandler = (error, req, res, next) => {
         timestamp: appError.timestamp
     };
 
-    // Agrega detalles solo en desarrollo
+    // Add details only in production
     if (!isProduction && appError.details) {
         response.details = appError.details;
     }

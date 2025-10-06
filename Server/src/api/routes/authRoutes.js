@@ -13,12 +13,8 @@ module.exports = (authController) => {
     .post(validateAccessToken, authController.logOut.bind(authController));
 
   router
-    .route("/renovar-access-token")
-    .post(validateAccessToken,authController.refreshAccessToken.bind(authController));
-
-  router
-    .route("/renovar-refresh-token")
-    .post(validateAccessToken,authController.refreshRefreshToken.bind(authController));
+    .route("/refresh-access-token")
+    .post(authController.refreshAccessToken.bind(authController));
 
   router
     .route("/active-sessions")

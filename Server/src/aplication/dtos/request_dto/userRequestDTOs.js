@@ -8,10 +8,10 @@ class CreateUserRequestDTO {
 }
 
 class UpdateUserRequestDTO {
-  constructor({ username, email, password, rol }) {
+  constructor({ id,username, email, rol }) {
+    this.id=id;
     this.username = username;
     this.email = email;
-    this.password = password;
     this.rol = rol;
   }
 }

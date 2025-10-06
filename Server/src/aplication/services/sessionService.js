@@ -2,7 +2,6 @@ const {
   SORT_ORDER,
   SESSION_SORT_FIELD,
 } = require("../../infrastructure/constants/sortConstants");
-const PAGINATION_CONFIG = require("../../infrastructure/config/paginationConfig");
 
 class SessionService {
   constructor({
@@ -26,46 +25,6 @@ class SessionService {
     this.paginationHelper = paginationHelper;
     this.paginationConfig = paginationConfig;
   }
-
-  // async manageUserSession(
-  //   { userId, existingRefreshToken, userAgent, ip },
-  //   externalDbClient = null
-  // ) {
-  //   return this.withTransaction(async (dbClient) => {
-  //     let session = null;
-  //     let NewRefreshToken = null;
-  //     if (existingRefreshToken) {
-  //       session = await this.validateExistingSession(
-  //         userId,
-  //         existingRefreshToken,
-  //         dbClient
-  //       );
-  //     }
-
-  //     if (!session) {
-  //       const { createdSession, refreshToken } = await this.createNewSession(
-  //         {
-  //           userId,
-  //           userAgent,
-  //           ip,
-  //         },
-  //         dbClient
-  //       );
-  //       session = createdSession;
-  //     }
-
-  //     await this.manageSessionLimit(
-  //       userId,
-  //       this.appConfig.session.maxActive,
-  //       dbClient
-  //     );
-
-  //     return {
-  //       refreshToken: NewRefreshToken,
-  //       session,
-  //     };
-  //   }, externalDbClient);
-  // }
 
   async validateExistingSession(
     userId,

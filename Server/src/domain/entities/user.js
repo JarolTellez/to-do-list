@@ -67,7 +67,7 @@ class User {
     }
 
     if (missingFields.length > 0) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         `Missing required fields: ${missingFields.join(", ")}`,
         { missingFields },
         this.#validator.codes.REQUIRED_FIELD
@@ -85,7 +85,7 @@ class User {
 
     const invalidChars = /[^a-zA-Z0-9_\-.]/;
     if (invalidChars.test(validated)) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "username can only contain letters, numbers, underscores, hyphens and dots",
         null,
         this.#validator.codes.INVALID_FORMAT
@@ -103,7 +103,7 @@ class User {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(validated)) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "Invalid email format",
         { email: validated },
         this.#validator.codes.INVALID_EMAIL
@@ -115,7 +115,7 @@ class User {
 
   #validateUserTags(userTags) {
     if (!Array.isArray(userTags)) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "userTags must be an array",
         { actualType: typeof userTags },
         this.#validator.codes.INVALID_FORMAT
@@ -124,7 +124,7 @@ class User {
 
     const invalidTags = userTags.filter((tag) => !(tag instanceof UserTag));
     if (invalidTags.length > 0) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "All userTags must be instances of UserTag",
         { invalidTagsCount: invalidTags.length },
         this.#validator.codes.INVALID_FORMAT
@@ -136,7 +136,7 @@ class User {
 
   #validateTasks(tasks) {
     if (!Array.isArray(tasks)) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "tasks must be an array",
         { actualType: typeof tasks },
         this.#validator.codes.INVALID_FORMAT
@@ -145,7 +145,7 @@ class User {
 
     const invalidTasks = tasks.filter((task) => !(task instanceof Task));
     if (invalidTasks.length > 0) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "All tasks must be instances of Task",
         { invalidTagsCount: invalidTasks.length },
         this.#validator.codes.INVALID_FORMAT
@@ -187,7 +187,7 @@ class User {
 
   addUserTag(userTag) {
     if (!(userTag instanceof UserTag)) {
-      throw this.#validator.error.createValidationError(
+      throw this.#validator.errorFactory.createValidationError(
         "Must provide an instance of UserTag",
         null,
         this.#validator.codes.INVALID_FORMAT
@@ -203,7 +203,7 @@ class User {
   addUserTagById(tagId) {
     const userTag = UserTag.create(
       { userId: this.#id, tagId },
-      this.#validator.error
+      this.#validator.errorFactory
     );
     this.addUserTag(userTag);
   }
@@ -296,6 +296,21 @@ class User {
         username,
         email,
         password,
+        rol,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      errorFactory
+    );
+  }
+
+   static toUpdate({ id, username, email, rol }, errorFactory) {
+    return new User(
+      {
+        id,
+        username,
+        email,
+        password: "Temporal", 
         rol,
         createdAt: new Date(),
         updatedAt: new Date(),
