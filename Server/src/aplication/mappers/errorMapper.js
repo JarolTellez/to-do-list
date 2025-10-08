@@ -62,7 +62,7 @@ class ErrorMapper {
     const { entity, field } = context;
     
     if (entity && field) {
-      return `Error en ${entity}: ${message.toLowerCase()}`;
+      return  message.toLowerCase();
     }
     
     return message;

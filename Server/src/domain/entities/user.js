@@ -79,9 +79,9 @@ class User {
   }
 
   #validatePassword(password) {
-    return this.#validator.validateText(password, "password", {
-      min: this.#config.PASSWORD.MIN_LENGTH,
-      max: this.#config.PASSWORD.MAX_LENGTH,
+    return this.#validator.validatePassword(password, "password", {
+      min: this.#config.PASSWORD_HASH.MIN_LENGTH,
+      max: this.#config.PASSWORD_HASH.MAX_LENGTH,
       required: true,
       entity: "User",
     });

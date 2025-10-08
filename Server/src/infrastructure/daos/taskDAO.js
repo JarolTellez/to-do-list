@@ -63,7 +63,6 @@ class TaskDAO extends BaseDatabaseHandler {
 
         return this.taskMapper.dbToDomainWithTags(createdTask);
       } catch (error) {
-        console.error("Error en createWithTags:", error);
         this._handlePrismaError(error, "taskDAO.createWithTags", {
           attemptedData: {
             name: taskDomain.name,
