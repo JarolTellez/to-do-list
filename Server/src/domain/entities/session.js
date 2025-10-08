@@ -1,4 +1,9 @@
 const DomainValidators = require("../utils/domainValidators");
+const {
+  ValidationError,
+  RequiredFieldError,
+  InvalidFormatError,
+} = require("../errors/domainError");
 const crypto = require("crypto");
 const ms = require("ms");
 
@@ -13,31 +18,31 @@ class Session {
   #isActive;
   #validator;
 
-  constructor(
-    {
-      id = null,
-      userId,
-      refreshTokenHash,
-      userAgent = null,
-      ip = null,
-      createdAt = new Date(),
-      expiresAt,
-      isActive = true,
-    },
-    errorFactory
-  ) {
-    this.#validator = new DomainValidators(errorFactory);
+  constructor({
+    id = null,
+    userId,
+    refreshTokenHash,
+    userAgent = null,
+    ip = null,
+    createdAt = new Date(),
+    expiresAt,
+    isActive = true,
+  }) {
+    this.#validator = new DomainValidators();
 
     this.#id = this.#validator.validateId(id, "Session");
     this.#userId = this.#validator.validateId(userId, "User");
     this.#refreshTokenHash = this.#validateRefreshTokenHash(refreshTokenHash);
-    this.#userAgent = this.#validator.validateText(userAgent, "userAgent",  {
+    this.#userAgent = this.#validator.validateText(userAgent, "userAgent", {
       required: false,
       entity: "Session",
-      max: 500 
+      max: 500,
     });
     this.#ip = this.#validateIp(ip);
-    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt", {
+      required: true,
+      entity: "Session",
+    });
     this.#expiresAt = this.#validateExpiresAt(expiresAt);
     this.#isActive = this.#validator.validateBoolean(
       isActive,
@@ -60,7 +65,7 @@ class Session {
   #validateIp(ip) {
     if (ip != null) {
       return this.#validator.validateText(ip, "ip", {
-        required: true,
+        required: false,
         entity: "Session",
         max: 45,
       });
@@ -75,10 +80,13 @@ class Session {
     });
 
     if (date <= new Date()) {
-      throw this.#validator.error.createValidationError(
-        "Expiration date must be in the future",
-        { field: "expiresAt", value: date },
-        this.#validator.codes.INVALID_DATE
+      throw new ValidationError(
+        "La fecha de expiración debe ser en el futuro",
+        {
+          entity: "Session",
+          field: "expiresAt",
+          value: date,
+        }
       );
     }
 
@@ -87,14 +95,14 @@ class Session {
 
   #validateBusinessRules() {
     if (this.#expiresAt <= this.#createdAt) {
-      throw this.#validator.error.createValidationError(
-        "Expiration date must be after creation date",
+      throw new ValidationError(
+        "La fecha de expiración debe ser después de la fecha de creación",
         {
+          entity: "Session",
           field: "expiresAt",
           createdAt: this.#createdAt,
           expiresAt: this.#expiresAt,
-        },
-        this.#validator.codes.BUSINESS_RULE_VIOLATION
+        }
       );
     }
   }
@@ -109,23 +117,19 @@ class Session {
 
   isValid() {
     if (!this.#isActive) {
-      throw this.#validator.error.createValidationError(
-        "Session is not active",
-        { sessionId: this.#id },
-        this.#validator.codes.SESSION_INVALID
-      );
+      throw new ValidationError("La sesión no está activa", {
+        entity: "Session",
+        sessionId: this.#id,
+      });
     }
 
     if (this.isExpired()) {
-      throw this.#validator.error.createValidationError(
-        "Session expired",
-        {
-          sessionId: this.#id,
-          expiredAt: this.#expiresAt.toISOString(),
-          currentTime: new Date().toISOString(),
-        },
-        this.#validator.codes.SESSION_EXPIRED
-      );
+      throw new ValidationError("La sesión ha expirado", {
+        entity: "Session",
+        sessionId: this.#id,
+        expiredAt: this.#expiresAt.toISOString(),
+        currentTime: new Date().toISOString(),
+      });
     }
 
     return true;
@@ -162,36 +166,35 @@ class Session {
     return this.#expiresAt - new Date();
   }
 
-  static create(
-    {
+  static create({
+    userId,
+    refreshTokenHash,
+    userAgent,
+    ip,
+    expiresAt = "7d",
+    active = true,
+  }) {
+    const createdAt = new Date();
+    const expiresInMs = ms(expiresAt);
+
+    if (!expiresInMs || expiresInMs <= 0) {
+      throw new ValidationError("Valor de expiración inválido", {
+        entity: "Session",
+        field: "expiresAt",
+        value: expiresAt,
+      });
+    }
+    const expirationDate = new Date(createdAt.getTime() + expiresInMs);
+
+    return new Session({
       userId,
       refreshTokenHash,
       userAgent,
       ip,
-      expiresAt = "7d",
-      active = true,
-    },
-    errorFactory
-  ) {
-    const createdAt = new Date();
-    const expiresInMs = ms(expiresAt);
-    if (!expiresInMs || expiresInMs <= 0) {
-      throw new Error("Invalid expiresAt value");
-    }
-    const expirationDate = new Date(createdAt.getTime() + expiresInMs);
-
-    return new Session(
-      {
-        userId,
-        refreshTokenHash,
-        userAgent,
-        ip,
-        createdAt,
-        expiresAt: expirationDate,
-        isActive: active,
-      },
-      errorFactory
-    );
+      createdAt,
+      expiresAt: expirationDate,
+      isActive: active,
+    });
   }
 
   toJSON() {

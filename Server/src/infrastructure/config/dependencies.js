@@ -44,9 +44,7 @@ const UserTagResponseDTO = require("../../aplication/dtos/response_dto/userTagRe
 const TaskDAO = require("../daos/taskDAO");
 const TagDAO = require("../daos/tagDAO");
 const UserDAO = require("../daos/userDAO");
-const TaskTagDAO = require("../daos/taskTagDAO");
 const SessionDAO = require("../daos/sessionDAO");
-const UserTagDAO = require("../daos/userTagDAO");
 const UserService = require("../../aplication/services/userService");
 const TaskService = require("../../aplication/services/taskService");
 const TagService = require("../../aplication/services/tagService");
@@ -60,6 +58,8 @@ const TaskTagMapper = require("../mappers/taskTagMapper");
 const TagMapper = require("../mappers/tagMapper");
 const UserMapper = require("../mappers/userMapper");
 const SessionMapper = require("../mappers/sessionMapper");
+
+const ErrorMapper = require("../../aplication/mappers/errorMapper");
 
 const TaskController = require("../../api/controladores/taskController");
 const TagController = require("../../api/controladores/tagController");
@@ -167,6 +167,8 @@ const sessionMapper = new SessionMapper({
   errorFactory,
 });
 
+const errorMapper = new ErrorMapper(errorFactory);
+
 // Bind solo los métodos que realmente usan los DAOs
 const tagMapperWithBind = {
   ...tagMapper,
@@ -216,12 +218,7 @@ const taskDAO = new TaskDAO({
   errorFactory,
   inputValidator,
 });
-const taskTagDAO = new TaskTagDAO({
-  taskTagMapper: taskTagMapperWithBind,
-  dbManager: prismaManager,
-  errorFactory,
-  inputValidator,
-});
+
 const tagDAO = new TagDAO({
   tagMapper: tagMapperWithBind,
   dbManager: prismaManager,
@@ -234,12 +231,6 @@ const userDAO = new UserDAO({
   errorFactory,
   inputValidator,
 });
-const userTagDAO = new UserTagDAO({
-  userTagMapper: userTagMapperWithBind,
-  dbManager: prismaManager,
-  errorFactory,
-  inputValidator,
-});
 const sessionDAO = new SessionDAO({
   sessionMapper: sessionMapperWithBind,
   dbManager: prismaManager,
@@ -247,7 +238,7 @@ const sessionDAO = new SessionDAO({
   inputValidator,
 });
 
-const jwtAuth = new JwtAuth(appConfig);
+const jwtAuth = new JwtAuth(appConfig, errorFactory);
 
 // Servicios
 const tagService = new TagService({
@@ -256,7 +247,8 @@ const tagService = new TagService({
   errorFactory,
   validator,
   paginationHelper,
-  paginationConfig: PAGINATION_CONFIG
+  paginationConfig: PAGINATION_CONFIG,
+  errorMapper
 });
 const userService = new UserService({
   userDAO,
@@ -267,7 +259,8 @@ const userService = new UserService({
   errorFactory,
   validator,
   userMapper,
-  paginationHelper
+  paginationHelper,
+  errorMapper
 });
 
 const taskService = new TaskService({
@@ -281,7 +274,8 @@ const taskService = new TaskService({
   errorFactory,
   validator,
   paginationHelper,
-  paginationConfig: PAGINATION_CONFIG
+  paginationConfig: PAGINATION_CONFIG,
+  errorMapper
 });
 const sessionService = new SessionService({
   sessionDAO,
@@ -293,7 +287,8 @@ const sessionService = new SessionService({
   validator,
   appConfig,
   paginationHelper,
-  paginationConfig: PAGINATION_CONFIG
+  paginationConfig: PAGINATION_CONFIG,
+  errorMapper
 });
 const authService = new AuthService({
   User,
@@ -309,7 +304,8 @@ const authService = new AuthService({
   validator,
   appConfig,
   paginationHelper,
-  paginationConfig: PAGINATION_CONFIG
+  paginationConfig: PAGINATION_CONFIG,
+  errorMapper
   
 });
 

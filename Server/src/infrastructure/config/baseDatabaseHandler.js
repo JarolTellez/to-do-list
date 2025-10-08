@@ -18,7 +18,7 @@ class BaseDatabaseHandler {
   const { safeField } = this.inputValidator.validateSortField(
     sortBy,
     validSortFields,
-    "sort field"
+    'sort field'
   );
   const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder);
 
@@ -43,23 +43,23 @@ class BaseDatabaseHandler {
   }
 
   _handlePrismaError(error, context, metadata = {}) {
-    if (error.code === "P2002") {
-      throw this.errorFactory.createConflictError("Duplicate entry", {
+    if (error.code === 'P2002') {
+      throw this.errorFactory.createConflictError('Entrada duplicada', {
         ...metadata,
         prismaCode: error.code,
         target: error.meta?.target,
       });
     }
 
-    if (error.code === "P2025") {
-      throw this.errorFactory.createNotFoundError("Record not found", {
+    if (error.code === 'P2025') {
+      throw this.errorFactory.createNotFoundError('Recurso no encontrado', {
         ...metadata,
         prismaCode: error.code,
       });
     }
 
     throw this.errorFactory.createDatabaseError(
-      `Database operation failed: ${context}`,
+      `Error en operación de base de datos: ${context}`,
       {
         ...metadata,
         originalError: error.message,

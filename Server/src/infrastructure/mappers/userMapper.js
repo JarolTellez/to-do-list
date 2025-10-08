@@ -29,8 +29,8 @@ class UserMapper {
       updatedAt: userDomain.updatedAt,
       userTagsCount: userDomain.userTags ? userDomain.userTags.length : 0,
       tasksCount: userDomain.tasks ? userDomain.tasks.length : 0,
-      userTags: userDomain.userTags || [],
-      tasks: userDomain.tasks || [],
+      userTags: userDomain.userTags,
+      tasks: userDomain.tasks,
     });
   }
 
@@ -76,20 +76,19 @@ class UserMapper {
         email: createUserRequest.email,
         password: createUserRequest.password,
         rol: createUserRequest.rol,
-      },
-      this.errorFactory
+      }
     );
   }
 
-
-   updateRequestToDomain(updateRequestDTO) {
-    return this.User.toUpdate({
-      id: updateRequestDTO.id,
-      username: updateRequestDTO.username,
-      email: updateRequestDTO.email,
-      rol: updateRequestDTO.rol
-    }, this.errorFactory);
-  
+  updateRequestToDomain(updateRequestDTO) {
+    return this.User.toUpdate(
+      {
+        id: updateRequestDTO.id,
+        username: updateRequestDTO.username,
+        email: updateRequestDTO.email,
+        rol: updateRequestDTO.rol,
+      }
+    );
   }
 
   loginRequestToDomain(loginRequest) {
@@ -113,8 +112,7 @@ class UserMapper {
         updatedAt: row.updatedAt,
         userTags: [],
         tasks: [],
-      },
-      this.errorFactory
+      }
     );
   }
 

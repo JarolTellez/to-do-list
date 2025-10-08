@@ -10,6 +10,7 @@ class UserService {
     validator,
     userMapper,
     paginationHelper,
+    errorMapper,
   }) {
     this.dbManager = dbManager;
     this.userDAO = userDAO;
@@ -21,186 +22,240 @@ class UserService {
     this.validator = validator;
     this.userMapper = userMapper;
     this.paginationHelper = paginationHelper;
+    this.errorMapper = errorMapper;
   }
 
   async createUser(createUserRequestDTO, externalDbClient = null) {
-    this.validator.validateRequired(
-      ["username", "email", "password"],
-      createUserRequestDTO
-    );
-    this.validator.validateEmail("email", createUserRequestDTO);
-    this.validator.validateLength("username", createUserRequestDTO, {
-      min: 3,
-      max: 30,
-    });
-    this.validator.validateLength("password", createUserRequestDTO, {
-      min: 6,
-      max: 128,
-    });
-
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const [existingByEmail, existingByusername] = await Promise.all([
-        this.userDAO.findByEmail(createUserRequestDTO.email, dbClient),
-        this.userDAO.findByUsername(createUserRequestDTO.username, dbClient),
-      ]);
-      if (existingByEmail) {
-        throw this.errorFactory.createConflictError(
-          "El email ya está registrado"
-        );
-      }
-      if (existingByusername) {
-        throw this.errorFactory.createConflictError(
-          "El nombre de usuario ya está en uso"
-        );
-      }
-
-      const hashedPassword = await this.bcrypt.hash(
-        createUserRequestDTO.password,
-        10
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(
+        ["username", "email", "password"],
+        createUserRequestDTO
       );
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const [existingByEmail, existingByUsername] = await Promise.all([
+          this.userDAO.findByEmail(createUserRequestDTO.email, dbClient),
+          this.userDAO.findByUsername(createUserRequestDTO.username, dbClient),
+        ]);
+        if (existingByEmail) {
+          throw this.errorFactory.createConflictError(
+            "El email ya está registrado",
+            {
+              email: createUserRequestDTO.email,
+              operation: "createUser",
+            }
+          );
+        }
+        if (existingByUsername) {
+          throw this.errorFactory.createConflictError(
+            "El nombre de usuario no está disponible",
+            {
+              username: createUserRequestDTO.username,
+              operation: "createUser",
+            }
+          );
+        }
 
-      const userDomain = this.userMapper.createRequestToDomain({
-        ...createUserRequestDTO,
-        password: hashedPassword,
-      });
+        const hashedPassword = await this.bcrypt.hash(
+          createUserRequestDTO.password,
+          10
+        );
 
-      const createdUser = await this.userDAO.create(userDomain, dbClient);
+        const userDomain = this.userMapper.createRequestToDomain({
+          ...createUserRequestDTO,
+          password: hashedPassword,
+        });
 
-      return this.userMapper.domainToResponse(createdUser);
-    }, externalDbClient);
+        const createdUser = await this.userDAO.create(userDomain, dbClient);
+        if (!createdUser) {
+          throw this.errorFactory.createDatabaseError(
+            "Error al crear el usuario",
+            {
+              userData: {
+                username: createUserRequestDTO.username,
+                email: createUserRequestDTO.email,
+              },
+              operation: "createUser",
+            }
+          );
+        }
+
+        return this.userMapper.domainToResponse(createdUser);
+      }, externalDbClient);
+    });
   }
 
   async updateUser(updateUserRequestDTO, externalDbClient = null) {
-    this.validator.validateRequired(["id"], updateUserRequestDTO);
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(["id"], updateUserRequestDTO);
 
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const existingUser = await this.userDAO.findById(
-        updateUserRequestDTO.id,
-        dbClient
-      );
-
-      if (!existingUser) {
-        throw this.errorFactory.createNotFoundError("Usuario no encontrado", {
-          attemptedData: { userId: updateUserRequestDTO.id },
-        });
-      }
-      if (
-        updateUserRequestDTO.email &&
-        updateUserRequestDTO.email !== existingUser.email
-      ) {
-        const existingByEmail = await this.userDAO.findByEmail(
-          updateUserRequestDTO.email,
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const existingUser = await this.userDAO.findById(
+          updateUserRequestDTO.id,
           dbClient
         );
-        if (existingByEmail) {
-          throw this.errorFactory.createConflictError(
-            "El email ya está registrado"
+
+        if (!existingUser) {
+          throw this.errorFactory.createNotFoundError(
+            "Usuario no encontrado para actualizar",
+            {
+              userId: updateUserRequestDTO.id,
+              operation: "updateUser",
+            }
           );
         }
-      }
+        if (
+          updateUserRequestDTO.email &&
+          updateUserRequestDTO.email !== existingUser.email
+        ) {
+          const existingByEmail = await this.userDAO.findByEmail(
+            updateUserRequestDTO.email,
+            dbClient
+          );
+          if (existingByEmail) {
+            throw this.errorFactory.createConflictError(
+              "El email ya está en uso",
+              {
+                email: updateUserRequestDTO.email,
+                currentUserId: updateUserRequestDTO.id,
+                operation: "updateUser",
+              }
+            );
+          }
+        }
 
-      if (
-        updateUserRequestDTO.username &&
-        updateUserRequestDTO.username !== existingUser.username
-      ) {
-        const existingByUsername = await this.userDAO.findByUsername(
-          updateUserRequestDTO.username,
-          dbClient
+        if (
+          updateUserRequestDTO.username &&
+          updateUserRequestDTO.username !== existingUser.username
+        ) {
+          const existingByUsername = await this.userDAO.findByUsername(
+            updateUserRequestDTO.username,
+            dbClient
+          );
+          if (existingByUsername) {
+            throw this.errorFactory.createConflictError(
+              "El nombre de usuario ya está en uso",
+              {
+                username: updateUserRequestDTO.username,
+                currentUserId: updateUserRequestDTO.id,
+                operation: "updateUser",
+              }
+            );
+          }
+        }
+
+        const criticalChanges = this.detectCriticalChanges(
+          existingUser,
+          updateUserRequestDTO
         );
-        if (existingByUsername) {
-          throw this.errorFactory.createConflictError(
-            "El nombre de usuario ya está en uso"
+
+        const userDomain =
+          this.userMapper.updateRequestToDomain(updateUserRequestDTO);
+        const updatedUser = await this.userDAO.update(userDomain, dbClient);
+
+        if (!updatedUser) {
+          throw this.errorFactory.createDatabaseError(
+            "Error al actualizar el usuario",
+            {
+              userId: updateUserRequestDTO.id,
+              operation: "updateUser",
+              updateData: userDomain,
+            }
           );
         }
-      }
 
-      const criticalChanges = this.detectCriticalChanges(
-        existingUser,
-        updateUserRequestDTO
-      );
+        let sessionsClosed = false;
+        if (criticalChanges.hasCriticalChanges) {
+          await this.authService.deactivateAllUserSessions(
+            updatedUser.id,
+            dbClient
+          );
+          sessionsClosed = true;
+        }
 
-      const userDomain =
-        this.userMapper.updateRequestToDomain(updateUserRequestDTO);
-      const updatedUser = await this.userDAO.update(userDomain, dbClient);
-
-      if (!updatedUser) {
-        throw this.errorFactory.createNotFoundError(
-          "Usuario no encontrado para actualizar"
-        );
-      }
-
-      let sessionsClosed = false;
-      if (criticalChanges.hasCriticalChanges) {
-        await this.authService.deactivateAllUserSessions(updatedUser.id, dbClient);
-        sessionsClosed = true;
-      }
-
-      return {
-        user: updatedUser,
-        criticalChanges,
-        sessionsClosed,
-      };
-    }, externalDbClient);
+        return {
+          user: updatedUser,
+          criticalChanges,
+          sessionsClosed,
+        };
+      }, externalDbClient);
+    });
   }
 
-   detectCriticalChanges(existingUser, updateData) {
+  detectCriticalChanges(existingUser, updateData) {
     const changes = {
       emailChanged: updateData.email && updateData.email !== existingUser.email,
-      usernameChanged: updateData.username && updateData.username !== existingUser.username,
+      usernameChanged:
+        updateData.username && updateData.username !== existingUser.username,
       roleChanged: updateData.rol && updateData.rol !== existingUser.rol,
-      hasCriticalChanges: false
+      hasCriticalChanges: false,
     };
 
-    changes.hasCriticalChanges = changes.emailChanged || changes.usernameChanged || changes.roleChanged;
+    changes.hasCriticalChanges =
+      changes.emailChanged || changes.usernameChanged || changes.roleChanged;
     return changes;
   }
 
- async updateUserPassword(updatePasswordRequestDTO, externalDbClient = null) {
-    this.validator.validateRequired(
-      ["userId", "currentPassword", "newPassword"],
-      updatePasswordRequestDTO
-    );
-
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const user = await this.validateUserExistenceById(
-        updatePasswordRequestDTO.userId,
-        dbClient
+  async updateUserPassword(updatePasswordRequestDTO, externalDbClient = null) {
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(
+        ["userId", "currentPassword", "newPassword"],
+        updatePasswordRequestDTO
       );
 
-      const isCurrentPasswordValid = await this.bcrypt.compare(
-        updatePasswordRequestDTO.currentPassword,
-        user.password
-      );
-
-      if (!isCurrentPasswordValid) {
-        throw this.errorFactory.createAuthenticationError(
-          "Contraseña actual incorrecta"
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const user = await this.validateUserExistenceById(
+          updatePasswordRequestDTO.userId,
+          dbClient
         );
-      }
 
-      const hashedNewPassword = await this.bcrypt.hash(
-        updatePasswordRequestDTO.newPassword,
-        10
-      );
+        const isCurrentPasswordValid = await this.bcrypt.compare(
+          updatePasswordRequestDTO.currentPassword,
+          user.password
+        );
 
-      const updatedUser = await this.userDAO.updatePassword(
-        updatePasswordRequestDTO.userId,
-        hashedNewPassword,
-        dbClient
-      );
+        if (!isCurrentPasswordValid) {
+          throw this.errorFactory.createAuthenticationError(
+            "La contraseña actual es incorrecta",
+            {
+              userId: updatePasswordRequestDTO.userId,
+              operation: "updatePassword",
+              errorType: "invalid_current_password",
+            }
+          );
+        }
 
-      if (!updatedUser) {
-        throw this.errorFactory.createNotFoundError("Usuario no encontrado");
-      }
+        const hashedNewPassword = await this.bcrypt.hash(
+          updatePasswordRequestDTO.newPassword,
+          10
+        );
 
-      // ✅ Cerrar todas las sesiones después de cambiar contraseña
-      await this.authService.deactivateAllUserSessions(updatedUser.id, dbClient);
+        const updatedUser = await this.userDAO.updatePassword(
+          updatePasswordRequestDTO.userId,
+          hashedNewPassword,
+          dbClient
+        );
 
-      return { 
-        success: true,
-        sessionsClosed: true
-      };
-    }, externalDbClient);
+        if (!updatedUser) {
+          throw this.errorFactory.createDatabaseError(
+            "Error al actualizar la contraseña en la base de datos",
+            {
+              userId: updatePasswordRequestDTO.userId,
+              operation: "updatePassword",
+            }
+          );
+        }
+
+        await this.authService.deactivateAllUserSessions(
+          updatedUser.id,
+          dbClient
+        );
+
+        return {
+          success: true,
+          sessionsClosed: true,
+        };
+      }, externalDbClient);
+    });
   }
 
   async deleteUser(userId, requestingUserId, externalDbClient = null) {
@@ -209,8 +264,13 @@ class UserService {
       requestingUserId,
     });
     if (userId !== requestingUserId) {
-      throw this.errorFactory.createAuthorizationError(
-        "No tienes permisos para eliminar este usuario"
+      throw this.errorFactory.createForbiddenError(
+        "No tienes permisos para eliminar este usuario",
+        {
+          attemptingUserId: requestingUserId,
+          targetUserId: userId,
+          operation: "deleteUser",
+        }
       );
     }
 
@@ -220,10 +280,16 @@ class UserService {
       const result = await this.userDAO.delete(userId, dbClient);
 
       if (!result) {
-        throw this.errorFactory.createNotFoundError("Usuario no encontrado");
+        throw this.errorFactory.createDatabaseError(
+          "Error al eliminar el usuario de la base de datos",
+          {
+            userId: userId,
+            operation: "deleteUser",
+          }
+        );
       }
 
-      return { success: true, message: "Usuario eliminado correctamente" };
+      return { success: true };
     }, externalDbClient);
   }
 
@@ -245,12 +311,14 @@ class UserService {
         tagDomains,
         dbClient
       );
+
       const tagIds = tags.map((t) => t.id);
       const userWithTags = await this.userDAO.assignTags(
         userId,
         tagIds,
         dbClient
       );
+
       return userWithTags;
     }, externalDbClient);
   }
@@ -293,7 +361,12 @@ class UserService {
 
       if (!user) {
         throw this.errorFactory.createAuthenticationError(
-          "Credenciales inválidas"
+          "Credenciales inválidas",
+          {
+            identifier: identifier,
+            identifierType: isEmail ? "email" : "username",
+            operation: "validateCredentials",
+          }
         );
       }
 
@@ -303,7 +376,12 @@ class UserService {
       );
       if (!isPasswordValid) {
         throw this.errorFactory.createAuthenticationError(
-          "Credenciales inválidas"
+          "Credenciales inválidas",
+          {
+            userId: user.id,
+            identifier: identifier,
+            operation: "validateCredentials",
+          }
         );
       }
 
@@ -312,43 +390,55 @@ class UserService {
   }
 
   async getByEmail(email, externalDbClient = null) {
-    return this.dbManager.forRead(async (dbClient) => {
-      const user = await this.userDAO.getByEmail(email, dbClient);
-      if (!user) {
-        throw this.errorFactory.createNotFoundError("Usuario no encontrado", {
-          attemptedData: { email },
-        });
-      }
-      return user;
-    }, externalDbClient);
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.forRead(async (dbClient) => {
+        const user = await this.userDAO.getByEmail(email, dbClient);
+        if (!user) {
+          throw this.errorFactory.createNotFoundError(
+            "Usuario no encontrado con el email proporcionado",
+            {
+              email: email,
+              operation: "getByEmail",
+            }
+          );
+        }
+        return user;
+      }, externalDbClient);
+    });
   }
 
   async getById(userId, externalDbClient = null) {
-    return this.dbManager.forRead(async (dbClient) => {
-      const user = await this.userDAO.findById(userId, dbClient);
-      if (!user) {
-        throw this.errorFactory.createNotFoundError("Usuario no encontrado", {
-          attemptedData: { userId },
-        });
-      }
-      return user;
-    }, externalDbClient);
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.forRead(async (dbClient) => {
+        const user = await this.userDAO.findById(userId, dbClient);
+        if (!user) {
+          throw this.errorFactory.createNotFoundError("Usuario no encontrado", {
+            userId: userId,
+            operation: "getById",
+          });
+        }
+        return user;
+      }, externalDbClient);
+    });
   }
 
   async getUserWithTags(userId, externalDbClient = null) {
-    this.validator.validateRequired(["userId"], { userId });
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(["userId"], { userId });
 
-    return this.dbManager.forRead(async (dbClient) => {
-      const user = await this.userDAO.findByIdWithUserTags(userId, dbClient);
+      return this.dbManager.forRead(async (dbClient) => {
+        const user = await this.userDAO.findByIdWithUserTags(userId, dbClient);
 
-      if (!user) {
-        throw this.errorFactory.createNotFoundError("Usuario no encontrado", {
-          attemptedData: { userId },
-        });
-      }
+        if (!user) {
+          throw this.errorFactory.createNotFoundError("Usuario no encontrado", {
+            userId: userId,
+            operation: "getUserWithTags",
+          });
+        }
 
-      return user;
-    }, externalDbClient);
+        return user;
+      }, externalDbClient);
+    });
   }
   async hasTags(userId, tagNames, externalDbClient = null) {
     this.validator.validateRequired(["userId", "tagNames"], {
@@ -387,30 +477,47 @@ class UserService {
       );
 
       if (tagsToAssign.length > 0) {
-        await this.userDAO.assignTags(userId, tagsToAssign, dbClient);
+        const result = await this.userDAO.assignTags(
+          userId,
+          tagsToAssign,
+          dbClient
+        );
+
+        if (!result) {
+          throw this.errorFactory.createDatabaseError(
+            "Error al asignar etiquetas al usuario",
+            {
+              userId: userId,
+              tagIds: tagsToAssign,
+              operation: "ensureUserHasTags",
+            }
+          );
+        }
       }
     }, externalDbClient);
   }
 
   async processMixedTagsForTask(userId, mixedTags, externalDbClient = null) {
-    return this.dbManager.withTransaction(async (dbClient) => {
-      if (!mixedTags || mixedTags.length === 0) {
-        return [];
-      }
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.withTransaction(async (dbClient) => {
+        if (!mixedTags || mixedTags.length === 0) {
+          return [];
+        }
 
-      // make suree all tags exist in db, if not creates them
-      const tagIds = await this.tagService.processMixedTags(
-        mixedTags,
-        dbClient
-      );
+        // make suree all tags exist in db, if not creates them
+        const tagIds = await this.tagService.processMixedTags(
+          mixedTags,
+          dbClient
+        );
 
-      // make sure all taks belongs to user in userTag db, if not creates them
-      await this.ensureUserHasTags(userId, tagIds, dbClient);
+        // make sure all taks belongs to user in userTag db, if not creates them
+        await this.ensureUserHasTags(userId, tagIds, dbClient);
 
-      //verify user is owner of all tags defined
-      await this.validateUserOwnsTags(userId, tagIds, dbClient);
-      return tagIds;
-    }, externalDbClient);
+        //verify user is owner of all tags defined
+        await this.validateUserOwnsTags(userId, tagIds, dbClient);
+        return tagIds;
+      }, externalDbClient);
+    });
   }
 
   async validateUserExistenceById(userId, externalDbClient = null) {
@@ -418,10 +525,11 @@ class UserService {
     return this.dbManager.forRead(async (dbClient) => {
       const user = await this.userDAO.findById(userId, dbClient);
       if (!user) {
-        throw new this.errorFactory.createNotFoundError(
+        throw this.errorFactory.createNotFoundError(
           "Usuario no encontrado",
           {
-            attemptedData: { userId },
+            userId: userId,
+            operation: "validateUserExistenceById",
           }
         );
       }
@@ -429,37 +537,41 @@ class UserService {
     }, externalDbClient);
   }
   async validateUserOwnsTags(userId, tagIds, externalDbClient = null) {
-    return this.dbManager.forRead(async (dbClient) => {
-      if (!tagIds || tagIds.length === 0) {
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.forRead(async (dbClient) => {
+        if (!tagIds || tagIds.length === 0) {
+          return true;
+        }
+
+        const userTagIds = await this.userDAO.hasTags(userId, tagIds, dbClient);
+
+        // Verify user has all tags defined in tagIds in userTag db
+        const missingTags = tagIds.filter(
+          (tagId) => !userTagIds.includes(tagId)
+        );
+
+        if (missingTags.length > 0) {
+          const missingTagsData = await this.tagService.getTagsByIds(
+            missingTags,
+            dbClient
+          );
+          const missingTagNames = missingTagsData.map((t) => t.name);
+
+           throw this.errorFactory.createForbiddenError(
+            `No tienes permisos sobre las etiquetas: ${missingTagNames.join(", ")}`,
+            {
+              userId,
+              missingTagIds: missingTags,
+              missingTagNames: missingTagNames,
+              operation: "validateUserOwnsTags",
+              requiredPermission: "tag_ownership"
+            }
+          );
+        }
+
         return true;
-      }
-
-      const userTagIds = await this.userDAO.hasTags(userId, tagIds, dbClient);
-
-      // Verify user has all tags defined in tagIds in userTag db
-      const missingTags = tagIds.filter((tagId) => !userTagIds.includes(tagId));
-
-      if (missingTags.length > 0) {
-        const missingTagsData = await this.tagService.getTagsByIds(
-          missingTags,
-          dbClient
-        );
-        const missingTagNames = missingTagsData.map((t) => t.name);
-
-        throw this.errorFactory.createValidationError(
-          `El usuario no tiene permisos sobre las etiquetas: ${missingTagNames.join(
-            ", "
-          )}`,
-          {
-            userId,
-            missingTagIds: missingTags,
-            missingTagNames: missingTagNames,
-          }
-        );
-      }
-
-      return true;
-    }, externalDbClient);
+      }, externalDbClient);
+    });
   }
 }
 

@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const validateRefreshToken = (req, res, next) => {
   try {
-    // Verificar que req.cookies existe
+ 
     if (!req.cookies) {
       return res.status(401).json({ 
         status: 'error',
@@ -10,7 +10,6 @@ const validateRefreshToken = (req, res, next) => {
       });
     }
 
-    // Obtener refresh guardado en la cookie
     const refreshToken = req.cookies.refreshToken;
     
     if (!refreshToken) {
@@ -20,10 +19,8 @@ const validateRefreshToken = (req, res, next) => {
       });
     }
 
-    // Verificar refresh token
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    
-    // Agregar info al request
+
     req.user = {
       userId: decoded.userId
     };
@@ -32,8 +29,7 @@ const validateRefreshToken = (req, res, next) => {
     next();
   } catch (error) {
     console.error('Error validando refresh token:', error);
-    
-   // Limpiar la cookie 
+
     res.clearCookie('refreshToken', {
             httpOnly: true,
             secure: false,

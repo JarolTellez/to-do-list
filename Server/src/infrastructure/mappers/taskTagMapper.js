@@ -34,10 +34,6 @@ class TaskTagMapper {
   }
 
   createRequestDTOToDomain(tagRequestDTO) {
-    if (!tagRequestDTO.name) {
-      throw this.errorFactory.createValidationError("Tag name is required");
-    }
-
     const tag = this.tagMapper.createRequestToDomain({
       id: tagRequestDTO.id || null,
       name: tagRequestDTO.name,
@@ -47,8 +43,7 @@ class TaskTagMapper {
     const taskTag = this.TaskTag.create(
       {
         tag,
-      },
-      this.errorFactory
+      }
     );
     return taskTag;
   }
@@ -59,8 +54,7 @@ class TaskTagMapper {
         taskId: tagRequestDTO.taskId ? tagRequestDTO.taskId : null,
         tag: this.tagMapper.createRequestToDomain(tagRequestDTO.tag),
         toDelete: tagRequestDTO.toDelete || false,
-      },
-      this.errorFactory
+      }
     );
   }
 
@@ -79,18 +73,16 @@ class TaskTagMapper {
         createdAt: row.createdAt,
         tag: tag,
         task: null,
-      },
-      this.errorFactory
+      }
     );
   }
 
-createFromTagId({ taskId = null, tagId }, errorFactory) {
+createFromTagId({ taskId = null, tagId }) {
   const taskTag = this.TaskTag.create(
     { 
       taskId, 
       tagId 
-    },
-    errorFactory
+    }
   );
   return taskTag;
 }

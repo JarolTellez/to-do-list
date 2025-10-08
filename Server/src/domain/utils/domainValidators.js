@@ -1,142 +1,189 @@
+const {
+  ValidationError,
+  BusinessRuleViolationError,
+  RequiredFieldError,
+  InvalidFormatError,
+} = require("../errors/domainError");
+
 class DomainValidators {
-  constructor(errorFactory) {
-    this.errorFactory = errorFactory;
-    this.codes = errorFactory.ErrorCodes;
+  constructor() {
+    this.codes = {
+      REQUIRED_FIELD: "REQUIRED_FIELD",
+      INVALID_FORMAT: "INVALID_FORMAT",
+      INVALID_EMAIL: "INVALID_EMAIL",
+      INVALID_DATE: "INVALID_DATE",
+      BUSINESS_RULE_VIOLATION: "BUSINESS_RULE_VIOLATION",
+      SESSION_INVALID: "SESSION_INVALID",
+      SESSION_EXPIRED: "SESSION_EXPIRED",
+    };
   }
 
-  validateId(id, entityName = "entity") {
-    if (id !== null && typeof id !== "number" && typeof id !== "string") {
-      throw this.error.createValidationError(
-        `${entityName} ID must be number or string`,
-        { type: typeof id },
-        this.codes.INVALID_FORMAT
+  validateRequired(fields, data) {
+    const missingFields = [];
+
+    fields.forEach((field) => {
+      if (
+        data[field] === undefined ||
+        data[field] === null ||
+        data[field] === ""
+      ) {
+        missingFields.push(field);
+      }
+    });
+
+    if (missingFields.length > 0) {
+      throw new RequiredFieldError(
+        `Campos requeridos: ${missingFields.join(", ")}`,
+        { missingFields }
       );
     }
+  }
 
-    if (id !== null && String(id).trim() === "") {
-      throw this.errorFactory.createValidationError(
-        `${entityName} ID cannot be empty`,
-        null,
-        this.codes.INVALID_FORMAT
-      );
+  validateId(id, entity) {
+    if (id === null || id === undefined) {
+      return null;
     }
 
-    return id;
+    if (typeof id !== "number" && typeof id !== "string") {
+      throw new InvalidFormatError("id", "number o string", {
+        entity,
+        field: "id",
+        actualType: typeof id,
+      });
+    }
+
+    if (typeof id === "string" && !/^\d+$/.test(id)) {
+      throw new InvalidFormatError("id", "numérico", {
+        entity,
+        field: "id",
+        value: id,
+      });
+    }
+
+    const numericId = typeof id === "string" ? parseInt(id, 10) : id;
+
+    if (numericId <= 0) {
+      throw new ValidationError("ID debe ser un número positivo", {
+        entity,
+        field: "id",
+        value: id,
+      });
+    }
+
+    return numericId;
   }
 
   validateText(value, fieldName, options = {}) {
-    const {
-      min = 0,
-      max = Infinity,
-      required = false,
-      entity = "entity",
-    } = options;
+    const { min, max, required = true, entity = "" } = options;
 
-    if (required && (!value || String(value).trim() === "")) {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} is required`,
-        { field: fieldName },
-        this.codes.REQUIRED_FIELD
-      );
+    if (required && (value === undefined || value === null || value === "")) {
+      throw new RequiredFieldError(fieldName, { entity, field: fieldName });
     }
 
-    if (!required && value == null) return value;
-    if (typeof value !== "string") {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} must be text`,
-        { field: fieldName, type: typeof value },
-        this.codes.INVALID_FORMAT
-      );
-    }
-
-    const text = value.trim();
-    const length = text.length;
-
-    if (length < min) {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} too short (min ${min} chars)`,
-        { field: fieldName, length, min },
-        this.codes.INVALID_FORMAT
-      );
-    }
-
-    if (length > max) {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} too long (max ${max} chars)`,
-        { field: fieldName, length, max },
-        this.codes.INVALID_FORMAT
-      );
-    }
-
-    return text;
-  }
-
-  validateEnum(value, fieldName, allowed, entity = "entity") {
-    if (!allowed.includes(value)) {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} must be: ${allowed.join(", ")}`,
-        { field: fieldName, value, allowed },
-        this.codes.INVALID_FORMAT
-      );
-    }
-    return value;
-  }
-
-  validateDate(date, fieldName, options = {}) {
-    const { required = false } = options;
-
-    if (required && !date) {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} is required`,
-        { field: fieldName },
-        this.codes.REQUIRED_FIELD
-      );
-    }
-
-    if (!required && !date) return null;
-
-    const dateObj = date instanceof Date ? date : new Date(date);
-
-    if (isNaN(dateObj.getTime())) {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} must be valid date`,
-        { field: fieldName, value: date },
-        this.codes.INVALID_DATE
-      );
-    }
-
-    return dateObj;
-  }
-
-  validateBoolean(value, fieldName, entity = "entity") {
-    if (typeof value === "boolean") {
+    if (value === undefined || value === null || value === "") {
       return value;
     }
 
-    if (typeof value === "string") {
-      const valLower = value.toLowerCase().trim();
-      if (valLower === "true" || valLower === "1") return true;
-      if (valLower === "false" || valLower === "0") return false;
+    if (typeof value !== "string") {
+      throw new InvalidFormatError(fieldName, "string", {
+        entity,
+        field: fieldName,
+        actualType: typeof value,
+      });
+    }
+    const trimmed = value.trim();
+
+    if (min && trimmed.length < min) {
+      throw new ValidationError(
+        `${fieldName} debe tener al menos ${min} caracteres`,
+        { entity, field: fieldName, min, actual: trimmed.length }
+      );
     }
 
-    if (typeof value === "number") {
-      if (value === 1) return true;
-      if (value === 0) return false;
+    if (max && trimmed.length > max) {
+      throw new ValidationError(
+        `${fieldName} no puede tener más de ${max} caracteres`,
+        { entity, field: fieldName, max, actual: trimmed.length }
+      );
     }
 
-    throw this.errorFactory.createValidationError(
-      `${fieldName} must be a boolean (true/false, "0"/"1", 0/1)`,
-      { field: fieldName, value, type: typeof value },
-      this.codes.INVALID_BOOLEAN
-    );
+    return trimmed;
   }
 
-  validateCollection(collection, fieldName, entity = "entity") {
+  validateEmail(value, fieldName = "email") {
+    const email = this.validateText(value, fieldName, { required: true });
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new InvalidFormatError(fieldName, " ejemplo@dominio.com", {
+        field: fieldName,
+        value: email,
+      });
+    }
+
+    return email;
+  }
+
+  validateEnum(value, fieldName, allowedValues, entity = '') {
+     if (value === undefined || value === null) {
+      throw new RequiredFieldError(fieldName, { entity, field: fieldName });
+    }
+
+    if (!allowedValues.includes(value)) {
+      throw new ValidationError(
+        `${fieldName} debe ser uno de: ${allowedValues.join(', ')}`,
+        { entity, field: fieldName, value, allowedValues }
+      );
+    }
+
+    return value;
+  }
+
+  validateDate(value, fieldName, options = {}) {
+    const { required = true, entity = "" } = options;
+
+    if (required && (value === undefined || value === null)) {
+      throw new RequiredFieldError(fieldName, { entity, field: fieldName });
+    }
+
+    if (value === undefined || value === null) {
+      return null;
+    }
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      throw new InvalidFormatError(fieldName, "fecha válida", {
+        entity,
+        field: fieldName,
+        value,
+      });
+    }
+
+    return date;
+  }
+
+  validateBoolean(value, fieldName, entity = '') {
+    if (value === undefined || value === null) {
+      throw new RequiredFieldError(fieldName, { entity, field: fieldName });
+    }
+
+    if (typeof value !== 'boolean') {
+      throw new InvalidFormatError(
+        fieldName,
+        'boolean',
+        { entity, field: fieldName, actualType: typeof value }
+      );
+    }
+
+    return value;
+  }
+
+  validateCollection(collection, fieldName) {
     if (!Array.isArray(collection)) {
-      throw this.errorFactory.createValidationError(
-        `${fieldName} must be an array`,
-        { field: fieldName, type: typeof collection },
-        this.codes.INVALID_FORMAT
+      throw new InvalidFormatError(
+        fieldName,
+        'array',
+        { field: fieldName, actualType: typeof collection }
       );
     }
     return [...collection];

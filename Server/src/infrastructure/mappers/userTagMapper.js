@@ -36,8 +36,7 @@ class UserTagMapper {
 
   fromTagAndUserToDomain(tagId, userId){
      const userTag= this.UserTag.create(
-          { userId, tagId }, 
-          this.errorFactory
+          { userId, tagId }
         );
         return userTag;
 
@@ -53,8 +52,7 @@ class UserTagMapper {
         createdAt: row.createdAt,
         tag: null,
         user: null, 
-      },
-      this.errorFactory
+      }
     );
   }
 
@@ -70,8 +68,7 @@ class UserTagMapper {
         tagId: row.tag_id,
         createdAt: row.user_tag_created_at,
         tag: tag,
-      },
-      this.errorFactory
+      }
     );
   }
 }

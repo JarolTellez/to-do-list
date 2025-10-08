@@ -10,7 +10,7 @@ const validateAccessToken = async (req, res, next) => {
     if (!authorizationHeader) {
       return res.status(401).json({
         success: false,
-        error: "Authorization header requerido",
+        message: "Authorization header requerido",
         code: "MISSING_AUTH_HEADER",
       });
     }
@@ -18,22 +18,21 @@ const validateAccessToken = async (req, res, next) => {
     if (!authorizationHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
-        error: "Formato de autorización inválido. Use: Bearer <token>",
+        message: "Formato de autorización inválido. Use: Bearer <token>",
         code: "INVALID_AUTH_FORMAT",
       });
     }
-    //  Extraer solo el token eliminando el 'Barear'
+
     const accessToken = authorizationHeader.split(" ")[1];
 
     if (!accessToken) {
       return res.status(401).json({
         success: false,
-        error: "Token de acceso no puede estar vacío",
+        message: "Token de acceso no puede estar vacío",
         code: "EMPTY_TOKEN",
       });
     }
 
-    // Verificar token
     const decoded = jwtAuth.verifyAccessToken(accessToken);
 
     const isSessionActive = await sessionService.validateSessionById(
@@ -56,15 +55,15 @@ const validateAccessToken = async (req, res, next) => {
       email: decoded.email,
     };
 
-    // Continuar al controller
+    // continuar al controller
     next();
   } catch (error) {
     console.error("Error validando token:", error);
 
     return res.status(401).json({
       success: false,
-      error: errorMessage,
-      code: errorCode,
+      message: error.message,
+      code: error.code,
     });
   }
 };

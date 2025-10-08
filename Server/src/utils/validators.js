@@ -22,35 +22,36 @@ class Validator {
     }
   }
 
-  validateEmail(field, object) {
-    const email = object[field];
-    if (email && !this.isValidEmail(email)) {
-      throw this.errorFactory.createValidationError(
-        `Email inválido en campo: ${field}`,
-        { [field]: 'Formato de email inválido' }
-      );
-    }
-  }
-validateLength(field, object, { min, max } = {}) {
-    const value = object[field];
-    if (!value) return; 
+//   validateEmail(field, object) {
+//     const email = object[field];
+//     if (email && !this.isValidEmail(email)) {
+//       throw this.errorFactory.createValidationError(
+//         `Email inválido en campo: ${field}`,
+//         { [field]: 'Formato de email inválido' }
+//       );
+//     }
+//   }
+
+// validateLength(field, object, { min, max } = {}) {
+//     const value = object[field];
+//     if (!value) return; 
     
-    const length = value.toString().length;
+//     const length = value.toString().length;
     
-    if (min && length < min) {
-        throw this.errorFactory.createValidationError(
-            `Campo ${field} debe tener al menos ${min} caracteres`,
-            { [field]: `Mínimo ${min} caracteres` }
-        );
-    }
+//     if (min && length < min) {
+//         throw this.errorFactory.createValidationError(
+//             `Campo ${field} debe tener al menos ${min} caracteres`,
+//             { [field]: `Mínimo ${min} caracteres` }
+//         );
+//     }
     
-    if (max && length > max) {
-        throw this.errorFactory.createValidationError(
-            `Campo ${field} no puede tener más de ${max} caracteres`,
-            { [field]: `Máximo ${max} caracteres` }
-        );
-    }
-}
+//     if (max && length > max) {
+//         throw this.errorFactory.createValidationError(
+//             `Campo ${field} no puede tener más de ${max} caracteres`,
+//             { [field]: `Máximo ${max} caracteres` }
+//         );
+//     }
+// }
 
   isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

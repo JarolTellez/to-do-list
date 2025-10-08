@@ -1,47 +1,56 @@
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { TokenExpiredError } = jwt;
 
 class JwtAuth {
- constructor(appConfig) {
+  constructor(appConfig, errorFactory) {
     this.appConfig = appConfig;
+    this.errorFactory = errorFactory;
   }
 
-  createAccessToken({userId, email,rol = 'user', sessionId}) {
+  createAccessToken({ userId, email, rol = "user", sessionId }) {
     if (!this.appConfig.jwt.access.secret) {
-      throw new Error('JWT_ACCESS_SECRET no configurado');
+      throw this.errorFactory.createAuthenticationError(
+        "JWT_ACCESS_SECRET no configurado",
+        {
+          operation: "createAccessToken",
+          configIssue: true,
+        },
+        this.errorFactory.ErrorCodes.INVALID_TOKEN
+      );
     }
 
     return jwt.sign(
-      { sub: userId,email, rol, sessionId},
+      { sub: userId, email, rol, sessionId },
       this.appConfig.jwt.access.secret,
-     { expiresIn: this.appConfig.jwt.access.expiresIn}
+      { expiresIn: this.appConfig.jwt.access.expiresIn }
     );
   }
 
-   
   createRefreshToken(userId) {
     if (!this.appConfig.jwt.refresh.secret) {
-      throw new Error('JWT_REFRESH_SECRET no configurado');
+      throw this.errorFactory.createAuthenticationError(
+        "JWT_REFRESH_SECRET no configurado",
+        {
+          operation: "createRefreshToken",
+          configIssue: true,
+        },
+        this.errorFactory.ErrorCodes.INVALID_TOKEN
+      );
     }
     const refreshToken = jwt.sign(
-      { sub: userId,
-       },
+      { sub: userId },
       this.appConfig.jwt.refresh.secret,
-     { expiresIn:this.appConfig.jwt.refresh.expiresIn}
+      { expiresIn: this.appConfig.jwt.refresh.expiresIn }
     );
 
     return refreshToken;
   }
 
-  createHashRefreshToken(refreshToken){
-    const hash= crypto
-          .createHash("sha256")
-          .update(refreshToken)
-          .digest("hex");
+  createHashRefreshToken(refreshToken) {
+    const hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
     return hash;
-        
   }
 
   verifyAccessToken(token) {
@@ -49,32 +58,61 @@ class JwtAuth {
       return jwt.verify(token, this.appConfig.jwt.access.secret);
     } catch (err) {
       if (err instanceof TokenExpiredError) {
-        throw new Error('Token de acceso expirado');
+        throw this.errorFactory.createAuthenticationError(
+          "Token de acceso expirado",
+          {
+            operation: "verifyAccessToken",
+            tokenType: "access",
+            expired: true,
+          },
+          this.errorFactory.ErrorCodes.TOKEN_EXPIRED
+        );
       }
-      throw new Error('Token de acceso inválido');
+      throw this.errorFactory.createAuthenticationError(
+        "Token de acceso inválido",
+        {
+          operation: "verifyAccessToken",
+          tokenType: "access",
+          invalid: true,
+        },
+        this.errorFactory.ErrorCodes.INVALID_TOKEN
+      );
     }
   }
 
-
-verifyRefreshToken(token) {
+  verifyRefreshToken(token) {
     try {
-        return jwt.verify(token, this.appConfig.jwt.refresh.secret);
+      return jwt.verify(token, this.appConfig.jwt.refresh.secret);
     } catch (err) {
         if (err instanceof jwt.TokenExpiredError) {
-            throw new Error('Refresh token expirado');
+          throw this.errorFactory.createAuthenticationError(
+            "Refresh token expirado",
+            {
+              operation: "verifyRefreshToken",
+              tokenType: "refresh",
+              expired: true,
+            },
+            this.errorFactory.ErrorCodes.TOKEN_EXPIRED
+          );
         }
-        throw new Error('Refresh token inválido');
+      throw this.errorFactory.createAuthenticationError(
+        "Refresh token inválido",
+        {
+          operation: "verifyRefreshToken",
+          tokenType: "refresh",
+          invalid: true,
+        },
+        this.errorFactory.ErrorCodes.INVALID_TOKEN
+      );
     }
-}
-
+  }
 
   decodeToken(token) {
     return jwt.decode(token);
   }
 
-
   createHash(token) {
-    return crypto.createHash('sha256').update(token).digest('hex');
+    return crypto.createHash("sha256").update(token).digest("hex");
   }
 }
 
