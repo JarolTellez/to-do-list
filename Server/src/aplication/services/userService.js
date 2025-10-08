@@ -11,6 +11,7 @@ class UserService {
     userMapper,
     paginationHelper,
     errorMapper,
+    validationConfig
   }) {
     this.dbManager = dbManager;
     this.userDAO = userDAO;
@@ -23,6 +24,7 @@ class UserService {
     this.userMapper = userMapper;
     this.paginationHelper = paginationHelper;
     this.errorMapper = errorMapper;
+    this.validationConfig = validationConfig;
   }
 
   async createUser(createUserRequestDTO, externalDbClient = null) {
@@ -54,6 +56,12 @@ class UserService {
             }
           );
         }
+
+        this.validator.validateText(createUserRequestDTO.password, "password", {
+          minLength: this.validationConfig.USER.PASSWORD.MIN_LENGTH,
+          maxLength: this.validationConfig.USER.PASSWORD.MAX_LENGTH,
+          required: true,
+        });
 
         const hashedPassword = await this.bcrypt.hash(
           createUserRequestDTO.password,
@@ -525,13 +533,10 @@ class UserService {
     return this.dbManager.forRead(async (dbClient) => {
       const user = await this.userDAO.findById(userId, dbClient);
       if (!user) {
-        throw this.errorFactory.createNotFoundError(
-          "Usuario no encontrado",
-          {
-            userId: userId,
-            operation: "validateUserExistenceById",
-          }
-        );
+        throw this.errorFactory.createNotFoundError("Usuario no encontrado", {
+          userId: userId,
+          operation: "validateUserExistenceById",
+        });
       }
       return user;
     }, externalDbClient);
@@ -557,14 +562,16 @@ class UserService {
           );
           const missingTagNames = missingTagsData.map((t) => t.name);
 
-           throw this.errorFactory.createForbiddenError(
-            `No tienes permisos sobre las etiquetas: ${missingTagNames.join(", ")}`,
+          throw this.errorFactory.createForbiddenError(
+            `No tienes permisos sobre las etiquetas: ${missingTagNames.join(
+              ", "
+            )}`,
             {
               userId,
               missingTagIds: missingTags,
               missingTagNames: missingTagNames,
               operation: "validateUserOwnsTags",
-              requiredPermission: "tag_ownership"
+              requiredPermission: "tag_ownership",
             }
           );
         }

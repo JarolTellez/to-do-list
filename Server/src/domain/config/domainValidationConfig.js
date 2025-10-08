@@ -6,9 +6,9 @@ const domainValidationConfig = {
       ALLOWED_CHARS: /^[a-zA-Z0-9_\-.]*$/,
       ALLOWED_CHARS_DESCRIPTION: "letras, números, guiones bajos, guiones y puntos"
     },
-    PASSWORD: {
-      MIN_LENGTH: 6,
-      MAX_LENGTH: 30
+    PASSWORD_HASH: {
+      MIN_LENGTH: 60,
+      MAX_LENGTH: 100
     },
     EMAIL: {
       MAX_LENGTH: 255
@@ -82,3 +82,5 @@ const domainValidationConfig = {
     MAX_LENGTH_GENERAL: 255
   }
 };
+
+module.exports = domainValidationConfig;

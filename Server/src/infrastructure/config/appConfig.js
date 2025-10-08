@@ -18,7 +18,7 @@ const appConfig = {
     }
   },
   session: {
-    maxActive: parseInt(process.env.MAX_SESIONES_ACTIVAS) || 10
+    maxActive: parseInt(process.env.MAX_SESIONES_ACTIVAS) || 30
   },
   environment: process.env.NODE_ENV || 'development'
 };

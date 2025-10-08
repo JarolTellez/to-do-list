@@ -48,8 +48,6 @@ async function testFindByIdWithUserTags() {
   let connection;
 
   try {
-    console.log("🔍 Probando findByIdWithUserTags...");
-
     connection = await connectionDB.connect();
 
     const userId = 13;

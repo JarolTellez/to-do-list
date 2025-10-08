@@ -111,9 +111,11 @@ const PrismaManager = require("./prismaManager");
 const prismaManager = PrismaManager.getInstance();
 
 //validator
-const Validator = require("../../utils/validators");
+const Validator = require("../../aplication/utils/validators");
+
 const validator = new Validator(errorFactory);
 const inputValidator = new InputValidator({ errorFactory });
+const servicesValidationConfig = require("../../aplication/config/servicesValidationConfig"); 
 
 // Mappers y Factories
 
@@ -260,7 +262,8 @@ const userService = new UserService({
   validator,
   userMapper,
   paginationHelper,
-  errorMapper
+  errorMapper,
+  validationConfig: servicesValidationConfig
 });
 
 const taskService = new TaskService({

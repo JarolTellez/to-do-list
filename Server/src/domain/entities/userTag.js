@@ -6,6 +6,7 @@ const {
 } = require("../errors/domainError");
 const Tag = require("../entities/tag");
 const User = require("../entities/user");
+const domainValidationConfig = require("../config/domainValidationConfig");
 
 class UserTag {
   #id;

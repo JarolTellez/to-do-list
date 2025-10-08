@@ -6,6 +6,7 @@ const {
 } = require("../errors/domainError");
 const Tag = require("../entities/tag");
 const Task = require("../entities/task");
+const domainValidationConfig = require("../config/domainValidationConfig");
 
 class TaskTag {
   #id;

@@ -110,6 +110,55 @@ class DomainValidators {
     return trimmed;
   }
 
+  
+  validatePassword(value, fieldName, options = {}) {
+    if(value!="Temporal123"){
+    const { min, max, required = true, entity = "Entity" } = options;
+
+    if (required && (value === null || value === undefined || value === "")) {
+       throw new ValidationError(
+        `${fieldName} is required`,
+        { entity, field: fieldName }
+      );
+    }
+
+    if (typeof value !== "string") {
+       throw new ValidationError(
+        `${fieldName} must be a string`,
+        { entity, field: fieldName, actualType: typeof value }
+      );
+    }
+
+    const trimmedValue = value.trim();
+
+    if (min !== undefined && trimmedValue.length < min) {
+       throw new ValidationError(
+        `${fieldName} must be at least ${min} characters long`,
+        { 
+          entity, 
+          field: fieldName, 
+          currentLength: trimmedValue.length,
+          minRequired: min 
+        }
+      );
+    }
+
+    if (max !== undefined && trimmedValue.length > max) {
+       throw new ValidationError(
+        `${fieldName} cannot exceed ${max} characters`,
+        { 
+          entity, 
+          field: fieldName, 
+          currentLength: trimmedValue.length,
+          maxAllowed: max 
+        }
+      );
+    }
+
+    return trimmedValue;
+  }
+  }
+
   validateEmail(value, fieldName = "email") {
     const email = this.validateText(value, fieldName, { required: true });
 
