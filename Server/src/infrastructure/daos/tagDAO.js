@@ -30,57 +30,128 @@ class TagDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
-async createMultiple(tagDomains = [], externalDbClient = null) {
+
+async update(tagDomain, externalDbClient = null) {
   return this.dbManager.withTransaction(async (dbClient) => {
     try {
-      if (!Array.isArray(tagDomains)) {
-        throw this.errorFactory.createValidationError("Tags must be an array");
-      }
+      const tagIdNum = this.inputValidator.validateId(tagDomain.id, "tag id");
 
-  
-      const validTagDomains = tagDomains.filter(tag => 
-        tag && tag.name && typeof tag.name === "string"
-      );
+      const updatedTag = await dbClient.tag.update({
+        where: { id: tagIdNum },
+        data: {
+          name: tagDomain.name,
+          description: tagDomain.description,
+        },
+      });
 
-      if (validTagDomains.length === 0) {
-        return [];
-      }
-
-
-      const createdTags = [];
-      for (const tagDomain of validTagDomains) {
-        try {
-          const created = await dbClient.tag.upsert({
-            where: { name: tagDomain.name },
-            update: {}, 
-            create: {
-              name: tagDomain.name,
-              description: tagDomain.description
-            },
-          });
-          createdTags.push(this.tagMapper.dbToDomain(created));
-        } catch (error) {
-          if (error.code === "P2002") {
-            const existing = await dbClient.tag.findUnique({
-              where: { name: tagDomain.name },
-            });
-            if (existing) {
-              createdTags.push(this.tagMapper.dbToDomain(existing));
-              continue;
-            }
-          }
-          throw error;
-        }
-      }
-
-      return createdTags;
+      return this.tagMapper.dbToDomain(updatedTag);
     } catch (error) {
-      this._handlePrismaError(error, "tagDAO.createMultiple", { 
-        tags: tagDomains.map(t => t.toJSON()) 
+      if (error.code === "P2025") {
+        throw this.errorFactory.createNotFoundError(
+          "Tag no encontrado para actualizar",
+          {
+            tagId: tagDomain.id,
+            prismaCode: error.code,
+            operation: "tagDAO.update"
+          }
+        );
+      }
+      if (error.code === "P2002") {
+        throw this.errorFactory.createConflictError(
+          "Ya existe un tag con este nombre",
+          { name: tagDomain.name }
+        );
+      }
+      this._handlePrismaError(error, "tagDAO.update", {
+        tagId: tagDomain.id,
       });
     }
   }, externalDbClient);
 }
+
+async delete(id, externalDbClient = null) {
+  return this.dbManager.withTransaction(async (dbClient) => {
+    try {
+      const tagIdNum = this.inputValidator.validateId(id, "tag id");
+
+      await dbClient.tag.delete({
+        where: { id: tagIdNum },
+      });
+
+      return true;
+    } catch (error) {
+      if (error.code === "P2025") {
+        throw this.errorFactory.createNotFoundError(
+          "Tag no encontrado para eliminar",
+          {
+            tagId: id,
+            prismaCode: error.code,
+            operation: "tagDAO.delete"
+          }
+        );
+      }
+      if (error.code === "P2003") {
+        throw this.errorFactory.createConflictError(
+          "No se puede eliminar el tag: tiene tareas o usuarios asociados",
+          { tagId: id }
+        );
+      }
+      this._handlePrismaError(error, "tagDAO.delete", { tagId: id });
+    }
+  }, externalDbClient);
+}
+
+  async createMultiple(tagDomains = [], externalDbClient = null) {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      try {
+        if (!Array.isArray(tagDomains)) {
+          throw this.errorFactory.createValidationError(
+            "Tags must be an array"
+          );
+        }
+
+        const validTagDomains = tagDomains.filter(
+          (tag) => tag && tag.name && typeof tag.name === "string"
+        );
+
+        if (validTagDomains.length === 0) {
+          return [];
+        }
+
+        const createdTags = [];
+        for (const tagDomain of validTagDomains) {
+          try {
+            const created = await dbClient.tag.upsert({
+              where: { name: tagDomain.name },
+              update: {},
+              create: {
+                name: tagDomain.name,
+                description: tagDomain.description,
+              },
+            });
+            createdTags.push(this.tagMapper.dbToDomain(created));
+          } catch (error) {
+            if (error.code === "P2002") {
+              const existing = await dbClient.tag.findUnique({
+                where: { name: tagDomain.name },
+              });
+              if (existing) {
+                createdTags.push(this.tagMapper.dbToDomain(existing));
+                continue;
+              }
+            }
+            throw error;
+          }
+        }
+
+        return createdTags;
+      } catch (error) {
+        this._handlePrismaError(error, "tagDAO.createMultiple", {
+          tags: tagDomains.map((t) => t.toJSON()),
+        });
+      }
+    }, externalDbClient);
+  }
 
   async findByName(name, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
@@ -136,35 +207,40 @@ async createMultiple(tagDomains = [], externalDbClient = null) {
     }, externalDbClient);
   }
 
+  async findByIds(tagIds = [], externalDbClient = null) {
+    return this.dbManager.forRead(async (dbClient) => {
+      try {
+        if (!Array.isArray(tagIds)) {
+          throw this.errorFactory.createValidationError(
+            "tagIds debe ser un arreglo",
+            {
+              operation: "tagDAO.findByIds",
+              actualType: typeof tagIds,
+            }
+          );
+        }
+        const validTagIds = tagIds
+          .map((tagId) => this.inputValidator.validateId(tagId, "tag id"))
+          .filter((id) => id !== null);
 
-async findByIds(tagIds = [], externalDbClient = null) {
-  return this.dbManager.forRead(async (dbClient) => {
-    try {
-      if (!Array.isArray(tagIds)) {
-        throw this.errorFactory.createValidationError("tagIds must be an array");
-      }
-      const validTagIds = tagIds
-        .filter(tagId => Number.isInteger(tagId) && tagId > 0)
-        .map(tagId => Number(tagId));
+        if (validTagIds.length === 0) {
+          return [];
+        }
 
-      if (validTagIds.length === 0) {
-        return [];
-      }
-
-      const tags = await dbClient.tag.findMany({
-        where: {
-          id: {
-            in: validTagIds,
+        const tags = await dbClient.tag.findMany({
+          where: {
+            id: {
+              in: validTagIds,
+            },
           },
-        },
-      });
+        });
 
-      return tags.map((tag) => this.tagMapper.dbToDomain(tag));
-    } catch (error) {
-      this._handlePrismaError(error, "tagDAO.findByIds", { tagIds });
-    }
-  }, externalDbClient);
-}
+        return tags.map((tag) => this.tagMapper.dbToDomain(tag));
+      } catch (error) {
+        this._handlePrismaError(error, "tagDAO.findByIds", { tagIds });
+      }
+    }, externalDbClient);
+  }
 
   async findAllByUserId({
     userId,
@@ -211,7 +287,7 @@ async findByIds(tagIds = [], externalDbClient = null) {
     }, externalDbClient);
   }
 
-   async countByUserId(userId, externalDbClient = null) {
+  async countByUserId(userId, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
         const userIdNum = this.inputValidator.validateId(userId, "user id");

@@ -47,7 +47,14 @@ class UserDAO extends BaseDatabaseHandler {
         return this.userMapper.dbToDomain(updatedUser);
       } catch (error) {
         if (error.code === "P2025") {
-          return null;
+          throw this.errorFactory.createNotFoundError(
+            "Usuario no encontrado para actualizar",
+            {
+              userId: userDomain.id,
+              prismaCode: error.code,
+              operation: "userDAO.update",
+            }
+          );
         }
         this._handlePrismaError(error, "userDAO.update", {
           userId: userDomain.id,
@@ -71,7 +78,14 @@ class UserDAO extends BaseDatabaseHandler {
         return this.userMapper.dbToDomain(updatedUser);
       } catch (error) {
         if (error.code === "P2025") {
-          return null;
+          throw this.errorFactory.createNotFoundError(
+            "Usuario no encontrado para actualizar contraseña",
+            {
+              userId,
+              prismaCode: error.code,
+              operation: "userDAO.updatePassword",
+            }
+          );
         }
         this._handlePrismaError(error, "userDAO.updatePassword", {
           userId,
@@ -131,7 +145,14 @@ class UserDAO extends BaseDatabaseHandler {
         const userIdNum = this.inputValidator.validateId(userId, "user id");
 
         if (!Array.isArray(tagIds)) {
-          throw new Error("tagIds must be an array");
+          throw this.errorFactory.createValidationError(
+            "tagIds debe ser un array",
+            {
+              operation: "userDAO.assignTags",
+              userId,
+              actualType: typeof tagIds,
+            }
+          );
         }
 
         const validTagIds = tagIds.filter(
@@ -149,6 +170,17 @@ class UserDAO extends BaseDatabaseHandler {
               },
             },
           });
+
+          if (!user) {
+            throw this.errorFactory.createNotFoundError(
+              "Usuario no encontrado",
+              {
+                userId,
+                operation: "userDAO.assignTags",
+              }
+            );
+          }
+
           return this.userMapper.dbToDomainWithTags(user);
         }
 
@@ -173,7 +205,16 @@ class UserDAO extends BaseDatabaseHandler {
 
         return this.userMapper.dbToDomainWithTags(userWithTags);
       } catch (error) {
-        console.error("Error en assignTags:", error);
+        if (error.code === "P2025") {
+          throw this.errorFactory.createNotFoundError(
+            "Usuario no encontrado para asignar tags",
+            {
+              userId,
+              prismaCode: error.code,
+              operation: "userDAO.assignTags",
+            }
+          );
+        }
         this._handlePrismaError(error, "userDAO.assignTags", {
           userId,
           tagIds,

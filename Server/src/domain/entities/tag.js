@@ -1,4 +1,9 @@
 const DomainValidators = require("../utils/domainValidators");
+const {
+  ValidationError,
+  RequiredFieldError,
+  InvalidFormatError,
+} = require("../errors/domainError");
 
 class Tag {
   #id;
@@ -8,32 +13,34 @@ class Tag {
   #taskTags;
   #userTags;
   #validator;
-  constructor(
-    {
-      id = null,
-      name,
-      description = "",
-      createdAt = new Date(),
-      taskTags = [],
-      userTags = [],
-    },
-    errorFactory
-  ) {
-    this.#validator = new DomainValidators(errorFactory);
+  constructor({
+    id = null,
+    name,
+    description = "",
+    createdAt = new Date(),
+    taskTags = [],
+    userTags = [],
+  }) {
+    this.#validator = new DomainValidators();
     this.#id = this.#validator.validateId(id, "Tag");
     this.#name = this.#validateName(name);
     this.#description = this.#validator.validateText(
       description,
       "description",
       {
+        required: false,
         max: 500,
         entity: "Tag",
       }
     );
-    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt", {
+      required: true,
+      entity: "Tag",
+    });
     this.#taskTags = this.#validator.validateCollection(taskTags, "taskTags");
     this.#userTags = this.#validator.validateCollection(userTags, "userTags");
   }
+
   #validateName(name) {
     return this.#validator.validateText(name, "name", {
       min: 1,
@@ -54,6 +61,7 @@ class Tag {
       newDescription,
       "description",
       {
+        required: false,
         max: 500,
         entity: "Tag",
       }
@@ -123,18 +131,14 @@ class Tag {
     };
   }
 
-  static create({id=null, name, description = "" }, errorFactory) {
-    return new Tag(
-      {
-        id,
-        name,
-        description,
-        createdAt: new Date(),
-      },
-      errorFactory
-    );
+  static create({ id = null, name, description = "" }) {
+    return new Tag({
+      id,
+      name,
+      description,
+      createdAt: new Date(),
+    });
   }
-
 }
 
 module.exports = Tag;

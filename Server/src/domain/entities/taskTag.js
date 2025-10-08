@@ -1,4 +1,9 @@
 const DomainValidators = require("../utils/domainValidators");
+const {
+  ValidationError,
+  RequiredFieldError,
+  InvalidFormatError,
+} = require("../errors/domainError");
 const Tag = require("../entities/tag");
 const Task = require("../entities/task");
 
@@ -19,63 +24,42 @@ class TaskTag {
       createdAt = new Date(),
       tag = null,
       toDelete = false,
-    },
-    errorFactory
+    }
   ) {
-    this.#validator = new DomainValidators(errorFactory);
+    this.#validator = new DomainValidators();
 
     this.#id = this.#validator.validateId(id, "TaskTag");
     this.#taskId = taskId ? this.#validator.validateId(taskId, "Task") : null;
     this.#tagId = tagId ? this.#validator.validateId(tagId, "Tag") : null;
-    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt",{
+      required: true,
+      entity: "TaskTag"
+    });
     this.#tag = this.#validateTag(tag);
-    this.#toDelete = !!toDelete;
-    this.#validateBusinessRules();
+    this.#toDelete = this.#validator.validateBoolean(toDelete, "toDelete", "TaskTag");
   }
 
   #validateTag(tag) {
     if (tag === null || tag === undefined) return null;
 
     if (!(tag instanceof Tag)) {
-      throw this.#validator.error.createValidationError(
-        "Must provide an instance of Tag",
-        null,
-        this.#validator.codes.INVALID_FORMAT
-      );
+      throw new ValidationError(
+      "Debe proporcionar una instancia válida de Tag",
+      {
+        entity: "TaskTag",
+        field: "tag",
+        expectedType: "Tag",
+        actualType: tag ? tag.constructor.name : typeof tag,
+      }
+    );
     }
 
     return tag;
   }
 
-  #validateTask(task) {
-    if (task === null || task === undefined) return null;
-
-    if (!(task instanceof Task)) {
-      throw this.#validator.error.createValidationError(
-        "Must provide an instance of Task",
-        null,
-        this.#validator.codes.INVALID_FORMAT
-      );
-    }
-
-    if (this.#taskId && task.id !== this.#taskId) {
-      throw this.#validator.error.createValidationError(
-        "Assigned task does not match taskId",
-        { taskId: this.#taskId, taskIdFromObject: task.id },
-        this.#validator.codes.BUSINESS_RULE_VIOLATION
-      );
-    }
-
-    return task;
-  }
-
-  #validateBusinessRules() {}
 
   assignTag(tag) {
     this.#tag = this.#validateTag(tag);
-    if (tag) {
-      this.#tag = tag;
-    }
   }
 
   assignTaskId(taskId) {
@@ -83,7 +67,10 @@ class TaskTag {
   }
 
   updateCreatedAt(createdAt) {
-    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt", {
+    required: true,
+    entity: "TaskTag"
+  });
   }
 
   markForDeletion() {
@@ -102,10 +89,10 @@ class TaskTag {
     return this.#taskId;
   }
   get tagId() {
-    if (this.#tag && this.#tag.id) {
-      return this.#tag.id;
-    }
-    return this.#tagId;
+     if (this.#tag && this.#tag.id) {
+    return this.#tag.id;
+  }
+  return this.#tagId;
   }
   get createdAt() {
     return this.#createdAt;
@@ -142,8 +129,7 @@ class TaskTag {
   }
 
   static create(
-    { taskId = null, tagId = null, tag = null, toDelete = false },
-    errorFactory
+    { taskId = null, tagId = null, tag = null, toDelete = false }
   ) {
     return new TaskTag(
       {
@@ -152,19 +138,19 @@ class TaskTag {
         tag,
         createdAt: new Date(),
         toDelete,
-      },
-      errorFactory
+      }
     );
   }
 
-  static assign({ tag, taskId, toDelete = false }, errorFactory) {
-    const validator = new DomainValidators(errorFactory);
+  static assign({ tag, taskId, toDelete = false }) {
     if (!tag) {
-      throw validator.error.createValidationError(
-        "Task and Tag are required for assignment",
-        null,
-        validator.codes.REQUIRED_FIELD
-      );
+      throw new RequiredFieldError( 
+      "tag",
+      { 
+        entity: "TaskTag",
+        operation: "assign" 
+      }
+    );
     }
     return new TaskTag(
       {
@@ -172,8 +158,7 @@ class TaskTag {
         tag,
         createdAt: new Date(),
         toDelete,
-      },
-      errorFactory
+      }
     );
   }
 }

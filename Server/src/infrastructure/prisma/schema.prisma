@@ -58,7 +58,7 @@ model Tag {
 
 model Session {
   id               Int      @id @default(autoincrement())
-  refreshTokenHash String   @map("refresh_token_hash")
+  refreshTokenHash String   @map("refresh_token_hash") @unique
   userAgent        String?  @map("user_agent")
   ip               String?
   expiresAt        DateTime @map("expires_at")

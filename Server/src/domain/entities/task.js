@@ -1,4 +1,9 @@
 const DomainValidators = require("../utils/domainValidators");
+const {
+  ValidationError,
+  RequiredFieldError,
+  InvalidFormatError,
+} = require("../errors/domainError");
 const TaskTag = require("../entities/taskTag");
 
 class Task {
@@ -14,24 +19,19 @@ class Task {
   #taskTags;
   #validator;
 
-  constructor(
-    {
-      id = null,
-      name,
-      description = "",
-      scheduledDate = null,
-      createdAt = new Date(),
-      updatedAt = new Date(),
-      isCompleted = false,
-      userId,
-      priority = null,
-      taskTags = [],
-    },
-    errorFactory
-  ) {
-    this.#validator = new DomainValidators(errorFactory);
-
-    this.#validateRequiredFields({ name, userId });
+  constructor({
+    id = null,
+    name,
+    description = "",
+    scheduledDate = null,
+    createdAt = new Date(),
+    updatedAt = new Date(),
+    isCompleted = false,
+    userId,
+    priority = null,
+    taskTags = [],
+  }) {
+    this.#validator = new DomainValidators();
 
     this.#id = this.#validator.validateId(id, "Task");
     this.#name = this.#validateName(name);
@@ -39,13 +39,20 @@ class Task {
       description,
       "description",
       {
+        required: false,
         max: 1000,
         entity: "Task",
       }
     );
     this.#scheduledDate = this.#validateScheduledDate(scheduledDate);
-    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
-    this.#updatedAt = this.#validator.validateDate(updatedAt, "updatedAt");
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt", {
+      required: true,
+      entity: "Task",
+    });
+    this.#updatedAt = this.#validator.validateDate(updatedAt, "updatedAt", {
+      required: true,
+      entity: "Task",
+    });
     this.#isCompleted = this.#validator.validateBoolean(
       isCompleted,
       "isCompleted",
@@ -53,29 +60,9 @@ class Task {
     );
     this.#userId = this.#validator.validateId(userId, "User");
     this.#priority = this.#validatePriority(priority);
-    this.#taskTags = this.#validator.validateCollection(taskTags, "taskTags");
+    this.#taskTags = this.#validateTaskTags(taskTags);
 
     this.#validateBusinessRules();
-  }
-
-  #validateRequiredFields({ name, userId }) {
-    const missingFields = [];
-
-    if (!name || name.trim().length === 0) {
-      missingFields.push("name");
-    }
-
-    if (!userId) {
-      missingFields.push("userId");
-    }
-
-    if (missingFields.length > 0) {
-      throw this.#validator.errorFactory.createValidationError(
-        `Missing required fields: ${missingFields.join(", ")}`,
-        { missingFields },
-        this.#validator.codes.REQUIRED_FIELD
-      );
-    }
   }
 
   #validateName(name) {
@@ -91,13 +78,19 @@ class Task {
   #validateScheduledDate(scheduledDate) {
     if (!scheduledDate) return null;
 
-    const date = this.#validator.validateDate(scheduledDate, "scheduledDate");
+    const date = this.#validator.validateDate(scheduledDate, "scheduledDate", {
+      required: false,
+      entity: "Task",
+    });
 
     if (date < new Date()) {
-      throw this.#validator.error.createValidationError(
-        "Scheduled date cannot be in the past",
-        { field: "scheduledDate", value: date },
-        this.#validator.codes.INVALID_DATE
+      throw new ValidationError(
+        "La fecha programada no puede estar en el pasado",
+        {
+          entity: "Task",
+          field: "scheduledDate",
+          value: date,
+        }
       );
     }
 
@@ -108,11 +101,13 @@ class Task {
     if (priority === null || priority === undefined) return null;
 
     if (typeof priority !== "number" || priority < 1 || priority > 5) {
-      throw this.#validator.error.createValidationError(
-        "Priority must be a number between 1 and 5",
-        { field: "priority", value: priority, min: 1, max: 5 },
-        this.#validator.codes.INVALID_FORMAT
-      );
+      throw new ValidationError("La prioridad debe ser un número entre 1 y 5", {
+        entity: "Task",
+        field: "priority",
+        value: priority,
+        min: 1,
+        max: 5,
+      });
     }
 
     return priority;
@@ -124,23 +119,50 @@ class Task {
       this.#scheduledDate < new Date() &&
       !this.#isCompleted
     ) {
-      throw this.#validator.error.createValidationError(
-        "Incomplete task cannot have past scheduled date",
-        { field: "scheduledDate", value: this.#scheduledDate },
-        this.#validator.codes.BUSINESS_RULE_VIOLATION
+      throw new ValidationError(
+        "Una tarea incompleta no puede tener una fecha programada en el pasado",
+        {
+          entity: "Task",
+          field: "scheduledDate",
+          value: this.#scheduledDate,
+        }
       );
     }
   }
 
-  complete() {
+  #validateTaskTags(taskTags) {
+    if (!Array.isArray(taskTags)) {
+      throw new InvalidFormatError("taskTags", "array", {
+        entity: "Task",
+        field: "taskTags",
+        actualType: typeof taskTags,
+      });
+    }
 
-     if (this.#isCompleted) {
-    throw this.#validator.errorFactory.createValidationError(
-      "Task is already completed",
-      { taskId: this.#id },
-      this.#validator.codes.BUSINESS_RULE_VIOLATION
+    const invalidTaskTags = taskTags.filter(
+      (taskTag) => !(taskTag instanceof TaskTag)
     );
+    if (invalidTaskTags.length > 0) {
+      throw new ValidationError(
+        "Todos los taskTags deben ser instancias de TaskTag",
+        {
+          entity: "Task",
+          field: "taskTags",
+          invalidTaskTagsCount: invalidTaskTags.length,
+        }
+      );
+    }
+
+    return [...taskTags];
   }
+
+  complete() {
+    if (this.#isCompleted) {
+      throw new ValidationError("La tarea ya está completada", {
+        entity: "Task",
+        taskId: this.#id,
+      });
+    }
 
     this.#isCompleted = true;
     this.#updatedAt = new Date();
@@ -166,6 +188,7 @@ class Task {
       newDescription,
       "description",
       {
+        required: false,
         max: 1000,
         entity: "Task",
       }
@@ -175,60 +198,54 @@ class Task {
 
   addTaskTag(taskTag) {
     if (!(taskTag instanceof TaskTag)) {
-      throw this.#validator.errorFactory.createValidationError(
-        "Must provide an instance of TaskTag",
-        null,
-        this.#validator.codes.INVALID_FORMAT
+      throw new ValidationError(
+        "Debe proporcionar una instancia válida de TaskTag",
+        {
+          entity: "Task",
+          operation: "addTaskTag",
+          expectedType: "TaskTag",
+          actualType: taskTag ? taskTag.constructor.name : typeof taskTag,
+        }
       );
     }
-    if (!this.#taskTags.some((tt) => tt.tagId === taskTag.tagId)) {
+
+    const existingTaskTag = this.#taskTags.find(
+      (tt) => tt.tagId === taskTag.tagId
+    );
+    if (!existingTaskTag) {
       this.#taskTags.push(taskTag);
       this.#updatedAt = new Date();
     }
   }
 
-  addTagsByIds(tagIds = []) {
-    tagIds.forEach((tagId) => this.addTagById(tagId));
-  }
   addTagById(tagId) {
-    const taskTag = TaskTag.createFromTagId(
-      {
-        taskId: this.#id,
-        tagId: tagId,
-      },
-      this.#validator.errorFactory
-    );
+    const validatedTagId = this.#validator.validateId(tagId, "Tag");
+    const taskTag = TaskTag.createFromTagId({
+      taskId: this.#id,
+      tagId: validatedTagId,
+    });
     this.addTaskTag(taskTag);
   }
-  addTagsByIds(tagIds = []) {
-    tagIds.forEach((tagId) => this.addTagById(tagId));
+ addTagsByIds(tagIds = []) {
+  if (!Array.isArray(tagIds)) {
+    throw new InvalidFormatError("tagIds", "array", {
+      entity: "Task",
+      field: "tagIds",
+      operation: "addTagsByIds",
+    });
   }
+  tagIds.forEach((tagId) => this.addTagById(tagId));
+}
 
   setTaskTags(newTaskTags) {
-    if (!Array.isArray(newTaskTags)) {
-      throw this.#validator.errorFactory.createValidationError(
-        "taskTags must be an array",
-        null,
-        this.#validator.codes.INVALID_FORMAT
-      );
-    }
-    newTaskTags.forEach((taskTag) => {
-      if (!(taskTag instanceof TaskTag)) {
-        throw this.#validator.errorFactory.createValidationError(
-          "All taskTags must be instances of TaskTag",
-          null,
-          this.#validator.codes.INVALID_FORMAT
-        );
-      }
-    });
-
-    this.#taskTags = [...newTaskTags];
+    this.#taskTags = this.#validateTaskTags(newTaskTags); 
     this.#updatedAt = new Date();
   }
 
   removeTaskTag(taskTagId) {
+    const validatedId = this.#validator.validateId(taskTagId, "TaskTag");
     const initialLength = this.#taskTags.length;
-    this.#taskTags = this.#taskTags.filter((tt) => tt.id !== taskTagId);
+    this.#taskTags = this.#taskTags.filter((tt) => tt.id !== validatedId);
 
     if (this.#taskTags.length !== initialLength) {
       this.#updatedAt = new Date();
@@ -236,7 +253,8 @@ class Task {
   }
 
   hasTag(tagId) {
-    return this.#taskTags.some((tt) => tt.tagId === tagId);
+    const validatedTagId = this.#validator.validateId(tagId, "Tag");
+    return this.#taskTags.some((tt) => tt.tagId === validatedTagId);
   }
 
   //Getters
@@ -321,23 +339,19 @@ class Task {
       scheduledDate = null,
       priority = null,
       taskTags = [],
-    },
-    errorFactory
+    }
   ) {
-    return new Task(
-      {
-        name,
-        description,
-        userId,
-        scheduledDate,
-        priority,
-        isCompleted: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        taskTags: taskTags,
-      },
-      errorFactory
-    );
+    return new Task({
+      name,
+      description,
+      userId,
+      scheduledDate,
+      priority,
+      isCompleted: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      taskTags: taskTags,
+    });
   }
 }
 

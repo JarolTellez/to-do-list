@@ -31,8 +31,7 @@ class TagMapper {
         description: createTagRequest.description
           ? createTagRequest.description
           : null,
-      },
-      this.errorFactory
+      }
     );
   }
 
@@ -44,10 +43,9 @@ class TagMapper {
         description: updateTagRequest.description ?? existingTag.description,
         exists: existingTag.exists,
         createdAt: existingTag.createdAt,
-        taskTags: existingTag.taskTags || [],
-        userTags: existingTag.userTags || [],
-      },
-      this.errorFactory
+        taskTags: existingTag.taskTags,
+        userTags: existingTag.userTags,
+      }
     );
   }
 
@@ -63,8 +61,7 @@ class TagMapper {
         exists: true,
         taskTags: [],
         userTags: [],
-      },
-      this.errorFactory
+      }
     );
   }
 }

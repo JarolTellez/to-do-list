@@ -52,8 +52,7 @@ class SessionMapper {
           createSessionRequest.isActive !== undefined
             ? createSessionRequest.isActive
             : true,
-      },
-      this.errorFactory
+      }
     );
   }
 
@@ -65,8 +64,7 @@ class SessionMapper {
         userAgent: existingSession.userAgent,
         ip: existingSession.ip,
         expiresInHours: 24 * 7,
-      },
-      this.errorFactory
+      }
     );
   }
   dbToDomain(row) {
@@ -83,8 +81,7 @@ class SessionMapper {
         createdAt: row.createdAt,
         expiresAt: row.expiresAt,
         isActive: row.isActive,
-      },
-      this.errorFactory
+      }
     );
     return mappedSession;
   }

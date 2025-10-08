@@ -26,6 +26,16 @@ class SessionDAO extends BaseDatabaseHandler {
 
         return this.sessionMapper.dbToDomain(createdSession);
       } catch (error) {
+          if (error.code === "P2002") {
+        throw this.errorFactory.createConflictError(
+          "Ya existe una sesión con este refresh token",
+          {
+            field: "refreshTokenHash",
+            operation: "sessionDAO.create",
+            userId: session.userId
+          }
+        );
+      }
         this._handlePrismaError(error, "sessionDAO.create", {
           attemptedData: { userId: session.userId },
         });
@@ -43,10 +53,18 @@ class SessionDAO extends BaseDatabaseHandler {
           data: { isActive: false },
         });
 
+        
         return !!session;
       } catch (error) {
         if (error.code === "P2025") {
-          return false; 
+          throw this.errorFactory.createNotFoundError(
+            "Sesión no encontrada para desactivar",
+            {
+              sessionId: id,
+              prismaCode: error.code,
+              operation: "sessionDAO.deactivate",
+            }
+          );
         }
         this._handlePrismaError(error, "sessionDAO.deactivate", {
           sessionId: id,

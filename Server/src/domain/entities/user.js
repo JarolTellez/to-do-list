@@ -1,5 +1,11 @@
 const UserTag = require("../entities/userTag");
 const DomainValidators = require("../utils/domainValidators");
+const {
+  ValidationError,
+  RequiredFieldError,
+  InvalidFormatError,
+} = require("../errors/domainError");
+const Task = require("./task");
 
 class User {
   #id;
@@ -13,32 +19,23 @@ class User {
   #tasks;
   #validator;
 
-  constructor(
-    {
-      id = null,
-      username,
-      email,
-      password,
-      rol = "user",
-      createdAt = new Date(),
-      updatedAt = new Date(),
-      userTags = [],
-      tasks = [],
-    },
-    errorFactory
-  ) {
-    this.#validator = new DomainValidators(errorFactory);
-
-    this.#validateRequiredFields({ username, email, password });
+  constructor({
+    id = null,
+    username,
+    email,
+    password,
+    rol = "user",
+    createdAt = new Date(),
+    updatedAt = new Date(),
+    userTags = [],
+    tasks = [],
+  }) {
+    this.#validator = new DomainValidators();
 
     this.#id = this.#validator.validateId(id, "User");
     this.#username = this.#validateusername(username);
     this.#email = this.#validateEmail(email);
-    this.#password = this.#validator.validateText(password, "password", {
-      min: 6,
-      required: true,
-      entity: "User",
-    });
+    this.#password = this.#validatePassword(password);
     this.#rol = this.#validator.validateEnum(
       rol,
       "role",
@@ -51,30 +48,6 @@ class User {
     this.#tasks = this.#validateTasks(tasks);
   }
 
-  #validateRequiredFields({ username, email, password }) {
-    const missingFields = [];
-
-    if (!username || username.trim().length === 0) {
-      missingFields.push("username");
-    }
-
-    if (!email || email.trim().length === 0) {
-      missingFields.push("email");
-    }
-
-    if (!password || password.trim().length === 0) {
-      missingFields.push("password");
-    }
-
-    if (missingFields.length > 0) {
-      throw this.#validator.errorFactory.createValidationError(
-        `Missing required fields: ${missingFields.join(", ")}`,
-        { missingFields },
-        this.#validator.codes.REQUIRED_FIELD
-      );
-    }
-  }
-
   #validateusername(username) {
     const validated = this.#validator.validateText(username, "username", {
       min: 3,
@@ -85,10 +58,10 @@ class User {
 
     const invalidChars = /[^a-zA-Z0-9_\-.]/;
     if (invalidChars.test(validated)) {
-      throw this.#validator.errorFactory.createValidationError(
-        "username can only contain letters, numbers, underscores, hyphens and dots",
-        null,
-        this.#validator.codes.INVALID_FORMAT
+      throw new InvalidFormatError(
+        "username",
+        "solo letras, números, guiones bajos, guiones y puntos",
+        { value: validated }
       );
     }
 
@@ -96,38 +69,35 @@ class User {
   }
 
   #validateEmail(email) {
-    const validated = this.#validator.validateText(email, "email", {
+    return this.#validator.validateEmail(email, "email");
+  }
+
+  #validatePassword(password) {
+    return this.#validator.validateText(password, "password", {
+      min: 6,
       required: true,
       entity: "User",
     });
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(validated)) {
-      throw this.#validator.errorFactory.createValidationError(
-        "Invalid email format",
-        { email: validated },
-        this.#validator.codes.INVALID_EMAIL
-      );
-    }
-
-    return validated;
   }
 
   #validateUserTags(userTags) {
     if (!Array.isArray(userTags)) {
-      throw this.#validator.errorFactory.createValidationError(
-        "userTags must be an array",
-        { actualType: typeof userTags },
-        this.#validator.codes.INVALID_FORMAT
-      );
+      throw new InvalidFormatError("userTags", "array", {
+        entity: "User",
+        field: "userTags",
+        actualType: typeof userTags,
+      });
     }
 
     const invalidTags = userTags.filter((tag) => !(tag instanceof UserTag));
     if (invalidTags.length > 0) {
-      throw this.#validator.errorFactory.createValidationError(
-        "All userTags must be instances of UserTag",
-        { invalidTagsCount: invalidTags.length },
-        this.#validator.codes.INVALID_FORMAT
+      throw new ValidationError(
+        "Todos los userTags deben ser instancias de UserTag",
+        {
+          entity: "User",
+          field: "userTags",
+          invalidTagsCount: invalidTags.length,
+        }
       );
     }
 
@@ -136,19 +106,18 @@ class User {
 
   #validateTasks(tasks) {
     if (!Array.isArray(tasks)) {
-      throw this.#validator.errorFactory.createValidationError(
-        "tasks must be an array",
-        { actualType: typeof tasks },
-        this.#validator.codes.INVALID_FORMAT
-      );
+      throw new ValidationError("Campo tareas deben ser un arreglo");
     }
 
     const invalidTasks = tasks.filter((task) => !(task instanceof Task));
     if (invalidTasks.length > 0) {
-      throw this.#validator.errorFactory.createValidationError(
-        "All tasks must be instances of Task",
-        { invalidTagsCount: invalidTasks.length },
-        this.#validator.codes.INVALID_FORMAT
+      throw new ValidationError(
+        "Todas las tareas deben ser instancias de Task",
+        {
+          entity: "User",
+          field: "tasks",
+          invalidTasksCount: invalidTasks.length,
+        }
       );
     }
 
@@ -158,11 +127,14 @@ class User {
   // business logic
   updateusername(newusername) {
     this.#username = this.#validateusername(newusername);
-    this.#updatedAt = new Date();
+    this.#updateTimestamp();
   }
 
   updateEmail(newEmail) {
     this.#email = this.#validateEmail(newEmail);
+    this.#updateTimestamp();
+  }
+  #updateTimestamp() {
     this.#updatedAt = new Date();
   }
 
@@ -172,7 +144,7 @@ class User {
       required: true,
       entity: "User",
     });
-    this.#updatedAt = new Date();
+    this.#updateTimestamp();
   }
 
   changeRole(newRole) {
@@ -182,33 +154,43 @@ class User {
       ["user", "admin"],
       "User"
     );
-    this.#updatedAt = new Date();
+    this.#updateTimestamp();
   }
 
   addUserTag(userTag) {
     if (!(userTag instanceof UserTag)) {
-      throw this.#validator.errorFactory.createValidationError(
-        "Must provide an instance of UserTag",
-        null,
-        this.#validator.codes.INVALID_FORMAT
+      throw new ValidationError(
+        "Debe proporcionar una instancia válida de UserTag",
+        {
+          entity: "User",
+          operation: "addUserTag",
+          expectedType: "UserTag",
+          actualType: userTag ? userTag.constructor.name : typeof userTag,
+        }
       );
     }
 
-    if (!this.#userTags.some((ut) => ut.id === userTag.id)) {
+    const existingTag = this.#userTags.find((ut) => ut.tagId === userTag.tagId);
+    if (!existingTag) {
       this.#userTags.push(userTag);
-      this.#updatedAt = new Date();
+      this.#updateTimestamp();
     }
   }
 
   addUserTagById(tagId) {
-    const userTag = UserTag.create(
-      { userId: this.#id, tagId },
-      this.#validator.errorFactory
-    );
+    const validatedTagId = this.#validator.validateId(tagId, "Tag");
+    const userTag = UserTag.create({ userId: this.#id, tagId: validatedTagId });
     this.addUserTag(userTag);
   }
 
   addUserTagsByIds(tagIds = []) {
+    if (!Array.isArray(tagIds)) {
+      throw new InvalidFormatError("tagIds", "array", {
+        entity: "User",
+        field: "tagIds",
+        operation: "addUserTagsByIds",
+      });
+    }
     tagIds.forEach((tagId) => this.addUserTagById(tagId));
   }
 
@@ -218,16 +200,18 @@ class User {
   }
 
   removeUserTag(userTagId) {
+    const validatedId = this.#validator.validateId(userTagId, "UserTag");
     const initialLength = this.#userTags.length;
-    this.#userTags = this.#userTags.filter((ut) => ut.id !== userTagId);
+    this.#userTags = this.#userTags.filter((ut) => ut.id !== validatedId);
 
     if (this.#userTags.length !== initialLength) {
-      this.#updatedAt = new Date();
+      this.#updateTimestamp();
     }
   }
 
   hasTag(tagId) {
-    return this.#userTags.some((ut) => ut.tagId === tagId);
+    const validatedTagId = this.#validator.validateId(tagId, "Tag");
+    return this.#userTags.some((ut) => ut.tagId === validatedTagId);
   }
 
   // Getters
@@ -290,33 +274,27 @@ class User {
     };
   }
 
-  static create({ username, email, password, rol = "user" }, errorFactory) {
-    return new User(
-      {
-        username,
-        email,
-        password,
-        rol,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      errorFactory
-    );
+  static create({ username, email, password, rol = "user" }) {
+    return new User({
+      username,
+      email,
+      password,
+      rol,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   }
 
-   static toUpdate({ id, username, email, rol }, errorFactory) {
-    return new User(
-      {
-        id,
-        username,
-        email,
-        password: "Temporal", 
-        rol,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      errorFactory
-    );
+  static toUpdate({ id, username, email, rol }) {
+    return new User({
+      id,
+      username,
+      email,
+      password: "Temporal123",
+      rol,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   }
 }
 

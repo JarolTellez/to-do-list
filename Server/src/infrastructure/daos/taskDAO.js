@@ -16,7 +16,7 @@ class TaskDAO extends BaseDatabaseHandler {
             description: task.description,
             scheduledDate: task.scheduledDate,
             isCompleted: task.isCompleted || false,
-            priority: task.priority || "medium",
+            priority: task.priority,
             userId: task.userId,
           },
         });
@@ -97,7 +97,14 @@ class TaskDAO extends BaseDatabaseHandler {
         return this.taskMapper.dbToDomain(updatedTask);
       } catch (error) {
         if (error.code === "P2025") {
-          return null;
+          throw this.errorFactory.createNotFoundError(
+            "Tarea no encontrada para actualizar",
+            {
+              taskId: taskDomain.id,
+              prismaCode: error.code,
+              operation: "taskDAO.updateBasicInfo",
+            }
+          );
         }
         this._handlePrismaError(error, "taskDAO.updateBasicInfo", {
           taskId: taskDomain.id,
@@ -120,6 +127,16 @@ class TaskDAO extends BaseDatabaseHandler {
 
         return true;
       } catch (error) {
+        if (error.code === "P2025") {
+          throw this.errorFactory.createNotFoundError(
+            "Tarea no encontrada para remover tags",
+            {
+              taskId,
+              prismaCode: error.code,
+              operation: "taskDAO.removeTaskTags",
+            }
+          );
+        }
         this._handlePrismaError(error, "taskDAO.removeTaskTags", {
           taskId,
           tagIds,
@@ -143,6 +160,16 @@ class TaskDAO extends BaseDatabaseHandler {
 
         return true;
       } catch (error) {
+        if (error.code === "P2025") {
+        throw this.errorFactory.createNotFoundError(
+          "Tarea no encontrada para agregar tags",
+          {
+            taskId,
+            prismaCode: error.code,
+            operation: "taskDAO.addTaskTags"
+          }
+        );
+      }
         this._handlePrismaError(error, "taskDAO.addTaskTags", {
           taskId,
           tagIds,
@@ -167,7 +194,15 @@ class TaskDAO extends BaseDatabaseHandler {
         return true;
       } catch (error) {
         if (error.code === "P2025") {
-          return false;
+          throw this.errorFactory.createNotFoundError(
+            "Tarea no encontrada para eliminar",
+            {
+              taskId: id,
+              userId,
+              prismaCode: error.code,
+              operation: "taskDAO.delete",
+            }
+          );
         }
         this._handlePrismaError(error, "taskDAO.delete", {
           taskId: id,

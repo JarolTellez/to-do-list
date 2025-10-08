@@ -1,4 +1,9 @@
 const DomainValidators = require("../utils/domainValidators");
+const {
+  ValidationError,
+  RequiredFieldError,
+  InvalidFormatError,
+} = require("../errors/domainError");
 const Tag = require("../entities/tag");
 const User = require("../entities/user");
 
@@ -11,23 +16,23 @@ class UserTag {
   #user;
   #validator;
 
-  constructor(
-    {
-      id = null,
-      userId,
-      tagId,
-      createdAt = new Date(),
-      tag = null,
-      user = null,
-    },
-    errorFactory
-  ) {
-    this.#validator = new DomainValidators(errorFactory);
+  constructor({
+    id = null,
+    userId,
+    tagId,
+    createdAt = new Date(),
+    tag = null,
+    user = null,
+  }) {
+    this.#validator = new DomainValidators();
 
     this.#id = this.#validator.validateId(id, "UserTag");
     this.#userId = this.#validator.validateId(userId, "User");
     this.#tagId = this.#validator.validateId(tagId, "Tag");
-    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt", {
+      required: true,
+      entity: "UserTag",
+    });
     this.#tag = this.#validateTag(tag);
     this.#user = this.#validateUser(user);
 
@@ -38,19 +43,23 @@ class UserTag {
     if (tag === null || tag === undefined) return null;
 
     if (!(tag instanceof Tag)) {
-      throw this.#validator.error.createValidationError(
-        "Must provide a valid Tag instance",
-        null,
-        this.#validator.codes.INVALID_FORMAT
+      throw new ValidationError(
+        "Debe proporcionar una instancia válida de Tag",
+        {
+          entity: "UserTag",
+          field: "tag",
+          expectedType: "Tag",
+          actualType: tag ? tag.constructor.name : typeof tag,
+        }
       );
     }
 
     if (this.#tagId && tag.id !== this.#tagId) {
-      throw this.#validator.error.createValidationError(
-        "Assigned tag does not match tagId",
-        { tagId: this.#tagId, tagIdFromObject: tag.id },
-        this.#validator.codes.BUSINESS_RULE_VIOLATION
-      );
+      throw new ValidationError("El tag asignado no coincide con el tagId", {
+        entity: "UserTag",
+        tagId: this.#tagId,
+        tagIdFromObject: tag.id,
+      });
     }
 
     return tag;
@@ -60,18 +69,25 @@ class UserTag {
     if (user === null || user === undefined) return null;
 
     if (!(user instanceof User)) {
-      throw this.#validator.error.createValidationError(
-        "Must provide a valid User instance",
-        null,
-        this.#validator.codes.INVALID_FORMAT
+      throw new ValidationError(
+        "Debe proporcionar una instancia válida de User",
+        {
+          entity: "UserTag",
+          field: "user",
+          expectedType: "User",
+          actualType: user ? user.constructor.name : typeof user,
+        }
       );
     }
 
     if (this.#userId && user.id !== this.#userId) {
-      throw this.#validator.error.createValidationError(
-        "Assigned user does not match userId",
-        { userId: this.#userId, userIdFromObject: user.id },
-        this.#validator.codes.BUSINESS_RULE_VIOLATION
+      throw new ValidationError(
+        "El usuario asignado no coincide con el userId",
+        {
+          entity: "UserTag",
+          userId: this.#userId,
+          userIdFromObject: user.id,
+        }
       );
     }
 
@@ -80,11 +96,11 @@ class UserTag {
 
   #validateBusinessRules() {
     if (!this.#userId || !this.#tagId) {
-      throw this.#validator.error.createValidationError(
-        "UserId and TagId are required",
-        { userId: this.#userId, tagId: this.#tagId },
-        this.#validator.codes.REQUIRED_FIELD
-      );
+      throw new RequiredFieldError("userId y tagId", {
+        entity: "UserTag",
+        userId: this.#userId,
+        tagId: this.#tagId,
+      });
     }
   }
 
@@ -104,7 +120,10 @@ class UserTag {
   }
 
   updateCreatedAt(createdAt) {
-    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
+    this.#createdAt = this.#validator.validateDate(createdAt, "createdAt", {
+      required: true,
+      entity: "UserTag",
+    });
   }
 
   updateId(id) {
@@ -171,62 +190,65 @@ class UserTag {
   }
 
   // statics
-  static create({ userId, tagId, user = null, tag = null }, errorFactory) {
-    return new UserTag(
-      {
-        userId,
-        tagId,
-        user,
-        tag,
-        createdAt: new Date(),
-      },
-      errorFactory
-    );
+  static create({ userId, tagId, user = null, tag = null }) {
+    return new UserTag({
+      userId,
+      tagId,
+      user,
+      tag,
+      createdAt: new Date(),
+    });
   }
 
-
-  static assign({ user, tag }, errorFactory) {
+  static assign({ user, tag }) {
     if (!user || !tag) {
-      const validator = new DomainValidators(errorFactory);
-      throw validator.error.createValidationError(
-        "User and Tag are required for assignment",
-        null,
-        validator.codes.REQUIRED_FIELD
-      );
+      throw new RequiredFieldError("user y tag", {
+        entity: "UserTag",
+        operation: "assign",
+      });
     }
 
     if (!user.id || !tag.id) {
-      const validator = new DomainValidators(errorFactory);
-      throw validator.error.createValidationError(
-        "User and Tag must have IDs for assignment",
-        { userId: user.id, tagId: tag.id },
-        validator.codes.REQUIRED_FIELD
+      throw new ValidationError(
+        "El usuario y el tag deben tener IDs para la asignación",
+        {
+          entity: "UserTag",
+          userId: user.id,
+          tagId: tag.id,
+        }
       );
     }
 
-    return new UserTag(
-      {
-        userId: user.id,
-        tagId: tag.id,
-        user,
-        tag,
-        createdAt: new Date(),
-      },
-      errorFactory
-    );
+    return new UserTag({
+      userId: user.id,
+      tagId: tag.id,
+      user,
+      tag,
+      createdAt: new Date(),
+    });
   }
 
   static createBulkAssignments(user, tags = [], errorFactory) {
     if (!user || !user.id) {
-      const validator = new DomainValidators(errorFactory);
-      throw validator.error.createValidationError(
-        "Valid user is required for bulk assignment",
-        { user: user, userId: user ? user.id : null },
-        validator.codes.REQUIRED_FIELD
+      throw new ValidationError( 
+        "Se requiere un usuario válido para la asignación masiva",
+        {
+          entity: "UserTag",
+          user: user,
+          userId: user ? user.id : null,
+        }
       );
     }
 
-    return tags.map((tag) => UserTag.assign({ user, tag }, errorFactory));
+    if (!Array.isArray(tags)) {
+      throw new InvalidFormatError("tags", "array", {
+        entity: "UserTag",
+        field: "tags",
+        operation: "createBulkAssignments",
+      });
+    }
+
+    return tags.map((tag) => UserTag.assign({ user, tag }));
   }
 }
 

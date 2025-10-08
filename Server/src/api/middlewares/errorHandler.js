@@ -77,7 +77,8 @@ const errorHandler = (error, req, res, next) => {
                 }
             );
         }
-        else if (error.name === 'ValidationError' || error.name === 'ValidatorError') {
+        else if (error.code === 'VALIDATION_ERROR' || error.code === 'ValidatorError') {
+            console.log("LLEGO AL ERROR HANDLER");
             appError = new ValidationError(
                 'Error de validación de datos',
                 isProduction ? null : { 
@@ -141,7 +142,7 @@ const errorHandler = (error, req, res, next) => {
    
     const response = {
         success: false,
-        error: appError.message,
+        message: appError.message,
         code: appError.errorCode,
         status: appError.statusCode,
         timestamp: appError.timestamp

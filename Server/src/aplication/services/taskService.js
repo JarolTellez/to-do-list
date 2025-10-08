@@ -13,6 +13,7 @@ class TaskService {
     appConfig,
     paginationHelper,
     paginationConfig,
+    errorMapper,
   }) {
     this.dbManager = dbManager;
     this.taskDAO = taskDAO;
@@ -27,131 +28,154 @@ class TaskService {
     this.appConfig = appConfig;
     this.paginationHelper = paginationHelper;
     this.paginationConfig = paginationConfig;
+    this.errorMapper = errorMapper;
   }
 
   async createTask(createTaskRequestDTO, externalDbClient = null) {
-    this.validator.validateRequired(["createTaskRequestDTO"], {
-      createTaskRequestDTO,
-    });
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(["userId", "name"], createTaskRequestDTO);
 
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const taskDomain =
-        this.taskMapper.createRequestDTOToDomain(createTaskRequestDTO);
-
-      // Extracts tags
-      const mixedTags = taskDomain.taskTags
-        .map((taskTag) => taskTag.tag)
-        .filter((tag) => tag.name && typeof tag.name === "string");
-
-      // Process mixed tags (existing and new) and return final tag ids
-      const tagIds = await this.userService.processMixedTagsForTask(
-        taskDomain.userId,
-        mixedTags,
-        dbClient
-      );
-
-      taskDomain.setTaskTags([]);
-      // Create complete taskTag  with their ids
-      tagIds.forEach((tagId) => {
-        const taskTag = this.taskTagMapper.createFromTagId(
-          {
-            taskId: null,
-            tagId: tagId,
-          },
-          this.errorFactory
+      return this.dbManager.withTransaction(async (dbClient) => {
+        await this.userService.validateUserExistenceById(
+          createTaskRequestDTO.userId,
+          dbClient
         );
-        taskDomain.addTaskTag(taskTag);
-      });
 
-      // save task in db
-      const newTask = await this.taskDAO.createWithTags(taskDomain, dbClient);
+        const taskDomain =
+          this.taskMapper.createRequestDTOToDomain(createTaskRequestDTO);
 
-      return newTask;
-    }, externalDbClient);
+        // Extracts tags
+        const mixedTags = taskDomain.taskTags
+          .map((taskTag) => taskTag.tag)
+          .filter((tag) => tag.name && typeof tag.name === "string");
+
+        // Process mixed tags (existing and new) and return final tag ids
+        const tagIds = await this.userService.processMixedTagsForTask(
+          taskDomain.userId,
+          mixedTags,
+          dbClient
+        );
+
+        taskDomain.setTaskTags([]);
+        // Create complete taskTag  with their ids
+        tagIds.forEach((tagId) => {
+          const taskTag = this.taskTagMapper.createFromTagId(
+            {
+              taskId: null,
+              tagId: tagId,
+            },
+            this.errorFactory
+          );
+          taskDomain.addTaskTag(taskTag);
+        });
+
+        // save task in db
+        const newTask = await this.taskDAO.createWithTags(taskDomain, dbClient);
+        if (!newTask) {
+          throw this.errorFactory.createDatabaseError(
+            "Error al crear la tarea en la base de datos",
+            {
+              userId: createTaskRequestDTO.userId,
+              operation: "createTask",
+              taskData: {
+                title: createTaskRequestDTO.title,
+                hasTags: tagIds.length > 0,
+              },
+            }
+          );
+        }
+
+        return newTask;
+      }, externalDbClient);
+    });
   }
 
   async updateTask(updateTaskRequestDTO, externalDbClient = null) {
-    this.validator.validateRequired(["updateTaskRequestDTO"], {
-      updateTaskRequestDTO,
-    });
-
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const existingTask = await this.taskDAO.findWithTagsByIdAndUserId(
-        updateTaskRequestDTO.id,
-        updateTaskRequestDTO.userId,
-        dbClient
-      );
-
-      if (!existingTask) {
-        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-          attemptedData: {
-            taskId: updateTaskRequestDTO.id,
-            userId: updateTaskRequestDTO.userId,
-          },
-        });
-      }
-      const taskDomain = this.taskMapper.updateDTOToDomain(
+    console.log("DTO: ", updateTaskRequestDTO);
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(["id", "userId"], 
         updateTaskRequestDTO,
-        existingTask
       );
 
-      // get only the tags(mixed because can be existing or not)
-      const mixedTags = taskDomain.taskTags
-        .map((tt) => tt.tag)
-        .filter((tag) => tag.name && typeof tag.name === "string");
-
-      // Process mixed tags (existing and new) and return final tag ids
-      const tagIds = await this.userService.processMixedTagsForTask(
-        taskDomain.userId,
-        mixedTags,
-        dbClient
-      );
-
-      const currentTagIds = existingTask.taskTags.map((tt) => tt.tagId);
-      const newTagIds = tagIds;
-
-      const tagsToAdd = newTagIds.filter(
-        (tagId) => !currentTagIds.includes(tagId)
-      );
-      const tagsToRemove = currentTagIds.filter(
-        (tagId) => !newTagIds.includes(tagId)
-      );
-
-      if (tagsToRemove.length > 0) {
-        await this.taskDAO.removeTaskTags(
-          taskDomain.id,
-          tagsToRemove,
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const existingTask = await this.taskDAO.findWithTagsByIdAndUserId(
+          updateTaskRequestDTO.id,
+          updateTaskRequestDTO.userId,
           dbClient
         );
-      }
 
-      if (tagsToAdd.length > 0) {
-        await this.taskDAO.addTaskTags(taskDomain.id, tagsToAdd, dbClient);
-      }
-      const updatedTask = await this.taskDAO.updateBasicInfo(
-        taskDomain,
-        dbClient
-      );
-
-      if (!updatedTask) {
-        throw this.errorFactory.createNotFoundError(
-          "Tarea no encontrada para actualizar",
-          {
-            attemptedData: {
+        if (!existingTask) {
+          throw this.errorFactory.createNotFoundError(
+            "Tarea no encontrada para actualizar",
+            {
               taskId: updateTaskRequestDTO.id,
               userId: updateTaskRequestDTO.userId,
-            },
-          }
+              operation: "updateTask",
+            }
+          );
+        }
+        const taskDomain = this.taskMapper.updateDTOToDomain(
+          updateTaskRequestDTO,
+          existingTask
         );
-      }
-      const finalTask = await this.taskDAO.findWithTagsByIdAndUserId(
-        taskDomain.id,
-        taskDomain.userId,
-        dbClient
-      );
 
-      return finalTask;
-    }, externalDbClient);
+        // get only the tags(mixed because can be existing or not)
+        const mixedTags = taskDomain.taskTags
+          .map((tt) => tt.tag)
+          .filter((tag) => tag.name && typeof tag.name === "string");
+
+        // Process mixed tags (existing and new) and return final tag ids
+        const tagIds = await this.userService.processMixedTagsForTask(
+          taskDomain.userId,
+          mixedTags,
+          dbClient
+        );
+
+        const currentTagIds = existingTask.taskTags.map((tt) => tt.tagId);
+        const newTagIds = tagIds;
+
+        const tagsToAdd = newTagIds.filter(
+          (tagId) => !currentTagIds.includes(tagId)
+        );
+        const tagsToRemove = currentTagIds.filter(
+          (tagId) => !newTagIds.includes(tagId)
+        );
+
+        if (tagsToRemove.length > 0) {
+          await this.taskDAO.removeTaskTags(
+            taskDomain.id,
+            tagsToRemove,
+            dbClient
+          );
+        }
+
+        if (tagsToAdd.length > 0) {
+          await this.taskDAO.addTaskTags(taskDomain.id, tagsToAdd, dbClient);
+        }
+        const updatedTask = await this.taskDAO.updateBasicInfo(
+          taskDomain,
+          dbClient
+        );
+
+        if (!updatedTask) {
+          throw this.errorFactory.createDatabaseError(
+            "Error al actualizar la información básica de la tarea",
+            {
+              taskId: updateTaskRequestDTO.id,
+              userId: updateTaskRequestDTO.userId,
+              operation: "updateTask",
+            }
+          );
+        }
+        const finalTask = await this.taskDAO.findWithTagsByIdAndUserId(
+          taskDomain.id,
+          taskDomain.userId,
+          dbClient
+        );
+
+        return finalTask;
+      }, externalDbClient);
+    });
   }
 
   async deleteTask(taskId, userId, externalDbClient = null) {
@@ -164,16 +188,26 @@ class TaskService {
       );
 
       if (!existingTask) {
-        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId, userId },
-        });
+        throw this.errorFactory.createNotFoundError(
+          "Tarea no encontrada para eliminar",
+          {
+            taskId: taskId,
+            userId: userId,
+            operation: "deleteTask",
+          }
+        );
       }
 
       const deletedTask = await this.taskDAO.delete(taskId, userId, dbClient);
       if (!deletedTask) {
-        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId, userId },
-        });
+        throw this.errorFactory.createDatabaseError(
+          "Error al eliminar la tarea de la base de datos",
+          {
+            taskId: taskId,
+            userId: userId,
+            operation: "deleteTask",
+          }
+        );
       }
 
       return deletedTask;
@@ -181,45 +215,65 @@ class TaskService {
   }
 
   async completeTask({ taskId, completed, userId }, externalDbClient = null) {
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const task = await this.taskDAO.findWithTagsByIdAndUserId(
-        taskId,
-        userId,
-        dbClient
-      );
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const task = await this.taskDAO.findWithTagsByIdAndUserId(
+          taskId,
+          userId,
+          dbClient
+        );
 
-      if (!task) {
-        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId, userId },
-        });
-      }
+        if (!task) {
+          throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
+            taskId: taskId,
+            userId: userId,
+            operation: "completeTask",
+            targetStatus: completed ? "completed" : "pending",
+          });
+        }
 
-      task.complete(completed);
+        task.complete(completed);
 
-      const updatedTask = await this.taskDAO.updateBasicInfo(task, dbClient);
+        const updatedTask = await this.taskDAO.updateBasicInfo(task, dbClient);
+        if (!updatedTask) {
+          throw this.errorFactory.createDatabaseError(
+            "Error al actualizar el estado de la tarea",
+            {
+              taskId: taskId,
+              userId: userId,
+              operation: "completeTask",
+              targetStatus: completed ? "completed" : "pending",
+            }
+          );
+        }
 
-      return updatedTask;
-    }, externalDbClient);
+        return updatedTask;
+      }, externalDbClient);
+    });
   }
 
   async getTaskById(taskId, userId, externalDbClient = null) {
-    this.validator.validateRequired(["taskId", "userId"], { taskId, userId });
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(["taskId", "userId"], { taskId, userId });
 
-    return this.dbManager.forRead(async (dbClient) => {
-      const task = await this.taskDAO.findWithTagsByIdAndUserId(
-        taskId,
-        userId,
-        dbClient
-      );
+      return this.dbManager.forRead(async (dbClient) => {
+        const task = await this.taskDAO.findWithTagsByIdAndUserId(
+          taskId,
+          userId,
+          dbClient
+        );
 
-      if (!task) {
-        throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-          attemptedData: { taskId, userId },
-        });
-      }
+        if (!task) {
+          throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
+             taskId: taskId,
+            userId: userId,
+            operation: "getTaskById"
+          });
+        }
 
-      return task;
-    }, externalDbClient);
+        return task;
+      }, externalDbClient);
+    });
   }
 
   async getTasksByTags(
@@ -228,127 +282,131 @@ class TaskService {
     options = {},
     externalDbClient = null
   ) {
-    return this.dbManager.forRead(async (dbClient) => {
-      const allTasks = await this.taskDAO.findAllByUserId(
-        {
-          userId,
-          ...options,
-        },
-        dbClient
-      );
-
-      if (tagNames && tagNames.length > 0) {
-        return allTasks.filter((task) =>
-          task.taskTags.some((taskTag) => tagNames.includes(taskTag.tag.name))
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.forRead(async (dbClient) => {
+        const allTasks = await this.taskDAO.findAllByUserId(
+          {
+            userId,
+            ...options,
+          },
+          dbClient
         );
-      }
 
-      return allTasks;
-    }, externalDbClient);
+        if (tagNames && tagNames.length > 0) {
+          return allTasks.filter((task) =>
+            task.taskTags.some((taskTag) => tagNames.includes(taskTag.tag.name))
+          );
+        }
+
+        return allTasks;
+      }, externalDbClient);
+    });
   }
 
   async getAllTasksByUserId(userId, options = {}, externalDbClient = null) {
-    return this.dbManager.forRead(async (dbClient) => {
-      const {
-        pendingPage,
-        pendingLimit,
-        completedPage,
-        completedLimit,
-        overduePage,
-        overdueLimit,
-      } = options;
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.forRead(async (dbClient) => {
+        const {
+          pendingPage,
+          pendingLimit,
+          completedPage,
+          completedLimit,
+          overduePage,
+          overdueLimit,
+        } = options;
 
-      const pendingPagination = this.paginationHelper.calculatePagination(
-        pendingPage,
-        pendingLimit,
-        this.paginationConfig.ENTITY_LIMITS.TASKS,
-        this.paginationConfig.DEFAULT_PAGE,
-        this.paginationConfig.DEFAULT_LIMIT
-      );
+        const pendingPagination = this.paginationHelper.calculatePagination(
+          pendingPage,
+          pendingLimit,
+          this.paginationConfig.ENTITY_LIMITS.TASKS,
+          this.paginationConfig.DEFAULT_PAGE,
+          this.paginationConfig.DEFAULT_LIMIT
+        );
 
-      const completedPagination = this.paginationHelper.calculatePagination(
-        completedPage,
-        completedLimit,
-        this.paginationConfig.ENTITY_LIMITS.TASKS,
-        this.paginationConfig.DEFAULT_PAGE,
-        this.paginationConfig.DEFAULT_LIMIT
-      );
+        const completedPagination = this.paginationHelper.calculatePagination(
+          completedPage,
+          completedLimit,
+          this.paginationConfig.ENTITY_LIMITS.TASKS,
+          this.paginationConfig.DEFAULT_PAGE,
+          this.paginationConfig.DEFAULT_LIMIT
+        );
 
-      const overduePagination = this.paginationHelper.calculatePagination(
-        overduePage,
-        overdueLimit,
-        this.paginationConfig.ENTITY_LIMITS.TASKS,
-        this.paginationConfig.DEFAULT_PAGE,
-        this.paginationConfig.DEFAULT_LIMIT
-      );
+        const overduePagination = this.paginationHelper.calculatePagination(
+          overduePage,
+          overdueLimit,
+          this.paginationConfig.ENTITY_LIMITS.TASKS,
+          this.paginationConfig.DEFAULT_PAGE,
+          this.paginationConfig.DEFAULT_LIMIT
+        );
 
-      const [pendingTasks, completedTasks, overdueTasks] = await Promise.all([
-        this.taskDAO.findAllPendingByUserId(
-          {
-            userId,
-            limit: pendingPagination.limit,
-            offset: pendingPagination.offset,
-          },
-          dbClient
-        ),
-        await this.taskDAO.findAllCompletedByUserId(
-          {
-            userId,
-            limit: completedPagination.limit,
-            offset: completedPagination.offset,
-          },
-          dbClient
-        ),
+        const [pendingTasks, completedTasks, overdueTasks] = await Promise.all([
+          this.taskDAO.findAllPendingByUserId(
+            {
+              userId,
+              limit: pendingPagination.limit,
+              offset: pendingPagination.offset,
+            },
+            dbClient
+          ),
+          this.taskDAO.findAllCompletedByUserId(
+            {
+              userId,
+              limit: completedPagination.limit,
+              offset: completedPagination.offset,
+            },
+            dbClient
+          ),
 
-        this.taskDAO.findAllOverdueByUserId(
-          {
-            userId,
-            limit: overduePagination.limit,
-            offset: overduePagination.offset,
-          },
-          dbClient
-        ),
-      ]);
+          this.taskDAO.findAllOverdueByUserId(
+            {
+              userId,
+              limit: overduePagination.limit,
+              offset: overduePagination.offset,
+            },
+            dbClient
+          ),
+        ]);
 
-      const [pendingTotal, completedTotal, overdueTotal] = await Promise.all([
-        this.taskDAO.countByUserId({ userId, isCompleted: false }, dbClient),
-        this.taskDAO.countByUserId({ userId, isCompleted: true }, dbClient),
-        this.taskDAO.countOverdueByUserId(userId, dbClient),
-      ]);
+        const [pendingTotal, completedTotal, overdueTotal] = await Promise.all([
+          this.taskDAO.countByUserId({ userId, isCompleted: false }, dbClient),
+          this.taskDAO.countByUserId({ userId, isCompleted: true }, dbClient),
+          this.taskDAO.countOverdueByUserId(userId, dbClient),
+        ]);
 
-      return {
-        pendingTasks: this.paginationHelper.buildPaginationResponse(
-          pendingTasks,
-          pendingPagination,
-          pendingTotal,
-          this.paginationHelper.calculateTotalPages(
+        return {
+          pendingTasks: this.paginationHelper.buildPaginationResponse(
+            pendingTasks,
+            pendingPagination,
             pendingTotal,
-            pendingPagination.limit
+            this.paginationHelper.calculateTotalPages(
+              pendingTotal,
+              pendingPagination.limit
+            ),
+            "tasks"
           ),
-          "tasks"
-        ),
-        completedTasks: this.paginationHelper.buildPaginationResponse(
-          completedTasks,
-          completedPagination,
-          completedTotal,
-          this.paginationHelper.calculateTotalPages(
+          completedTasks: this.paginationHelper.buildPaginationResponse(
+            completedTasks,
+            completedPagination,
             completedTotal,
-            completedPagination.limit
+            this.paginationHelper.calculateTotalPages(
+              completedTotal,
+              completedPagination.limit
+            ),
+            "tasks"
           ),
-          "tasks"
-        ),
-        overdueTasks: this.paginationHelper.buildPaginationResponse(
-          overdueTasks,
-          overduePagination,
-          overdueTotal,
-          this.paginationHelper.calculateTotalPages(
+          overdueTasks: this.paginationHelper.buildPaginationResponse(
+            overdueTasks,
+            overduePagination,
             overdueTotal,
-            overduePagination.limit
+            this.paginationHelper.calculateTotalPages(
+              overdueTotal,
+              overduePagination.limit
+            ),
+            "tasks"
           ),
-          "tasks"
-        ),
-      };
-    }, externalDbClient);
+        };
+      }, externalDbClient);
+    });
   }
 }
 

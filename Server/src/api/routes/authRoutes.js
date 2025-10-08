@@ -1,12 +1,11 @@
 const express = require("express");
-const { pruebas } = require("./pruebas");
 const {validateAccessToken} = require('../middlewares/validateAccessToken');
 module.exports = (authController) => {
   const router = express.Router();
 
   router
     .route("/login")
-    .post(pruebas, authController.login.bind(authController));
+    .post(authController.login.bind(authController));
 
   router
     .route("/logout")

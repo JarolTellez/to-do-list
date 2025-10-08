@@ -53,8 +53,7 @@ class TaskMapper {
         priority: createDTO.priority,
         userId: createDTO.userId,
         taskTags,
-      },
-      this.errorFactory
+      }
     );
   }
 
@@ -93,8 +92,7 @@ class TaskMapper {
         createdAt: existingTask.createdAt,
         updatedAt: new Date(),
         taskTags,
-      },
-      this.errorFactory
+      }
     );
   }
 
@@ -117,8 +115,7 @@ class TaskMapper {
         createdAt: existingTask.createdAt,
         updatedAt: new Date(),
         taskTags: existingTask.taskTags || [],
-      },
-      this.errorFactory
+      }
     );
   }
 
@@ -137,8 +134,7 @@ class TaskMapper {
         userId: row.userId,
         priority: row.priority,
         taskTags: [],
-      },
-      this.errorFactory
+      }
     );
   }
 
@@ -166,8 +162,7 @@ class TaskMapper {
       userId: dbTask.userId,
       priority: dbTask.priority,
       taskTags: taskTags,  
-    },
-    this.errorFactory
+    }
   );
 }
 
