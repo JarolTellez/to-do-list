@@ -6,6 +6,7 @@ const {
 } = require("../errors/domainError");
 const crypto = require("crypto");
 const ms = require("ms");
+const domainValidationConfig = require("../config/domainValidationConfig");
 
 class Session {
   #id;
@@ -17,6 +18,7 @@ class Session {
   #expiresAt;
   #isActive;
   #validator;
+  #config;
 
   constructor({
     id = null,
@@ -29,6 +31,7 @@ class Session {
     isActive = true,
   }) {
     this.#validator = new DomainValidators();
+    this.#config = domainValidationConfig.SESSION;
 
     this.#id = this.#validator.validateId(id, "Session");
     this.#userId = this.#validator.validateId(userId, "User");
@@ -36,7 +39,7 @@ class Session {
     this.#userAgent = this.#validator.validateText(userAgent, "userAgent", {
       required: false,
       entity: "Session",
-      max: 500,
+      max: this.#config.USER_AGENT.MAX_LENGTH,
     });
     this.#ip = this.#validateIp(ip);
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt", {
@@ -57,8 +60,8 @@ class Session {
     return this.#validator.validateText(refreshTokenHash, "refreshTokenHash", {
       required: true,
       entity: "Session",
-      min: 64,
-      max: 64,
+      min: this.#config.REFRESH_TOKEN_HASH.EXACT_LENGTH,
+      max:  this.#config.REFRESH_TOKEN_HASH.EXACT_LENGTH,
     });
   }
 
@@ -67,7 +70,7 @@ class Session {
       return this.#validator.validateText(ip, "ip", {
         required: false,
         entity: "Session",
-        max: 45,
+        max:  this.#config.IP.MAX_LENGTH,
       });
     }
     return null;
@@ -171,19 +174,34 @@ class Session {
     refreshTokenHash,
     userAgent,
     ip,
-    expiresAt = "7d",
+    expiresAt,
     active = true,
   }) {
     const createdAt = new Date();
-    const expiresInMs = ms(expiresAt);
+    const expirationDuration = expiresAt || domainValidationConfig.SESSION.EXPIRATION.DEFAULT_DURATION;
+    const expiresInMs = ms(expirationDuration);;
 
     if (!expiresInMs || expiresInMs <= 0) {
       throw new ValidationError("Valor de expiración inválido", {
         entity: "Session",
         field: "expiresAt",
-        value: expiresAt,
+        value: expirationDuration,
       });
     }
+
+    const minDurationMs = ms(domainValidationConfig.SESSION.EXPIRATION.MIN_DURATION);
+    if (expiresInMs < minDurationMs) {
+      throw new ValidationError(
+        `La duración de la sesión no puede ser menor a ${domainValidationConfig.SESSION.EXPIRATION.MIN_DURATION}`,
+        {
+          entity: "Session",
+          field: "expiresAt",
+          value: expirationDuration,
+          minAllowed: domainValidationConfig.SESSION.EXPIRATION.MIN_DURATION,
+        }
+      );
+    }
+
     const expirationDate = new Date(createdAt.getTime() + expiresInMs);
 
     return new Session({
@@ -208,6 +226,7 @@ class Session {
       isActive: this.#isActive,
       isExpired: this.isExpired(),
       timeUntilExpiration: this.timeUntilExpiration(),
+      maxActiveSessions: domainValidationConfig.RELATIONSHIPS.SESSION.MAX_ACTIVE_SESSIONS,
     };
   }
 }

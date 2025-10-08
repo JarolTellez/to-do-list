@@ -5,6 +5,7 @@ const {
   InvalidFormatError,
 } = require("../errors/domainError");
 const TaskTag = require("../entities/taskTag");
+const domainValidationConfig = require("../config/domainValidationConfig");
 
 class Task {
   #id;
@@ -18,6 +19,7 @@ class Task {
   #priority;
   #taskTags;
   #validator;
+  #config;
 
   constructor({
     id = null,
@@ -32,6 +34,7 @@ class Task {
     taskTags = [],
   }) {
     this.#validator = new DomainValidators();
+    this.#config = domainValidationConfig.TASK;
 
     this.#id = this.#validator.validateId(id, "Task");
     this.#name = this.#validateName(name);
@@ -40,7 +43,7 @@ class Task {
       "description",
       {
         required: false,
-        max: 1000,
+        max: this.#config.DESCRIPTION.MAX_LENGTH,
         entity: "Task",
       }
     );
@@ -67,8 +70,8 @@ class Task {
 
   #validateName(name) {
     const validated = this.#validator.validateText(name, "name", {
-      min: 1,
-      max: 30,
+      min: this.#config.NAME.MIN_LENGTH,
+      max: this.#config.NAME.MAX_LENGTH,
       required: true,
       entity: "Task",
     });
@@ -83,13 +86,22 @@ class Task {
       entity: "Task",
     });
 
-    if (date < new Date()) {
+    const minFutureDate = new Date();
+    minFutureDate.setMinutes(
+      minFutureDate.getMinutes() +
+        this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES
+    );
+
+    if (date < minFutureDate) {
       throw new ValidationError(
-        "La fecha programada no puede estar en el pasado",
+        `La fecha programada debe ser al menos ${
+          this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES
+        } minutos en el futuro`,
         {
           entity: "Task",
           field: "scheduledDate",
           value: date,
+          minFutureMinutes: this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES,
         }
       );
     }
@@ -100,14 +112,23 @@ class Task {
   #validatePriority(priority) {
     if (priority === null || priority === undefined) return null;
 
-    if (typeof priority !== "number" || priority < 1 || priority > 5) {
-      throw new ValidationError("La prioridad debe ser un número entre 1 y 5", {
-        entity: "Task",
-        field: "priority",
-        value: priority,
-        min: 1,
-        max: 5,
-      });
+    if (
+      typeof priority !== "number" ||
+      priority < this.#config.PRIORITY.MIN ||
+      priority > this.#config.PRIORITY.MAX
+    ) {
+      throw new ValidationError(
+        `La prioridad debe ser un número entre ${this.#config.PRIORITY.MIN} y ${
+          this.#config.PRIORITY.MAX
+        }`,
+        {
+          entity: "Task",
+          field: "priority",
+          value: priority,
+          min: this.#config.PRIORITY.MIN,
+          max: this.#config.PRIORITY.MAX,
+        }
+      );
     }
 
     return priority;
@@ -137,6 +158,22 @@ class Task {
         field: "taskTags",
         actualType: typeof taskTags,
       });
+    }
+
+    if (
+      taskTags.length >
+      domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK
+    ) {
+      throw new ValidationError(
+        `No se pueden asignar más de ${domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK} tags por tarea`,
+        {
+          entity: "Task",
+          field: "taskTags",
+          currentCount: taskTags.length,
+          maxAllowed:
+            domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK,
+        }
+      );
     }
 
     const invalidTaskTags = taskTags.filter(
@@ -189,7 +226,7 @@ class Task {
       "description",
       {
         required: false,
-        max: 1000,
+        max: this.#config.DESCRIPTION.MAX_LENGTH,
         entity: "Task",
       }
     );
@@ -209,6 +246,21 @@ class Task {
       );
     }
 
+    if (
+      this.#taskTags.length >=
+      domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK
+    ) {
+      throw new ValidationError(
+        `No se pueden asignar más de ${domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK} tags por tarea`,
+        {
+          entity: "Task",
+          operation: "addTaskTag",
+          currentCount: this.#taskTags.length,
+          maxAllowed:
+            domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK,
+        }
+      );
+    }
     const existingTaskTag = this.#taskTags.find(
       (tt) => tt.tagId === taskTag.tagId
     );
@@ -226,19 +278,42 @@ class Task {
     });
     this.addTaskTag(taskTag);
   }
- addTagsByIds(tagIds = []) {
-  if (!Array.isArray(tagIds)) {
-    throw new InvalidFormatError("tagIds", "array", {
-      entity: "Task",
-      field: "tagIds",
-      operation: "addTagsByIds",
-    });
+  addTagsByIds(tagIds = []) {
+    if (!Array.isArray(tagIds)) {
+      throw new InvalidFormatError("tagIds", "array", {
+        entity: "Task",
+        field: "tagIds",
+        operation: "addTagsByIds",
+      });
+    }
+
+    const totalAfterAdd = this.#taskTags.length + tagIds.length;
+    if (
+      totalAfterAdd >
+      domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK
+    ) {
+      throw new ValidationError(
+        `No se pueden asignar más de ${
+          domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK
+        } tags. Actual: ${this.#taskTags.length}, Intentando agregar: ${
+          tagIds.length
+        }`,
+        {
+          entity: "Task",
+          operation: "addTagsByIds",
+          currentCount: this.#taskTags.length,
+          tryingToAdd: tagIds.length,
+          maxAllowed:
+            domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK,
+        }
+      );
+    }
+
+    tagIds.forEach((tagId) => this.addTagById(tagId));
   }
-  tagIds.forEach((tagId) => this.addTagById(tagId));
-}
 
   setTaskTags(newTaskTags) {
-    this.#taskTags = this.#validateTaskTags(newTaskTags); 
+    this.#taskTags = this.#validateTaskTags(newTaskTags);
     this.#updatedAt = new Date();
   }
 
@@ -255,6 +330,28 @@ class Task {
   hasTag(tagId) {
     const validatedTagId = this.#validator.validateId(tagId, "Tag");
     return this.#taskTags.some((tt) => tt.tagId === validatedTagId);
+  }
+
+  canAddMoreTags() {
+    return (
+      this.#taskTags.length <
+      domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK
+    );
+  }
+
+  getRemainingTagSlots() {
+    return (
+      domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK -
+      this.#taskTags.length
+    );
+  }
+
+  getNameMaxLength() {
+    return this.#config.NAME.MAX_LENGTH;
+  }
+
+  getDescriptionMaxLength() {
+    return this.#config.DESCRIPTION.MAX_LENGTH;
   }
 
   //Getters
@@ -328,19 +425,28 @@ class Task {
       ),
       isOverdue: this.isOverdue(),
       isScheduledForToday: this.isScheduledForToday(),
+      canAddMoreTags: this.canAddMoreTags(),
+      remainingTagSlots: this.getRemainingTagSlots(),
+      limits: {
+        nameMaxLength: this.#config.NAME.MAX_LENGTH,
+        descriptionMaxLength: this.#config.DESCRIPTION.MAX_LENGTH,
+        priorityMin: this.#config.PRIORITY.MIN,
+        priorityMax: this.#config.PRIORITY.MAX,
+        maxTagsPerTask:
+          domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK,
+        minFutureMinutes: this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES,
+      },
     };
   }
 
-  static create(
-    {
-      name,
-      description = "",
-      userId,
-      scheduledDate = null,
-      priority = null,
-      taskTags = [],
-    }
-  ) {
+  static create({
+    name,
+    description = "",
+    userId,
+    scheduledDate = null,
+    priority = null,
+    taskTags = [],
+  }) {
     return new Task({
       name,
       description,
