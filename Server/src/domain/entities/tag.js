@@ -4,6 +4,7 @@ const {
   RequiredFieldError,
   InvalidFormatError,
 } = require("../errors/domainError");
+const domainValidationConfig = require("../config/domainValidationConfig");
 
 class Tag {
   #id;
@@ -13,6 +14,8 @@ class Tag {
   #taskTags;
   #userTags;
   #validator;
+  #config;
+
   constructor({
     id = null,
     name,
@@ -22,6 +25,8 @@ class Tag {
     userTags = [],
   }) {
     this.#validator = new DomainValidators();
+    this.#config = domainValidationConfig.TAG;
+
     this.#id = this.#validator.validateId(id, "Tag");
     this.#name = this.#validateName(name);
     this.#description = this.#validator.validateText(
@@ -29,7 +34,7 @@ class Tag {
       "description",
       {
         required: false,
-        max: 500,
+        max: this.#config.DESCRIPTION.MAX_LENGTH,
         entity: "Tag",
       }
     );
@@ -43,8 +48,8 @@ class Tag {
 
   #validateName(name) {
     return this.#validator.validateText(name, "name", {
-      min: 1,
-      max: 50,
+      min: this.#config.NAME.MIN_LENGTH,
+      max: this.#config.NAME.MAX_LENGTH,
       required: true,
       entity: "Tag",
     });
@@ -62,7 +67,7 @@ class Tag {
       "description",
       {
         required: false,
-        max: 500,
+        max: this.#config.DESCRIPTION.MAX_LENGTH,
         entity: "Tag",
       }
     );
@@ -120,6 +125,23 @@ class Tag {
     return !this.isAssignedToAnyTask() && !this.isAssignedToAnyUser();
   }
 
+  getNameMaxLength() {
+    return this.#config.NAME.MAX_LENGTH;
+  }
+
+  getDescriptionMaxLength() {
+    return this.#config.DESCRIPTION.MAX_LENGTH;
+  }
+
+  getUsageLimits() {
+    return {
+      maxTagsPerUser:
+        domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER,
+      maxTagsPerTask:
+        domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK,
+    };
+  }
+
   toJSON() {
     return {
       id: this.#id,
@@ -128,6 +150,15 @@ class Tag {
       createdAt: this.#createdAt.toISOString(),
       taskTagsCount: this.#taskTags.length,
       userTagsCount: this.#userTags.length,
+      canBeDeleted: this.canBeDeleted(),
+      limits: {
+        nameMaxLength: this.#config.NAME.MAX_LENGTH,
+        descriptionMaxLength: this.#config.DESCRIPTION.MAX_LENGTH,
+        maxTagsPerUser:
+          domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER,
+        maxTagsPerTask:
+          domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK,
+      },
     };
   }
 

@@ -15,6 +15,7 @@ class UserTag {
   #tag;
   #user;
   #validator;
+  #config;
 
   constructor({
     id = null,
@@ -25,6 +26,7 @@ class UserTag {
     user = null,
   }) {
     this.#validator = new DomainValidators();
+    this.#config = domainValidationConfig.RELATIONSHIPS;
 
     this.#id = this.#validator.validateId(id, "UserTag");
     this.#userId = this.#validator.validateId(userId, "User");
@@ -130,6 +132,14 @@ class UserTag {
     this.#id = this.#validator.validateId(id, "UserTag");
   }
 
+  getMaxTagsPerUser() {
+    return this.#config.USER_TAG.MAX_TAGS_PER_USER;
+  }
+
+  getMaxTagsPerTask() {
+    return this.#config.TASK_TAG.MAX_TAGS_PER_TASK;
+  }
+
   //Getters
   get id() {
     return this.#id;
@@ -186,6 +196,10 @@ class UserTag {
               username: this.#user.username,
             }
         : null,
+      limits: {
+        maxTagsPerUser: this.#config.USER_TAG.MAX_TAGS_PER_USER,
+        maxTagsPerTask: this.#config.TASK_TAG.MAX_TAGS_PER_TASK,
+      },
     };
   }
 
@@ -230,7 +244,7 @@ class UserTag {
 
   static createBulkAssignments(user, tags = [], errorFactory) {
     if (!user || !user.id) {
-      throw new ValidationError( 
+      throw new ValidationError(
         "Se requiere un usuario válido para la asignación masiva",
         {
           entity: "UserTag",
@@ -246,6 +260,22 @@ class UserTag {
         field: "tags",
         operation: "createBulkAssignments",
       });
+    }
+
+    if (
+      tags.length >
+      domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER
+    ) {
+      throw new ValidationError(
+        `No se pueden asignar más de ${domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER} tags por usuario`,
+        {
+          entity: "UserTag",
+          operation: "createBulkAssignments",
+          currentCount: tags.length,
+          maxAllowed:
+            domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER,
+        }
+      );
     }
 
     return tags.map((tag) => UserTag.assign({ user, tag }));

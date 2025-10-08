@@ -6,6 +6,7 @@ const {
   InvalidFormatError,
 } = require("../errors/domainError");
 const Task = require("./task");
+const domainValidationConfig = require("../config/domainValidationConfig");
 
 class User {
   #id;
@@ -18,6 +19,7 @@ class User {
   #userTags;
   #tasks;
   #validator;
+  #config;
 
   constructor({
     id = null,
@@ -31,6 +33,7 @@ class User {
     tasks = [],
   }) {
     this.#validator = new DomainValidators();
+    this.#config = domainValidationConfig.USER;
 
     this.#id = this.#validator.validateId(id, "User");
     this.#username = this.#validateusername(username);
@@ -39,7 +42,7 @@ class User {
     this.#rol = this.#validator.validateEnum(
       rol,
       "role",
-      ["user", "admin"],
+      this.#config.ROLE.ALLOWED_VALUES,
       "User"
     );
     this.#createdAt = this.#validator.validateDate(createdAt, "createdAt");
@@ -50,17 +53,16 @@ class User {
 
   #validateusername(username) {
     const validated = this.#validator.validateText(username, "username", {
-      min: 3,
-      max: 30,
+      min: this.#config.USERNAME.MIN_LENGTH,
+      max: this.#config.USERNAME.MAX_LENGTH,
       required: true,
       entity: "User",
     });
 
-    const invalidChars = /[^a-zA-Z0-9_\-.]/;
-    if (invalidChars.test(validated)) {
+    if (!this.#config.USERNAME.ALLOWED_CHARS.test(validated)) {
       throw new InvalidFormatError(
         "username",
-        "solo letras, números, guiones bajos, guiones y puntos",
+        this.#config.USERNAME.ALLOWED_CHARS_DESCRIPTION,
         { value: validated }
       );
     }
@@ -69,12 +71,17 @@ class User {
   }
 
   #validateEmail(email) {
-    return this.#validator.validateEmail(email, "email");
+    return this.#validator.validateEmail(email, "email", {
+      max: this.#config.EMAIL.MAX_LENGTH,
+      required: true,
+      entity: "User",
+    });
   }
 
   #validatePassword(password) {
     return this.#validator.validateText(password, "password", {
-      min: 6,
+      min: this.#config.PASSWORD.MIN_LENGTH,
+      max: this.#config.PASSWORD.MAX_LENGTH,
       required: true,
       entity: "User",
     });
@@ -87,6 +94,22 @@ class User {
         field: "userTags",
         actualType: typeof userTags,
       });
+    }
+
+    if (
+      userTags.length >
+      domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER
+    ) {
+      throw new ValidationError(
+        `No se pueden asignar más de ${domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER} tags por usuario`,
+        {
+          entity: "User",
+          field: "userTags",
+          currentCount: userTags.length,
+          maxAllowed:
+            domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER,
+        }
+      );
     }
 
     const invalidTags = userTags.filter((tag) => !(tag instanceof UserTag));
@@ -140,7 +163,8 @@ class User {
 
   changePassword(newPassword) {
     this.#password = this.#validator.validateText(newPassword, "password", {
-      min: 6,
+      min: this.#config.PASSWORD.MIN_LENGTH,
+      max: this.#config.PASSWORD.MAX_LENGTH,
       required: true,
       entity: "User",
     });
@@ -151,7 +175,7 @@ class User {
     this.#rol = this.#validator.validateEnum(
       newRole,
       "role",
-      ["user", "admin"],
+      this.#config.ROLE.ALLOWED_VALUES,
       "User"
     );
     this.#updateTimestamp();
@@ -170,6 +194,21 @@ class User {
       );
     }
 
+    if (
+      this.#userTags.length >=
+      domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER
+    ) {
+      throw new ValidationError(
+        `No se pueden asignar más de ${domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER} tags por usuario`,
+        {
+          entity: "User",
+          operation: "addUserTag",
+          currentCount: this.#userTags.length,
+          maxAllowed:
+            domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER,
+        }
+      );
+    }
     const existingTag = this.#userTags.find((ut) => ut.tagId === userTag.tagId);
     if (!existingTag) {
       this.#userTags.push(userTag);
@@ -190,6 +229,27 @@ class User {
         field: "tagIds",
         operation: "addUserTagsByIds",
       });
+    }
+    const totalAfterAdd = this.#userTags.length + tagIds.length;
+    if (
+      totalAfterAdd >
+      domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER
+    ) {
+      throw new ValidationError(
+        `No se pueden asignar más de ${
+          domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER
+        } tags. Actual: ${this.#userTags.length}, Intentando agregar: ${
+          tagIds.length
+        }`,
+        {
+          entity: "User",
+          operation: "addUserTagsByIds",
+          currentCount: this.#userTags.length,
+          tryingToAdd: tagIds.length,
+          maxAllowed:
+            domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER,
+        }
+      );
     }
     tagIds.forEach((tagId) => this.addUserTagById(tagId));
   }
@@ -214,6 +274,7 @@ class User {
     return this.#userTags.some((ut) => ut.tagId === validatedTagId);
   }
 
+  
   // Getters
   get id() {
     return this.#id;
@@ -257,6 +318,15 @@ class User {
     return this.#userTags.length > 0;
   }
 
+  
+  canAddMoreTags() {
+    return this.#userTags.length < domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER;
+  }
+
+  getRemainingTagSlots() {
+    return domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER - this.#userTags.length;
+  }
+
   toJSON() {
     return {
       id: this.#id,
@@ -266,6 +336,7 @@ class User {
       createdAt: this.#createdAt.toISOString(),
       updatedAt: this.#updatedAt.toISOString(),
       userTagsCount: this.#userTags.length,
+      maxTagsAllowed: domainValidationConfig.RELATIONSHIPS.USER_TAG.MAX_TAGS_PER_USER,
       isAdmin: this.isAdmin(),
       userTags: this.#userTags.map((userTag) =>
         userTag.toJSON ? userTag.toJSON() : userTag
