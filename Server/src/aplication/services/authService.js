@@ -490,9 +490,7 @@ class AuthService {
           }
         );
 
-        return {
-          data: response,
-        };
+        return response;
       }, options.externalDbClient);
     });
   }

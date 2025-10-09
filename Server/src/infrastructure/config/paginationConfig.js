@@ -7,8 +7,8 @@ const PAGINATION_CONFIG = {
   ENTITY_LIMITS: {
     SESSIONS: 50,
     USERS: 100,
-    TASKS: 200,
-    TAGS: 100,
+    TASKS: 100,
+    TAGS: 200,
   },
 };
 

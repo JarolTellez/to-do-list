@@ -404,13 +404,10 @@ class SessionService {
           total,
           pagination.limit
         );
-
-        const sessionsResponse = sessions.map((session) =>
-          this.sessionMapper.domainToResponse(session, currentSessionId)
-        );
+        
 
         const response = this.paginationHelper.buildPaginationResponse(
-          sessionsResponse,
+          sessions,
           pagination,
           total,
           totalPages,

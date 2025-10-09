@@ -1,9 +1,12 @@
-
-const { COOKIE_OPTIONS, CLEAR_COOKIE_OPTIONS } = require('../config/cookiesConfig');
+const {
+  COOKIE_OPTIONS,
+  CLEAR_COOKIE_OPTIONS,
+} = require("../config/cookiesConfig");
 class AuthController {
-  constructor({ authService, userMapper, errorFactory }) {
+  constructor({ authService, userMapper, sessionMapper, errorFactory }) {
     this.authService = authService;
     this.userMapper = userMapper;
+    this.sessionMapper = sessionMapper;
     this.errorFactory = errorFactory;
   }
 
@@ -21,7 +24,7 @@ class AuthController {
         ip,
       });
       if (result.isNewRefreshToken) {
-         res.cookie("refreshToken", result.refreshToken, COOKIE_OPTIONS);
+        res.cookie("refreshToken", result.refreshToken, COOKIE_OPTIONS);
         console.log("Nuevo refresh token establecido en cookies");
       } else {
         console.log("Usando refresh token existente");
@@ -92,11 +95,9 @@ class AuthController {
 
   async closeAllUserSessions(req, res, next) {
     try {
-         const userId = req.user.userId;
+      const userId = req.user.userId;
 
-      const result = await this.authService.deactivateAllUserSessions(
-       userId
-      );
+      const result = await this.authService.deactivateAllUserSessions(userId);
 
       this._clearAuthCookies(res);
 
@@ -116,7 +117,7 @@ class AuthController {
     }
   }
 
-  async findUserActiveSessions(req, res, next) {
+  async getUserActiveSessions(req, res, next) {
     try {
       const accessToken = req.headers.authorization?.replace("Bearer ", "");
 
@@ -133,7 +134,23 @@ class AuthController {
         limit,
       });
 
-      return res.status(200).json(result);
+      const mappedSessions = result.sessions.map((session) =>
+        this.sessionMapper.domainToResponse(session, req.user.sessionId)
+      );
+
+      const message =
+        mappedSessions.length === 0
+          ? "No hay sesiones activas"
+          : "Sesiones activas consultadas exitosamente";
+
+      return res.status(200).json({
+        success: true,
+        message: message,
+        data: {
+          sessions: mappedSessions,
+          pagination: result.pagination,
+        },
+      });
     } catch (error) {
       this._clearAuthCookies(res);
       next(error);
@@ -143,7 +160,6 @@ class AuthController {
   _clearAuthCookies(res) {
     res.clearCookie("refreshToken", CLEAR_COOKIE_OPTIONS);
   }
-
 }
 
 module.exports = AuthController;

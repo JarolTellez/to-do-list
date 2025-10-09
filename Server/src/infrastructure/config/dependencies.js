@@ -61,10 +61,10 @@ const SessionMapper = require("../mappers/sessionMapper");
 
 const ErrorMapper = require("../../aplication/mappers/errorMapper");
 
-const TaskController = require("../../api/controladores/taskController");
-const TagController = require("../../api/controladores/tagController");
-const AuthController = require("../../api/controladores/authController");
-const UserController = require("../../api/controladores/userController");
+const TaskController = require("../../api/controllers/taskController");
+const TagController = require("../../api/controllers/tagController");
+const AuthController = require("../../api/controllers/authController");
+const UserController = require("../../api/controllers/userController");
 
 //Infraestructura
 const {
@@ -327,6 +327,7 @@ const tagController = new TagController({
 const authController = new AuthController({
   authService,
   userMapper,
+  sessionMapper
 });
 const userController = new UserController({
   userService,
