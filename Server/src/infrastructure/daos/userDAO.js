@@ -1,12 +1,34 @@
 const BaseDatabaseHandler = require("../config/baseDatabaseHandler");
 const { SORT_ORDER, USER_SORT_FIELD } = require("../constants/sortConstants");
 
+/**
+ * Data Access Object for User entity handling database operations
+ * @class UserDAO
+ * @extends BaseDatabaseHandler
+ */
 class UserDAO extends BaseDatabaseHandler {
+  /**
+   * Creates a new UserDAO instance
+   * @param {Object} dependencies - Dependencies for UserDAO
+   * @param {Object} dependencies.userMapper - Mapper for user data transformation from dbData to Domain
+   * @param {Object} dependencies.dbManager - Database manager for connection handling (prisma)
+   * @param {Object} dependencies.errorFactory - Factory for creating app errors
+   * @param {Object} dependencies.inputValidator - Validator for input parameters
+   */
   constructor({ userMapper, dbManager, errorFactory, inputValidator }) {
     super({ dbManager, inputValidator, errorFactory });
     this.userMapper = userMapper;
   }
 
+  /**
+   * Creates a new user in the database
+   * @param {User} user - User domain entity to create
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<User>} Created user domain entity
+   * @throws {ValidationError} If user data is invalid
+   * @throws {ConflictError} If username or email already exists
+   * @throws {DatabaseError} On database operation failure
+   */
   async create(user, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       try {
@@ -28,6 +50,15 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Updates an existing user's basic information (Not password)
+   * @param {User} userDomain - User domain entity with updated data
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<User>} Updated user domain entity
+   * @throws {ValidationError} If user ID or data is invalid
+   * @throws {NotFoundError} If user is not found
+   * @throws {DatabaseError} On database operation failure
+   */
   async update(userDomain, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       try {
@@ -63,6 +94,16 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Updates a user's password
+   * @param {number|string} userId - ID of the user to update
+   * @param {string} hashedPassword - New hashed password
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<User>} Updated user domain entity
+   * @throws {ValidationError} If user ID is invalid
+   * @throws {NotFoundError} If user is not found
+   * @throws {DatabaseError} On database operation failure
+   */
   async updatePassword(userId, hashedPassword, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       try {
@@ -94,6 +135,15 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Deletes a user from the database
+   * @param {number|string} id - ID of the user to delete
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<boolean>} True if deletion was successful
+   * @throws {ValidationError} If user ID is invalid
+   * @throws {ConflictError} If user has associated tasks or sessions
+   * @throws {DatabaseError} On database operation failure
+   */
   async delete(id, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       try {
@@ -115,6 +165,15 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Removes tags from a user
+   * @param {number|string} userId - ID of the user
+   * @param {number[]} tagIds - Array of tag IDs to remove
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<boolean>} True if removal was successful
+   * @throws {ValidationError} If user ID or tag IDs are invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async removeTags(userId, tagIds = [], externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       try {
@@ -139,6 +198,16 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Assigns tags to a usetr
+   * @param {number|string} userId - ID of the user
+   * @param {number[]} tagIds - Array of tag IDs to assign
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<User>} User domain entity with updated tags
+   * @throws {ValidationError} If user ID or tag IDs are invalid
+   * @throws {NotFoundError} If user is not found
+   * @throws {DatabaseError} On database operation failure
+   */
   async assignTags(userId, tagIds = [], externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       try {
@@ -207,7 +276,7 @@ class UserDAO extends BaseDatabaseHandler {
       } catch (error) {
         if (error.code === "P2025") {
           throw this.errorFactory.createNotFoundError(
-            "Usuario no encontrado para asignar tags",
+            "Usuario no encontrado para asignar etiquetas",
             {
               userId,
               prismaCode: error.code,
@@ -223,6 +292,15 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Checks if a user has specific tags
+   * @param {number|string} userId - ID of the user
+   * @param {number[]} tagIds - Array of tag IDs to check
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<number[]>} Array of tag IDs that the user has
+   * @throws {ValidationError} If user ID or tag IDs are invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async hasTags(userId, tagIds = [], externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
@@ -247,6 +325,14 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Finds a user by username
+   * @param {string} username - Username to search for
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<User|null>} User domain entity if found, null otherwise
+   * @throws {ValidationError} If username is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findByUsername(username, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
@@ -269,6 +355,15 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Finds a user by email
+   * @param {string} email - Email to search for
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<User|null>} User domain entity if found, null otherwise
+   * @throws {ValidationError} If email is invalid
+   * @throws {DatabaseError} On database operation failure
+
+   */
   async findByEmail(email, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
@@ -291,6 +386,14 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Finds a user by ID
+   * @param {number|string} id - ID of the user to find
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<User|null>} User domain entity if found, null otherwise
+   * @throws {ValidationError} If user ID is invalid
+   * @throws {DatabaseError} On database operation failureF
+   */
   async findById(id, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
@@ -309,6 +412,14 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Finds a user by ID including their tags
+   * @param {number|string} id - ID of the user to find
+   * @param {Object} [externalDbClient=null] - External Prisma transaction client
+   * @returns {Promise<User|null>} User domain entity with tags if found, null otherwise
+   * @throws {ValidationError} If user ID is invalid
+   * @throws {DatabaseError} On database operation failure
+   */
   async findByIdWithUserTags(id, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
@@ -336,6 +447,17 @@ class UserDAO extends BaseDatabaseHandler {
     }, externalDbClient);
   }
 
+  /**
+   * Finds all users with pagination and sorting
+   * @param {Object} [options={}] - Query options
+   * @param {Object} [options.externalDbClient=null] - External Prisma transaction client
+   * @param {number} [options.limit=null] - Maximum number of users to return
+   * @param {number} [options.offset=null] - Number of users to skip
+   * @param {string} [options.sortBy=USER_SORT_FIELD.CREATED_AT] - Field to sort by
+   * @param {string} [options.sortOrder=SORT_ORDER.DESC] - Sort order (ASC/DESC)
+   * @returns {Promise<User[]>} Array of user domain entities
+   * @throws {DatabaseError} On database operation failure
+   */
   async findAll({
     externalDbClient = null,
     limit = null,
