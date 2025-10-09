@@ -11,8 +11,8 @@ class TagController {
       const {
         page,
         limit,
-        sortBy = "createdAt",
-        sortOrder = "desc",
+        sortBy,
+        sortOrder,
       } = req.query;
 
       const paginatedTags = await this.tagService.getAllTagsByUserId(userId, {
