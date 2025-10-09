@@ -17,7 +17,7 @@ module.exports = (authController) => {
 
   router
     .route("/active-sessions")
-    .get(validateAccessToken, authController.findUserActiveSessions.bind(authController));
+    .get(validateAccessToken, authController.getUserActiveSessions.bind(authController));
 
   router
     .route("/close-all-sessions")

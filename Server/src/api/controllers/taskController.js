@@ -93,12 +93,12 @@ class TaskController {
     try {
       const userId = req.user.userId;
       const {
-        pendingPage = 1,
-        pendingLimit = 10,
-        completedPage = 1,
-        completedLimit = 10,
-        overduePage = 1,
-        overdueLimit = 10,
+        pendingPage,
+        pendingLimit,
+        completedPage,
+        completedLimit,
+        overduePage,
+        overdueLimit,
       } = req.query;
       const result = await this.taskService.getAllTasksByUserId(userId, {
         pendingPage: parseInt(pendingPage),

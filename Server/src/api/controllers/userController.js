@@ -11,9 +11,11 @@ class UserController {
       );
       const addedUser = await this.userService.createUser(createUserRequestDTO);
 
+      const userResponse = this.userMapper.domainToResponse(addedUser);
+
       return res.status(201).json({
         success: true,
-        data: addedUser,
+        data: userResponse,
       });
     } catch (error) {
       next(error);
@@ -30,9 +32,7 @@ class UserController {
 
       const updateUserRequestDTO =
         this.userMapper.requestDataToUpdateDTO(userData);
-      const result = await this.userService.updateUser(
-        updateUserRequestDTO
-      );
+      const result = await this.userService.updateUser(updateUserRequestDTO);
 
       const userResponse = this.userMapper.domainToResponse(result.user);
 
@@ -48,7 +48,7 @@ class UserController {
     }
   }
 
- async updateUserPassword(req, res, next) {
+  async updateUserPassword(req, res, next) {
     try {
       const userId = req.user.userId;
       const updatePasswordData = {
@@ -63,7 +63,7 @@ class UserController {
       return res.status(200).json({
         success: true,
         message: "Contrasena actualizada",
-        requiresReauth: result.sessionsClosed, 
+        requiresReauth: result.sessionsClosed,
       });
     } catch (error) {
       next(error);
@@ -73,7 +73,7 @@ class UserController {
   async deleteUser(req, res, next) {
     try {
       const userId = req.user.userId;
-      const requestingUserId = req.user.userId; 
+      const requestingUserId = req.user.userId;
 
       const result = await this.userService.deleteUser(
         userId,
