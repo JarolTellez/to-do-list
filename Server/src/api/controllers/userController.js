@@ -1,3 +1,4 @@
+const { clearAuthCookies } = require("../utils/cookieUtils");
 class UserController {
   constructor({ userService, userMapper }) {
     this.userService = userService;
@@ -36,6 +37,7 @@ class UserController {
 
       const userResponse = this.userMapper.domainToResponse(result.user);
 
+      clearAuthCookies(res);
       return res.status(200).json({
         success: true,
         message: "Usuario actualizado correctamente",
@@ -60,6 +62,7 @@ class UserController {
         updatePasswordData
       );
 
+      clearAuthCookies(res);
       return res.status(200).json({
         success: true,
         message: "Contrasena actualizada",
@@ -79,7 +82,7 @@ class UserController {
         userId,
         requestingUserId
       );
-
+      clearAuthCookies(res);
       return res.status(200).json({
         success: true,
         message: result.message,

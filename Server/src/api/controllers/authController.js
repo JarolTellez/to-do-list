@@ -1,7 +1,8 @@
 const {
-  COOKIE_OPTIONS,
-  CLEAR_COOKIE_OPTIONS,
+  COOKIE_OPTIONS
 } = require("../config/cookiesConfig");
+
+const { clearAuthCookies } = require("../utils/cookieUtils");
 class AuthController {
   constructor({ authService, userMapper, sessionMapper, errorFactory }) {
     this.authService = authService;
@@ -30,13 +31,15 @@ class AuthController {
         console.log("Usando refresh token existente");
       }
 
+         const authResponse = this.userMapper.domainToAuthResponse(result);
+
       return res.status(200).json({
         success: true,
         message: "Success auth",
-        data: result.authResponse,
+        data: authResponse,
       });
     } catch (error) {
-      this._clearAuthCookies(res);
+      clearAuthCookies(res);
       next(error);
     }
   }
@@ -46,7 +49,7 @@ class AuthController {
       const refreshTokenExistente = req.cookies.refreshToken;
 
       if (!refreshTokenExistente) {
-        return res.status(400).json({
+        return res.status(401).json({
           success: false,
           message: "No hay sesión activa",
         });
@@ -56,7 +59,7 @@ class AuthController {
         refreshTokenExistente
       );
 
-      this._clearAuthCookies(res);
+      clearAuthCookies(res);
 
       return res.status(200).json({
         success: true,
@@ -64,7 +67,7 @@ class AuthController {
         userId: result.userId,
       });
     } catch (error) {
-      this._clearAuthCookies(res);
+      clearAuthCookies(res);
 
       next(error);
     }
@@ -75,12 +78,14 @@ class AuthController {
       const refreshToken = req.cookies.refreshToken;
 
       if (!refreshToken) {
-        throw this.errorFactory.createAuthenticationError(
-          "Refresh token no proporcionado"
-        );
+        return res.status(401).json({
+          success: false,
+          message: "No hay sesión activa",
+        });
       }
 
       const result = await this.authService.refreshAccessToken(refreshToken);
+      result.user = this.userMapper.domainToResponse(result.user);
 
       return res.status(200).json({
         success: true,
@@ -88,7 +93,7 @@ class AuthController {
         data: result,
       });
     } catch (error) {
-      this._clearAuthCookies(res);
+      clearAuthCookies(res);
       next(error);
     }
   }
@@ -99,7 +104,7 @@ class AuthController {
 
       const result = await this.authService.deactivateAllUserSessions(userId);
 
-      this._clearAuthCookies(res);
+      clearAuthCookies(res);
 
       return res.status(200).json({
         success: true,
@@ -112,7 +117,7 @@ class AuthController {
         },
       });
     } catch (error) {
-      this._clearAuthCookies(res);
+      clearAuthCookies(res);
       next(error);
     }
   }
@@ -152,14 +157,11 @@ class AuthController {
         },
       });
     } catch (error) {
-      this._clearAuthCookies(res);
+      clearAuthCookies(res);
       next(error);
     }
   }
 
-  _clearAuthCookies(res) {
-    res.clearCookie("refreshToken", CLEAR_COOKIE_OPTIONS);
-  }
 }
 
 module.exports = AuthController;

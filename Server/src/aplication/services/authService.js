@@ -103,15 +103,13 @@ class AuthService {
           sessionId: session.id,
         });
 
-        const authResponse = this.userMapper.domainToAuthResponse({
+
+
+        return {
           userDomain: user,
           accessToken,
           expiresIn: this.appConfig.jwt.access.expiresIn,
           expiresAt: session.expiresAt,
-        });
-
-        return {
-          authResponse,
           refreshToken: refreshTokenToUse,
           isNewRefreshToken: isNewRefreshToken,
         };
@@ -198,6 +196,7 @@ class AuthService {
 
         return {
           accessToken: accessToken,
+          user,
           expiresIn: this.appConfig.jwt.access.expiresIn,
           tokenType: "Bearer",
           sessionId: sessionValidation.id,
