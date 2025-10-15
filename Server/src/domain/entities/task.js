@@ -20,6 +20,7 @@ class Task {
   #taskTags;
   #validator;
   #config;
+  #skipValidations;
 
   constructor({
     id = null,
@@ -32,6 +33,7 @@ class Task {
     userId,
     priority = null,
     taskTags = [],
+    skipValidatios = false,
   }) {
     this.#validator = new DomainValidators();
     this.#config = domainValidationConfig.TASK;
@@ -65,7 +67,9 @@ class Task {
     this.#priority = this.#validatePriority(priority);
     this.#taskTags = this.#validateTaskTags(taskTags);
 
-    this.#validateBusinessRules();
+    if (!this.#skipValidations) {
+      this.#validateBusinessRules();
+    }
   }
 
   #validateName(name) {
@@ -86,24 +90,26 @@ class Task {
       entity: "Task",
     });
 
-    const minFutureDate = new Date();
-    minFutureDate.setMinutes(
-      minFutureDate.getMinutes() +
-        this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES
-    );
-
-    if (date < minFutureDate) {
-      throw new ValidationError(
-        `La fecha programada debe ser al menos ${
+    if (!this.#skipValidations) {
+      const minFutureDate = new Date();
+      minFutureDate.setMinutes(
+        minFutureDate.getMinutes() +
           this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES
-        } minutos en el futuro`,
-        {
-          entity: "Task",
-          field: "scheduledDate",
-          value: date,
-          minFutureMinutes: this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES,
-        }
       );
+
+      if (date < minFutureDate) {
+        throw new ValidationError(
+          `La fecha programada debe ser al menos ${
+            this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES
+          } minutos en el futuro`,
+          {
+            entity: "Task",
+            field: "scheduledDate",
+            value: date,
+            minFutureMinutes: this.#config.SCHEDULED_DATE.MIN_FUTURE_MINUTES,
+          }
+        );
+      }
     }
 
     return date;
@@ -112,10 +118,24 @@ class Task {
   #validatePriority(priority) {
     if (priority === null || priority === undefined) return null;
 
+    let priorityNumber = priority;
+    if (typeof priority !== "number") {
+      priorityNumber = Number(priority);
+
+      if (isNaN(priorityNumber)) {
+        throw new ValidationError(`La prioridad debe ser un número válido`, {
+          entity: "Task",
+          field: "priority",
+          value: priority,
+          expected: "number",
+          received: typeof priority,
+        });
+      }
+    }
+
     if (
-      typeof priority !== "number" ||
-      priority < this.#config.PRIORITY.MIN ||
-      priority > this.#config.PRIORITY.MAX
+      priorityNumber < this.#config.PRIORITY.MIN ||
+      priorityNumber > this.#config.PRIORITY.MAX
     ) {
       throw new ValidationError(
         `La prioridad debe ser un número entre ${this.#config.PRIORITY.MIN} y ${
@@ -124,17 +144,18 @@ class Task {
         {
           entity: "Task",
           field: "priority",
-          value: priority,
+          value: priorityNumber,
           min: this.#config.PRIORITY.MIN,
           max: this.#config.PRIORITY.MAX,
         }
       );
     }
 
-    return priority;
+    return priorityNumber;
   }
 
   #validateBusinessRules() {
+    if (this.#skipValidations) return;
     if (
       this.#scheduledDate &&
       this.#scheduledDate < new Date() &&
@@ -439,7 +460,7 @@ class Task {
     };
   }
 
-  static create({
+  static createNew({
     name,
     description = "",
     userId,
@@ -457,6 +478,14 @@ class Task {
       createdAt: new Date(),
       updatedAt: new Date(),
       taskTags: taskTags,
+      skipValidatios: false
+    });
+  }
+
+   static createExisting(data) {
+    return new Task({
+      ...data,
+      skipValidations: true
     });
   }
 }

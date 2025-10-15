@@ -71,12 +71,12 @@ class TaskMapper {
     const taskTags = createDTO.tags.map((tt) =>
       this.taskTagMapper.createRequestDTOToDomain(tt)
     );
-    return this.Task.create({
+    return this.Task.createNew({
       name: createDTO.name,
       description: createDTO.description,
       scheduledDate: createDTO.scheduledDate
         ? this.dateParser.parseToDate(createDTO.scheduledDate)
-        : existingTask.scheduledDate,
+        : null,
       priority: createDTO.priority,
       userId: createDTO.userId,
       taskTags,
@@ -169,7 +169,7 @@ class TaskMapper {
    * @returns {Task} Task domain entity
    */
   dbToDomain(row) {
-    return new this.Task({
+    return  this.Task.createExisting({
       id: row.id,
       name: row.name,
       description: row.description,
@@ -200,7 +200,7 @@ class TaskMapper {
       });
     }
 
-    return new this.Task({
+    return this.Task.createExisting({
       id: dbTask.id,
       name: dbTask.name,
       description: dbTask.description,
