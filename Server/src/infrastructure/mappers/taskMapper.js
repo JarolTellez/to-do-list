@@ -199,8 +199,7 @@ class TaskMapper {
         }
       });
     }
-
-    return this.Task.createExisting({
+    const mappedTask= this.Task.createExisting({
       id: dbTask.id,
       name: dbTask.name,
       description: dbTask.description,
@@ -214,6 +213,7 @@ class TaskMapper {
       priority: dbTask.priority,
       taskTags: taskTags,
     });
+    return mappedTask;
   }
 
   /**
@@ -236,6 +236,7 @@ class TaskMapper {
       createdAt: taskDomain.createdAt,
       updatedAt: taskDomain.updatedAt,
       isCompleted: taskDomain.isCompleted,
+      isOverdue: taskDomain.isOverdue,
       userId: taskDomain.userId,
       priority: taskDomain.priority,
       taskTags,

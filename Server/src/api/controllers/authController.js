@@ -126,7 +126,7 @@ class AuthController {
     try {
       const accessToken = req.headers.authorization?.replace("Bearer ", "");
 
-      const { page, limit } = req.query;
+      const { page, limit, sortBy, sortOrder } = req.query;
       if (!accessToken) {
         return res.status(401).json({
           success: false,
@@ -135,8 +135,10 @@ class AuthController {
       }
 
       const result = await this.authService.getUserActiveSessions(accessToken, {
-        page,
-        limit,
+        page: page? parseInt(page): undefined,
+        limit:limit? parseInt(limit): undefined,
+        sortBy,
+        sortOrder,
       });
 
       const mappedSessions = result.sessions.map((session) =>

@@ -1,0 +1,356 @@
+.user-modal-content-wrapper {
+  max-width: 600px;
+  background: white !important;
+}
+
+.user-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px 0;
+  border-bottom: none;
+}
+
+.user-modal-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5em;
+}
+
+.user-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-modal-close-btn:hover {
+  color: #333;
+  background: #f8f9fa;
+  border-radius: 50%;
+}
+
+.user-modal-tabs-container {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0 25px;
+  margin-top: 15px;
+}
+
+.user-tab-btn {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.user-tab-btn:hover {
+  color: #007bff;
+}
+
+.user-tab-active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  font-weight: 600;
+}
+
+.user-modal-main-content {
+  padding: 20px 25px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.user-tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Form Styles */
+.user-form-group {
+  margin-bottom: 15px;
+}
+
+.user-form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.user-form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.user-form-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.user-form-group.error .user-form-input {
+  border-color: #dc3545;
+}
+
+.user-form-error {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Button styles */
+.user-btn-primary {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-btn-primary:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.user-btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-btn-secondary:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.user-btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-btn-danger:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.user-btn-danger:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.user-btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Sessions atyles */
+.user-sessions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.user-sessions-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.user-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.user-session-item.current {
+  background: #e7f3ff;
+  border-color: #007bff;
+}
+
+.user-session-info {
+  flex: 1;
+}
+
+.user-session-platform {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-current-badge {
+  background: #28a745;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.user-session-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-session-details span {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Modal actions */
+.user-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 25px;
+  border-top: 1px solid #dee2e6;
+  background: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+}
+
+.user-modal-close-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-modal-close-button:hover {
+  background: #5a6268;
+}
+
+.user-modal-logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-modal-logout-btn:hover {
+  background: #c82333;
+}
+
+/* Loading state */
+.user-loading {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
+
+
+/* Form layout */
+.user-form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.user-form-buttons .user-btn-primary,
+.user-form-buttons .user-btn-secondary {
+  flex: 1;
+}
+
+/* Disabled states */
+.user-btn-primary:disabled,
+.user-btn-secondary:disabled,
+.user-btn-danger:disabled,
+.user-modal-close-button:disabled,
+.user-modal-logout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .user-modal-content-wrapper {
+    max-width: 95%;
+    margin: 10px;
+  }
+  
+  .user-modal-main-content {
+    padding: 15px;
+  }
+  
+  .user-modal-tabs-container {
+    padding: 0 15px;
+  }
+  
+  .user-modal-actions {
+    padding: 15px;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .user-session-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .user-sessions-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .user-form-buttons {
+    flex-direction: column;
+  }
+}

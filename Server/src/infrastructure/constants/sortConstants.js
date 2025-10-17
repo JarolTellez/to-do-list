@@ -1,59 +1,91 @@
-const SORT_ORDER = Object.freeze({
-  ASC: "asc",
-  DESC: "desc",
-});
+const SORT_CONSTANTS = {
+  SORT_ORDER: {
+    ASC: "asc",
+    DESC: "desc",
+  },
 
-const TAG_SORT_FIELD = Object.freeze({
-  ID: "id",
-  NAME: "name",
-  DESCRIPTION: "description",
-  CREATED_AT: "createdAt", 
-});
+  ENTITIES: {
+    TASK: {
+      FIELDS: {
+        ID: "id",
+        NAME: "name",
+        DESCRIPTION: "description",
+        SCHEDULED_DATE: "scheduledDate",  
+        IS_COMPLETED: "isCompleted",         
+        PRIORITY: "priority",     
+        CREATED_AT: "createdAt",          
+        LAST_UPDATE_DATE: "lastUpdateDate",
+      },
+      DEFAULTS: {
+        SORT_BY: "lastUpdateDate",
+        SORT_ORDER: "desc"
+      }
+    },
 
-const USER_SORT_FIELD = Object.freeze({
-  ID: "id",
-  USER_NAME: "username",   
-  EMAIL: "email",
-  CREATED_AT: "createdAt",  
-  UPDATED_AT: "updatedAt",  
-});
+    TAG: {
+      FIELDS: {
+        ID: "id",
+        NAME: "name",
+        DESCRIPTION: "description",
+        CREATED_AT: "createdAt", 
+      },
+      DEFAULTS: {
+        SORT_BY: "name",
+        SORT_ORDER: "asc"
+      }
+    },
 
-const TASK_SORT_FIELD = Object.freeze({
-  ID: "id",
-  NAME: "name",
-  DESCRIPTION: "description",
-  SCHEDULED_DATE: "scheduledDate",  
-  IS_COMPLETED: "isCompleted",         
-  PRIORITY: "priority",     
-  CREATED_AT: "createdAt",          
-  LAST_UPDATE_DATE: "lastUpdateDate",
-});
+    USER: {
+      FIELDS: {
+        ID: "id",
+        USER_NAME: "username",   
+        EMAIL: "email",
+        CREATED_AT: "createdAt",  
+        UPDATED_AT: "updatedAt",  
+      },
+      DEFAULTS: {
+        SORT_BY: "username",
+        SORT_ORDER: "asc"
+      }
+    },
 
-const SESSION_SORT_FIELD = Object.freeze({
-  ID: "id",
-  REFRESH_TOKEN_HASH: "refreshTokenHash", 
-  USER_AGENT: "userAgent",                  
-  IP: "ip",                          
-  EXPIRES_AT: "expiresAt",                     
-  CREATED_AT: "createdAt",          
-});
+    SESSION: {
+      FIELDS: {
+        ID: "id",
+        REFRESH_TOKEN_HASH: "refreshTokenHash", 
+        USER_AGENT: "userAgent",                  
+        IP: "ip",                          
+        EXPIRES_AT: "expiresAt",                     
+        CREATED_AT: "createdAt",          
+      },
+      DEFAULTS: {
+        SORT_BY: "createdAt",
+        SORT_ORDER: "desc"
+      }
+    },
 
-const TASK_TAG_SORT_FIELD = Object.freeze({
-  ID: "id", 
-  CREATED_AT: "createdAt",          
-});
+    TASK_TAG: {
+      FIELDS: {
+        ID: "id", 
+        CREATED_AT: "createdAt",          
+      },
+      DEFAULTS: {
+        SORT_BY: "createdAt",
+        SORT_ORDER: "asc"
+      }
+    },
 
-const USER_TAG_SORT_FIELD = Object.freeze({
-  ID: "id", 
-  CREATED_AT: "createdAt",          
-});
-
-module.exports = {
-  SORT_ORDER,
-  TAG_SORT_FIELD,
-  USER_SORT_FIELD,
-  TASK_SORT_FIELD,
-  SESSION_SORT_FIELD,
-  TASK_TAG_SORT_FIELD,
-  USER_TAG_SORT_FIELD,
+    USER_TAG: {
+      FIELDS: {
+        ID: "id", 
+        CREATED_AT: "createdAt",          
+      },
+      DEFAULTS: {
+        SORT_BY: "createdAt",
+        SORT_ORDER: "asc"
+      }
+    }
+  }
 };
+
+module.exports = SORT_CONSTANTS;

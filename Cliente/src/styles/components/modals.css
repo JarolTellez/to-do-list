@@ -1,0 +1,243 @@
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modalAppear 0.3s;
+  padding: 0;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Modal container */
+.modal-form-container {
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  padding: 25px;
+  border: none;
+  border-radius: 0;
+  gap: 20px;
+  min-height: 500px;
+}
+
+/* Inputs */
+.modal-inputs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal-task-name, .modal-task-description {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+}
+
+.modal-task-name:focus, .modal-task-description:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.modal-task-name:hover, .modal-task-description:hover {
+  border-color: #ced4da;
+}
+
+.modal-task-description {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+/* Labels */
+.modal-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+/* Input datetime-local */
+.modal-datetime-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+}
+
+.modal-datetime-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* Priority field */
+.modal-priority-container {
+  margin: 15px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.modal-priority-container label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.modal-priority-selector {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.modal-priority-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  flex: 1;
+}
+
+.modal-priority-option input {
+  display: none;
+}
+
+.modal-priority-label {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e9ecef;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-priority-option input:checked + .modal-priority-label {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.modal-priority-option:hover .modal-priority-label {
+  border-color: #007bff;
+}
+
+/* Modal buttons */
+.modal-buttons-container {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.modal-add-btn, .modal-cancel-btn, .modal-clear-btn, .modal-delete-btn {
+  padding: 12px 20px;
+  height: 50px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.modal-add-btn {
+  background: #28a745;
+  color: white;
+}
+
+.modal-add-btn:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.modal-cancel-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.modal-cancel-btn:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.modal-clear-btn {
+  background: #ffc107;
+  color: #212529;
+}
+
+.modal-clear-btn:hover:not(:disabled) {
+  background: #e0a800;
+  transform: translateY(-1px);
+}
+
+.modal-delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.modal-delete-btn:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* Disabled states */
+.modal-add-btn:disabled,
+.modal-cancel-btn:disabled,
+.modal-clear-btn:disabled,
+.modal-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Error messages */
+.modal-error-message {
+  color: #dc3545;
+  font-size: 12px;
+  margin: 5px 0 0 0;
+  font-weight: 500;
+}

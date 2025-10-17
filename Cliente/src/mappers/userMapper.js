@@ -1,11 +1,36 @@
-import {User} from "../models/userModel.js";
+import { User } from '../models/user';
 
-export function mapApiToUsuario (apiDatos){
+export const userMappers = {
 
+  apiToUser: (apiData) => {
     return new User(
-        apiDatos.id,
-        apiDatos.userName,
-        apiDatos.email,
-       // apiDatos.password,
+      apiData.id,
+      apiData.username,
+      apiData.email,
+      apiData.rol || 'user',
+      apiData.createdAt,
+      apiData.updatedAt,
+      apiData.userTagsCount || 0,
+      apiData.tasksCount || 0,
+      apiData.userTags || [],
+      apiData.tasks || []
     );
-}
+  },
+
+ 
+  userToUpdateDTO: (user) => {
+    return {
+      username: user.username,
+      email: user.email
+    };
+  },
+
+
+  inputToRegisterDTO: (userInput) => {
+    return {
+      username: userInput.username,
+      email: userInput.email,
+      password: userInput.password
+    };
+  }
+};

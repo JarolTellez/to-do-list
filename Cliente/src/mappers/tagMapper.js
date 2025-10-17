@@ -1,13 +1,50 @@
-import { Tag } from "../models/tagModel.js";
+import { Tag } from '../models/tag';
 
-export function mapApiToTagModel(apiDatos) {
-  return new Tag(
-    apiDatos.id,
-    apiDatos.name,
-    apiDatos.description || null,
-    true,
-    false,
-    apiDatos.userId,
-    apiDatos.taskTagId
-  );
-}
+export const tagMappers = {
+
+  apiToTag: (apiData) => {
+    
+    if (apiData.tag) {
+      return new Tag({
+        id: apiData.tag.id,
+        name: apiData.tag.name,
+        description: apiData.tag.description || null,
+        createdAt: apiData.tag.createdAt
+      });
+    }
+    else {
+      return new Tag({
+        id: apiData.id,
+        name: apiData.name,
+        description: apiData.description || null,
+        createdAt: apiData.createdAt
+      });
+    }
+  },
+
+
+  inputToTag: (tagInput) => {
+    return new Tag({
+      id: tagInput.id || null,
+      name: tagInput.name,
+      description: tagInput.description || null,
+      createdAt: tagInput.createdAt ? new Date(tagInput.createdAt) : new Date()
+    });
+  },
+
+  tagToCreateDTO: (tag) => {
+    return {
+      name: tag.name,
+      description: tag.description
+    };
+  },
+
+ 
+  tagToUpdateDTO: (tag) => {
+    return {
+      id: tag.id,
+      name: tag.name,
+      description: tag.description
+    };
+  }
+};

@@ -1,4 +1,4 @@
-class Tag {
+export class Tag {
   constructor({ id, name, description, createdAt }) {
     this.id = id;
     this.name = name;

@@ -512,16 +512,16 @@ class UserService {
           return [];
         }
 
-        // make suree all tags exist in db, if not creates them
+        // Make suree all tags exist in db, if not creates them
         const tagIds = await this.tagService.processMixedTags(
           mixedTags,
           dbClient
         );
 
-        // make sure all taks belongs to user in userTag db, if not creates them
+        // Make sure all taks belongs to user in userTag db, if not creates them
         await this.ensureUserHasTags(userId, tagIds, dbClient);
 
-        //verify user is owner of all tags defined
+        //Verify user is owner of all tags defined
         await this.validateUserOwnsTags(userId, tagIds, dbClient);
         return tagIds;
       }, externalDbClient);

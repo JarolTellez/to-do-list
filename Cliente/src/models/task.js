@@ -1,4 +1,4 @@
-class Task {
+export class Task {
   constructor({
     id,
     name,
@@ -7,6 +7,7 @@ class Task {
     createdAt,
     updatedAt,
     isCompleted = false,
+    isOverdue = false,
     userId,
     priority,
     taskTags = [],
@@ -18,6 +19,7 @@ class Task {
     this.createdAt = createdAt ? new Date(createdAt) : new Date();
     this.updatedAt = updatedAt ? new Date(updatedAt) : new Date();
     this.isCompleted = isCompleted;
+    this.isOverdue = isOverdue;
     this.userId = userId;
     this.priority = priority;
     this.taskTags = taskTags.map((tag) => new TaskTag(tag));

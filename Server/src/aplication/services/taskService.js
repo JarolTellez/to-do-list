@@ -10,6 +10,7 @@ class TaskService {
     dbManager,
     errorFactory,
     validator,
+    sortValidator,
     appConfig,
     paginationHelper,
     paginationConfig,
@@ -25,6 +26,7 @@ class TaskService {
     this.userTagService = userTagService;
     this.errorFactory = errorFactory;
     this.validator = validator;
+    this.sortValidator = sortValidator;
     this.appConfig = appConfig;
     this.paginationHelper = paginationHelper;
     this.paginationConfig = paginationConfig;
@@ -69,7 +71,6 @@ class TaskService {
           taskDomain.addTaskTag(taskTag);
         });
 
-        // save task in db
         const newTask = await this.taskDAO.createWithTags(taskDomain, dbClient);
         if (!newTask) {
           throw this.errorFactory.createDatabaseError(
@@ -91,11 +92,8 @@ class TaskService {
   }
 
   async updateTask(updateTaskRequestDTO, externalDbClient = null) {
-    console.log("DTO: ", updateTaskRequestDTO);
     return this.errorMapper.executeWithErrorMapping(async () => {
-      this.validator.validateRequired(["id", "userId"], 
-        updateTaskRequestDTO,
-      );
+      this.validator.validateRequired(["id", "userId"], updateTaskRequestDTO);
 
       return this.dbManager.withTransaction(async (dbClient) => {
         const existingTask = await this.taskDAO.findWithTagsByIdAndUserId(
@@ -265,9 +263,9 @@ class TaskService {
 
         if (!task) {
           throw this.errorFactory.createNotFoundError("Tarea no encontrada", {
-             taskId: taskId,
+            taskId: taskId,
             userId: userId,
-            operation: "getTaskById"
+            operation: "getTaskById",
           });
         }
 
@@ -307,104 +305,62 @@ class TaskService {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {
         const {
-          pendingPage,
-          pendingLimit,
-          completedPage,
-          completedLimit,
-          overduePage,
-          overdueLimit,
+          page = this.paginationConfig.DEFAULT_PAGE,
+          limit = this.paginationConfig.DEFAULT_LIMIT,
+          isCompleted,
+          scheduledDateBefore,
+          scheduledDateAfter,
+          sortBy,
+          sortOrder,
         } = options;
 
-        const pendingPagination = this.paginationHelper.calculatePagination(
-          pendingPage,
-          pendingLimit,
+        const validatedSort = this.sortValidator.validateAndNormalizeSortParams(
+          "TASK",
+          { sortBy, sortOrder }
+        );
+        const pagination = this.paginationHelper.calculatePagination(
+          page,
+          limit,
           this.paginationConfig.ENTITY_LIMITS.TASKS,
           this.paginationConfig.DEFAULT_PAGE,
           this.paginationConfig.DEFAULT_LIMIT
         );
 
-        const completedPagination = this.paginationHelper.calculatePagination(
-          completedPage,
-          completedLimit,
-          this.paginationConfig.ENTITY_LIMITS.TASKS,
-          this.paginationConfig.DEFAULT_PAGE,
-          this.paginationConfig.DEFAULT_LIMIT
+        const tasks = await this.taskDAO.findAllWithTagsByUserId({
+          userId,
+          isCompleted,
+          scheduledDateBefore,
+          scheduledDateAfter,
+          sortBy: validatedSort.sortBy,
+          sortOrder: validatedSort.sortOrder,
+          limit: pagination.limit,
+          offset: pagination.offset,
+          externalDbClient: dbClient,
+        });
+
+        const totalCount = await this.taskDAO.countByUserId(
+          {
+            userId,
+            isCompleted,
+            scheduledDateBefore,
+            scheduledDateAfter,
+          },
+          dbClient
         );
 
-        const overduePagination = this.paginationHelper.calculatePagination(
-          overduePage,
-          overdueLimit,
-          this.paginationConfig.ENTITY_LIMITS.TASKS,
-          this.paginationConfig.DEFAULT_PAGE,
-          this.paginationConfig.DEFAULT_LIMIT
+        const totalPages = this.paginationHelper.calculateTotalPages(
+          totalCount,
+          pagination.limit
         );
 
-        const [pendingTasks, completedTasks, overdueTasks] = await Promise.all([
-          this.taskDAO.findAllPendingByUserId(
-            {
-              userId,
-              limit: pendingPagination.limit,
-              offset: pendingPagination.offset,
-            },
-            dbClient
-          ),
-          this.taskDAO.findAllCompletedByUserId(
-            {
-              userId,
-              limit: completedPagination.limit,
-              offset: completedPagination.offset,
-            },
-            dbClient
-          ),
 
-          this.taskDAO.findAllOverdueByUserId(
-            {
-              userId,
-              limit: overduePagination.limit,
-              offset: overduePagination.offset,
-            },
-            dbClient
-          ),
-        ]);
-
-        const [pendingTotal, completedTotal, overdueTotal] = await Promise.all([
-          this.taskDAO.countByUserId({ userId, isCompleted: false }, dbClient),
-          this.taskDAO.countByUserId({ userId, isCompleted: true }, dbClient),
-          this.taskDAO.countOverdueByUserId(userId, dbClient),
-        ]);
-
-        return {
-          pendingTasks: this.paginationHelper.buildPaginationResponse(
-            pendingTasks,
-            pendingPagination,
-            pendingTotal,
-            this.paginationHelper.calculateTotalPages(
-              pendingTotal,
-              pendingPagination.limit
-            ),
-            "tasks"
-          ),
-          completedTasks: this.paginationHelper.buildPaginationResponse(
-            completedTasks,
-            completedPagination,
-            completedTotal,
-            this.paginationHelper.calculateTotalPages(
-              completedTotal,
-              completedPagination.limit
-            ),
-            "tasks"
-          ),
-          overdueTasks: this.paginationHelper.buildPaginationResponse(
-            overdueTasks,
-            overduePagination,
-            overdueTotal,
-            this.paginationHelper.calculateTotalPages(
-              overdueTotal,
-              overduePagination.limit
-            ),
-            "tasks"
-          ),
-        };
+        return this.paginationHelper.buildPaginationResponse(
+          tasks,
+          pagination,
+          totalCount,
+          totalPages,
+          "tasks"
+        );
       }, externalDbClient);
     });
   }

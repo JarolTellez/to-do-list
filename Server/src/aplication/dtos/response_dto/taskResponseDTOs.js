@@ -1,5 +1,5 @@
 class TaskResponseDTO {
-  constructor({ id, name, description, scheduledDate, createdAt, updatedAt, isCompleted, userId, priority, taskTags }) {
+  constructor({ id, name, description, scheduledDate, createdAt, updatedAt, isCompleted, isOverdue, userId, priority, taskTags }) {
     this.id = id;
     this.name = name;
     this.description = description;
@@ -7,6 +7,7 @@ class TaskResponseDTO {
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.isCompleted = isCompleted;
+    this.isOverdue = isOverdue;
     this.userId = userId;
     this.priority = priority;
     this.taskTags = taskTags || [];

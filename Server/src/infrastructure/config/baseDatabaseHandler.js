@@ -7,12 +7,10 @@ class BaseDatabaseHandler {
    * Creates a new BaseDatabaseHandler instance
    * @param {Object} dependencies - Dependencies for database operations
    * @param {PrismaManager} dependencies.dbManager - Database manager instance
-   * @param {InputValidator} dependencies.inputValidator - Input validator instance
    * @param {ErrorFactory} dependencies.errorFactory - Error factory instance
    */
-  constructor({ dbManager, inputValidator, errorFactory }) {
+  constructor({ dbManager, errorFactory }) {
     this.dbManager = dbManager;
-    this.inputValidator = inputValidator;
     this.errorFactory = errorFactory;
   }
 
@@ -24,31 +22,6 @@ class BaseDatabaseHandler {
   async getPrisma(externalTx = null) {
     if (externalTx) return externalTx;
     return this.dbManager.getClient();
-  }
-
-  /**
-   * Builds sort options for database queries
-   * @param {string} sortBy - Field to sort by
-   * @param {string} sortOrder - Sort order ('asc' or 'desc')
-   * @param {Object} validSortFields - Object containing valid sort field values
-   * @returns {Object} Prisma orderBy options object
-   * @throws {ValidationError} If sort field or order is invalid
-   */
-  _buildSortOptions(sortBy, sortOrder, validSortFields) {
-    if (!sortBy || !validSortFields) return {};
-
-    const { safeField } = this.inputValidator.validateSortField(
-      sortBy,
-      validSortFields,
-      "sort field"
-    );
-    const { safeOrder } = this.inputValidator.validateSortOrder(sortOrder);
-
-    return {
-      orderBy: {
-        [safeField]: safeOrder.toLowerCase(),
-      },
-    };
   }
 
   /**

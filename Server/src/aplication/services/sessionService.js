@@ -11,6 +11,7 @@ class SessionService {
     dbManager,
     errorFactory,
     validator,
+    sortValidator,
     appConfig,
     paginationHelper,
     paginationConfig,
@@ -22,6 +23,7 @@ class SessionService {
     this.sessionMapper = sessionMapper;
     this.errorFactory = errorFactory;
     this.validator = validator;
+    this.sortValidator = sortValidator;
     this.appConfig = appConfig;
     this.paginationHelper = paginationHelper;
     this.paginationConfig = paginationConfig;
@@ -279,52 +281,52 @@ class SessionService {
   }
 
   async manageSessionLimit(userId, maxSessions = 10, externalDbClient = null) {
-      return this.errorMapper.executeWithErrorMapping(async () => {
-         this.validator.validateRequired(["userId"], { userId });
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const activeCount = await this.sessionDAO.countAllByUserIdAndIsActive(
-        userId,
-        true,
-        dbClient
-      );
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(["userId"], { userId });
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const activeCount = await this.sessionDAO.countAllByUserIdAndIsActive(
+          userId,
+          true,
+          dbClient
+        );
 
-      if (activeCount >= maxSessions) {
-        const deactivated = await this.sessionDAO.deactivateOldestByUserId(
+        if (activeCount >= maxSessions) {
+          const deactivated = await this.sessionDAO.deactivateOldestByUserId(
+            userId,
+            dbClient
+          );
+
+          return {
+            deactivated: deactivated,
+            activeCount: activeCount - deactivated,
+            maxSessions: maxSessions,
+            hadToDeactivate: true,
+          };
+        }
+
+        return {
+          deactivated: 0,
+          activeCount: activeCount,
+          maxSessions: maxSessions,
+          hadToDeactivate: false,
+        };
+      }, externalDbClient);
+    });
+  }
+
+  async deactivateAllUserSessions(userId, externalDbClient = null) {
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const result = await this.sessionDAO.deactivateAllByUserId(
           userId,
           dbClient
         );
 
         return {
-          deactivated: deactivated,
-          activeCount: activeCount-deactivated,
-          maxSessions: maxSessions,
-          hadToDeactivate: true,
+          deactivated: result,
         };
-      }
-
-      return {
-        deactivated: 0,
-        activeCount: activeCount,
-        maxSessions: maxSessions,
-        hadToDeactivate: false,
-      };
-    }, externalDbClient);
-  });
-  }
-
-  async deactivateAllUserSessions(userId, externalDbClient = null) {
-      return this.errorMapper.executeWithErrorMapping(async () => {
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const result = await this.sessionDAO.deactivateAllByUserId(
-        userId,
-        dbClient
-      );
-
-      return {
-        deactivated: result,
-      };
-    }, externalDbClient);
-  });
+      }, externalDbClient);
+    });
   }
 
   async getSessionById(sessionId, externalDbClient = null) {
@@ -336,7 +338,7 @@ class SessionService {
         if (!session) {
           throw this.errorFactory.createNotFoundError("Sesión no encontrada", {
             sessionId: sessionId,
-            operation: "getSessionById"
+            operation: "getSessionById",
           });
         }
         return session;
@@ -345,35 +347,49 @@ class SessionService {
   }
 
   async deactivateSpecificSession(sessionId, externalDbClient = null) {
-        return this.errorMapper.executeWithErrorMapping(async () => {
-    this.validator.validateRequired(["sessionId"], {
-      sessionId,
-    });
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      this.validator.validateRequired(["sessionId"], {
+        sessionId,
+      });
 
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const result = await this.sessionDAO.deactivate(sessionId, dbClient);
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const result = await this.sessionDAO.deactivate(sessionId, dbClient);
 
-       if (!result) {
+        if (!result) {
           throw this.errorFactory.createDatabaseError(
             "Error al desactivar la sessión en la base de datos",
             {
               sessionId: sessionId,
-              operation: "deactivateSpecificSession"
+              operation: "deactivateSpecificSession",
             }
           );
         }
-      return {
-        success: result,
-      };
-    }, externalDbClient);
-  });
+        return {
+          success: result,
+        };
+      }, externalDbClient);
+    });
   }
 
-  async getAllUserActiveSessions(userId, currentSessionId, options = {}) {
+  async getAllUserActiveSessions(
+    userId,
+    currentSessionId,
+    options = {},
+    externalDbClient = null
+  ) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["userId"], { userId });
-      const { page, limit, offset, externalDbClient = null } = options;
+      const {
+        page = this.paginationConfig.DEFAULT_PAGE,
+        limit = this.paginationConfig.DEFAULT_LIMIT,
+        sortBy,
+        sortOrder,
+      } = options;
 
+      const validatedSort = this.sortValidator.validateAndNormalizeSortParams(
+        "SESSION",
+        { sortBy, sortOrder }
+      );
       const pagination = this.paginationHelper.calculatePagination(
         page,
         limit,
@@ -383,18 +399,16 @@ class SessionService {
       );
 
       return this.dbManager.forRead(async (dbClient) => {
-        // get paginated sessions
         const sessions = await this.sessionDAO.findAllByUserIdAndIsActive({
           userId: userId,
           active: true,
           limit: pagination.limit,
           offset: pagination.offset,
-          sortBy: SESSION_SORT_FIELD.CREATED_AT,
-          sortOrder: SORT_ORDER.DESC,
+          sortBy: validatedSort.sortBy,
+          sortOrder: validatedSort.sortOrder,
           externalDbClient: dbClient,
         });
 
-        // get total sessions
         const total = await this.sessionDAO.countAllByUserIdAndIsActive(
           userId,
           true,
@@ -404,7 +418,6 @@ class SessionService {
           total,
           pagination.limit
         );
-        
 
         const response = this.paginationHelper.buildPaginationResponse(
           sessions,
