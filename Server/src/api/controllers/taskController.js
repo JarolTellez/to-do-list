@@ -29,7 +29,7 @@ class TaskController {
   async deleteTask(req, res, next) {
     try {
       const userId = req.user.userId;
-      const { taskId } = req.body;
+      const { taskId } = req.body.data || req.body;
       await this.taskService.deleteTask(taskId, userId);
 
       return res.status(200).json({
@@ -93,27 +93,26 @@ class TaskController {
     try {
       const userId = req.user.userId;
       const {
-        pendingPage,
-        pendingLimit,
-        completedPage,
-        completedLimit,
-        overduePage,
-        overdueLimit,
+        page,
+        limit,
+        isCompleted,
+        scheduledDateBefore,
+        scheduledDateAfter,
+        sortBy,
+        sortOrder,
       } = req.query;
       const result = await this.taskService.getAllTasksByUserId(userId, {
-        pendingPage: parseInt(pendingPage),
-        pendingLimit: parseInt(pendingLimit),
-        completedPage: parseInt(completedPage),
-        completedLimit: parseInt(completedLimit),
-        overduePage: parseInt(overduePage),
-        overdueLimit: parseInt(overdueLimit),
+        page: page ? parseInt(page) : undefined,
+        limit: limit ? parseInt(limit) : undefined,
+        isCompleted:
+          isCompleted !== undefined ? isCompleted === "true" : undefined,
+        scheduledDateBefore,
+        scheduledDateAfter,
+        sortBy,
+        sortOrder,
       });
 
-      const mappedResult = {
-        pendingTasks: this._mapPaginationResponse(result.pendingTasks),
-        completedTasks: this._mapPaginationResponse(result.completedTasks),
-        overdueTasks: this._mapPaginationResponse(result.overdueTasks),
-      };
+      const mappedResult = this._mapPaginationResponse(result);
 
       return res.status(200).json({
         success: true,

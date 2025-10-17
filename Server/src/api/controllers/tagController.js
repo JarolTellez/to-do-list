@@ -16,8 +16,8 @@ class TagController {
       } = req.query;
 
       const paginatedTags = await this.tagService.getAllTagsByUserId(userId, {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: page? parseInt(page): undefined,
+        limit:limit? parseInt(limit): undefined,
         sortBy,
         sortOrder,
       });

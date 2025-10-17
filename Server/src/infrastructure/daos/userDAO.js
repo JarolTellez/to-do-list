@@ -13,11 +13,12 @@ class UserDAO extends BaseDatabaseHandler {
    * @param {Object} dependencies.userMapper - Mapper for user data transformation from dbData to Domain
    * @param {Object} dependencies.dbManager - Database manager for connection handling (prisma)
    * @param {Object} dependencies.errorFactory - Factory for creating app errors
-   * @param {Object} dependencies.inputValidator - Validator for input parameters
+   * @param {Object} dependencies.inputValidator - Validator for parameters recived from services
    */
-  constructor({ userMapper, dbManager, errorFactory, inputValidator }) {
-    super({ dbManager, inputValidator, errorFactory });
+  constructor({ userMapper, dbManager, inputValidator, errorFactory }) {
+    super({ dbManager, errorFactory });
     this.userMapper = userMapper;
+    this.inputValidator = inputValidator;
   }
 
   /**
@@ -462,16 +463,11 @@ class UserDAO extends BaseDatabaseHandler {
     externalDbClient = null,
     limit = null,
     offset = null,
-    sortBy = USER_SORT_FIELD.CREATED_AT,
-    sortOrder = SORT_ORDER.DESC,
+    sortBy,
+    sortOrder,
   } = {}) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
-        const sortOptions = this._buildSortOptions(
-          sortBy,
-          sortOrder,
-          USER_SORT_FIELD
-        );
         const paginationOptions = this._buildPaginationOptions(limit, offset);
 
         const users = await dbClient.user.findMany({

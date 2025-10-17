@@ -16,11 +16,12 @@ class SessionDAO extends BaseDatabaseHandler {
    * @param {Object} dependencies.sessionMapper - Mapper for session data transformation from dbData to domain
    * @param {Object} dependencies.dbManager - Database manager for connection handling (prisma)
    * @param {Object} dependencies.errorFactory - Factory for creating app errors
-   * @param {Object} dependencies.inputValidator - Validator for input parameters
+   * @param {Object} dependencies.inputValidator - Validator for parameters recived from services
    */
-  constructor({ sessionMapper, dbManager, errorFactory, inputValidator }) {
-    super({ dbManager, inputValidator, errorFactory });
+  constructor({ sessionMapper, dbManager, inputValidator, errorFactory }) {
+    super({ dbManager, errorFactory });
     this.sessionMapper = sessionMapper;
+    this.inputValidator = inputValidator;
   }
 
   /**
@@ -270,18 +271,18 @@ class SessionDAO extends BaseDatabaseHandler {
     externalDbClient = null,
     limit = null,
     offset = null,
-    sortBy = SESSION_SORT_FIELD.CREATED_AT,
-    sortOrder = "desc",
+    sortBy,
+    sortOrder,
   } = {}) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
         const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-        const sortOptions = this._buildSortOptions(
-          sortBy,
-          sortOrder,
-          SESSION_SORT_FIELD
-        );
+         const sortOptions = sortBy?{
+          orderBy:{
+            [sortBy]: sortOrder.toLowerCase()
+          }
+        }:{};
         const paginationOptions = this._buildPaginationOptions(limit, offset);
 
         const sessions = await dbClient.session.findMany({
@@ -323,8 +324,8 @@ class SessionDAO extends BaseDatabaseHandler {
   async findAllByUserIdAndIsActive({
     userId,
     externalDbClient = null,
-    sortBy = SESSION_SORT_FIELD.CREATED_AT,
-    sortOrder = SORT_ORDER.DESC,
+    sortBy,
+    sortOrder,
     active = true,
     limit = null,
     offset = null,
@@ -338,12 +339,11 @@ class SessionDAO extends BaseDatabaseHandler {
             "Active must be a boolean"
           );
         }
-
-        const sortOptions = this._buildSortOptions(
-          sortBy,
-          sortOrder,
-          SESSION_SORT_FIELD
-        );
+         const sortOptions = sortBy?{
+          orderBy:{
+            [sortBy]: sortOrder.toLowerCase()
+          }
+        }:{};
         const paginationOptions = this._buildPaginationOptions(limit, offset);
 
         const sessions = await dbClient.session.findMany({

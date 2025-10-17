@@ -11,6 +11,7 @@ class AuthService {
     crypto,
     errorFactory,
     validator,
+    sortValidator,
     appConfig,
     paginationHelper,
     paginationConfig,
@@ -27,6 +28,7 @@ class AuthService {
     this.crypto = crypto;
     this.errorFactory = errorFactory;
     this.validator = validator;
+    this.sortValidator = sortValidator;
     this.appConfig = appConfig;
     this.paginationHelper = paginationHelper;
     this.paginationConfig = paginationConfig;
@@ -103,8 +105,6 @@ class AuthService {
           sessionId: session.id,
         });
 
-
-
         return {
           userDomain: user,
           accessToken,
@@ -126,10 +126,13 @@ class AuthService {
           decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
         } catch (error) {
           await this.cleanupInvalidSession(refreshToken, dbClient);
-          throw this.errorFactory.createAuthenticationError("Refresh token invalido",{
-            operation: "logOutUserSession",
-            tokenType: "refresh",
-          });
+          throw this.errorFactory.createAuthenticationError(
+            "Refresh token invalido",
+            {
+              operation: "logOutUserSession",
+              tokenType: "refresh",
+            }
+          );
         }
 
         const refreshTokenHashRecibido =
@@ -207,11 +210,11 @@ class AuthService {
 
   async cleanupInvalidSession(refreshToken, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
-       this.validator.validateRequired(["refreshToken"], { refreshToken });
+      this.validator.validateRequired(["refreshToken"], { refreshToken });
       const refreshTokenHash =
         this.jwtAuth.createHashRefreshToken(refreshToken);
       return this.dbManager.withTransaction(async (dbClient) => {
-       const result= await this.sessionService.deactivateSessionByTokenHash(
+        const result = await this.sessionService.deactivateSessionByTokenHash(
           refreshTokenHash,
           dbClient
         );
@@ -446,7 +449,11 @@ class AuthService {
     });
   }
 
-  async getUserActiveSessions(accessToken, options = {}) {
+  async getUserActiveSessions(
+    accessToken,
+    options = {},
+    externalDbClient = null
+  ) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["accessToken"], { accessToken });
       let decoded;
@@ -464,14 +471,6 @@ class AuthService {
       const currentUserId = decoded.sub;
       const currentSessionId = decoded.sessionId;
 
-      const pagination = this.paginationHelper.calculatePagination(
-        options.page,
-        options.limit,
-        this.paginationConfig.ENTITY_LIMITS.SESSIONS,
-        this.paginationConfig.DEFAULT_PAGE,
-        this.paginationConfig.DEFAULT_LIMIT
-      );
-
       return this.dbManager.forRead(async (dbClient) => {
         await this.userService.validateUserExistenceById(
           currentUserId,
@@ -481,16 +480,12 @@ class AuthService {
         const response = await this.sessionService.getAllUserActiveSessions(
           currentUserId,
           currentSessionId,
-          {
-            page: pagination.page,
-            limit: pagination.limit,
-            offset: pagination.offset,
-            externalDbClient: dbClient,
-          }
+          options,
+          externalDbClient
         );
 
         return response;
-      }, options.externalDbClient);
+      }, externalDbClient);
     });
   }
 }

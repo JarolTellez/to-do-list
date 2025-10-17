@@ -82,6 +82,7 @@ const ErrorCodes = require("../../infrastructure/utils/errors/errorCodes");
 const ErrorFactory = require("../../infrastructure/utils/errors/errorFactory");
 const DateParser = require("../../utils/dateParser");
 const InputValidator = require("../utils/validation/inputValidator");
+const SortValidator = require("../../aplication/utils/sortValidator");
 
 
 const JwtAuth = require("./jwtAuth");
@@ -115,6 +116,7 @@ const Validator = require("../../aplication/utils/validators");
 
 const validator = new Validator(errorFactory);
 const inputValidator = new InputValidator({ errorFactory });
+const sortValidator = new SortValidator({errorFactory});
 const servicesValidationConfig = require("../../aplication/config/servicesValidationConfig"); 
 
 // Mappers y Factories
@@ -248,6 +250,7 @@ const tagService = new TagService({
   dbManager: prismaManager,
   errorFactory,
   validator,
+  sortValidator,
   paginationHelper,
   paginationConfig: PAGINATION_CONFIG,
   errorMapper
@@ -260,6 +263,7 @@ const userService = new UserService({
   bcrypt,
   errorFactory,
   validator,
+  sortValidator,
   userMapper,
   paginationHelper,
   errorMapper,
@@ -276,6 +280,7 @@ const taskService = new TaskService({
   dbManager: prismaManager,
   errorFactory,
   validator,
+  sortValidator,
   paginationHelper,
   paginationConfig: PAGINATION_CONFIG,
   errorMapper
@@ -288,6 +293,7 @@ const sessionService = new SessionService({
   dbManager: prismaManager,
   errorFactory,
   validator,
+  sortValidator,
   appConfig,
   paginationHelper,
   paginationConfig: PAGINATION_CONFIG,
@@ -305,6 +311,7 @@ const authService = new AuthService({
   crypto,
   errorFactory,
   validator,
+  sortValidator,
   appConfig,
   paginationHelper,
   paginationConfig: PAGINATION_CONFIG,

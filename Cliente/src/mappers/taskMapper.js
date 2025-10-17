@@ -1,67 +1,115 @@
-import {Task} from "../models/taskModel.js";
-import {mapApiToTagModel} from "./tagMapper.js";
+import { Task } from '../models/task.js';
 
-// export function mapApiToTarea(apiData){
-//     console.log("LLEGA AL MAPPER: ", apiData);
-//     return new Tarea(
-//         apiData.idTarea,
-//         apiData.nombre,
-//         apiData.descripcion,
-//         apiData.scheduledDate,
-//         apiData.createdAt,
-//         apiData.updatedAt,
-//         apiData.isCompleted,
-//         apiData.userId,
-//         apiData.priority,
-//         apiData.tags.map(tag => mapApiToTagModel(tag)),
 
-//     );
-// }
+const safeMapTags = (tags, mapperFunction) => {
+  if (!tags || !Array.isArray(tags)) return [];
+  
+  return tags.map(tag => {
+    try {
+      return mapperFunction(tag);
+    } catch (error) {
+      return {
+        id: tag.id || tag.tag?.id || null,
+        name: tag.name || tag.tag?.name || 'Tag inválida'
+      };
+    }
+  }).filter(tag => tag && tag.name);
+};
 
-export function mapApiToTarea(apiData) {
+export const taskMappers = {
+
+  apiToTask: (apiData) => {
+
+    let tagMappers;
+    try {
+      tagMappers = require('./tagMapper.js').tagMappers;
+    } catch (error) {
+      tagMappers = {
+        apiToTag: (tag) => ({
+          id: tag.id || tag.tag?.id,
+          name: tag.name || tag.tag?.name,
+          description: tag.description || tag.tag?.description,
+          createdAt: tag.createdAt || tag.tag?.createdAt
+        })
+      };
+    }
+
+    const mappedTags = safeMapTags(apiData.taskTags || apiData.tags, tagMappers.apiToTag);
     
-  const procesarFecha = (fecha) => {
-    if (!fecha) return null;
-    const d = new Date(fecha);
-    return isNaN(d.getTime()) ? null : d;
-  };
 
-  return new Task(
-    apiData.id,
-    apiData.name,
-    apiData.description,
-    procesarFecha(apiData.scheduledDate),
-    procesarFecha(apiData.createdAt),
-    procesarFecha(apiData.updatedAt),
-    apiData.isCompleted,
-    apiData.userId,
-    apiData.priority,
-    apiData.tags.map(tag => mapApiToTagModel(tag))
-  );
-}
-
-export function mapInputToTask(tareaInput) {
-     console.log("MAPEAR INPUT: ", tareaInput);
-  const procesarFecha = (fecha) => {
-    if (!fecha) return null;
-    const d = new Date(fecha);
-    return isNaN(d.getTime()) ? null : d;
-  };
-
-  return new Task(
-    tareaInput.id,
-    tareaInput.name,
-    tareaInput.description,
-    procesarFecha(tareaInput.scheduledDate),
-    procesarFecha(tareaInput.createdAt),
-    procesarFecha(tareaInput.updatedAt),
-    tareaInput.isCompleted,
-    tareaInput.userId,
-    tareaInput.priority,
-    tareaInput.tags.map(tag => mapApiToTagModel(tag))
-  );
-}
+    return new Task({
+      id: apiData.id,
+      name: apiData.name,
+      description: apiData.description,
+      scheduledDate: apiData.scheduledDate,
+      createdAt: apiData.createdAt,
+      updatedAt: apiData.updatedAt,
+      isCompleted: apiData.isCompleted,
+      isOverdue: apiData.isOverdue,
+      userId: apiData.userId,
+      priority: apiData.priority,
+      tags: mappedTags
+    });
+  },
 
 
+  taskToCreateDTO: (task) => {
+    
+    return {
+      name: task.name,
+      description: task.description,
+      scheduledDate: task.scheduledDate,
+      priority: task.priority,
+      userId: task.userId,
+      tags: (task.tags || []).map(tag => ({
+        name: tag.name,
+        id: tag.id 
+      }))
+    };
+  },
 
 
+  taskToUpdateDTO: (task) => {
+    return {
+      id: task.id,
+      name: task.name,
+      description: task.description,
+      scheduledDate: task.scheduledDate,
+      priority: task.priority,
+      userId: task.userId,
+      tags: (task.tags || []).map(tag => ({
+        name: tag.name,
+        id: tag.id
+      }))
+    };
+  },
+
+  inputToTask: (formData) => {
+    
+    const procesarFecha = (fecha) => {
+      if (!fecha) return null;
+      try {
+        const d = new Date(fecha);
+        return isNaN(d.getTime()) ? null : d;
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const mappedTags = formData.tags || [];
+
+    return new Task({
+      id: formData.id,
+      name: formData.name,
+      description: formData.description,
+      scheduledDate: procesarFecha(formData.scheduledDate),
+      createdAt: procesarFecha(formData.createdAt),
+      updatedAt: procesarFecha(formData.updatedAt),
+      isCompleted: formData.isCompleted || false,
+      isOverdue: formData.isOverdue || false,
+      userId: formData.userId,
+      priority: formData.priority,
+      tags: mappedTags
+    });
+  }
+};

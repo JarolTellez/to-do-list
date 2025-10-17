@@ -9,6 +9,7 @@ class TagService {
     dbManager,
     errorFactory,
     validator,
+    sortValidator,
     paginationHelper,
     paginationConfig,
     errorMapper,
@@ -18,6 +19,7 @@ class TagService {
     this.tagMapper = tagMapper;
     this.errorFactory = errorFactory;
     this.validator = validator;
+    this.sortValidator = sortValidator;
     this.paginationHelper = paginationHelper;
     this.paginationConfig = paginationConfig;
     this.errorMapper = errorMapper;
@@ -139,14 +141,18 @@ class TagService {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {
         const {
-          limit,
-          offset,
-          sortBy = TAG_SORT_FIELD.CREATED_AT,
-          sortOrder = SORT_ORDER.DESC,
+          page = this.paginationConfig.DEFAULT_PAGE,
+          limit = this.paginationConfig.DEFAULT_LIMIT,
+          sortBy,
+          sortOrder,
         } = options;
 
+        const validatedSort = this.sortValidator.validateAndNormalizeSortParams(
+          "TAG",
+          { sortBy, sortOrder }
+        );
         const pagination = this.paginationHelper.calculatePagination(
-          options.page,
+          page,
           limit,
           this.paginationConfig.ENTITY_LIMITS.TAGS,
           this.paginationConfig.DEFAULT_PAGE,
@@ -158,8 +164,8 @@ class TagService {
             userId,
             limit: pagination.limit,
             offset: pagination.offset,
-            sortBy,
-            sortOrder,
+            sortBy: validatedSort.sortBy,
+            sortOrder: validatedSort.sortOrder,
           },
           dbClient
         );
@@ -193,7 +199,7 @@ class TagService {
             "Etiqueta no encontrada",
             {
               tagName: name,
-              operation: "getTagByName"
+              operation: "getTagByName",
             }
           );
         }
@@ -214,8 +220,8 @@ class TagService {
           throw this.errorFactory.createNotFoundError(
             "Etiqueta no encontrada",
             {
-             tagId: tagId,
-              operation: "getTagById"
+              tagId: tagId,
+              operation: "getTagById",
             }
           );
         }
@@ -233,7 +239,7 @@ class TagService {
         }
 
         const tags = await this.tagDAO.findByNames(tagNames, dbClient);
-        
+
         return tags;
       }, externalDbClient);
     });

@@ -15,6 +15,7 @@ class Task {
   #createdAt;
   #updatedAt;
   #isCompleted;
+  #isOverdue;
   #userId;
   #priority;
   #taskTags;
@@ -33,10 +34,11 @@ class Task {
     userId,
     priority = null,
     taskTags = [],
-    skipValidatios = false,
+    skipValidations = false,
   }) {
     this.#validator = new DomainValidators();
     this.#config = domainValidationConfig.TASK;
+    this.#skipValidations = skipValidations;
 
     this.#id = this.#validator.validateId(id, "Task");
     this.#name = this.#validateName(name);
@@ -63,6 +65,7 @@ class Task {
       "isCompleted",
       "Task"
     );
+    this.#isOverdue = this.isTaskOverdue();
     this.#userId = this.#validator.validateId(userId, "User");
     this.#priority = this.#validatePriority(priority);
     this.#taskTags = this.#validateTaskTags(taskTags);
@@ -397,6 +400,9 @@ class Task {
   get isCompleted() {
     return this.#isCompleted;
   }
+  get isOverdue() {
+     return this.isTaskOverdue();
+  }
   get userId() {
     return this.#userId;
   }
@@ -407,12 +413,13 @@ class Task {
     return [...this.#taskTags];
   }
 
-  isOverdue() {
-    return (
-      this.#scheduledDate &&
-      new Date() > new Date(this.#scheduledDate) &&
-      !this.#isCompleted
-    );
+  isTaskOverdue() {
+    if (!this.#scheduledDate) {
+      return false;
+    }
+
+    const overdue= new Date() > new Date(this.#scheduledDate) && !this.#isCompleted;
+    return overdue;
   }
 
   isScheduledForToday() {
@@ -478,14 +485,14 @@ class Task {
       createdAt: new Date(),
       updatedAt: new Date(),
       taskTags: taskTags,
-      skipValidatios: false
+      skipValidations: false,
     });
   }
 
-   static createExisting(data) {
+  static createExisting(data) {
     return new Task({
       ...data,
-      skipValidations: true
+      skipValidations: true,
     });
   }
 }

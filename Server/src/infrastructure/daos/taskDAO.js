@@ -13,11 +13,12 @@ class TaskDAO extends BaseDatabaseHandler {
    * @param {Object} dependencies.taskMapper - Mapper for task data transformation from dbData to domain
    * @param {Object} dependencies.dbManager - Database manager for connection handling (prisma)
    * @param {Object} dependencies.errorFactory - Factory for creating app errors
-   * @param {Object} dependencies.inputValidator - Validator for input parameters
+   * @param {Object} dependencies.inputValidator - Validator for parameters recived from services
    */
   constructor({ taskMapper, dbManager, errorFactory, inputValidator }) {
-    super({ dbManager, inputValidator, errorFactory });
+    super({ dbManager, errorFactory });
     this.taskMapper = taskMapper;
+    this.inputValidator = inputValidator;
   }
 
   /**
@@ -367,11 +368,11 @@ class TaskDAO extends BaseDatabaseHandler {
    */
   async findAllWithTagsByUserId({
     userId,
-    isCompleted = false,
+    isCompleted,
     scheduledDateBefore,
     scheduledDateAfter,
-    sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
-    sortOrder = "desc",
+    sortBy,
+    sortOrder,
     limit = null,
     offset = null,
     externalDbClient = null,
@@ -380,16 +381,22 @@ class TaskDAO extends BaseDatabaseHandler {
       try {
         const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-        const sortOptions = this._buildSortOptions(
-          sortBy,
-          sortOrder,
-          TASK_SORT_FIELD
-        );
+        const sortOptions = sortBy
+          ? {
+              orderBy: {
+                [sortBy]: sortOrder.toLowerCase(),
+              },
+            }
+          : {};
+
         const paginationOptions = this._buildPaginationOptions(limit, offset);
         const whereConditions = {
           userId: userIdNum,
-          isCompleted: isCompleted,
         };
+
+        if (isCompleted !== undefined) {
+          whereConditions.isCompleted = isCompleted;
+        }
 
         const dateConditions = {};
 
@@ -463,8 +470,8 @@ class TaskDAO extends BaseDatabaseHandler {
    */
   async findAllOverdueByUserId({
     userId,
-    sortBy = TASK_SORT_FIELD.LAST_UPDATE_DATE,
-    sortOrder = "desc",
+    sortBy,
+    sortOrder,
     limit = null,
     offset = null,
     externalDbClient = null,
@@ -482,28 +489,45 @@ class TaskDAO extends BaseDatabaseHandler {
   }
 
   /**
-   * Counts tasks for a user by completion status
+   * Counts tasks for a user with optional filters
    * @param {Object} options - Count options
    * @param {number|string} options.userId - ID of the user
-   * @param {boolean} [options.isCompleted=false] - Filter by completion status
+   * @param {boolean} [options.isCompleted] - Filter by completion status
+   * @param {Date|string} [options.scheduledDateBefore] - Filter by maximum scheduled date
+   * @param {Date|string} [options.scheduledDateAfter] - Filter by minimum scheduled date
    * @param {Object} [externalDbClient=null] - External Prisma transaction client
    * @returns {Promise<number>} Number of tasks matching the criteria
    * @throws {ValidationError} If user ID is invalid
    * @throws {DatabaseError} On database operation failure
    */
   async countByUserId(
-    { userId, isCompleted = false },
+    { userId, isCompleted, scheduledDateBefore, scheduledDateAfter },
     externalDbClient = null
   ) {
     return this.dbManager.forRead(async (dbClient) => {
       try {
         const userIdNum = this.inputValidator.validateId(userId, "user id");
 
+        const whereConditions = {
+          userId: userIdNum,
+        };
+        if (isCompleted !== undefined) {
+          whereConditions.isCompleted = isCompleted;
+        }
+
+        const dateConditions = {};
+        if (scheduledDateBefore) {
+          dateConditions.lt = new Date(scheduledDateBefore);
+        }
+        if (scheduledDateAfter) {
+          dateConditions.gt = new Date(scheduledDateAfter);
+        }
+        if (Object.keys(dateConditions).length > 0) {
+          whereConditions.scheduledDate = dateConditions;
+        }
+
         const count = await dbClient.task.count({
-          where: {
-            userId: userIdNum,
-            isCompleted: isCompleted,
-          },
+          where: whereConditions,
         });
 
         return count;
@@ -514,6 +538,8 @@ class TaskDAO extends BaseDatabaseHandler {
         this._handlePrismaError(error, "taskDAO.countByUserId", {
           userId,
           isCompleted,
+          scheduledDateBefore,
+          scheduledDateAfter,
         });
       }
     }, externalDbClient);
