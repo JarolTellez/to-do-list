@@ -25,7 +25,7 @@ export const useTasks = (userId) => {
       const tasksData = await findAllTasksByUserId(userId, options);
       setTasks(tasksData || []);
     } catch (err) {
-      console.error("Error cargando tasks:", err);
+      console.error("Erroruploading tasks:", err);
       setError(err.message);
       setTasks([]);
     } finally {
@@ -48,7 +48,7 @@ export const useTasks = (userId) => {
       setTasks(prev => [...prev, newTask]);
       return true;
     } catch (err) {
-      console.error("Error agregando tarea:", err);
+      console.error("Error adding task:", err);
       setError(err.message);
       throw err;
     } finally {
@@ -67,7 +67,7 @@ export const useTasks = (userId) => {
       );
       return true;
     } catch (err) {
-      console.error("Error actualizando tarea:", err);
+      console.error("Error updating task:", err);
       setError(err.message);
       throw err;
     } finally {
@@ -81,7 +81,7 @@ export const useTasks = (userId) => {
       await deleteTask(taskId);
       setTasks(prev => prev.filter(task => task.id !== taskId));
     } catch (err) {
-      console.error("Error eliminando tarea:", err);
+      console.error("Error deleting task:", err);
       setError(err.message);
       throw err;
     } finally {

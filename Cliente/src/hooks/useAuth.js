@@ -31,7 +31,7 @@ export const useAuth = () => {
         await attemptTokenRefresh();
       }
     } catch (error) {
-      console.error('Error verificando autenticación:', error);
+      console.error('Error auth:', error);
       clearAuthState();
     } finally {
       setLoading(false);
@@ -56,7 +56,7 @@ export const useAuth = () => {
         return true;
       }
     } catch (error) {
-      console.log(' No se pudo renovar el token:', error);
+      console.log('Error refreshin accessToken:', error);
       clearAuthState();
       return false;
     }

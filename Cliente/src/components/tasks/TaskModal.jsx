@@ -113,7 +113,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
       await onSave(taskToSave);
       
     } catch (error) {
-      console.error(`❌ Error en ${isEditing ? 'actualización' : 'creación'} de tarea:`, error);
+      console.error(`Error en ${isEditing ? 'actualización' : 'creación'} de tarea:`, error);
       
       if (Array.isArray(error)) {
         const firstError = error[0];
