@@ -1,27 +1,29 @@
-import { api } from "./apiClient.js";
-import { taskMappers } from '../mappers/taskMapper.js';
+import { api } from "./api/clients/apiClient.js";
+import { taskMappers } from "../mappers/taskMapper.js";
 
 export async function createTask(newTask) {
   try {
     const taskDTO = taskMappers.taskToCreateDTO(newTask);
     const response = await api.post("/task/", taskDTO);
-    
+
     return taskMappers.apiToTask(response.data);
   } catch (error) {
+    console.error("Error creating task:", error);
     throw error;
   }
 }
 
 export async function findAllTasksByUserId(userId, options = {}) {
   try {
-    const response = await api.get("/task/", { 
-      params: options
+    const response = await api.get("/task/", {
+      params: options,
     });
 
     const allTasks = response.data.tasks?.map(taskMappers.apiToTask) || [];
 
     return allTasks;
   } catch (error) {
+    console.error("Error finding tasks:", error);
     throw error;
   }
 }
@@ -29,12 +31,13 @@ export async function findAllTasksByUserId(userId, options = {}) {
 export async function completeTask(taskId, isCompleted) {
   try {
     const response = await api.patch("/task/completion", {
-      taskId: taskId, 
-      isCompleted: isCompleted
+      taskId: taskId,
+      isCompleted: isCompleted,
     });
     return response.data;
   } catch (error) {
-    throw new Error("Error al actualizar la tarea: " + error.message);
+    console.error("Error completing task:", error);
+    throw error;
   }
 }
 
@@ -42,10 +45,11 @@ export async function updateTask(updatedTask) {
   try {
     const updateDTO = taskMappers.taskToUpdateDTO(updatedTask);
     const response = await api.patch("/task/update", updateDTO);
-    
+
     return taskMappers.apiToTask(response.data);
   } catch (error) {
-    throw new Error("Error al actualizar la tarea: " + error.message);
+    console.error("Error updatig task:", error);
+    throw error;
   }
 }
 
@@ -56,10 +60,11 @@ export async function deleteTask(taskId) {
       data: {
         taskId: taskId,
         userId: userId,
-      }
+      },
     });
     return response.data;
   } catch (error) {
-    throw new Error("Error al eliminar la tarea: " + error.message);
+    console.error("Error deleting tasks:", error);
+    throw error;
   }
 }

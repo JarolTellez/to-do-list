@@ -13,8 +13,9 @@ class AuthController {
 
   async login(req, res, next) {
     try {
+      console.log("BODY", req.body)
       const loginRequestDTO = this.userMapper.requestDataToLoginDTO(req.body);
-      const userAgent = req.get("User-Agent");
+      const userAgent = req.body.deviceInfo.userAgent;
       const ip = req.ip;
       const existingRefreshToken = req.cookies.refreshToken;
 

@@ -10,7 +10,7 @@ export class Task {
     isOverdue = false,
     userId,
     priority,
-    taskTags = [],
+    tags = [],
   }) {
     this.id = id;
     this.name = name;
@@ -22,7 +22,7 @@ export class Task {
     this.isOverdue = isOverdue;
     this.userId = userId;
     this.priority = priority;
-    this.taskTags = taskTags.map((tag) => new TaskTag(tag));
+    this.tags = tags;
   }
 
   validate() {

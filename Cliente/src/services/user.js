@@ -1,4 +1,4 @@
-import { api } from "./apiClient.js";
+import { api } from "./api/clients/apiClient.js";
 import { userMappers } from '../mappers/userMapper.js';
 
 function getAuthToken() {

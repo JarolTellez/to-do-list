@@ -1,41 +1,11 @@
-import { Task } from '../models/task.js';
+import { Task } from "../models/task.js";
+import { tagMappers } from "./tagMapper.js";
 
-
-const safeMapTags = (tags, mapperFunction) => {
-  if (!tags || !Array.isArray(tags)) return [];
-  
-  return tags.map(tag => {
-    try {
-      return mapperFunction(tag);
-    } catch (error) {
-      return {
-        id: tag.id || tag.tag?.id || null,
-        name: tag.name || tag.tag?.name || 'Tag inválida'
-      };
-    }
-  }).filter(tag => tag && tag.name);
-};
 
 export const taskMappers = {
-
   apiToTask: (apiData) => {
-
-    let tagMappers;
-    try {
-      tagMappers = require('./tagMapper.js').tagMappers;
-    } catch (error) {
-      tagMappers = {
-        apiToTag: (tag) => ({
-          id: tag.id || tag.tag?.id,
-          name: tag.name || tag.tag?.name,
-          description: tag.description || tag.tag?.description,
-          createdAt: tag.createdAt || tag.tag?.createdAt
-        })
-      };
-    }
-
-    const mappedTags = safeMapTags(apiData.taskTags || apiData.tags, tagMappers.apiToTag);
-    
+    const mappedTags = (apiData.tags || apiData.taskTags|| [])
+      .map(tag => tagMappers.apiToTag(tag));
 
     return new Task({
       id: apiData.id,
@@ -48,28 +18,27 @@ export const taskMappers = {
       isOverdue: apiData.isOverdue,
       userId: apiData.userId,
       priority: apiData.priority,
-      tags: mappedTags
+      tags: mappedTags,
     });
   },
 
-
   taskToCreateDTO: (task) => {
-    
+    const tagDTOs = (task.tags || []).map((tag) =>
+      tagMappers.tagToCreateDTO(tag)
+    );
     return {
       name: task.name,
       description: task.description,
       scheduledDate: task.scheduledDate,
       priority: task.priority,
       userId: task.userId,
-      tags: (task.tags || []).map(tag => ({
-        name: tag.name,
-        id: tag.id 
-      }))
+      tags: tagDTOs
     };
   },
 
-
   taskToUpdateDTO: (task) => {
+    const tagDTOs = (task.tags || []).map(tag => tagMappers.tagToUpdateDTO(tag));
+
     return {
       id: task.id,
       name: task.name,
@@ -77,15 +46,14 @@ export const taskMappers = {
       scheduledDate: task.scheduledDate,
       priority: task.priority,
       userId: task.userId,
-      tags: (task.tags || []).map(tag => ({
-        name: tag.name,
-        id: tag.id
-      }))
+      tags: tagDTOs,
     };
   },
 
   inputToTask: (formData) => {
-    
+    const mappedTags =(formData.tags || formData.taskTags || [])
+      .map(tag => tagMappers.apiToTag(tag))
+
     const procesarFecha = (fecha) => {
       if (!fecha) return null;
       try {
@@ -96,7 +64,6 @@ export const taskMappers = {
       }
     };
 
-    const mappedTags = formData.tags || [];
 
     return new Task({
       id: formData.id,
@@ -109,7 +76,7 @@ export const taskMappers = {
       isOverdue: formData.isOverdue || false,
       userId: formData.userId,
       priority: formData.priority,
-      tags: mappedTags
+      tags: mappedTags,
     });
-  }
+  },
 };

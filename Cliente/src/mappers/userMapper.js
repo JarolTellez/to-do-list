@@ -32,5 +32,14 @@ export const userMappers = {
       email: userInput.email,
       password: userInput.password
     };
+  },
+
+  inputToLoginDTO:(userInput)=>{
+    return{
+      identifier: userInput.identifier,
+      password: userInput.password,
+      deviceInfo: userInput.deviceInfo
+    }
+
   }
 };

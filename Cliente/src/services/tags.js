@@ -1,11 +1,14 @@
-import { api } from "./apiClient.js";
+import { api } from "./api/clients/apiClient.js";
 import { tagMappers } from '../mappers/tagMapper.js';
+import { handleServiceResponse, handleServiceError } from "./api/utils/responseHandlers.js";
 
 export async function loadTags() {
   try {
-    const response = await api.get("/tag/");
-    const tags = response.data.tags?.map(tagMappers.apiToTag) || [];
-    return tags;
+    const data = await api.get("/tag/");
+    const response = handleServiceResponse(data, (sourceData) => ({
+      tags: sourceData.tags?.map(tagMappers.apiToTag) || []
+    }));
+    return response.tags;    
   } catch (error) {
     throw new Error("Error al consultar las etiquetas: " + error.message);
   }
