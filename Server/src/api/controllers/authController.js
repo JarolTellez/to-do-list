@@ -1,6 +1,4 @@
-const {
-  COOKIE_OPTIONS
-} = require("../config/cookiesConfig");
+const { COOKIE_OPTIONS } = require("../config/cookiesConfig");
 
 const { clearAuthCookies } = require("../utils/cookieUtils");
 class AuthController {
@@ -13,9 +11,8 @@ class AuthController {
 
   async login(req, res, next) {
     try {
-      console.log("BODY", req.body)
+      const userAgent = req.headers["user-agent"];
       const loginRequestDTO = this.userMapper.requestDataToLoginDTO(req.body);
-      const userAgent = req.body.deviceInfo.userAgent;
       const ip = req.ip;
       const existingRefreshToken = req.cookies.refreshToken;
 
@@ -32,7 +29,7 @@ class AuthController {
         console.log("Usando refresh token existente");
       }
 
-         const authResponse = this.userMapper.domainToAuthResponse(result);
+      const authResponse = this.userMapper.domainToAuthResponse(result);
 
       return res.status(200).json({
         success: true,
@@ -136,8 +133,8 @@ class AuthController {
       }
 
       const result = await this.authService.getUserActiveSessions(accessToken, {
-        page: page? parseInt(page): undefined,
-        limit:limit? parseInt(limit): undefined,
+        page: page ? parseInt(page) : undefined,
+        limit: limit ? parseInt(limit) : undefined,
         sortBy,
         sortOrder,
       });
@@ -164,7 +161,6 @@ class AuthController {
       next(error);
     }
   }
-
 }
 
 module.exports = AuthController;

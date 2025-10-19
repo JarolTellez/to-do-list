@@ -23,7 +23,7 @@ export const useTasks = (userId) => {
       setInitialLoading(true);
       setError(null);
       const tasksData = await findAllTasksByUserId(userId, options);
-      setTasks(tasksData || []);
+      setTasks(tasksData.data || []);
     } catch (err) {
       console.error("Erroruploading tasks:", err);
       setError(err.message);

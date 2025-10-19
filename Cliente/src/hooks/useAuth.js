@@ -77,11 +77,12 @@ export const useAuth = () => {
     
     try {
       const result = await login(username, password);
+
       
-      if (result?.success) {
+      if (result) {
         setIsAuthenticated(true);
-        setUser(result.user);
-        return result;
+        setUser(result.data);
+        return result.data;
       } else {
         setError(result?.error || 'Error desconocido');
         return result;

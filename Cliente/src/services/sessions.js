@@ -3,50 +3,35 @@ import { sessionMappers } from "../mappers/sessionMapper.js";
 
 export async function getUserSessions() {
   try {
-    const data = await api.get("/auth/active-sessions");
+    const response = await api.get("/auth/active-sessions");
 
-    if (data.success === false) {
-      return { success: false, error: data.message };
-    }
-    const sessions = data.data.sessions?.map(sessionMappers.apiToSession) || [];
-    return { success: true, sessions };
+    const sessions =
+      response.data.sessions?.map(sessionMappers.apiToSession) || [];
+    return { data: sessions, message: response.message };
   } catch (error) {
-    return {
-      success: false,
-      error: error.message || "Error de conexión",
-    };
+    console.error("Error getting user sessions:", error);
+    throw error;
   }
 }
 
 export async function closeAllSessions() {
   try {
-    const data = await api.patch("/auth/close-all-sessions");
+    const response = await api.patch("/auth/close-all-sessions");
 
-    if (data.success === false) {
-      return { success: false, error: data.message };
-    }
-    return { success: true, data };
+    return { data: response.data, message: response.message };
   } catch (error) {
-    return {
-      success: false,
-      error: error.message || "Error de conexión",
-    };
+     console.error("Error closing all sessions:", error);
+    throw error;
   }
 }
 
 export async function closeSession(sessionId) {
   try {
-    const data = await api.delete(`/auth/session/${sessionId}`);
+    const response = await api.delete(`/auth/session/${sessionId}`);
 
-    if (data.success === false) {
-      return { success: false, error: data.message };
-    }
-
-    return { success: true, data };
+    return { data: response.data, message: response.message };
   } catch (error) {
-    return {
-      success: false,
-      error: error.message || "Error de conexión",
-    };
+     console.error("Error clossing session:", error);
+    throw error;
   }
 }

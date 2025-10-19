@@ -1,16 +1,14 @@
 import { api } from "./api/clients/apiClient.js";
-import { tagMappers } from '../mappers/tagMapper.js';
-import { handleServiceResponse, handleServiceError } from "./api/utils/responseHandlers.js";
+import { tagMappers } from "../mappers/tagMapper.js";
 
 export async function loadTags() {
   try {
-    const data = await api.get("/tag/");
-    const response = handleServiceResponse(data, (sourceData) => ({
-      tags: sourceData.tags?.map(tagMappers.apiToTag) || []
-    }));
-    return response.tags;    
+    const response = await api.get("/tag/");
+    const mappedTags = response.data.tags?.map(tagMappers.apiToTag) || [];
+    return { data: mappedTags, message: response.message };
   } catch (error) {
-    throw new Error("Error al consultar las etiquetas: " + error.message);
+    console.error("Error loading tags:", error);
+    throw error;
   }
 }
 
@@ -18,9 +16,11 @@ export async function createTag(tagData) {
   try {
     const tagDTO = tagMappers.tagToCreateDTO(tagData);
     const response = await api.post("/tag/", tagDTO);
-    
-    return tagMappers.apiToTag(response.data);
+
+    const mappedTag = tagMappers.apiToTag(response.data);
+    return { data: mappedTag, message: response.message };
   } catch (error) {
+    console.error("Error creating tag:", error);
     throw error;
   }
 }
@@ -29,9 +29,11 @@ export async function updateTag(tagId, tagData) {
   try {
     const tagDTO = tagMappers.tagToCreateDTO(tagData);
     const response = await api.put(`/tag/${tagId}`, tagDTO);
-    
-    return tagMappers.apiToTag(response.data);
+
+    const mappedTag = tagMappers.apiToTag(response.data);
+    return { data: mappedTag, message: response.message };
   } catch (error) {
+    console.error("Error updating tag:", error);
     throw error;
   }
 }
@@ -39,8 +41,9 @@ export async function updateTag(tagId, tagData) {
 export async function deleteTag(tagId) {
   try {
     const response = await api.delete(`/tag/${tagId}`);
-    return response.data;
+    return { data: response.data, message: response.message };
   } catch (error) {
+    console.error("Error deleting tag:", error);
     throw error;
   }
 }
