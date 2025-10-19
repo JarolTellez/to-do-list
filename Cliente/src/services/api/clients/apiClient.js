@@ -30,7 +30,10 @@ export class ApiClient {
         if (response.ok) {
           return response;
         }
-
+    
+        if(!response.success){
+          throw new Error(response.message)
+        }
         const status = response.status;
 
         if (status === 401 && this.tokenManager.canRetry()) {

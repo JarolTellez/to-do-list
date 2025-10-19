@@ -14,20 +14,25 @@ function getAuthToken() {
 
 export async function login(username, password) {
   try {
-    const deviceInfo = getDeviceInfo();
     const userLoginDTO = userMappers.inputToLoginDTO({
       identifier: username,
       password,
-      deviceInfo,
     });
 
-    const response = await authClient.post("/auth/login", userLoginDTO, {
-      headers: {
-        "Dispositivo-Info": JSON.stringify(deviceInfo),
-      },
-    });
+  
+    const response = await authClient.post("/auth/login", userLoginDTO);
+
 
     const userData = userMappers.apiToUser(response.data.user);
+    const authResponse = {
+      data: userData,
+      message: response.message,
+      accessToken: response.data.accessToken,
+      expiresIn: response.data.expiresIn,
+      expiresAt: response.data.expiresAt,
+      tokenType: response.data.tokenType,
+    };
+
 
     sessionStorage.setItem("userId", userData.id);
     sessionStorage.setItem("userEmail", userData.email);
@@ -35,10 +40,7 @@ export async function login(username, password) {
 
     setAccessToken(response.data.accessToken);
 
-    return {
-      success: true,
-      user: userData,
-    };
+    return authResponse;
   } catch (error) {
     console.error("Error in login:", error);
     throw error;
@@ -47,12 +49,9 @@ export async function login(username, password) {
 
 export async function logout() {
   try {
-    const token = getAuthToken();
+    const response = await api.post("/auth/logout");
 
-    if (token) {
-      await api.post("/auth/logout");
-    }
-    return { success: true };
+    return { data: response.data, message: response.message };
   } catch (error) {
     console.error("Error login out:", error);
     throw error;
@@ -64,12 +63,8 @@ export async function logout() {
 export async function refreshAccessToken() {
   try {
     const response = await authClient.post("/auth/refresh-access-token");
-    return response.data;
+    return { data: response.data, message: response.message };
   } catch (error) {
-    if (error.status == 401) {
-      console.error("No active session:", error);
-      throw error;
-    }
     console.error("Error refreshing accessToken:", error);
     throw error;
   }
@@ -78,27 +73,14 @@ export async function refreshAccessToken() {
 export async function register(userData) {
   try {
     const registerDTO = userMappers.inputToRegisterDTO(userData);
-    const data = await authClient.post("/user/", registerDTO);
+    const response = await authClient.post("/user/", registerDTO);
+    const mappedUser = userMappers.apiToUser(response.data);
 
-    if (data.success === false) {
-      return { success: false, error: data.message };
-    }
-
-    return { success: true };
+    return { data: mappedUser, message: response.message };
   } catch (error) {
     console.error("Error creating user:", error);
     throw error;
   }
-}
-
-function getDeviceInfo() {
-  return {
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-    screenWidth: screen.width,
-    screenHeight: screen.height,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  };
 }
 
 function clearLocalState() {

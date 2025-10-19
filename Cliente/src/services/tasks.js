@@ -6,7 +6,8 @@ export async function createTask(newTask) {
     const taskDTO = taskMappers.taskToCreateDTO(newTask);
     const response = await api.post("/task/", taskDTO);
 
-    return taskMappers.apiToTask(response.data);
+    const mappedTaks = taskMappers.apiToTask(response.data);
+    return { data: mappedTaks, message: response.message };
   } catch (error) {
     console.error("Error creating task:", error);
     throw error;
@@ -19,9 +20,8 @@ export async function findAllTasksByUserId(userId, options = {}) {
       params: options,
     });
 
-    const allTasks = response.data.tasks?.map(taskMappers.apiToTask) || [];
-
-    return allTasks;
+    const mappedTasks = response.data.tasks?.map(taskMappers.apiToTask) || [];
+    return { data: mappedTasks, message: response.message };
   } catch (error) {
     console.error("Error finding tasks:", error);
     throw error;
@@ -34,7 +34,7 @@ export async function completeTask(taskId, isCompleted) {
       taskId: taskId,
       isCompleted: isCompleted,
     });
-    return response.data;
+    return { data: response.data, message: response.message };
   } catch (error) {
     console.error("Error completing task:", error);
     throw error;
@@ -46,7 +46,8 @@ export async function updateTask(updatedTask) {
     const updateDTO = taskMappers.taskToUpdateDTO(updatedTask);
     const response = await api.patch("/task/update", updateDTO);
 
-    return taskMappers.apiToTask(response.data);
+    const mappedTask = taskMappers.apiToTask(response.data);
+    return { data: mappedTask, message: response.message };
   } catch (error) {
     console.error("Error updatig task:", error);
     throw error;
@@ -62,7 +63,7 @@ export async function deleteTask(taskId) {
         userId: userId,
       },
     });
-    return response.data;
+   return { data: response.data, message: response.message };
   } catch (error) {
     console.error("Error deleting tasks:", error);
     throw error;

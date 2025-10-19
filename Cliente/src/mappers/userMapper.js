@@ -37,8 +37,7 @@ export const userMappers = {
   inputToLoginDTO:(userInput)=>{
     return{
       identifier: userInput.identifier,
-      password: userInput.password,
-      deviceInfo: userInput.deviceInfo
+      password: userInput.password
     }
 
   }

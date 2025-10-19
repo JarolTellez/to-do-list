@@ -27,8 +27,15 @@ export class AuthClient {
         ...options.headers,
       },
     });
+    console.log("se hizo el response");
 
-    return await handleApiResponse(response);
+    const apiResponse= await handleApiResponse(response);
+      console.log("se manejo el response: ", apiResponse);
+       if(!apiResponse.success){
+          throw new Error(apiResponse.message)
+        }
+
+    return apiResponse;
   }
 
   async post(url, data = null, options = {}) {
