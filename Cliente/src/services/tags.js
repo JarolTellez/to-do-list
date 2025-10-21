@@ -1,9 +1,9 @@
-import { api } from "./api/clients/apiClient.js";
+import {apiClient } from "./api/clients/apiClient.js";
 import { tagMappers } from "../mappers/tagMapper.js";
 
 export async function loadTags() {
   try {
-    const response = await api.get("/tag/");
+    const response = await apiClient.api.get("/tag/");
     const mappedTags = response.data.tags?.map(tagMappers.apiToTag) || [];
     return { data: mappedTags, message: response.message };
   } catch (error) {
@@ -15,7 +15,7 @@ export async function loadTags() {
 export async function createTag(tagData) {
   try {
     const tagDTO = tagMappers.tagToCreateDTO(tagData);
-    const response = await api.post("/tag/", tagDTO);
+    const response = await apiClient.api.post("/tag/", tagDTO);
 
     const mappedTag = tagMappers.apiToTag(response.data);
     return { data: mappedTag, message: response.message };
@@ -28,7 +28,7 @@ export async function createTag(tagData) {
 export async function updateTag(tagId, tagData) {
   try {
     const tagDTO = tagMappers.tagToCreateDTO(tagData);
-    const response = await api.put(`/tag/${tagId}`, tagDTO);
+    const response = await apiClient.api.put(`/tag/${tagId}`, tagDTO);
 
     const mappedTag = tagMappers.apiToTag(response.data);
     return { data: mappedTag, message: response.message };
@@ -40,7 +40,7 @@ export async function updateTag(tagId, tagData) {
 
 export async function deleteTag(tagId) {
   try {
-    const response = await api.delete(`/tag/${tagId}`);
+    const response = await apiClient.api.delete(`/tag/${tagId}`);
     return { data: response.data, message: response.message };
   } catch (error) {
     console.error("Error deleting tag:", error);

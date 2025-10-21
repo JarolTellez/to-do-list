@@ -54,11 +54,12 @@ function App() {
     const result = await register(userData);
     
     
-    if (result && result.success) {
+    if (result) {
       showToast('Usuario registrado correctamente', 'success');
       setCurrentView('login');
     } else {
-      showToast(result.error, 'error', 6000);
+       const errorMessage = result?.error || 'Error desconocido';
+      showToast(errorMessage, 'error', 6000);
     }
     
     return result;

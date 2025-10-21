@@ -1,29 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { getUserSessions, closeAllSessions } from '../../../services/sessions';
+import React from 'react';
+import { useSessions } from '../../../hooks/useSessions';
 
 const SessionsTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad, onLogout, showConfirmModal, setLoadingMessage, setLoadingSubMessage }) => {
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    loadSessions();
-  }, []);
-
-  const loadSessions = async () => {
-    setLoading(true);
-    try {
-      const result = await getUserSessions();
-      if (result.success) {
-        setSessions(result.sessions || []);
-      } else {
-        showToast(result.error, 'error', 5000);
-      }
-    } catch (error) {
-      showToast('Error cargando sesiones', 'error', 5000);
-    } finally {
-      setLoading(false);
+ const { 
+    sessions, 
+    loading, 
+    error,
+    loadSessions,
+    closeAllSessions 
+  } = useSessions();
+  
+   React.useEffect(() => {
+    if (error) {
+      showToast(error, 'error', 5000);
     }
-  };
+  }, [error, showToast]);
+
 
   const handleCloseAllSessions = () => {
     showConfirmModal({

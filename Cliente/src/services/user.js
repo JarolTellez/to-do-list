@@ -1,9 +1,9 @@
-import { api } from "./api/clients/apiClient.js";
+import { apiClient } from "./api/clients/apiClient.js";
 import { userMappers } from "../mappers/userMapper.js";
 
 export async function getUserProfile() {
   try {
-    const response = await api.get("/user/profile");
+    const response = await apiClient.api.get("/user/profile");
     const mappedUser = userMappers.apiToUser(response.data);
     return { data: mappedUser, message: response.message };
   } catch (error) {
@@ -16,7 +16,7 @@ export async function updateUserProfile(profileData) {
   try {
     const updateDTO = userMappers.userToUpdateDTO(profileData);
 
-    const response = await api.put("/user/", updateDTO);
+    const response = await apiClient.api.put("/user/", updateDTO);
     const mappedUser = userMappers.apiToUser(response.data);
 
     return { data: mappedUser, message: response.message };
@@ -28,7 +28,7 @@ export async function updateUserProfile(profileData) {
 
 export async function changePassword(passwordData) {
   try {
-    const response = await api.patch("/user/change-password", passwordData);
+    const response = await apiClient.api.patch("/user/change-password", passwordData);
 
     return { data: response.data, message: response.message };
   } catch (error) {
@@ -39,7 +39,7 @@ export async function changePassword(passwordData) {
 
 export async function deleteUserAccount() {
   try {
-    const response = await api.delete("/user/");
+    const response = await apiClient.api.delete("/user/");
     if (response.success === true) {
       clearLocalState();
     }

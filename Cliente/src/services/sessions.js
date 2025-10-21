@@ -1,9 +1,9 @@
-import { api } from "./api/clients/apiClient.js";
+import { apiClient } from "./api/clients/apiClient.js";
 import { sessionMappers } from "../mappers/sessionMapper.js";
 
 export async function getUserSessions() {
   try {
-    const response = await api.get("/auth/active-sessions");
+    const response = await apiClient.api.get("/auth/active-sessions");
 
     const sessions =
       response.data.sessions?.map(sessionMappers.apiToSession) || [];
@@ -16,7 +16,7 @@ export async function getUserSessions() {
 
 export async function closeAllSessions() {
   try {
-    const response = await api.patch("/auth/close-all-sessions");
+    const response = await apiClient.api.patch("/auth/close-all-sessions");
 
     return { data: response.data, message: response.message };
   } catch (error) {
@@ -27,7 +27,7 @@ export async function closeAllSessions() {
 
 export async function closeSession(sessionId) {
   try {
-    const response = await api.delete(`/auth/session/${sessionId}`);
+    const response = await apiClient.api.delete(`/auth/session/${sessionId}`);
 
     return { data: response.data, message: response.message };
   } catch (error) {

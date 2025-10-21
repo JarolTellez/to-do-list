@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { login, logout, register, refreshAccessToken } from '../services/auth.js';
+import { authService } from '../services/auth.js';
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);
@@ -40,7 +40,7 @@ export const useAuth = () => {
 
   const attemptTokenRefresh = async () => {
     try {
-      const newTokenData = await refreshAccessToken();
+      const newTokenData = await authService.refreshAccessToken();
       
       if (newTokenData?.accessToken) {
         localStorage.setItem('accessToken', newTokenData.accessToken);
@@ -56,7 +56,7 @@ export const useAuth = () => {
         return true;
       }
     } catch (error) {
-      console.log('Error refreshin accessToken:', error);
+      console.error('Error refreshin accessToken:', error);
       clearAuthState();
       return false;
     }
@@ -76,7 +76,7 @@ export const useAuth = () => {
     setError(null);
     
     try {
-      const result = await login(username, password);
+      const result = await authService.login(username, password);
 
       
       if (result) {
@@ -84,7 +84,7 @@ export const useAuth = () => {
         setUser(result.data);
         return result.data;
       } else {
-        setError(result?.error || 'Error desconocido');
+        setError(result?.message || 'Error desconocido');
         return result;
       }
     } catch (err) {
@@ -101,13 +101,13 @@ export const useAuth = () => {
     setError(null);
     
     try {
-      const result = await register(userData);
+      const response = await authService.register(userData);
       
-      if (result?.success) {
-        return result;
+      if (response) {
+        return response.data;
       } else {
-        setError(result?.error || 'Error desconocido');
-        return result;
+        setError(response?.error || 'Error desconocido');
+        return response;
       }
     } catch (err) {
       const errorMsg = err.message || 'Error al registrar usuario';
@@ -120,7 +120,7 @@ export const useAuth = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await authService.logout();
     } catch (error) {
       console.error('Error durante logout:', error);
     } finally {

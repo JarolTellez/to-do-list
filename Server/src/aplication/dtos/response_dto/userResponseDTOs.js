@@ -25,18 +25,6 @@ class UserResponseDTO {
 }
 
 
-class AuthResponseDTO {
-  constructor({ user, accessToken, expiresIn, expiresAt }) {
-    this.user = user;
-    this.accessToken = accessToken;
-    this.expiresIn = expiresIn;
-    this.expiresAt = expiresAt;
-    this.tokenType = "Bearer";
-
-  }
-}
-
 module.exports={
-  UserResponseDTO,
-  AuthResponseDTO
+  UserResponseDTO
 }
