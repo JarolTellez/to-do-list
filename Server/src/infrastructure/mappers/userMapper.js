@@ -18,7 +18,6 @@ class UserMapper {
   constructor({
     User,
     UserResponseDTO,
-    AuthResponseDTO,
     CreateUserRequestDTO,
     UpdateUserRequestDTO,
     LoginRequestDTO,
@@ -27,7 +26,6 @@ class UserMapper {
   }) {
     this.User = User;
     this.UserResponseDTO = UserResponseDTO;
-    this.AuthResponseDTO = AuthResponseDTO;
     this.CreateUserRequestDTO = CreateUserRequestDTO;
     this.UpdateUserRequestDTO = UpdateUserRequestDTO;
     this.LoginRequestDTO = LoginRequestDTO;
@@ -62,17 +60,16 @@ class UserMapper {
    * @param {string} params.accessToken - Access token
    * @param {string} params.expiresIn - Token expiration time
    * @param {Date} params.expiresAt - Token expiration date
-   * @returns {AuthResponseDTO} Auth response DTO
    */
-  domainToAuthResponse({ userDomain, accessToken, expiresIn, expiresAt }) {
-    return new this.AuthResponseDTO({
-      user: this.domainToResponse(userDomain),
-      accessToken,
-      expiresIn,
-      expiresAt,
-      tokenType: "Bearer",
-    });
-  }
+  // domainToAuthResponse({ userDomain, accessToken, expiresIn, expiresAt }) {
+  //   return new this.AuthResponseDTO({
+  //     user: this.domainToResponse(userDomain),
+  //     accessToken,
+  //     expiresIn,
+  //     expiresAt,
+  //     tokenType: "Bearer",
+  //   });
+  // }
 
   /**
    * Converts request data to create user DTO

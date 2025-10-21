@@ -30,7 +30,6 @@ const UserTagRequestDTO = require("../../aplication/dtos/request_dto/userTagRequ
 // ResponseDTO
 const {
   UserResponseDTO,
-  AuthResponseDTO,
 } = require("../../aplication/dtos/response_dto/userResponseDTOs");
 const TagResponseDTO = require("../../aplication/dtos/response_dto/tagResponseDTOs");
 const {
@@ -137,7 +136,6 @@ const userTagMapper = new UserTagMapper({
 const userMapper = new UserMapper({
   User,
   UserResponseDTO,
-  AuthResponseDTO,
   CreateUserRequestDTO,
   UpdateUserRequestDTO,
   LoginRequestDTO,
@@ -212,7 +210,6 @@ const sessionMapperWithBind = {
 const userMapperAplicationWithBind = {
   ...userMapper,
   domainToResponse: userMapper.domainToResponse.bind(userMapper),
-  domainToAuthResponse: userMapper.domainToAuthResponse.bind(userMapper),
 };
 
 // DAOs con sus dependencias

@@ -4,26 +4,8 @@ const validateAccessToken = async (req, res, next) => {
   try {
     const jwtAuth = req.app.get("jwtAuth");
     const sessionService = req.app.get("sessionService");
-    const authorizationHeader = req.headers["authorization"];
 
-    // Verificar que exista el header y tenga el formato correcto
-    if (!authorizationHeader) {
-      return res.status(401).json({
-        success: false,
-        message: "Authorization header requerido",
-        code: "MISSING_AUTH_HEADER",
-      });
-    }
-
-    if (!authorizationHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Formato de autorización inválido. Use: Bearer <token>",
-        code: "INVALID_AUTH_FORMAT",
-      });
-    }
-
-    const accessToken = authorizationHeader.split(" ")[1];
+    const accessToken = req.cookies.accessToken;
 
     if (!accessToken) {
       return res.status(401).json({
@@ -59,6 +41,22 @@ const validateAccessToken = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Error validando token:", error);
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token de acceso expirado",
+        code: "TOKEN_EXPIRED",
+      });
+    }
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token de acceso inválido",
+        code: "INVALID_TOKEN",
+      });
+    }
 
     return res.status(401).json({
       success: false,

@@ -1,11 +1,9 @@
 const express = require("express");
-const {validateAccessToken} = require('../middlewares/validateAccessToken');
+const { validateAccessToken } = require("../middlewares/validateAccessToken");
 module.exports = (authController) => {
   const router = express.Router();
 
-  router
-    .route("/login")
-    .post(authController.login.bind(authController));
+  router.route("/login").post(authController.login.bind(authController));
 
   router
     .route("/logout")
@@ -17,11 +15,21 @@ module.exports = (authController) => {
 
   router
     .route("/active-sessions")
-    .get(validateAccessToken, authController.getUserActiveSessions.bind(authController));
+    .get(
+      validateAccessToken,
+      authController.getUserActiveSessions.bind(authController)
+    );
 
   router
     .route("/close-all-sessions")
-    .patch(validateAccessToken, authController.closeAllUserSessions.bind(authController));
+    .patch(
+      validateAccessToken,
+      authController.closeAllUserSessions.bind(authController)
+    );
+
+  router
+    .route("/verify-session")
+    .get(authController.verifySession.bind(authController));
 
   // router
   //   .route("/sessions/:sessionId/close")

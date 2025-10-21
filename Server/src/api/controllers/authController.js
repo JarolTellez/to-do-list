@@ -1,4 +1,8 @@
-const { COOKIE_OPTIONS } = require("../config/cookiesConfig");
+const {
+  REFRESH_TOKEN_OPTIONS,
+  ACCESS_TOKEN_OPTIONS,
+  CLEAR_COOKIE_OPTIONS,
+} = require("../config/cookiesConfig");
 
 const { clearAuthCookies } = require("../utils/cookieUtils");
 class AuthController {
@@ -22,19 +26,14 @@ class AuthController {
         userAgent,
         ip,
       });
-      if (result.isNewRefreshToken) {
-        res.cookie("refreshToken", result.refreshToken, COOKIE_OPTIONS);
-        console.log("Nuevo refresh token establecido en cookies");
-      } else {
-        console.log("Usando refresh token existente");
-      }
-
-      const authResponse = this.userMapper.domainToAuthResponse(result);
+      res.cookie("refreshToken", result.refreshToken, REFRESH_TOKEN_OPTIONS);
+      res.cookie("accessToken", result.accessToken, ACCESS_TOKEN_OPTIONS);
+      const userResponse = this.userMapper.domainToResponse(result.userDomain);
 
       return res.status(200).json({
         success: true,
-        message: "Success auth",
-        data: authResponse,
+        message: "Autenticación exitosa",
+        data: userResponse,
       });
     } catch (error) {
       clearAuthCookies(res);
@@ -47,22 +46,19 @@ class AuthController {
       const refreshTokenExistente = req.cookies.refreshToken;
 
       if (!refreshTokenExistente) {
-        return res.status(401).json({
-          success: false,
-          message: "No hay sesión activa",
+        return res.status(200).json({
+          success: true,
+          message: "No hay sesión activa para cerrar",
         });
       }
 
-      const result = await this.authService.logOutUserSession(
-        refreshTokenExistente
-      );
+      await this.authService.logOutUserSession(refreshTokenExistente);
 
       clearAuthCookies(res);
 
       return res.status(200).json({
         success: true,
-        message: result.message,
-        userId: result.userId,
+        message: "Sesión cerrada exitosamente",
       });
     } catch (error) {
       clearAuthCookies(res);
@@ -83,6 +79,8 @@ class AuthController {
       }
 
       const result = await this.authService.refreshAccessToken(refreshToken);
+
+      res.cookie("accessToken", result.accessToken, ACCESS_TOKEN_OPTIONS);
       result.user = this.userMapper.domainToResponse(result.user);
 
       return res.status(200).json({
@@ -90,6 +88,47 @@ class AuthController {
         message: "Access token renovado exitosamente",
         data: result,
       });
+    } catch (error) {
+      clearAuthCookies(res);
+      next(error);
+    }
+  }
+
+  async verifySession(req, res, next) {
+    try {
+      const accessToken = req.cookies.accessToken;
+      const refreshToken = req.cookies.refreshToken;
+
+      const result = await this.authService.verifyUserSession({
+        accessToken,
+        refreshToken,
+      });
+
+      if (result.isAuthenticated) {
+        const mappedUser = this.userMapper.domainToResponse(result.user);
+        if (result.newAccessToken) {
+          res.cookie(
+            "accessToken",
+            result.newAccessToken,
+            ACCESS_TOKEN_OPTIONS
+          );
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: "Sesión activa",
+          isAuthenticated: true,
+          data: mappedUser,
+          tokenRefreshed: !!result.newAccessToken,
+        });
+      } else {
+        clearAuthCookies(res);
+        return res.status(200).json({
+          success: false,
+          message: "No hay sesión activa",
+          isAuthenticated: false,
+        });
+      }
     } catch (error) {
       clearAuthCookies(res);
       next(error);
@@ -122,9 +161,9 @@ class AuthController {
 
   async getUserActiveSessions(req, res, next) {
     try {
-      const accessToken = req.headers.authorization?.replace("Bearer ", "");
-
+      const accessToken = req.cookies.accessToken;
       const { page, limit, sortBy, sortOrder } = req.query;
+      
       if (!accessToken) {
         return res.status(401).json({
           success: false,

@@ -27,10 +27,8 @@ export class AuthClient {
         ...options.headers,
       },
     });
-    console.log("se hizo el response");
-
+    
     const apiResponse= await handleApiResponse(response);
-      console.log("se manejo el response: ", apiResponse);
        if(!apiResponse.success){
           throw new Error(apiResponse.message)
         }

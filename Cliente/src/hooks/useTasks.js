@@ -13,7 +13,7 @@ export const useTasks = (userId) => {
   const [operationLoading, setOperationLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadTasks = async (options = {}) => {
+  const loadTasks = async () => {
     if (!userId) {
       setTasks([]);
       return;
@@ -22,7 +22,7 @@ export const useTasks = (userId) => {
     try {
       setInitialLoading(true);
       setError(null);
-      const tasksData = await findAllTasksByUserId(userId, options);
+      const tasksData = await findAllTasksByUserId();
       setTasks(tasksData.data || []);
     } catch (err) {
       console.error("Erroruploading tasks:", err);
@@ -44,8 +44,8 @@ export const useTasks = (userId) => {
   const addTask = async (taskData) => {
     try {
       setOperationLoading(true);
-      const newTask = await createTask(taskData);
-      setTasks(prev => [...prev, newTask]);
+      const response = await createTask(taskData);
+      setTasks(prev => [...prev, response.data]);
       return true;
     } catch (err) {
       console.error("Error adding task:", err);
@@ -59,10 +59,10 @@ export const useTasks = (userId) => {
   const updateTaskItem = async (taskData) => {
     try {
       setOperationLoading(true);
-      const updatedTask = await updateTask(taskData);
+      const response = await updateTask(taskData);
       setTasks(prev => 
         prev.map(task => 
-          task.id === taskData.id ? { ...task, ...updatedTask } : task
+          task.id === taskData.id ? { ...task, ...response.data } : task
         )
       );
       return true;

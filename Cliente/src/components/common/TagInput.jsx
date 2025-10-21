@@ -13,8 +13,8 @@ const TagInput = ({ selectedTags, onTagsChange }) => {
   useEffect(() => {
     const loadAvailableTags = async () => {
       try {
-        const tags = await loadTags();
-        setAvailableTags(tags);
+        const response = await loadTags();
+        setAvailableTags(response.data);
       } catch (error) {
         console.error('Error loading tags:', error);
       }
