@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { changePassword } from '../../../services/user';
+import { useUser } from '../../../hooks/useUser';
 
 const ChangePasswordTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad, setLoadingMessage, setLoadingSubMessage }) => {
   const [passwordData, setPasswordData] = useState({
@@ -9,6 +9,8 @@ const ChangePasswordTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad,
   });
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+
+  const {updatePassword}= useUser();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,23 +30,21 @@ const ChangePasswordTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad,
     }
 
     try {
-      const result = await changePassword({
+      const response = await updatePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
 
-      if (result.success) {
-        showToast('Contraseña actualizada correctamente', 'success');
+  
+        showToast(response.message||'Contraseña actualizada', 'success');
         setPasswordData({
           currentPassword: '',
           newPassword: '',
           confirmPassword: ''
         });
-      } else {
-        showToast(result.error, 'error', 6000);
-      }
+  
     } catch (error) {
-      showToast('Error cambiando contraseña', 'error', 5000);
+      showToast(error.message||'Error cambiando contraseña', 'error', 5000);
     } finally {
       setLoading(false);
     }

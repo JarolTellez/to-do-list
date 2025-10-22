@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { deleteUserAccount } from '../../../services/user';
+import {  useUser } from '../../../hooks/useUser';
 
 const DeleteAccountTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad, showConfirmModal,setLoadingMessage,
   setLoadingSubMessage  }) => {
   const [loading, setLoading] = useState(false);
+  const {deleteAccount}=useUser();
 
   const handleDeleteAccount = () => {
     showConfirmModal({
@@ -17,7 +18,7 @@ const DeleteAccountTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad, 
           </p>
           <ul>
             <li>🗑️ Tu cuenta y todos tus datos serán eliminados</li>
-            <li>🗑️ Todas tus tareas y configuraciones se perderán</li>
+            <li>🗑️ Todas tus tareas se perderán</li>
             <li>🗑️ Tu historial de sesiones será borrado</li>
             <li>🚫 Perderás el acceso permanentemente</li>
           </ul>
@@ -28,33 +29,21 @@ const DeleteAccountTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad, 
         startFullScreenLoad("Eliminando cuenta", "Esta acción es irreversible. Por favor, espera...");
         
         try {
-          const result = await deleteUserAccount();
-          if (result.success) {
-            setLoadingMessage("Cuenta eliminada correctamente");
+           await deleteAccount();
+            setLoadingMessage("Cuenta eliminada");
             setLoadingSubMessage("Redirigiendo al login");
-            
             localStorage.setItem('accountDeletedMessage', 'true');
-            
             setTimeout(() => {
               window.location.href = '/';
             }, 2000);
-            
-          } else {
-            setLoadingMessage("Error al eliminar cuenta");
-            setLoadingSubMessage(result.error);
-            
-            setTimeout(() => {
-              stopFullScreenLoad();
-              showToast(result.error, 'error', 6000);
-            }, 3000);
-          }
+         
         } catch (error) {
           setLoadingMessage("❌ Error inesperado");
           setLoadingSubMessage("Por favor, intenta nuevamente");
           
           setTimeout(() => {
             stopFullScreenLoad();
-            showToast('Error eliminando cuenta', 'error', 5000);
+            showToast(error.message||'Error eliminando cuenta', 'error', 5000);
           }, 3000);
         }
       }

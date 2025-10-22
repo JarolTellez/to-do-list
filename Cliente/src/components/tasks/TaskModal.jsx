@@ -3,6 +3,7 @@ import TagInput from '../common/TagInput';
 import { formatDateForDateTimeInput } from '../../utils/formatDate';
 import { taskMappers } from '../../mappers/taskMapper';
 import { useToast } from '../../components/contexts/ToastContexts';
+import ConfirmModal from '../common/ConfirmModal';
 
 const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: externalLoading }) => {
   const { showToast } = useToast();
@@ -17,6 +18,16 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
+
+   const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: 'warning',
+    title: '',
+    message: '',
+    confirmText: 'Confirmar',
+    onConfirm: null,
+    loading: false
+  });
 
   useEffect(() => {
     if (task) {
@@ -131,18 +142,26 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await onDelete(task.id);
-    } catch (error) {
-      showToast('Error al eliminar la tarea', 'error', 6000);
-    } finally {
-      setLoading(false);
-    }
+   setConfirmModal({
+      isOpen: true,
+      type: 'danger',
+      title: 'Eliminar Tarea',
+      message: '¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        
+        try {
+          await onDelete(task.id);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          onClose();
+        } catch (error) {
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+          showToast('Error al eliminar la tarea', 'error', 6000);
+        }
+      }
+    });
   };
 
   const handleClear = () => {
@@ -159,6 +178,10 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
       setNameError('');
       setDescriptionError('');
     }
+  };
+
+    const closeConfirmModal = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
   };
 
   const handleInputChange = (e) => {
@@ -278,6 +301,17 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
           </div>
         </form>
       </div>
+        {/* ConfirmModal para eliminar */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        type={confirmModal.type}
+        loading={confirmModal.loading}
+      />
     </div>
   );
 };

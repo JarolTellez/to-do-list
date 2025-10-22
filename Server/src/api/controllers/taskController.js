@@ -34,7 +34,7 @@ class TaskController {
 
       return res.status(200).json({
         success: true,
-        message: `Tarea con ID ${taskId} eliminada correctamente.`,
+        message: `Tarea con ID ${taskId} eliminada.`,
         data: {
           taskId: taskId,
         },

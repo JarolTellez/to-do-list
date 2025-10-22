@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getUserSessions,
   closeAllSessions,
@@ -10,75 +10,57 @@ export const useSessions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-    useEffect(() => {
-    loadSessions();
-  }, []);
-
-
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await getUserSessions();
-      setSessions(response.data);
+      setSessions(response.data || []);
       return response;
-    } catch (err) {
-      const errorMsg = err.message || "Error cargando sesiones";
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
+    } catch (error) {
+      setError(error.message || "Error cargando sesiones");
+      throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleCloseAllSessions = async () => {
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const handleCloseAllSessions = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const result = await closeAllSessions();
-
-      if (result.success) {
-        await loadSessions();
-        return result;
-      } else {
-        setError(result.error);
-        return result;
-      }
-    } catch (err) {
-      const errorMsg = err.message || "Error cerrando sesiones";
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
+      const response = await closeAllSessions();
+      return response;
+    } catch (error) {
+      setError(error.message || "Error cerrando sesiones");
+      throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleCloseSession = async (sessionId) => {
+  const handleCloseSession = useCallback(async (sessionId) => {
     setLoading(true);
     setError(null);
 
     try {
-      const result = await closeSession(sessionId);
+      const response = await closeSession(sessionId);
 
-      if (result.success) {
-        setSessions((prev) =>
-          prev.filter((session) => session.id !== sessionId)
-        );
-        return result;
-      } else {
-        setError(result.error);
-        return result;
-      }
-    } catch (err) {
-      const errorMsg = err.message || "Error cerrando sesión";
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
+      setSessions((prev) => prev.filter((session) => session.id !== sessionId));
+      return response;
+    } catch (error) {
+      setError(error.message || "Error cerrando sesión");
+      throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     sessions,

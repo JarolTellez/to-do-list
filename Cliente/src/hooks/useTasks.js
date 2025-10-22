@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   findAllTasksByUserId,
   createTask,
@@ -8,12 +8,12 @@ import {
 } from "../services/tasks";
 
 export const useTasks = (userId) => {
-  const [tasks, setTasks] = useState([]); 
+  const [tasks, setTasks] = useState([]);
   const [initialLoading, setInitialLoading] = useState(false);
   const [operationLoading, setOperationLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     if (!userId) {
       setTasks([]);
       return;
@@ -22,89 +22,92 @@ export const useTasks = (userId) => {
     try {
       setInitialLoading(true);
       setError(null);
-      const tasksData = await findAllTasksByUserId();
-      setTasks(tasksData.data || []);
-    } catch (err) {
-      console.error("Erroruploading tasks:", err);
-      setError(err.message);
+      const response = await findAllTasksByUserId();
+      setTasks(response.data || []);
+    } catch (error) {
+      setError(error.message || "Error cargando tareas");
       setTasks([]);
+      throw error;
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     if (userId) {
       loadTasks();
-    } else {
-      setTasks([]);
     }
-  }, [userId]);
+  }, [loadTasks, userId]);
 
-  const addTask = async (taskData) => {
+  const addTask = useCallback(async (taskData) => {
     try {
       setOperationLoading(true);
+      setError(null);
       const response = await createTask(taskData);
-      setTasks(prev => [...prev, response.data]);
-      return true;
-    } catch (err) {
-      console.error("Error adding task:", err);
-      setError(err.message);
-      throw err;
+      setTasks((prev) => [...prev, response.data]);
+      return response;
+    } catch (error) {
+      setError(error.message || "Error agregando tarea");
+      throw error;
     } finally {
       setOperationLoading(false);
     }
-  };
+  }, []);
 
-  const updateTaskItem = async (taskData) => {
+  const updateTaskItem = useCallback(async (taskData) => {
     try {
       setOperationLoading(true);
+      setError(null);
       const response = await updateTask(taskData);
-      setTasks(prev => 
-        prev.map(task => 
+      setTasks((prev) =>
+        prev.map((task) =>
           task.id === taskData.id ? { ...task, ...response.data } : task
         )
       );
-      return true;
-    } catch (err) {
-      console.error("Error updating task:", err);
-      setError(err.message);
-      throw err;
+      return response;
+    } catch (error) {
+      setError(error.message || "Error actualizando tarea");
+      throw error;
     } finally {
       setOperationLoading(false);
     }
-  };
+  }, []);
 
-  const deleteTaskItem = async (taskId) => {
+  const deleteTaskItem = useCallback(async (taskId) => {
     try {
       setOperationLoading(true);
-      await deleteTask(taskId);
-      setTasks(prev => prev.filter(task => task.id !== taskId));
-    } catch (err) {
-      console.error("Error deleting task:", err);
-      setError(err.message);
-      throw err;
+      setError(null);
+
+      const response = await deleteTask(taskId);
+      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+      return response;
+    } catch (error) {
+      setError(error.message || "Error eliminando tarea");
+      throw error;
     } finally {
       setOperationLoading(false);
     }
-  };
+  }, []);
 
-  const toggleTaskCompletion = async (taskId, isCompleted) => {
+  const toggleTaskCompletion = useCallback(async (taskId, isCompleted) => {
     try {
       setOperationLoading(true);
-      await completeTask(taskId, isCompleted);
-      setTasks(prev => 
-        prev.map(task => 
+      setError(null);
+
+      const response = await completeTask(taskId, isCompleted);
+      setTasks((prev) =>
+        prev.map((task) =>
           task.id === taskId ? { ...task, isCompleted } : task
         )
       );
-    } catch (err) {
-      setError(err.message);
-      throw err;
+      return response;
+    } catch (error) {
+      setError(error.message || "Error completando tarea");
+      throw error;
     } finally {
       setOperationLoading(false);
     }
-  };
+  }, []);
 
   return {
     tasks,

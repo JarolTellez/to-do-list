@@ -162,78 +162,85 @@ class AuthService {
     });
   }
 
-  async verifyUserSession({ accessToken, refreshToken }, externalDbClient = null) {
-  return this.errorMapper.executeWithErrorMapping(async () => {
-    if (!refreshToken) {
-      return {
-        isAuthenticated: false,
-        user: null,
-        newAccessToken: null
-      };
-    }
-
-    return this.dbManager.withTransaction(async (dbClient) => {
-      let userData = null;
-      let newAccessToken = null;
-
-      try {
-        if (accessToken) {
-          try {
-            const decoded = this.jwtAuth.verifyAccessToken(accessToken);
-            
-            userData = await this.userService.validateUserExistenceById(decoded.userId, dbClient);
-            
-            const sessionValidation = await this.sessionService.validateSession(
-              decoded.userId,
-              this.jwtAuth.createHashRefreshToken(refreshToken),
-              dbClient
-            );
-
-            if (!sessionValidation) {
-                throw this.errorFactory.createAuthenticationError(
-            "Session no encontrada o inactiva",
-            {
-              operation: "verifyUserSession"
-            }
-          );
-            }
-            
-       
-          } catch (accessTokenError) {
-            if (accessTokenError.name === 'TokenExpiredError' || 
-                accessTokenError.name === 'JsonWebTokenError') {
-              
-              const refreshResult = await this.refreshAccessToken(refreshToken, dbClient);
-              userData = refreshResult.user; 
-              newAccessToken = refreshResult.accessToken;
-            } else {
-              throw accessTokenError;
-            }
-          }
-        } else {
-          const refreshResult = await this.refreshAccessToken(refreshToken, dbClient);
-          userData = refreshResult.user; 
-          newAccessToken = refreshResult.accessToken;
-        }
-
-        return {
-          isAuthenticated: true,
-          user: userData, 
-          newAccessToken: newAccessToken
-        };
-
-      } catch (error) {
+  async verifyUserSession(
+    { accessToken, refreshToken },
+    externalDbClient = null
+  ) {
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      if (!refreshToken) {
         return {
           isAuthenticated: false,
           user: null,
-          newAccessToken: null
+          newAccessToken: null,
         };
       }
-    }, externalDbClient);
-  });
-}
 
+      return this.dbManager.withTransaction(async (dbClient) => {
+        let userData = null;
+        let newAccessToken = null;
 
+        try {
+          if (accessToken) {
+            try {
+              const decoded = this.jwtAuth.verifyAccessToken(accessToken);
+
+              userData = await this.userService.validateUserExistenceById(
+                decoded.sub,
+                dbClient
+              );
+              const sessionValidation =
+                await this.sessionService.validateSession(
+                  decoded.sub,
+                  this.jwtAuth.createHashRefreshToken(refreshToken),
+                  dbClient
+                );
+              if (!sessionValidation) {
+                throw this.errorFactory.createAuthenticationError(
+                  "Session no encontrada o inactiva",
+                  {
+                    operation: "verifyUserSession",
+                  }
+                );
+              }
+            } catch (accessTokenError) {
+              if (
+                accessTokenError.name === "TokenExpiredError" ||
+                accessTokenError.name === "JsonWebTokenError"
+              ) {
+                const refreshResult = await this.refreshAccessToken(
+                  refreshToken,
+                  dbClient
+                );
+                userData = refreshResult.user;
+                newAccessToken = refreshResult.accessToken;
+              } else {
+                throw accessTokenError;
+              }
+            }
+          } else {
+            const refreshResult = await this.refreshAccessToken(
+              refreshToken,
+              dbClient
+            );
+            userData = refreshResult.user;
+            newAccessToken = refreshResult.accessToken;
+          }
+
+          return {
+            isAuthenticated: true,
+            user: userData,
+            newAccessToken: newAccessToken,
+          };
+        } catch (error) {
+          return {
+            isAuthenticated: false,
+            user: null,
+            newAccessToken: null,
+          };
+        }
+      }, externalDbClient);
+    });
+  }
 
   async refreshAccessToken(refreshToken, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {

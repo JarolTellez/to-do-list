@@ -40,7 +40,7 @@ class UserController {
       clearAuthCookies(res);
       return res.status(200).json({
         success: true,
-        message: "Usuario actualizado correctamente",
+        message: "Usuario actualizado",
         requiresReauth: result.sessionsClosed,
         criticalChanges: result.criticalChanges,
         data: userResponse,
