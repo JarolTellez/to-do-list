@@ -21,9 +21,9 @@ const LoginForm = ({ onLogin, onSwitchToRegister }) => {
     setLoading(true);
 
     try {
-      const result = await onLogin(formData.username, formData.password);
-    } catch (err) {
-      showToast('Error de conexión. Intenta nuevamente.', 'error', 6000);
+      const response = await onLogin(formData.username, formData.password);
+    } catch (error) {
+      showToast(error.message||'Intenta nuevamente', 'error', 6000);
     } finally {
       setLoading(false);
     }

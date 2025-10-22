@@ -65,7 +65,6 @@ export class ApiClient {
 
   async handleAuthError(url, options, originalResponse) {
     try {
-      console.log("Attempting to refresh access token...");
 
       await authService.refreshAccessToken();
 

@@ -35,40 +35,40 @@ function App() {
   }, [isAuthenticated, loading, user]);
 
   const handleLogin = async (username, password) => {
-    const result = await login(username, password);
+    const response = await login(username, password);
     
     
-    if (result && result.success === false) {
-      showToast(result.error, 'error', 6000);
-      return result;
+    if (response && response.success === false) {
+      showToast(response.error, 'error', 6000);
+      return response;
     }
     
-    if (result && result.success) {
+    if (response && response.success) {
       showToast('Inicio de sesión exitoso', 'success');
     }
     
-    return result;
+    return response;
   };
 
   const handleRegister = async (userData) => {
-    const result = await register(userData);
+    const response = await register(userData);
     
     
-    if (result) {
-      showToast('Usuario registrado correctamente', 'success');
+    if (response) {
+      showToast('Usuario registrado', 'success');
       setCurrentView('login');
     } else {
-       const errorMessage = result?.error || 'Error desconocido';
+       const errorMessage = response?.error || 'Error desconocido';
       showToast(errorMessage, 'error', 6000);
     }
     
-    return result;
+    return response;
   };
 
   const handleLogout = async () => {
     await logout();
     setCurrentView('login');
-    showToast('Sesión cerrada correctamente', 'success');
+    showToast('Sesión cerrada', 'success');
   };
 
   if (loading) {

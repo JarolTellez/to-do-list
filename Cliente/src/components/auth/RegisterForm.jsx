@@ -28,8 +28,8 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }) => {
 
     try {
       const result = await onRegister(formData);
-    } catch (err) {
-      showToast('Error de conexión. Intenta nuevamente.', 'error', 6000);
+    } catch (error) {
+      showToast(error.message||'Error de conexión. Intenta nuevamente.', 'error', 6000);
     } finally {
       setLoading(false);
     }

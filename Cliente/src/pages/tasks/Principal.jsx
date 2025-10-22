@@ -1,48 +1,47 @@
-
-import React, { useState, useMemo } from 'react';
-import Sidebar from '../../components/tasks/Sidebar';
-import TaskList from '../../components/tasks/TaskList';
-import TaskModal from '../../components/tasks/TaskModal';
-import UserModal from '../../components/user/userModal/index';
-import { useToast } from '../../components/contexts/ToastContexts';
-import { useTasks } from '../../hooks/useTasks';
-import { useFilters } from '../../hooks/useFilters';
-import FullScreenLoader from '../../components/common/FullScreenLoader';
-import ConfirmModal from '../../components/common/ConfirmModal';
+import React, { useState, useMemo } from "react";
+import Sidebar from "../../components/tasks/Sidebar";
+import TaskList from "../../components/tasks/TaskList";
+import TaskModal from "../../components/tasks/TaskModal";
+import UserModal from "../../components/user/userModal/index";
+import { useToast } from "../../components/contexts/ToastContexts";
+import { useTasks } from "../../hooks/useTasks";
+import { useFilters } from "../../hooks/useFilters";
+import FullScreenLoader from "../../components/common/FullScreenLoader";
+import ConfirmModal from "../../components/common/ConfirmModal";
 
 const Principal = ({ user, onLogout }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [fullScreenLoading, setFullScreenLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
-  const [loadingSubMessage, setLoadingSubMessage] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState("");
+  const [loadingSubMessage, setLoadingSubMessage] = useState("");
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
-    type: 'warning',
-    title: '',
-    message: '',
+    type: "warning",
+    title: "",
+    message: "",
     details: null,
-    confirmText: 'Confirmar',
-    onConfirm: null
+    confirmText: "Confirmar",
+    onConfirm: null,
   });
-  
+
   const { showToast } = useToast();
 
   const userId = user?.id;
-  
-  const { 
-    tasks, 
+
+  const {
+    tasks,
     loading,
     operationLoading,
-    error, 
-    addTask, 
-    updateTask, 
-    deleteTask, 
-    toggleTaskCompletion, 
-    refreshTasks 
+    error,
+    addTask,
+    updateTask,
+    deleteTask,
+    toggleTaskCompletion,
+    refreshTasks,
   } = useTasks(userId);
-  
+
   const {
     filter,
     priorityFilter,
@@ -52,31 +51,31 @@ const Principal = ({ user, onLogout }) => {
     setDateFilter,
     applyFilters,
     clearAll,
-    hasActiveFilters
+    hasActiveFilters,
   } = useFilters();
-
 
   const stats = useMemo(() => {
     const now = new Date();
-    
-    const completed = tasks.filter(task => task.isCompleted).length;
-    const pending = tasks.filter(task => !task.isCompleted).length;
-    const overdue = tasks.filter(task => 
-      !task.isCompleted && 
-      task.scheduledDate && 
-      new Date(task.scheduledDate) < now
+
+    const completed = tasks.filter((task) => task.isCompleted).length;
+    const pending = tasks.filter((task) => !task.isCompleted).length;
+    const overdue = tasks.filter(
+      (task) =>
+        !task.isCompleted &&
+        task.scheduledDate &&
+        new Date(task.scheduledDate) < now
     ).length;
 
     return {
       total: tasks.length,
       completed,
       pending,
-      overdue
+      overdue,
     };
   }, [tasks]);
 
   const filteredTasks = useMemo(() => {
-    return applyFilters(tasks); 
+    return applyFilters(tasks);
   }, [tasks, applyFilters]);
 
   const startFullScreenLoad = (message, subMessage = "Por favor, espera") => {
@@ -85,102 +84,104 @@ const Principal = ({ user, onLogout }) => {
     setFullScreenLoading(true);
   };
 
-  const stopFullScreenLoad = () => {
-    setFullScreenLoading(false);
-    setLoadingMessage('');
-    setLoadingSubMessage('');
-  };
+  // const stopFullScreenLoad = () => {
+  //   setFullScreenLoading(false);
+  //   setLoadingMessage("");
+  //   setLoadingSubMessage("");
+  // };
 
   const showConfirmModal = (config) => {
     setConfirmModal({
       isOpen: true,
-      type: config.type || 'warning',
+      type: config.type || "warning",
       title: config.title,
       message: config.message,
       details: config.details,
-      confirmText: config.confirmText || 'Confirmar',
-      onConfirm: config.onConfirm
+      confirmText: config.confirmText || "Confirmar",
+      onConfirm: config.onConfirm,
     });
   };
 
   const closeConfirmModal = () => {
-    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
 
   const getErrorMessage = (error) => {
-    return error.response?.data?.message || 
-           error.response?.data?.error || 
-           error.message || 
-           'Error en la operación';
+    return (
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "Error en la operación"
+    );
   };
 
   const handleAddTask = async (taskData) => {
     try {
-      await addTask(taskData);
+      const response = await addTask(taskData);
       setShowModal(false);
-      showToast('Tarea agregada correctamente', 'success');
+      showToast(response.message || "Tarea agregada", "success");
     } catch (error) {
-      showToast(getErrorMessage(error), 'error', 6000);
+      showToast(getErrorMessage(error), "error", 6000);
     }
   };
 
   const handleEditTask = async (taskData) => {
     try {
-      await updateTask(taskData);
+      const response = await updateTask(taskData);
       setShowModal(false);
       setEditingTask(null);
-      showToast('Tarea actualizada correctamente', 'success');
+      showToast(response.message || "Tarea actualizada", "success");
     } catch (error) {
-      showToast(getErrorMessage(error), 'error', 6000);
+      showToast(getErrorMessage(error), "error", 6000);
     }
   };
 
   const handleDeleteTask = async (taskId) => {
     try {
       await deleteTask(taskId);
-      showToast('Tarea eliminada correctamente', 'success');
+      showToast("Tarea eliminada", "success");
     } catch (error) {
-      showToast(getErrorMessage(error), 'error', 6000);
+      showToast(getErrorMessage(error), "error", 6000);
     }
   };
 
   const handleToggleComplete = async (taskId, isCompleted) => {
     try {
       await toggleTaskCompletion(taskId, isCompleted);
-      const action = isCompleted ? 'completada' : 'marcada como pendiente';
-      showToast(`Tarea ${action}`, 'success');
+      const action = isCompleted ? "completada" : "marcada como pendiente";
+      showToast(`Tarea ${action}`, "success");
     } catch (error) {
-      showToast(getErrorMessage(error), 'error', 6000);
+      showToast(getErrorMessage(error), "error", 6000);
     }
   };
 
   const handleRefresh = async () => {
     try {
       await refreshTasks();
-      showToast('Tareas actualizadas', 'success');
+      showToast("Tareas actualizadas", "success");
     } catch (error) {
-      showToast(getErrorMessage(error), 'error', 6000);
+      showToast(getErrorMessage(error), "error", 6000);
     }
   };
 
   const handleLogout = () => {
     showConfirmModal({
-      type: 'warning',
-      title: 'Cerrar Sesión',
-      message: '¿Estás seguro de que quieres cerrar la sesión actual?',
+      type: "warning",
+      title: "Cerrar Sesión",
+      message: "¿Estás seguro de que quieres cerrar la sesión actual?",
       details: (
         <ul>
           <li>Serás redirigido a la página de login</li>
         </ul>
       ),
-      confirmText: 'Cerrar Sesión',
+      confirmText: "Cerrar Sesión",
       onConfirm: () => {
         closeConfirmModal();
         startFullScreenLoad("Cerrando sesión", "Hasta pronto...");
         setTimeout(() => {
           onLogout();
         }, 1500);
-      }
+      },
     });
   };
 
@@ -230,7 +231,7 @@ const Principal = ({ user, onLogout }) => {
     <div className="todo-app">
       {/* FullScreenLoader para logout */}
       {fullScreenLoading && (
-        <FullScreenLoader 
+        <FullScreenLoader
           message={loadingMessage}
           subMessage={loadingSubMessage}
         />
@@ -272,8 +273,9 @@ const Principal = ({ user, onLogout }) => {
                 + Nueva Tarea
               </button>
               <span className="task-count">
-                {filteredTasks.length} {filteredTasks.length === 1 ? 'tarea' : 'tareas'}
-                {hasActiveFilters && ' (filtradas)'}
+                {filteredTasks.length}{" "}
+                {filteredTasks.length === 1 ? "tarea" : "tareas"}
+                {hasActiveFilters && " (filtradas)"}
               </span>
             </div>
           </div>
@@ -284,7 +286,7 @@ const Principal = ({ user, onLogout }) => {
             onDeleteTask={handleDeleteTask}
             onToggleComplete={handleToggleComplete}
             emptyMessage={
-              tasks.length === 0 
+              tasks.length === 0
                 ? "No hay tareas creadas. ¡Agrega tu primera tarea!"
                 : "No hay tareas que coincidan con los filtros aplicados."
             }
@@ -297,17 +299,14 @@ const Principal = ({ user, onLogout }) => {
           task={editingTask}
           onSave={editingTask ? handleEditTask : handleAddTask}
           onClose={closeModal}
+          onDelete={handleDeleteTask}
           isEditing={!!editingTask}
-          loading={operationLoading} 
+          loading={operationLoading}
         />
       )}
 
       {showUserModal && (
-        <UserModal
-          user={user}
-          onClose={closeUserModal}
-          onLogout={onLogout}
-        />
+        <UserModal user={user} onClose={closeUserModal} onLogout={onLogout} />
       )}
 
       {/* ConfirmModal para logout */}

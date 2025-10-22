@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { authService } from '../services/auth.js';
+import { useState, useEffect, useCallback } from "react";
+import { authService } from "../services/auth.js";
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);
@@ -7,66 +7,53 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
+  const verifySession = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      const token = localStorage.getItem('accessToken');
-      
-      if (token) {
-        const userId = sessionStorage.getItem('userId');
-        const userEmail = sessionStorage.getItem('userEmail');
-        const userUsername = sessionStorage.getItem('userUsername');
-        
-        if (userId) {
-          setUser({ id: userId, email: userEmail, username: userUsername });
-          setIsAuthenticated(true);
-        } else {
-          await attemptTokenRefresh();
-        }
-      } else {
-        await attemptTokenRefresh();
-      }
-    } catch (error) {
-      console.error('Error auth:', error);
-      clearAuthState();
+      const result = await authService.verifySession();
+
+      setIsAuthenticated(result.isAuthenticated);
+      setUser(result.user);
+
+      return result;
+    } catch (err) {
+      setError(err.message);
+      setIsAuthenticated(false);
+      setUser(null);
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const attemptTokenRefresh = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const newTokenData = await authService.refreshAccessToken();
-      
-      if (newTokenData?.accessToken) {
-        localStorage.setItem('accessToken', newTokenData.accessToken);
-        
-        if (newTokenData.user) {
-          sessionStorage.setItem('userId', newTokenData.user.id);
-          sessionStorage.setItem('userEmail', newTokenData.user.email);
-          sessionStorage.setItem('userUsername', newTokenData.user.username);
-          setUser(newTokenData.user);
-        }
-        
-        setIsAuthenticated(true);
-        return true;
+      const response = await authService.refreshAccessToken();
+
+      if (response.data) {
+        sessionStorage.setItem("userId", response.data.user.id);
+        sessionStorage.setItem("userEmail", response.data.user.email);
+        sessionStorage.setItem("userUsername", response.data.user.username);
+        setUser(response.data.user);
       }
+
+      return response;
     } catch (error) {
-      console.error('Error refreshin accessToken:', error);
       clearAuthState();
-      return false;
+      setError(error.message || "Error de autenticacion");
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const clearAuthState = () => {
-    localStorage.removeItem('accessToken');
-    sessionStorage.removeItem('userId');
-    sessionStorage.removeItem('userEmail');
-    sessionStorage.removeItem('userUsername');
+    sessionStorage.removeItem("userId");
+    sessionStorage.removeItem("userEmail");
+    sessionStorage.removeItem("userUsername");
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -74,23 +61,16 @@ export const useAuth = () => {
   const handleLogin = async (username, password) => {
     setLoading(true);
     setError(null);
-    
-    try {
-      const result = await authService.login(username, password);
 
-      
-      if (result) {
-        setIsAuthenticated(true);
-        setUser(result.data);
-        return result.data;
-      } else {
-        setError(result?.message || 'Error desconocido');
-        return result;
-      }
-    } catch (err) {
-      const errorMsg = err.message || 'Error al iniciar sesión';
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
+    try {
+      const response = await authService.login(username, password);
+
+      setIsAuthenticated(true);
+      setUser(response.data);
+      return response;
+    } catch (error) {
+      setError(error.message || "Error al iniciar sesión");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -99,34 +79,37 @@ export const useAuth = () => {
   const handleRegister = async (userData) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await authService.register(userData);
-      
-      if (response) {
-        return response.data;
-      } else {
-        setError(response?.error || 'Error desconocido');
-        return response;
-      }
-    } catch (err) {
-      const errorMsg = err.message || 'Error al registrar usuario';
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
+      return response;
+    } catch (error) {
+      setError(error.message || "Error al registrar usuario");
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      await authService.logout();
+      const response = await authService.logout();
+      return response;
     } catch (error) {
-      console.error('Error durante logout:', error);
+      setError(error.message || "Error al cerrar sesion");
+      throw error;
     } finally {
       clearAuthState();
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    verifySession();
+  },[]);
 
   return {
     user,
@@ -136,6 +119,6 @@ export const useAuth = () => {
     login: handleLogin,
     register: handleRegister,
     logout: handleLogout,
-    checkAuthStatus
+    verifySession,
   };
 };

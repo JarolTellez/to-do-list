@@ -146,7 +146,7 @@ class AuthController {
       return res.status(200).json({
         success: true,
         message: result.deactivated
-          ? "Todas las sesiones han sido desactivadas correctamente"
+          ? "Todas las sesiones han sido desactivadas"
           : "No se encontraron sesiones activas para desactivar",
         data: {
           deactivatedSessions: result.deactivated,
