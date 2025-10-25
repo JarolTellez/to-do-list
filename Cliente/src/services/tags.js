@@ -2,7 +2,7 @@ import { apiClient } from "./api/clients/apiClient.js";
 import { tagMappers } from "../mappers/tagMapper.js";
 
 export async function loadTags() {
-  const response = await apiClient.api.get("/tag/");
+  const response = await apiClient.api.get("/tag/?page=1&limit=500");
   const mappedTags = response.data.tags?.map(tagMappers.apiToTag) || [];
   return { data: mappedTags, message: response.message };
 }

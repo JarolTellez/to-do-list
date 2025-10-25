@@ -49,13 +49,6 @@ export class Task {
       });
     }
 
-    // if (!this.userId) {
-    //   errors.push({
-    //     field: "userId",
-    //     message: "El ID del usuario es obligatorio",
-    //   });
-    // }
-
     if (this.scheduledDate && this.scheduledDate < new Date()) {
       errors.push({
         field: "scheduledDate",

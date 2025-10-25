@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useToast } from '../contexts/ToastContexts';
+import { useToast } from '../../contexts/ToastContexts';
 
 const RegisterForm = ({ onRegister, onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
@@ -27,9 +26,7 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }) => {
     setLoading(true);
 
     try {
-      const result = await onRegister(formData);
-    } catch (error) {
-      showToast(error.message||'Error de conexión. Intenta nuevamente.', 'error', 6000);
+      await onRegister(formData);
     } finally {
       setLoading(false);
     }

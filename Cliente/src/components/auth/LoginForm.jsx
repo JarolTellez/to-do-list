@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useToast } from '../contexts/ToastContexts';
+import { useToast } from '../../contexts/ToastContexts';
 
 const LoginForm = ({ onLogin, onSwitchToRegister }) => {
   const [formData, setFormData] = useState({
@@ -21,9 +20,13 @@ const LoginForm = ({ onLogin, onSwitchToRegister }) => {
     setLoading(true);
 
     try {
-      const response = await onLogin(formData.username, formData.password);
+      if (typeof onLogin !== 'function') {
+        throw new Error('Función de login no disponible');
+      }
+      
+      await onLogin(formData.username, formData.password);
     } catch (error) {
-      showToast(error.message||'Intenta nuevamente', 'error', 6000);
+      console.error('Error en login:', error);
     } finally {
       setLoading(false);
     }

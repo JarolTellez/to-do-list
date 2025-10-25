@@ -1,4 +1,5 @@
-import { ApiError } from './ApiError.js';
+import { ApiError } from './ApiError';
+
 
 export const verifyContentType = (response) => {
   const contentType = response.headers.get("content-type");
@@ -11,6 +12,7 @@ export const extractErrorMessage = (errorData, status) => {
          errorData.error || 
          `Error ${status}`;
 };
+
 
 export const handleErrorResponse = async (response) => {
   const status = response.status;
@@ -91,4 +93,16 @@ export const handleApiResponse = async (response) => {
     }
     throw error;
   }
+};
+
+export const validateRequestParams = (url, options) => {
+  if (!url || typeof url !== 'string') {
+    throw new ApiError('URL must be a valid string', 400, 'INVALID_URL');
+  }
+
+  if (options.body && typeof options.body !== 'string' && !(options.body instanceof FormData)) {
+    throw new ApiError('Request body must be string or FormData', 400, 'INVALID_BODY');
+  }
+
+  return true;
 };

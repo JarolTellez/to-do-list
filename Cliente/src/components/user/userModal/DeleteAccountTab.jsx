@@ -1,57 +1,12 @@
-import React, { useState } from 'react';
-import {  useUser } from '../../../hooks/useUser';
+import React from 'react';
 
-const DeleteAccountTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad, showConfirmModal,setLoadingMessage,
-  setLoadingSubMessage  }) => {
-  const [loading, setLoading] = useState(false);
-  const {deleteAccount}=useUser();
-
+const DeleteAccountTab = ({ onDeleteAccount }) => {
   const handleDeleteAccount = () => {
-    showConfirmModal({
-      type: 'danger',
-      title: 'Eliminar Cuenta',
-      message: '¿ESTÁS ABSOLUTAMENTE SEGURO?',
-      details: (
-        <div>
-          <p style={{ marginBottom: '10px', fontWeight: 'bold', color: '#dc3545' }}>
-            ⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️
-          </p>
-          <ul>
-            <li>🗑️ Tu cuenta y todos tus datos serán eliminados</li>
-            <li>🗑️ Todas tus tareas se perderán</li>
-            <li>🗑️ Tu historial de sesiones será borrado</li>
-            <li>🚫 Perderás el acceso permanentemente</li>
-          </ul>
-        </div>
-      ),
-      confirmText: 'ELIMINAR CUENTA',
-      onConfirm: async () => {
-        startFullScreenLoad("Eliminando cuenta", "Esta acción es irreversible. Por favor, espera...");
-        
-        try {
-           await deleteAccount();
-            setLoadingMessage("Cuenta eliminada");
-            setLoadingSubMessage("Redirigiendo al login");
-            localStorage.setItem('accountDeletedMessage', 'true');
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 2000);
-         
-        } catch (error) {
-          setLoadingMessage("❌ Error inesperado");
-          setLoadingSubMessage("Por favor, intenta nuevamente");
-          
-          setTimeout(() => {
-            stopFullScreenLoad();
-            showToast(error.message||'Error eliminando cuenta', 'error', 5000);
-          }, 3000);
-        }
-      }
-    });
+    onDeleteAccount();
   };
 
   return (
-    <div className="tab-content">
+    <div className="user-tab-content">
       <div style={{ textAlign: 'center', padding: '20px' }}>
         <h3 style={{ color: '#dc3545', marginBottom: '20px' }}>Eliminar Cuenta</h3>
         
@@ -76,14 +31,13 @@ const DeleteAccountTab = ({ showToast, startFullScreenLoad, stopFullScreenLoad, 
         <button 
           className="btn-danger"
           onClick={handleDeleteAccount}
-          disabled={loading}
           style={{ 
             padding: '12px 24px',
             fontSize: '16px',
             fontWeight: 'bold'
           }}
         >
-          {loading ? '🔄 Procesando...' : '🗑️ ELIMINAR CUENTA'}
+          🗑️ ELIMINAR CUENTA
         </button>
       </div>
     </div>

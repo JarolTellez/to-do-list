@@ -2,20 +2,18 @@ import React, { useState, useMemo } from "react";
 import Sidebar from "../../components/tasks/Sidebar";
 import TaskList from "../../components/tasks/TaskList";
 import TaskModal from "../../components/tasks/TaskModal";
-import UserModal from "../../components/user/userModal/index";
-import { useToast } from "../../components/contexts/ToastContexts";
+import UserModal from "../../components/user/UserModal";
+import { useToast } from "../../contexts/ToastContexts";
 import { useTasks } from "../../hooks/useTasks";
 import { useFilters } from "../../hooks/useFilters";
-import FullScreenLoader from "../../components/common/FullScreenLoader";
+import { useLoading } from "../../contexts/LoadingContext";
 import ConfirmModal from "../../components/common/ConfirmModal";
+import { APP_CONFIG } from "../../utils/constants/appConstants";
 
 const Principal = ({ user, onLogout }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [fullScreenLoading, setFullScreenLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("");
-  const [loadingSubMessage, setLoadingSubMessage] = useState("");
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     type: "warning",
@@ -27,13 +25,13 @@ const Principal = ({ user, onLogout }) => {
   });
 
   const { showToast } = useToast();
+  const { startFullScreenLoading, stopFullScreenLoading } = useLoading();
 
   const userId = user?.id;
 
   const {
     tasks,
-    loading,
-    operationLoading,
+    loading: tasksLoading,
     error,
     addTask,
     updateTask,
@@ -56,7 +54,6 @@ const Principal = ({ user, onLogout }) => {
 
   const stats = useMemo(() => {
     const now = new Date();
-
     const completed = tasks.filter((task) => task.isCompleted).length;
     const pending = tasks.filter((task) => !task.isCompleted).length;
     const overdue = tasks.filter(
@@ -78,18 +75,6 @@ const Principal = ({ user, onLogout }) => {
     return applyFilters(tasks);
   }, [tasks, applyFilters]);
 
-  const startFullScreenLoad = (message, subMessage = "Por favor, espera") => {
-    setLoadingMessage(message);
-    setLoadingSubMessage(subMessage);
-    setFullScreenLoading(true);
-  };
-
-  // const stopFullScreenLoad = () => {
-  //   setFullScreenLoading(false);
-  //   setLoadingMessage("");
-  //   setLoadingSubMessage("");
-  // };
-
   const showConfirmModal = (config) => {
     setConfirmModal({
       isOpen: true,
@@ -106,61 +91,46 @@ const Principal = ({ user, onLogout }) => {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
 
-  const getErrorMessage = (error) => {
-    return (
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "Error en la operación"
-    );
-  };
-
   const handleAddTask = async (taskData) => {
     try {
-      const response = await addTask(taskData);
+      await addTask(taskData);
       setShowModal(false);
-      showToast(response.message || "Tarea agregada", "success");
     } catch (error) {
-      showToast(getErrorMessage(error), "error", 6000);
+       // Error already handled by useTasks
     }
   };
 
   const handleEditTask = async (taskData) => {
     try {
-      const response = await updateTask(taskData);
+      await updateTask(taskData);
       setShowModal(false);
       setEditingTask(null);
-      showToast(response.message || "Tarea actualizada", "success");
     } catch (error) {
-      showToast(getErrorMessage(error), "error", 6000);
+       // Error already handled by useTasks
     }
   };
 
   const handleDeleteTask = async (taskId) => {
     try {
       await deleteTask(taskId);
-      showToast("Tarea eliminada", "success");
     } catch (error) {
-      showToast(getErrorMessage(error), "error", 6000);
+       // Error already handled by useTasks
     }
   };
 
   const handleToggleComplete = async (taskId, isCompleted) => {
     try {
       await toggleTaskCompletion(taskId, isCompleted);
-      const action = isCompleted ? "completada" : "marcada como pendiente";
-      showToast(`Tarea ${action}`, "success");
     } catch (error) {
-      showToast(getErrorMessage(error), "error", 6000);
+       // Error already handled by useTasks
     }
   };
 
   const handleRefresh = async () => {
     try {
       await refreshTasks();
-      showToast("Tareas actualizadas", "success");
     } catch (error) {
-      showToast(getErrorMessage(error), "error", 6000);
+       // Error already handled by useTasks
     }
   };
 
@@ -175,16 +145,24 @@ const Principal = ({ user, onLogout }) => {
         </ul>
       ),
       confirmText: "Cerrar Sesión",
-      onConfirm: () => {
+      onConfirm: async () => {
         closeConfirmModal();
-        startFullScreenLoad("Cerrando sesión", "Hasta pronto...");
-        setTimeout(() => {
-          onLogout();
-        }, 1500);
+        startFullScreenLoading("Cerrando sesión", "Hasta pronto...");
+
+        try {
+          await onLogout();
+          showToast("Sesión cerrada exitosamente", "success");
+        } catch (error) {
+          console.error("Error durante logout:", error);
+          showToast("Sesión cerrada", "success");
+        } finally {
+          setTimeout(() => {
+            stopFullScreenLoading();
+          }, 1000);
+        }
       },
     });
   };
-
   const openAddModal = () => {
     setEditingTask(null);
     setShowModal(true);
@@ -208,7 +186,7 @@ const Principal = ({ user, onLogout }) => {
     setShowUserModal(false);
   };
 
-  if (loading) {
+  if (tasksLoading && tasks.length === 0) {
     return (
       <div className="loading-container">
         <div className="spinner"></div>
@@ -217,29 +195,23 @@ const Principal = ({ user, onLogout }) => {
     );
   }
 
-  if (error) {
+  if (error && tasks.length === 0) {
     return (
       <div className="error-container">
         <h2>Error al cargar las tareas</h2>
-        <p>{getErrorMessage(error)}</p>
-        <button onClick={handleRefresh}>Reintentar</button>
+        <p>{error.message || "Error desconocido"}</p>
+        <button onClick={handleRefresh} className="retry-btn">
+          Reintentar
+        </button>
       </div>
     );
   }
 
   return (
     <div className="todo-app">
-      {/* FullScreenLoader para logout */}
-      {fullScreenLoading && (
-        <FullScreenLoader
-          message={loadingMessage}
-          subMessage={loadingSubMessage}
-        />
-      )}
-
       <header className="app-header">
         <div className="header-content">
-          <h1>Todo App</h1>
+          <h1>{APP_CONFIG.NAME}</h1>
           <div className="user-actions">
             <span>Hola, {user?.username}</span>
             <button onClick={openUserModal} className="user-info-btn">
@@ -301,7 +273,6 @@ const Principal = ({ user, onLogout }) => {
           onClose={closeModal}
           onDelete={handleDeleteTask}
           isEditing={!!editingTask}
-          loading={operationLoading}
         />
       )}
 
@@ -309,7 +280,6 @@ const Principal = ({ user, onLogout }) => {
         <UserModal user={user} onClose={closeUserModal} onLogout={onLogout} />
       )}
 
-      {/* ConfirmModal para logout */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={closeConfirmModal}

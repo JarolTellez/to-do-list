@@ -1,65 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSessions } from "../../../hooks/useSessions";
 
 const SessionsTab = ({
-  showToast,
-  startFullScreenLoad,
-  stopFullScreenLoad,
-  onLogout,
-  showConfirmModal,
-  setLoadingMessage,
-  setLoadingSubMessage,
+  onCloseAllSessions,
 }) => {
-  const { sessions, loading, error, loadSessions, closeAllSessions } =
-    useSessions();
+  const { sessions, loading, error, loadSessions } = useSessions();
 
-  React.useEffect(() => {
-    if (error) {
-      showToast(error, "error", 5000);
-    }
-  }, [error, showToast]);
-
-  const handleCloseAllSessions = () => {
-    showConfirmModal({
-      type: "warning",
-      title: "Cerrar Sesiones",
-      message: "¿Estás seguro de que quieres cerrar todas las sesiones?",
-      details: (
-        <ul>
-          <li>Se cerrarán TODAS las sesiones activas</li>
-          <li>Serás redirigido a la página de login</li>
-          <li>
-            Tendrás que iniciar sesión nuevamente en todos los dispositivos
-          </li>
-        </ul>
-      ),
-      confirmText: "Cerrar Todas las Sesiones",
-      onConfirm: async () => {
-        startFullScreenLoad(
-          "Cerrando todas las sesiones",
-          "Estamos cerrando tu sesión en todos los dispositivos"
-        );
-
-        try {
-          await closeAllSessions();
-          setLoadingMessage("Sesiones cerradas");
-          setLoadingSubMessage("Redirigiendo al login");
-
-          setTimeout(() => {
-            onLogout();
-          }, 2000);
-        } catch (error) {
-          setLoadingMessage("Error inesperado");
-          setLoadingSubMessage("Por favor, intenta nuevamente");
-
-          setTimeout(() => {
-            stopFullScreenLoad();
-            showToast("Error cerrando sesiones", "error", 5000);
-          }, 3000);
-        }
-      },
-    });
-  };
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("es-ES", {
@@ -112,7 +61,7 @@ const SessionsTab = ({
         <h3>Sesiones Activas</h3>
         <button
           className="user-btn-danger user-btn-sm"
-          onClick={handleCloseAllSessions}
+          onClick={onCloseAllSessions}
           disabled={loading || sessions.length <= 1}
         >
           {loading ? "Cerrando..." : "Cerrar Todas las Sesiones"}
