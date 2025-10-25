@@ -2,7 +2,10 @@ import { apiClient } from "./api/clients/apiClient.js";
 import { sessionMappers } from "../mappers/sessionMapper.js";
 
 export async function getUserSessions() {
-  const response = await apiClient.api.get("/auth/active-sessions");
+  const response = await apiClient.api.get("/auth/active-sessions", {
+    page: 1,
+    limit: 2,
+  });
 
   const sessions =
     response.data.sessions?.map(sessionMappers.apiToSession) || [];
