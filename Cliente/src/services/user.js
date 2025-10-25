@@ -24,15 +24,6 @@ export async function changePassword(passwordData) {
 
 export async function deleteUserAccount() {
     const response = await apiClient.api.delete("/user/");
-    if (response.success === true) {
-      clearLocalState();
-    }
     return { data: response.data, message: response.message };
 }
 
-function clearLocalState() {
-  sessionStorage.removeItem("userId");
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("rememberMe");
-  localStorage.removeItem("userPreferences");
-}

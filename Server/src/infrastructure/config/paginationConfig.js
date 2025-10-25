@@ -1,6 +1,6 @@
 const PAGINATION_CONFIG = {
   MAX_LIMIT: 100,
-  DEFAULT_LIMIT: 10,
+  DEFAULT_LIMIT: 20,
   DEFAULT_PAGE: 1,
   MAX_PAGE_SIZE: 200,
 
@@ -8,7 +8,7 @@ const PAGINATION_CONFIG = {
     SESSIONS: 50,
     USERS: 100,
     TASKS: 100,
-    TAGS: 200,
+    TAGS: 500,
   },
 };
 

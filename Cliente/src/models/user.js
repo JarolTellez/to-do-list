@@ -19,8 +19,10 @@ export class User {
     this.updatedAt = updatedAt ? new Date(updatedAt) : new Date();
     this.userTagsCount = userTagsCount;
     this.tasksCount = tasksCount;
-    this.userTags = userTags.map((userTag) => new UserTag(userTag));
-    this.tasks = tasks.map((task) => new Task(task));
+    // this.userTags = userTags.map((userTag) => new UserTag(userTag));
+    // this.tasks = tasks.map((task) => new Task(task));
+     this.userTags = userTags;
+    this.tasks = tasks;
   }
   validate() {
     const errors = [];

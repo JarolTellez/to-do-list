@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import TagInput from '../common/TagInput';
 import { formatDateForDateTimeInput } from '../../utils/formatDate';
 import { taskMappers } from '../../mappers/taskMapper';
-import { useToast } from '../../components/contexts/ToastContexts';
+import { useToast } from '../../contexts/ToastContexts';
 import ConfirmModal from '../common/ConfirmModal';
+import { loadTags } from '../../services/tags'; 
 
-const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: externalLoading }) => {
+const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -18,8 +19,9 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
+  const [availableTags, setAvailableTags] = useState([]);
 
-   const [confirmModal, setConfirmModal] = useState({
+  const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     type: 'warning',
     title: '',
@@ -30,6 +32,20 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
   });
 
   useEffect(() => {
+    const loadAvailableTags = async () => {
+      try {
+        const response = await loadTags();
+        setAvailableTags(response.data || []);
+      } catch (error) {
+        console.error('Error loading tags:', error);
+        showToast('Error cargando etiquetas', 'error', 3000);
+      }
+    };
+    
+    loadAvailableTags();
+  }, [showToast]);
+
+  useEffect(() => {
     if (task) {
       setFormData({
         name: task.name || '',
@@ -37,7 +53,6 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
         scheduledDate: task.scheduledDate ? formatDateForDateTimeInput(new Date(task.scheduledDate)) : '',
         priority: task.priority?.toString() || ''
       });
-
 
       if (task.tags && task.tags.length > 0) {
         setTags(task.tags);
@@ -180,7 +195,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
     }
   };
 
-    const closeConfirmModal = () => {
+  const closeConfirmModal = () => {
     setConfirmModal(prev => ({ ...prev, isOpen: false }));
   };
 
@@ -192,7 +207,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
     if (name === 'description') setDescriptionError('');
   };
 
-  const isLoading = loading || externalLoading;
+  const isLoading = loading;
 
   return (
     <div className="modal" style={{ display: 'flex' }}>
@@ -242,6 +257,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
               <TagInput 
                 selectedTags={tags}
                 onTagsChange={setTags}
+                availableTags={availableTags}
                 disabled={isLoading}
               />
             </div>
@@ -268,7 +284,6 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
                   </label>
                 ))}
               </div>
-           
             </div>
 
             <div className="modal-buttons-container">
@@ -301,7 +316,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing, loading: extern
           </div>
         </form>
       </div>
-        {/* ConfirmModal para eliminar */}
+
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={closeConfirmModal}

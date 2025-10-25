@@ -1,37 +1,120 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  findAllTasksByUserId,
-  createTask,
-  updateTask,
-  deleteTask,
-  completeTask,
-} from "../services/tasks";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { taskService } from "../services/tasks";
+import { useToast } from "../contexts/ToastContexts";
 
 export const useTasks = (userId) => {
-  const [tasks, setTasks] = useState([]);
-  const [initialLoading, setInitialLoading] = useState(false);
-  const [operationLoading, setOperationLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [state, setState] = useState({
+    tasks: [],
+    loading: false,
+    error: null
+  });
+
+  const { showTaskToast } = useToast();
+
+  const updateState = useCallback((updates) => {
+    setState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  const executeWithToast = useCallback(async (operation, loadingMessage, successMessage) => {
+    const toast = showTaskToast(loadingMessage, successMessage);
+    
+    try {
+      const result = await operation();
+      toast.success();
+      return result;
+    } catch (error) {
+      toast.error(error.message);
+      throw error;
+    }
+  }, [showTaskToast]);
 
   const loadTasks = useCallback(async () => {
     if (!userId) {
-      setTasks([]);
+      updateState({ tasks: [] });
       return;
     }
 
     try {
-      setInitialLoading(true);
-      setError(null);
-      const response = await findAllTasksByUserId();
-      setTasks(response.data || []);
+      updateState({ loading: true, error: null });
+      const response = await taskService.findAllByUserId();
+      updateState({ tasks: response.data || [] });
     } catch (error) {
-      setError(error.message || "Error cargando tareas");
-      setTasks([]);
+      updateState({ 
+        error: error.message || "Error cargando tareas", 
+        tasks: [] 
+      });
       throw error;
     } finally {
-      setInitialLoading(false);
+      updateState({ loading: false });
     }
-  }, [userId]);
+  }, [userId, updateState]);
+
+  const addTask = useCallback(async (taskData) => {
+    return executeWithToast(
+      async () => {
+        const response = await taskService.create(taskData);
+        setState(prev => ({ 
+          ...prev, 
+          tasks: [...prev.tasks, response.data] 
+        }));
+        return response;
+      },
+      'Agregando tarea...',
+      'Tarea agregada'
+    );
+  }, [executeWithToast]);
+
+  const updateTask = useCallback(async (taskData) => {
+    return executeWithToast(
+      async () => {
+        const response = await taskService.update(taskData);
+        setState(prev => ({
+          ...prev,
+          tasks: prev.tasks.map(task =>
+            task.id === taskData.id ? { ...task, ...response.data } : task
+          )
+        }));
+        return response;
+      },
+      'Actualizando tarea...',
+      'Tarea actualizada'
+    );
+  }, [executeWithToast]);
+
+  const deleteTask = useCallback(async (taskId) => {
+    return executeWithToast(
+      async () => {
+        const response = await taskService.delete(taskId);
+        setState(prev => ({ 
+          ...prev, 
+          tasks: prev.tasks.filter(task => task.id !== taskId) 
+        }));
+        return response;
+      },
+      'Eliminando tarea...',
+      'Tarea eliminada'
+    );
+  }, [executeWithToast]);
+
+  const toggleTaskCompletion = useCallback(async (taskId, isCompleted) => {
+    const action = isCompleted ? 'Completando' : 'Marcando como pendiente';
+    const successMessage = isCompleted ? 'Tarea completada' : 'Tarea marcada como pendiente';
+    
+    return executeWithToast(
+      async () => {
+        const response = await taskService.complete(taskId, isCompleted);
+        setState(prev => ({
+          ...prev,
+          tasks: prev.tasks.map(task =>
+            task.id === taskId ? { ...task, isCompleted } : task
+          )
+        }));
+        return response;
+      },
+      `${action} tarea...`,
+      successMessage
+    );
+  }, [executeWithToast]);
 
   useEffect(() => {
     if (userId) {
@@ -39,85 +122,12 @@ export const useTasks = (userId) => {
     }
   }, [loadTasks, userId]);
 
-  const addTask = useCallback(async (taskData) => {
-    try {
-      setOperationLoading(true);
-      setError(null);
-      const response = await createTask(taskData);
-      setTasks((prev) => [...prev, response.data]);
-      return response;
-    } catch (error) {
-      setError(error.message || "Error agregando tarea");
-      throw error;
-    } finally {
-      setOperationLoading(false);
-    }
-  }, []);
-
-  const updateTaskItem = useCallback(async (taskData) => {
-    try {
-      setOperationLoading(true);
-      setError(null);
-      const response = await updateTask(taskData);
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === taskData.id ? { ...task, ...response.data } : task
-        )
-      );
-      return response;
-    } catch (error) {
-      setError(error.message || "Error actualizando tarea");
-      throw error;
-    } finally {
-      setOperationLoading(false);
-    }
-  }, []);
-
-  const deleteTaskItem = useCallback(async (taskId) => {
-    try {
-      setOperationLoading(true);
-      setError(null);
-
-      const response = await deleteTask(taskId);
-      setTasks((prev) => prev.filter((task) => task.id !== taskId));
-      return response;
-    } catch (error) {
-      setError(error.message || "Error eliminando tarea");
-      throw error;
-    } finally {
-      setOperationLoading(false);
-    }
-  }, []);
-
-  const toggleTaskCompletion = useCallback(async (taskId, isCompleted) => {
-    try {
-      setOperationLoading(true);
-      setError(null);
-
-      const response = await completeTask(taskId, isCompleted);
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === taskId ? { ...task, isCompleted } : task
-        )
-      );
-      return response;
-    } catch (error) {
-      setError(error.message || "Error completando tarea");
-      throw error;
-    } finally {
-      setOperationLoading(false);
-    }
-  }, []);
-
-  return {
-    tasks,
-    loading: initialLoading,
-    operationLoading,
-    error,
+  return useMemo(() => ({
+    ...state,
     addTask,
-    updateTask: updateTaskItem,
-    deleteTask: deleteTaskItem,
+    updateTask,
+    deleteTask,
     toggleTaskCompletion,
     refreshTasks: loadTasks,
-  };
+  }), [state, addTask, updateTask, deleteTask, toggleTaskCompletion, loadTasks]);
 };

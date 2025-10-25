@@ -1,26 +1,43 @@
-import { API_CONFIG } from "../api.js";
-import { authService } from "../../auth.js";
-import { handleErrorResponse, handleApiResponse } from "../utils/httpUtils.js";
-import { ApiError } from "../utils/ApiError.js";
+import { API_CONFIG } from "../../../utils/constants/appConstants";
+import { authService } from "../../auth";
+import { handleErrorResponse, handleApiResponse } from "../utils/httpUtils";
+import { ApiError } from "../utils/ApiError";
 
-const API_BASE_URL = API_CONFIG.BASE_URL;
-const MAX_RETRIES = API_CONFIG.MAX_REINTENTOS;
-
-export class ApiClient {
+class ApiClient {
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.baseURL = API_CONFIG.BASE_URL;
     this.retryCount = 0;
-    this.isRefreshing = false;
+    this.pendingRequests = new Map();
   }
 
   async request(url, options = {}) {
+    const requestKey = this.generateRequestKey(url, options);
+
+    if (this.pendingRequests.has(requestKey)) {
+      return this.pendingRequests.get(requestKey);
+    }
+
+    const requestPromise = this.executeRequest(url, options);
+    this.pendingRequests.set(requestKey, requestPromise);
+
+    try {
+      const result = await requestPromise;
+      return result;
+    } finally {
+      this.pendingRequests.delete(requestKey);
+    }
+  }
+
+  async executeRequest(url, options) {
     try {
       const response = await this.makeRequest(url, options);
-
       const result = await handleApiResponse(response);
 
-      if (result.success === false) {
-        if (response.status === 401 && this.retryCount < MAX_RETRIES) {
+      if (!result.success) {
+        if (
+          response.status === 401 &&
+          this.retryCount < API_CONFIG.RETRY_ATTEMPTS
+        ) {
           return await this.handleAuthError(url, options, response);
         }
 
@@ -32,12 +49,15 @@ export class ApiClient {
         );
       }
 
+      this.resetRetryCount();
       return result;
     } catch (error) {
-      console.error(`Error in request to ${url}:`, error);
+      console.error(`API Error [${options.method || "GET"} ${url}]:`, error);
+
       if (error.status === 401) {
         this.handlePersistentAuthError();
       }
+
       throw error;
     }
   }
@@ -53,19 +73,39 @@ export class ApiClient {
 
     const completeURL = url.startsWith("http") ? url : `${this.baseURL}${url}`;
 
-    return await fetch(completeURL, {
-      ...defaultOptions,
-      ...options,
-      headers: {
-        ...defaultOptions.headers,
-        ...options.headers,
-      },
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
+    try {
+      const response = await fetch(completeURL, {
+        ...defaultOptions,
+        ...options,
+        signal: controller.signal,
+        headers: {
+          ...defaultOptions.headers,
+          ...options.headers,
+        },
+      });
+
+      return response;
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new ApiError(
+          "Timeout: La petición tardó demasiado tiempo",
+          408,
+          "REQUEST_TIMEOUT",
+          { url: completeURL }
+        );
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async handleAuthError(url, options, originalResponse) {
     try {
-
+      console.log("Token expirado intentando refresh");
       await authService.refreshAccessToken();
 
       this.retryCount++;
@@ -86,13 +126,8 @@ export class ApiClient {
     }
   }
 
-  resetRetryCount() {
-    this.retryCount = 0;
-  }
-
   handlePersistentAuthError() {
     authService.clearLocalState();
-
     console.warn("Persistent authentication error - redirecting to login");
 
     if (typeof window !== "undefined" && window.dispatchEvent) {
@@ -100,14 +135,25 @@ export class ApiClient {
     }
   }
 
+  generateRequestKey(url, options) {
+    const method = options.method || "GET";
+    const body = options.body ? JSON.stringify(options.body) : "";
+    return `${method}:${url}:${body}`;
+  }
+
+  resetRetryCount() {
+    this.retryCount = 0;
+  }
+
+  cancelAllPendingRequests() {
+    this.pendingRequests.clear();
+  }
+
   createHttpMethod(method) {
     return async (url, data = null, options = {}) => {
       const config = {
         ...options,
         method: method.toUpperCase(),
-        headers: {
-          ...options.headers,
-        },
       };
 
       if (method.toUpperCase() === "GET" && data && data.params) {
@@ -117,7 +163,6 @@ export class ApiClient {
             queryParams.append(key, value);
           }
         });
-
         const queryString = queryParams.toString();
         url = queryString ? `${url}?${queryString}` : url;
         data = null;
@@ -126,14 +171,17 @@ export class ApiClient {
       if (data !== null && method.toUpperCase() !== "GET") {
         if (data instanceof FormData) {
           config.body = data;
-          delete config.headers["Content-Type"];
+          delete config.headers?.["Content-Type"];
         } else {
           config.body = JSON.stringify(data);
-          config.headers["Content-Type"] = "application/json";
+          config.headers = {
+            ...config.headers,
+            "Content-Type": "application/json",
+          };
         }
       }
-      this.resetRetryCount();
 
+      this.resetRetryCount();
       return await this.request(url, config);
     };
   }
@@ -148,4 +196,7 @@ export class ApiClient {
     };
   }
 }
+
 export const apiClient = new ApiClient();
+
+export { ApiClient };

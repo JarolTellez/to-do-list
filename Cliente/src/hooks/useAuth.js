@@ -1,124 +1,112 @@
-import { useState, useEffect, useCallback } from "react";
-import { authService } from "../services/auth.js";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { authService } from "../services/auth";
 
 export const useAuth = () => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [authState, setAuthState] = useState({
+    user: null,
+    isAuthenticated: false,
+    loading: true,
+  });
 
-  const verifySession = async () => {
-    setLoading(true);
-    setError(null);
+  const updateAuthState = useCallback((updates) => {
+    setAuthState((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const clearAuthState = useCallback(() => {
+    setAuthState({
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+    });
+    authService.clearLocalState();
+  }, []);
+
+  const verifySession = useCallback(async () => {
     try {
+      updateAuthState({ loading: true });
       const result = await authService.verifySession();
 
-      setIsAuthenticated(result.isAuthenticated);
-      setUser(result.user);
+      updateAuthState({
+        isAuthenticated: result.isAuthenticated,
+        user: result.user,
+        loading: false,
+      });
 
       return result;
-    } catch (err) {
-      setError(err.message);
-      setIsAuthenticated(false);
-      setUser(null);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const attemptTokenRefresh = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await authService.refreshAccessToken();
-
-      if (response.data) {
-        sessionStorage.setItem("userId", response.data.user.id);
-        sessionStorage.setItem("userEmail", response.data.user.email);
-        sessionStorage.setItem("userUsername", response.data.user.username);
-        setUser(response.data.user);
-      }
-
-      return response;
     } catch (error) {
+      console.warn("Error verifying session:", error);
       clearAuthState();
-      setError(error.message || "Error de autenticacion");
-      throw error;
-    } finally {
-      setLoading(false);
+      return { isAuthenticated: false, user: null };
     }
-  };
+  }, [updateAuthState, clearAuthState]);
 
-  const clearAuthState = () => {
-    sessionStorage.removeItem("userId");
-    sessionStorage.removeItem("userEmail");
-    sessionStorage.removeItem("userUsername");
-    setUser(null);
-    setIsAuthenticated(false);
-  };
+  const login = useCallback(
+    async (username, password) => {
+      try {
+        updateAuthState({ loading: true });
+        const response = await authService.login(username, password);
 
-  const handleLogin = async (username, password) => {
-    setLoading(true);
-    setError(null);
+        updateAuthState({
+          isAuthenticated: true,
+          user: response.data,
+          loading: false,
+        });
 
-    try {
-      const response = await authService.login(username, password);
+        return response;
+      } catch (error) {
+        updateAuthState({ loading: false });
+        throw error;
+      }
+    },
+    [updateAuthState]
+  );
 
-      setIsAuthenticated(true);
-      setUser(response.data);
-      return response;
-    } catch (error) {
-      setError(error.message || "Error al iniciar sesión");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const register = useCallback(
+    async (userData) => {
+      try {
+        updateAuthState({ loading: true });
+        const response = await authService.register(userData);
+        updateAuthState({ loading: false });
+        return response;
+      } catch (error) {
+        updateAuthState({ loading: false });
+        throw error;
+      }
+    },
+    [updateAuthState]
+  );
 
-  const handleRegister = async (userData) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await authService.register(userData);
-      return response;
-    } catch (error) {
-      setError(error.message || "Error al registrar usuario");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    setLoading(true);
-    setError(null);
-
+  const logout = useCallback(async () => {
     try {
       const response = await authService.logout();
       return response;
     } catch (error) {
-      setError(error.message || "Error al cerrar sesion");
+      console.warn("Error durante logout:", error);
+      if (
+        error.message?.includes("No hay sesión activa") ||
+        error.code === "EMPTY_TOKEN" ||
+        error.status === 401
+      ) {
+        return { data: { success: true }, message: "Sesión cerrada" };
+      }
+
       throw error;
     } finally {
       clearAuthState();
-      setLoading(false);
     }
-  };
-
+  }, [clearAuthState]);
   useEffect(() => {
     verifySession();
-  },[]);
+  }, [verifySession]);
 
-  return {
-    user,
-    isAuthenticated,
-    loading,
-    error,
-    login: handleLogin,
-    register: handleRegister,
-    logout: handleLogout,
-    verifySession,
-  };
+  return useMemo(
+    () => ({
+      ...authState,
+      login,
+      register,
+      logout,
+      verifySession,
+    }),
+    [authState, login, register, logout, verifySession]
+  );
 };
