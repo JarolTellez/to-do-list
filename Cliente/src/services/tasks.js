@@ -1,5 +1,6 @@
 import { apiClient } from "./api/clients/apiClient.js";
 import { taskMappers } from "../mappers/taskMapper.js";
+import { PaginationValidator } from "../utils/validators/paginationValidator.js";
 
 class TaskService {
   async create(newTask) {
@@ -10,8 +11,14 @@ class TaskService {
     return { data: mappedTask, message: response.message };
   }
 
-  async findAllByUserId() {
-    const response = await apiClient.api.get("/task/");
+  async findAllByUserId(page, limit) {
+    const validated = PaginationValidator.validateParams("TASKS", page, limit);
+    const response = await apiClient.api.get("/task/", {
+      params: {
+        page: validated.page,
+        limit: validated.limit,
+      },
+    });
 
     const mappedTasks = response.data.tasks?.map(taskMappers.apiToTask) || [];
     return { data: mappedTasks, message: response.message };

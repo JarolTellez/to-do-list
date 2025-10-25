@@ -1,4 +1,4 @@
-import { API_CONFIG } from "../../../utils/constants/appConstants";
+import { API_CONFIG, ERROR_MESSAGES, HTTP_STATUS_CODES } from "../../../utils/constants/appConstants";
 import { authService } from "../../auth";
 import { handleErrorResponse, handleApiResponse } from "../utils/httpUtils";
 import { ApiError } from "../utils/ApiError";
@@ -34,30 +34,24 @@ class ApiClient {
       const result = await handleApiResponse(response);
 
       if (!result.success) {
-        if (
-          response.status === 401 &&
-          this.retryCount < API_CONFIG.RETRY_ATTEMPTS
-        ) {
-          return await this.handleAuthError(url, options, response);
+        if (response.status === HTTP_STATUS_CODES.UNAUTHORIZED && 
+            this.retryCount < API_CONFIG.RETRY_ATTEMPTS) {
+          return await this.handleAuthError(url, options);
         }
 
         throw new ApiError(
-          result.message,
-          result.status || 400,
-          result.code || "API_ERROR",
-          result.data || {}
+          result.message || ERROR_MESSAGES.DEFAULT,
+          result.status || HTTP_STATUS_CODES.BAD_REQUEST,
+          result.code || "API_ERROR"
         );
       }
 
       this.resetRetryCount();
       return result;
     } catch (error) {
-      console.error(`API Error [${options.method || "GET"} ${url}]:`, error);
-
-      if (error.status === 401) {
+      if (error.status === HTTP_STATUS_CODES.UNAUTHORIZED) {
         this.handlePersistentAuthError();
       }
-
       throw error;
     }
   }
@@ -91,23 +85,33 @@ class ApiClient {
     } catch (error) {
       if (error.name === "AbortError") {
         throw new ApiError(
-          "Timeout: La petición tardó demasiado tiempo",
-          408,
-          "REQUEST_TIMEOUT",
-          { url: completeURL }
+          ERROR_MESSAGES.TIMEOUT,
+          HTTP_STATUS_CODES.TIMEOUT,
+          "REQUEST_TIMEOUT"
         );
       }
-      throw error;
+
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+        throw new ApiError(
+          ERROR_MESSAGES.NETWORK_ERROR,
+          0,
+          "NETWORK_ERROR"
+        );
+      }
+
+      throw new ApiError(
+        error.message || ERROR_MESSAGES.DEFAULT,
+        error.status || 500,
+        "UNKNOWN_ERROR"
+      );
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
-  async handleAuthError(url, options, originalResponse) {
+  async handleAuthError(url, options) {
     try {
-      console.log("Token expirado intentando refresh");
       await authService.refreshAccessToken();
-
       this.retryCount++;
 
       const retryResponse = await this.makeRequest(url, options);
@@ -120,7 +124,6 @@ class ApiClient {
         throw error;
       }
     } catch (refreshError) {
-      console.error("Error refreshing token:", refreshError);
       this.handlePersistentAuthError();
       throw refreshError;
     }
@@ -128,7 +131,6 @@ class ApiClient {
 
   handlePersistentAuthError() {
     authService.clearLocalState();
-    console.warn("Persistent authentication error - redirecting to login");
 
     if (typeof window !== "undefined" && window.dispatchEvent) {
       window.dispatchEvent(new CustomEvent("auth:session-expired"));
@@ -145,10 +147,6 @@ class ApiClient {
     this.retryCount = 0;
   }
 
-  cancelAllPendingRequests() {
-    this.pendingRequests.clear();
-  }
-
   createHttpMethod(method) {
     return async (url, data = null, options = {}) => {
       const config = {
@@ -156,29 +154,26 @@ class ApiClient {
         method: method.toUpperCase(),
       };
 
-      if (method.toUpperCase() === "GET" && data && data.params) {
-        const queryParams = new URLSearchParams();
-        Object.entries(data.params).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            queryParams.append(key, value);
-          }
-        });
-        const queryString = queryParams.toString();
-        url = queryString ? `${url}?${queryString}` : url;
+      if (method.toUpperCase() === "GET" && data) {
+        if (data.params) {
+          const queryParams = new URLSearchParams();
+          Object.entries(data.params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              queryParams.append(key, value.toString());
+            }
+          });
+          const queryString = queryParams.toString();
+          url = queryString ? `${url}?${queryString}` : url;
+        }
         data = null;
       }
 
       if (data !== null && method.toUpperCase() !== "GET") {
-        if (data instanceof FormData) {
-          config.body = data;
-          delete config.headers?.["Content-Type"];
-        } else {
-          config.body = JSON.stringify(data);
-          config.headers = {
-            ...config.headers,
-            "Content-Type": "application/json",
-          };
-        }
+        config.body = JSON.stringify(data);
+        config.headers = {
+          ...config.headers,
+          "Content-Type": "application/json",
+        };
       }
 
       this.resetRetryCount();
@@ -198,5 +193,3 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
-
-export { ApiClient };
