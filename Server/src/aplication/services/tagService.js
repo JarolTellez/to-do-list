@@ -176,13 +176,13 @@ class TagService {
           pagination.limit
         );
 
-        return this.paginationHelper.buildPaginationResponse(
-          tags,
-          pagination,
-          total,
-          totalPages,
-          "tags"
-        );
+        return this.paginationHelper.buildPaginationResponse({
+          data: tags,
+          paginationInfo: pagination,
+          total: total,
+          totalPages: totalPages,
+          itemsKey: "tags",
+        });
       }, externalDbClient);
     });
   }
