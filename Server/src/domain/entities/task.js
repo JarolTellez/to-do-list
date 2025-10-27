@@ -15,7 +15,6 @@ class Task {
   #createdAt;
   #updatedAt;
   #isCompleted;
-  #isOverdue;
   #userId;
   #priority;
   #taskTags;
@@ -65,7 +64,6 @@ class Task {
       "isCompleted",
       "Task"
     );
-    this.#isOverdue = this.isTaskOverdue();
     this.#userId = this.#validator.validateId(userId, "User");
     this.#priority = this.#validatePriority(priority);
     this.#taskTags = this.#validateTaskTags(taskTags);
