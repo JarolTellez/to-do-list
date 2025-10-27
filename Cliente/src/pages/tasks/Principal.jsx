@@ -32,12 +32,16 @@ const Principal = ({ user, onLogout }) => {
   const {
     tasks,
     loading: tasksLoading,
+    loadingMore: tasksLoadingMore,
     error,
+    hasMore,
+    totalTasks,
     addTask,
     updateTask,
     deleteTask,
     toggleTaskCompletion,
     refreshTasks,
+    loadMoreTasks,
   } = useTasks(userId);
 
   const {
@@ -64,12 +68,12 @@ const Principal = ({ user, onLogout }) => {
     ).length;
 
     return {
-      total: tasks.length,
+      total: totalTasks,
       completed,
       pending,
       overdue,
     };
-  }, [tasks]);
+  }, [tasks, totalTasks]);
 
   const filteredTasks = useMemo(() => {
     return applyFilters(tasks);
@@ -163,6 +167,7 @@ const Principal = ({ user, onLogout }) => {
       },
     });
   };
+
   const openAddModal = () => {
     setEditingTask(null);
     setShowModal(true);
@@ -245,9 +250,10 @@ const Principal = ({ user, onLogout }) => {
                 + Nueva Tarea
               </button>
               <span className="task-count">
-                {filteredTasks.length}{" "}
-                {filteredTasks.length === 1 ? "tarea" : "tareas"}
+                {totalTasks}{" "}
+                {totalTasks === 1 ? "tarea" : "tareas"}
                 {hasActiveFilters && " (filtradas)"}
+                {tasksLoadingMore && " - Cargando..."}
               </span>
             </div>
           </div>
@@ -257,6 +263,10 @@ const Principal = ({ user, onLogout }) => {
             onEditTask={openEditModal}
             onDeleteTask={handleDeleteTask}
             onToggleComplete={handleToggleComplete}
+            onLoadMore={loadMoreTasks}
+            loading={tasksLoading}
+            loadingMore={tasksLoadingMore}
+            hasMore={hasMore}
             emptyMessage={
               tasks.length === 0
                 ? "No hay tareas creadas. ¡Agrega tu primera tarea!"
