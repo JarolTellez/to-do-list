@@ -80,14 +80,14 @@ class PaginationHelper {
    * @returns {boolean} return.pagination.hasPrev - Whether there is a previous page
    * @returns {number} return.pagination.maxLimit - Maximum allowed items per page
    */
-  buildPaginationResponse = (
+  buildPaginationResponse = ({
     data,
     paginationInfo,
     total,
     additionalCounts = null,
     totalPages,
     itemsKey = "items"
-  ) => {
+ } ) => {
     const response = {
       [itemsKey]: data,
       pagination: {

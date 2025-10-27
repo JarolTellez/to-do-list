@@ -163,7 +163,7 @@ class AuthController {
     try {
       const accessToken = req.cookies.accessToken;
       const { page, limit, sortBy, sortOrder } = req.query;
-      
+
       if (!accessToken) {
         return res.status(401).json({
           success: false,

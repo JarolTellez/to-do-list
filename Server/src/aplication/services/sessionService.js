@@ -419,13 +419,13 @@ class SessionService {
           pagination.limit
         );
 
-        const response = this.paginationHelper.buildPaginationResponse(
-          sessions,
-          pagination,
-          total,
-          totalPages,
-          "sessions"
-        );
+        const response = this.paginationHelper.buildPaginationResponse({
+          data: sessions,
+          paginationInfo: pagination,
+          total: total,
+          totalPages: totalPages,
+          itemsKey: "sessions",
+        });
         return response;
       }, externalDbClient);
     });

@@ -368,18 +368,18 @@ class TaskService {
           pagination.limit
         );
 
-        return this.paginationHelper.buildPaginationResponse(
-          tasks,
-          pagination,
-          totalCount,
-          {
+        return this.paginationHelper.buildPaginationResponse({
+          data: tasks,
+          paginationInfo: pagination,
+          total: totalCount,
+          additionalCounts: {
             completed: completedCount,
             pending: pendingCount,
             overdue: overdueCount,
           },
-          totalPages,
-          "tasks"
-        );
+          totalPages: totalPages,
+          itemsKey: "tasks",
+        });
       }, externalDbClient);
     });
   }

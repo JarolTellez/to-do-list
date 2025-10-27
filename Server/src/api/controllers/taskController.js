@@ -111,9 +111,6 @@ class TaskController {
         sortBy,
         sortOrder,
       });
-
-      console.log("result: ", result);
-
       const mappedResult = this._mapPaginationResponse(result);
 
       return res.status(200).json({
