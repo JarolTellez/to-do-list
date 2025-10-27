@@ -348,16 +348,35 @@ class TaskService {
           dbClient
         );
 
+        const completedCount = await this.taskDAO.countByUserId(
+          { userId, isCompleted: true },
+          dbClient
+        );
+
+        const pendingCount = await this.taskDAO.countByUserId(
+          { userId, isCompleted: false },
+          dbClient
+        );
+
+        const overdueCount = await this.taskDAO.countOverdueByUserId(
+          userId,
+          dbClient
+        );
+
         const totalPages = this.paginationHelper.calculateTotalPages(
           totalCount,
           pagination.limit
         );
 
-
         return this.paginationHelper.buildPaginationResponse(
           tasks,
           pagination,
           totalCount,
+          {
+            completed: completedCount,
+            pending: pendingCount,
+            overdue: overdueCount,
+          },
           totalPages,
           "tasks"
         );
