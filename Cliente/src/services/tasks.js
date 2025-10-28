@@ -11,7 +11,7 @@ class TaskService {
     return { data: mappedTask, message: response.message };
   }
 
-  async findAllByUserId(page = 1, limit = 20) {
+  async findAllByUserId(page, limit) {
     const validated = PaginationValidator.validateParams("TASKS", page, limit);
     const response = await apiClient.api.get("/task/", {
       params: {

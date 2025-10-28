@@ -1,10 +1,12 @@
 import { apiClient } from "./api/clients/apiClient.js";
 import { sessionMappers } from "../mappers/sessionMapper.js";
+import { PaginationValidator } from "../utils/validators/paginationValidator.js";
 
-export async function getUserSessions() {
+export async function getUserSessions(page, limit) {
+     const validated = PaginationValidator.validateParams("SESSIONS", page, limit);
   const response = await apiClient.api.get("/auth/active-sessions", {
-    page: 1,
-    limit: 2,
+    page: validated.page,
+    limit: validated.limit,
   });
 
   const sessions =

@@ -4,6 +4,8 @@ import {
   closeAllSessions,
   closeSession,
 } from "../services/sessions.js";
+import { PAGINATION_CONFIG } from "../utils/constants/paginationConstants";
+const SESSIONS_PAGINATION = PAGINATION_CONFIG.SESSIONS;
 
 export const useSessions = () => {
   const [sessions, setSessions] = useState([]);
@@ -15,7 +17,7 @@ export const useSessions = () => {
     setError(null);
 
     try {
-      const response = await getUserSessions();
+      const response = await getUserSessions(SESSIONS_PAGINATION.INITIAL_PAGE, SESSIONS_PAGINATION.DEFAULT_LIMIT);
       setSessions(response.data || []);
       return response;
     } catch (error) {
