@@ -199,7 +199,6 @@ export const useTasks = (userId) => {
         const previousTask = state.tasks.find(
           (task) => task.id === taskData.id
         );
-
         const response = await taskService.update(taskData);
         setState((prev) => ({
           ...prev,
@@ -232,14 +231,12 @@ export const useTasks = (userId) => {
 
       try {
         const taskToDelete = state.tasks.find((task) => task.id === taskId);
-
         const response = await taskService.delete(taskId);
         setState((prev) => ({
           ...prev,
           tasks: prev.tasks.filter((task) => task.id !== taskId),
           totalTasks: prev.totalTasks - 1,
         }));
-
         if (taskToDelete) {
           updateStatsFromLocalChanges("DELETE_TASK", taskToDelete);
         }
@@ -265,7 +262,6 @@ export const useTasks = (userId) => {
 
       try {
         const previousTask = state.tasks.find((task) => task.id === taskId);
-
         const response = await taskService.complete(taskId, isCompleted);
         setState((prev) => ({
           ...prev,
@@ -273,7 +269,6 @@ export const useTasks = (userId) => {
             task.id === taskId ? { ...task, isCompleted } : task
           ),
         }));
-
         if (previousTask) {
           updateStatsFromLocalChanges(
             "TOGGLE_COMPLETE",
@@ -281,7 +276,6 @@ export const useTasks = (userId) => {
             previousTask
           );
         }
-
         toast.success();
         return response;
       } catch (error) {
