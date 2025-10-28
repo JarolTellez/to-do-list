@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { taskService } from "../services/tasks";
 import { useToast } from "../contexts/ToastContexts";
+import { PAGINATION_CONFIG } from "../utils/constants/paginationConstants";
+const TASKS_PAGINATION = PAGINATION_CONFIG.TASKS;
 
 export const useTasks = (userId) => {
   const [state, setState] = useState({
@@ -9,7 +11,7 @@ export const useTasks = (userId) => {
     loadingMore: false,
     error: null,
     hasMore: false,
-    currentPage: 1,
+    currentPage: TASKS_PAGINATION.INITIAL_PAGE,
     totalTasks: 0,
     pendingCount: 0,
     completedCount: 0,
@@ -100,23 +102,26 @@ export const useTasks = (userId) => {
   }, []);
 
   const loadTasks = useCallback(
-    async (page = 1, limit = 20) => {
+    async (page, limit) => {
       if (!userId) return;
 
       try {
         setState((prev) => ({
           ...prev,
-          loading: page === 1,
-          loadingMore: page > 1,
+          loading: page === TASKS_PAGINATION.INITIAL_PAGE,
+          loadingMore: page > TASKS_PAGINATION.INITIAL_PAGE,
           error: null,
         }));
 
-        const response = await taskService.findAllByUserId(page, limit);
+        const response = await taskService.findAllByUserId(
+          page || TASKS_PAGINATION.INITIAL_PAGE,
+          limit || TASKS_PAGINATION.DEFAULT_LIMIT
+        );
         const tasksFromResponse = response.data.tasks || [];
 
         setState((prev) => {
           const newTasks =
-            page === 1
+            page === TASKS_PAGINATION.INITIAL_PAGE
               ? tasksFromResponse
               : [...prev.tasks, ...tasksFromResponse];
 
@@ -157,7 +162,7 @@ export const useTasks = (userId) => {
     }
     try {
       setState((prev) => ({ ...prev, loadingMore: true }));
-      await loadTasks(state.currentPage + 1, 20);
+      await loadTasks(state.currentPage + 1, TASKS_PAGINATION.LOAD_MORE_LIMIT);
     } catch (error) {
       console.error("Error loading more tasks:", error);
       setState((prev) => ({
@@ -289,13 +294,19 @@ export const useTasks = (userId) => {
   const refreshTasks = useCallback(
     async (forceSync = false) => {
       try {
-        const response = await loadTasks(1, 20);
+        const response = await loadTasks(
+          TASKS_PAGINATION.INITIAL_PAGE,
+          TASKS_PAGINATION.REFRESH_LIMIT
+        );
 
         const localTotal = state.tasks.length;
         const serverTotal = response.data.pagination?.total || 0;
 
         if (forceSync || Math.abs(localTotal - serverTotal) > 2) {
-          await loadTasks(1, 20);
+          await loadTasks(
+            TASKS_PAGINATION.INITIAL_PAGE,
+            TASKS_PAGINATION.REFRESH_LIMIT
+          );
         }
 
         return response;
@@ -319,7 +330,7 @@ export const useTasks = (userId) => {
 
   useEffect(() => {
     if (userId) {
-      loadTasks(1, 20);
+      loadTasks(TASKS_PAGINATION.INITIAL_PAGE, TASKS_PAGINATION.DEFAULT_LIMIT);
     }
   }, [loadTasks, userId]);
 

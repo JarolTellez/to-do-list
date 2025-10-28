@@ -1,8 +1,15 @@
 import { apiClient } from "./api/clients/apiClient.js";
 import { tagMappers } from "../mappers/tagMapper.js";
+import { PaginationValidator } from "../utils/validators/paginationValidator.js";
 
-export async function loadTags() {
-  const response = await apiClient.api.get("/tag/?page=1&limit=500");
+export async function loadTags(page, limit) {
+   const validated = PaginationValidator.validateParams("TAGS", page, limit);
+  const response = await apiClient.api.get("/tag/", {
+    params: {
+      page: validated.page,
+      limit: validated.limit,
+    },
+  });
   const mappedTags = response.data.tags?.map(tagMappers.apiToTag) || [];
   return { data: mappedTags, message: response.message };
 }
