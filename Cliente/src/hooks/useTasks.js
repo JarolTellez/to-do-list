@@ -101,64 +101,6 @@ export const useTasks = (userId) => {
     };
   }, []);
 
-  // const loadTasks = useCallback(
-  //   async (page, limit) => {
-  //     if (!userId) return;
-
-  //     try {
-  //       setState((prev) => ({
-  //         ...prev,
-  //         loading: page === TASKS_PAGINATION.INITIAL_PAGE,
-  //         loadingMore: page > TASKS_PAGINATION.INITIAL_PAGE,
-  //         error: null,
-  //       }));
-
-  //       const response = await taskService.findAllByUserId(
-  //         page || TASKS_PAGINATION.INITIAL_PAGE,
-  //         limit || TASKS_PAGINATION.DEFAULT_LIMIT
-  //       );
-  //       const tasksFromResponse = response.data.tasks || [];
-
-  //       setState((prev) => {
-  //         const newTasks =
-  //           page === TASKS_PAGINATION.INITIAL_PAGE
-  //             ? tasksFromResponse
-  //             : [...prev.tasks, ...tasksFromResponse];
-
-  //         const serverPending = response.data.pagination?.counts?.pending || 0;
-  //         const serverCompleted =
-  //           response.data.pagination?.counts?.completed || 0;
-  //         const serverOverdue = response.data.pagination?.counts?.overdue || 0;
-
-  //         return {
-  //           tasks: newTasks,
-  //           hasMore: response.data.pagination?.hasNext || false,
-  //           currentPage: page,
-  //           totalTasks: response.data.pagination?.total || 0,
-  //           completedCount: serverCompleted,
-  //           pendingCount: serverPending,
-  //           overdueCount: serverOverdue,
-  //           loading: false,
-  //           loadingMore: false,
-  //           error: null,
-  //         };
-  //       });
-  //     } catch (error) {
-  //       console.error("Error loading tasks:", error);
-  //       setState((prev) => ({
-  //         ...prev,
-  //         error: error.message || "Error cargando tareas",
-  //         loading: false,
-  //         loadingMore: false,
-  //       }));
-  //     }
-  //   },
-  //   [userId]
-  // );
-
-  // ARCHIVO: C:\Users\Jarol\Documents\Habilidades Jarol ;)\JavaScript_Practica\Ejercicios_practicos\To-do-list\Cliente\src\hooks\useTasks.js
-// ... (código existente hasta la función loadTasks)
-
 const loadTasks = useCallback(
   async (page, limit) => {
     if (!userId) return;
