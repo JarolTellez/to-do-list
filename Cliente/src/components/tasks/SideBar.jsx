@@ -110,15 +110,15 @@ const Sidebar = ({
         </div>
         <div className="statistic-item completed-statistics">
           <p>Completadas</p>
-          <p>{stats.completed}</p>
+          <p>{stats.completedCount}</p>
         </div>
         <div className="statistic-item pending-statistics">
           <p>Pendientes</p>
-          <p>{stats.pending}</p>
+          <p>{stats.pendingCount}</p>
         </div>
         <div className="statistic-item overdue-statistics">
           <p>Vencidas</p>
-          <p>{stats.overdue || 0}</p>
+          <p>{stats.overdueCount || 0}</p>
         </div>
       </div>
     </aside>

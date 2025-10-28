@@ -36,6 +36,9 @@ const Principal = ({ user, onLogout }) => {
     error,
     hasMore,
     totalTasks,
+    completedCount,
+    pendingCount,
+    overdueCount,
     addTask,
     updateTask,
     deleteTask,
@@ -57,23 +60,13 @@ const Principal = ({ user, onLogout }) => {
   } = useFilters();
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const completed = tasks.filter((task) => task.isCompleted).length;
-    const pending = tasks.filter((task) => !task.isCompleted).length;
-    const overdue = tasks.filter(
-      (task) =>
-        !task.isCompleted &&
-        task.scheduledDate &&
-        new Date(task.scheduledDate) < now
-    ).length;
-
     return {
       total: totalTasks,
-      completed,
-      pending,
-      overdue,
+      completedCount,
+      pendingCount,
+      overdueCount,
     };
-  }, [tasks, totalTasks]);
+  }, [tasks, totalTasks, completedCount, pendingCount, overdueCount]);
 
   const filteredTasks = useMemo(() => {
     return applyFilters(tasks);
