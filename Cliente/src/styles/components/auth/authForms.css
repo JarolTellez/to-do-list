@@ -107,7 +107,6 @@
   font-weight: 500;
 }
 
-
 .auth-container {
   min-height: 100vh;
   display: flex;
@@ -117,7 +116,6 @@
   padding: 20px;
 }
 
-/* animaitions */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -214,8 +212,6 @@
   padding-left: 50px;
 }
 
-
 .container input {
   backdrop-filter: blur(10px);
 }
-

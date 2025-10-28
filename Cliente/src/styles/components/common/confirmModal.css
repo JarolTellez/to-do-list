@@ -167,7 +167,7 @@
   transform: none !important;
 }
 
-/* Tipos de confirmacion */
+/* confirmations */
 .confirm-warning .confirm-icon {
   color: #ffc107;
 }
@@ -184,7 +184,7 @@
   color: #007bff;
 }
 
-/* Responsive */
+/* responsive */
 @media (max-width: 768px) {
   .confirm-modal-container {
     max-width: 95%;

@@ -145,7 +145,7 @@
   background: #dc3545;
 }
 
-/* Content header */
+
 .content-header {
   margin-bottom: 20px;
 }
@@ -178,7 +178,7 @@
   font-weight: 500;
 }
 
-/* buttons */
+
 .btn-primary {
   background: #007bff;
   color: white;
@@ -239,7 +239,6 @@
   font-size: 12px;
 }
 
-/* Tag input*/
 #tag-input-container {
   display: flex;
   flex-direction: column;
@@ -280,7 +279,7 @@
   font-style: italic;
 }
 
-/* Selected tags list */
+/* tags list */
 .tags-list {
   display: flex;
   flex-wrap: wrap;
@@ -321,7 +320,6 @@
   transform: scale(1.2);
 }
 
-/* Input */
 #tag-input {
   border: none;
   outline: none;
@@ -334,7 +332,6 @@
 #tag-input::placeholder {
   color: #adb5bd;
 }
-
 
 .dropdown {
   position: absolute;
