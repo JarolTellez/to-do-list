@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLoading } from '../../contexts/LoadingContext';
-import '../../styles/components/full-screen-loader.css';
+import '../../styles/components/common/fullScreenLoader.css';
 
 const FullScreenLoader = ({ 
   message, 

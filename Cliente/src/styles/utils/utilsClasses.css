@@ -9,7 +9,6 @@
   pointer-events: none;
 }
 
-/* Text utilities */
 .text-center {
   text-align: center;
 }
@@ -42,7 +41,6 @@
   color: #007bff;
 }
 
-/* flexBox utilities */
 .flex {
   display: flex;
 }
@@ -69,7 +67,6 @@
   align-items: center;
 }
 
-
 .m-0 { margin: 0; }
 .m-1 { margin: 0.25rem; }
 .m-2 { margin: 0.5rem; }
@@ -84,7 +81,7 @@
 .p-4 { padding: 1.5rem; }
 .p-5 { padding: 3rem; }
 
-/* Visualizationn utilities */
+
 .hidden {
   display: none;
 }

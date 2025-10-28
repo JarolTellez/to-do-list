@@ -1,4 +1,3 @@
-/* ===== TOAST NORMAL (arriba en medio) ===== */
 .normal-toast-container {
   position: fixed;
   top: 20px;
@@ -27,7 +26,6 @@
   transform: translateY(0);
 }
 
-/* ===== TOAST TAREAS (esquina abajo) ===== */
 .task-toast-container {
   position: fixed;
   bottom: 20px;
@@ -58,7 +56,6 @@
   transform: translateX(0);
 }
 
-/* ===== ESTILOS DE COLOR (aplican a ambos) ===== */
 .toast.success {
   background: #28a745;
 }
@@ -80,7 +77,6 @@
   background: #6c757d;
 }
 
-/* Loading and error (tu CSS existente) */
 .loading-container, .error-container {
   display: flex;
   flex-direction: column;

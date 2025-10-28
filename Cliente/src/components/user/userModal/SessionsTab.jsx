@@ -1,14 +1,18 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useSessions } from "../../../hooks/useSessions";
+import InfiniteScrollList from "../../common/InfiniteScrollList";
 
 const SessionsTab = ({
   onCloseAllSessions,
 }) => {
-  const { sessions, loading, error, loadSessions } = useSessions();
-
-  useEffect(() => {
-    loadSessions();
-  }, [loadSessions]);
+  const { 
+    sessions, 
+    loading, 
+    loadingMore, 
+    hasMore, 
+    loadMoreSessions,
+    closeAllSessions 
+  } = useSessions();
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("es-ES", {
@@ -55,6 +59,34 @@ const SessionsTab = ({
     return `${browser} • ${os} • ${device}`;
   };
 
+  const renderSessionItem = (session) => (
+    <div
+      key={session.id}
+      className={`user-session-item ${session.isCurrent ? "current" : ""}`}
+    >
+      <div className="user-session-info">
+        <div className="user-session-platform">
+          {formatUserAgent(session.userAgent)}
+          {session.isCurrent && (
+            <span className="user-current-badge">Actual</span>
+          )}
+        </div>
+        <div className="user-session-details">
+          <div>
+            <strong>IP:</strong>{" "}
+            {session.ip === "::1" ? "Localhost" : session.ip}
+          </div>
+          <div>
+            <strong>Creada:</strong> {formatDate(session.createdAt)}
+          </div>
+          <div>
+            <strong>Expira:</strong> {formatDate(session.expiresAt)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="user-tab-content">
       <div className="user-sessions-header">
@@ -68,47 +100,18 @@ const SessionsTab = ({
         </button>
       </div>
 
-      {loading ? (
-        <div className="user-loading">Cargando sesiones...</div>
-      ) : (
-        <div className="user-sessions-list">
-          {sessions.length === 0 ? (
-            <p style={{ textAlign: "center", color: "#6c757d" }}>
-              No hay sesiones activas
-            </p>
-          ) : (
-            sessions.map((session) => (
-              <div
-                key={session.id}
-                className={`user-session-item ${
-                  session.isCurrent ? "current" : ""
-                }`}
-              >
-                <div className="user-session-info">
-                  <div className="user-session-platform">
-                    {formatUserAgent(session.userAgent)}
-                    {session.isCurrent && (
-                      <span className="user-current-badge">Actual</span>
-                    )}
-                  </div>
-                  <div className="user-session-details">
-                    <div>
-                      <strong>IP:</strong>{" "}
-                      {session.ip === "::1" ? "Localhost" : session.ip}
-                    </div>
-                    <div>
-                      <strong>Creada:</strong> {formatDate(session.createdAt)}
-                    </div>
-                    <div>
-                      <strong>Expira:</strong> {formatDate(session.expiresAt)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+      <InfiniteScrollList
+        items={sessions}
+        renderItem={renderSessionItem}
+        loading={loading}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+        onLoadMore={loadMoreSessions}
+        emptyMessage="No hay sesiones activas"
+        loadingMessage="Cargando sesiones..."
+        loadingMoreMessage="Cargando más sesiones..."
+        listClassName="user-sessions-list"
+      />
     </div>
   );
 };

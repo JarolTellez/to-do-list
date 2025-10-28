@@ -22,7 +22,7 @@
   padding: 40px;
 }
 
-/* Task item */
+
 .task-item-card {
   position: relative;
   min-height: 220px;
@@ -54,7 +54,6 @@
   color: #6c757d;
 }
 
-/* Main content area */
 .task-content {
   flex: 1;
   display: flex;
@@ -65,7 +64,7 @@
   overflow: hidden;
 }
 
-/* title */
+
 .task-item-title {
   margin: 0 0 4px 0;
   font-size: 16px;
@@ -77,7 +76,6 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-
 
 .task-description-text {
   flex: 1;
@@ -98,7 +96,7 @@
   overflow-wrap: break-word;
 }
 
-/* Custom scrollbars */
+
 .task-description-scroll::-webkit-scrollbar {
   width: 3px;
 }
@@ -108,7 +106,6 @@
   border-radius: 2px;
 }
 
-/* Date */
 .task-date {
   font-size: 12px;
   color: #6c757d;
@@ -118,7 +115,6 @@
   gap: 3px;
 }
 
-/*  Tag container*/
 .task-tags-container {
   margin: 2px 0 4px 0;
   width: 100%;
@@ -162,7 +158,7 @@
   line-height: 1.1;
 }
 
-/* Scrollbar for tags */
+/* scrollbar for tags */
 .task-tags-list-container::-webkit-scrollbar {
   width: 3px;
 }
@@ -176,7 +172,7 @@
   background: #a8a8a8;
 }
 
-/* Priority */
+/* priority */
 .task-priority-container {
   margin: 4px 0;
   flex-shrink: 0;
@@ -193,9 +189,10 @@
 
 .task-priority-bar div {
   height: 100%;
-  background: linear-gradient(90deg, 
-    #47df6a, 
-    #16b610, 
+  background: linear-gradient(
+    90deg,
+    #47df6a,
+    #16b610,
     #0571b9,
     #0556b9,
     #0540b9
@@ -210,7 +207,7 @@
   color: white;
   font-weight: bold;
   font-size: 14px;
-  text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
 }
 
 .task-priority-text {
@@ -219,7 +216,6 @@
   text-align: center;
 }
 
-/* Buttons */
 .task-completion-container {
   position: absolute;
   top: 10px;

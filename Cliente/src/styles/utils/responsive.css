@@ -44,7 +44,7 @@
     padding-right: 35px;
   }
 
-  /* Modal responsie */
+
   .modal {
     padding: 15px;
   }
@@ -79,7 +79,7 @@
     width: 100%;
   }
 
-  /* User modal responsive */
+  /* modal responsive */
   .user-modal {
     max-width: 95%;
     margin: 10px;
@@ -158,7 +158,7 @@
     max-height: 30px;
   }
 
-  /* Modal mobile */
+  /* modal mobile */
   .modal {
     padding: 10px;
   }

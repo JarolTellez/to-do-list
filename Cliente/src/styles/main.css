@@ -1,13 +1,28 @@
-@import url('./base.css');
-@import url('./layout.css');
-@import url('./login.css');
-@import url('./utilities.css');
-@import url('./responsive.css');
-@import url('./components/tasks.css');
-@import url('./components/modals.css');
-@import url('./components/user-modal.css');
-@import url('./components/forms.css');
-@import url('./components/toast.css');
-@import url('./components/confirm-modal.css');
-@import url('./components/loadingScroll.css');
-@import url('./components/taskList.css');
+@import './base/reset.css';
+@import './base/variables.css';
+
+/* Layout Styles */
+@import './layout/appLayout.css';
+
+/* Auth Components */
+@import './components/auth/authForms.css';
+
+/* Common Components */
+@import './components/common/confirmModal.css';
+@import './components/common/fullScreenLoader.css';
+@import './components/common/inlineLoader.css';
+@import './components/common/loadingScroll.css';
+@import './components/common/toast.css';
+
+/* Task Components */
+@import './components/tasks/taskLists.css';
+@import './components/tasks/taskItem.css';
+@import './components/tasks/taskModal.css';
+@import './components/tasks/sidebar.css';
+
+/* User Components */
+@import './components/user/userModal.css';
+
+/* Utility Styles */
+@import './utils/responsive.css';
+@import './utils/utilsClasses.css';

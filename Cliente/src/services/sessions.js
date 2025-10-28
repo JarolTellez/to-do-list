@@ -3,15 +3,17 @@ import { sessionMappers } from "../mappers/sessionMapper.js";
 import { PaginationValidator } from "../utils/validators/paginationValidator.js";
 
 export async function getUserSessions(page, limit) {
-     const validated = PaginationValidator.validateParams("SESSIONS", page, limit);
+  const validated = PaginationValidator.validateParams("SESSIONS", page, limit);
   const response = await apiClient.api.get("/auth/active-sessions", {
-    page: validated.page,
-    limit: validated.limit,
+    params: {
+      page: validated.page,
+      limit: validated.limit,
+    },
   });
 
   const sessions =
     response.data.sessions?.map(sessionMappers.apiToSession) || [];
-  return { data: sessions, message: response.message };
+  return { data: sessions, message: response.message, pagination: response.data.pagination };
 }
 
 export async function closeAllSessions() {
