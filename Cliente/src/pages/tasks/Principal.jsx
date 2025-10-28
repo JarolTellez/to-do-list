@@ -68,6 +68,7 @@ const Principal = ({ user, onLogout }) => {
     };
   }, [tasks, totalTasks, completedCount, pendingCount, overdueCount]);
 
+
   const filteredTasks = useMemo(() => {
     return applyFilters(tasks);
   }, [tasks, applyFilters]);
