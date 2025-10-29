@@ -10,7 +10,6 @@
 /* Common Components */
 @import "./components/common/confirmModal.css";
 @import "./components/common/fullScreenLoader.css";
-@import "./components/common/inlineLoader.css";
 @import "./components/common/loadingScroll.css";
 @import "./components/common/toast.css";
 

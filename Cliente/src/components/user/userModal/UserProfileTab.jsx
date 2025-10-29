@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 
 const UserProfileTab = ({ user, onUpdateProfile }) => {
-  const [profileData, setProfileData] = useState({
+  const [formData, setFormData] = useState({
     username: "",
     email: "",
   });
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
-    setProfileData({
+    setFormData({
       username: user?.username || "",
       email: user?.email || "",
     });
@@ -26,16 +26,16 @@ const UserProfileTab = ({ user, onUpdateProfile }) => {
     e.preventDefault();
     setFormErrors({});
 
-    const errors = validateForm(profileData);
+    const errors = validateForm(formData);
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
     }
-    onUpdateProfile(profileData);
+    onUpdateProfile(formData);
   };
 
   const handleInputChange = (field, value) => {
-    setProfileData((prev) => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
@@ -55,7 +55,7 @@ const UserProfileTab = ({ user, onUpdateProfile }) => {
           <label>Nombre de usuario</label>
           <input
             type="text"
-            value={profileData.username}
+            value={formData.username}
             onChange={(e) => handleInputChange("username", e.target.value)}
             className="user-form-input"
             placeholder="Ingresa tu nombre de usuario"
@@ -68,7 +68,7 @@ const UserProfileTab = ({ user, onUpdateProfile }) => {
           <label>Correo electrónico</label>
           <input
             type="email"
-            value={profileData.email}
+            value={formData.email}
             onChange={(e) => handleInputChange("email", e.target.value)}
             className="user-form-input"
             placeholder="Ingresa tu correo electrónico"

@@ -5,24 +5,6 @@
   padding: 0;
 }
 
-.empty-message {
-  text-align: center;
-  color: #6c757d;
-  font-size: 16px;
-  padding: 40px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-}
-
-.loading {
-  text-align: center;
-  color: #6c757d;
-  font-size: 16px;
-  padding: 40px;
-}
-
-
 .task-item-card {
   position: relative;
   min-height: 220px;
