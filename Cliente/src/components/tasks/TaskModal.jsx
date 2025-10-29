@@ -5,9 +5,11 @@ import { taskMappers } from '../../mappers/taskMapper';
 import { useToast } from '../../contexts/ToastContexts';
 import ConfirmModal from '../common/ConfirmModal';
 import { loadTags } from '../../services/tags'; 
+import { useAuthContext } from '../../contexts/AuthContext'; 
 
 const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
   const { showToast } = useToast();
+    const { user } = useAuthContext(); 
 
   const [formData, setFormData] = useState({
     name: '',
@@ -119,7 +121,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
         description: formData.description.trim(),
         scheduledDate: formData.scheduledDate || null,
         priority: formData.priority ? parseInt(formData.priority) : null,
-        userId: isEditing ? task.userId : parseInt(sessionStorage.getItem('userId')),
+        userId: isEditing ? task.userId : user?.id,
         tags: tags, 
         isCompleted: isEditing ? task.isCompleted : false,
         createdAt: isEditing ? task.createdAt : new Date().toISOString(),
