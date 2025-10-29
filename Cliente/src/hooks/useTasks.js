@@ -19,6 +19,7 @@ export const useTasks = (userId) => {
   });
 
   const { showTaskToast } = useToast();
+
   const updateStatsFromLocalChanges = useCallback(
     (action, taskData, previousTaskState = null) => {
       setState((prev) => {
@@ -101,57 +102,57 @@ export const useTasks = (userId) => {
     };
   }, []);
 
-const loadTasks = useCallback(
-  async (page, limit) => {
-    if (!userId) return;
+  const loadTasks = useCallback(
+    async (page, limit) => {
+      if (!userId) return;
 
-    try {
-      setState((prev) => ({
-        ...prev,
-        loading: page === TASKS_PAGINATION.INITIAL_PAGE,
-        loadingMore: page > TASKS_PAGINATION.INITIAL_PAGE,
-        error: null,
-      }));
+      try {
+        setState((prev) => ({
+          ...prev,
+          loading: page === TASKS_PAGINATION.INITIAL_PAGE,
+          loadingMore: page > TASKS_PAGINATION.INITIAL_PAGE,
+          error: null,
+        }));
 
-      const response = await taskService.findAllByUserId(
-        page || TASKS_PAGINATION.INITIAL_PAGE,
-        limit || TASKS_PAGINATION.DEFAULT_LIMIT
-      );
-      
-      const tasksFromResponse = response.data.tasks || [];
-      const paginationInfo = response.data.pagination || {};
+        const response = await taskService.findAllByUserId(
+          page || TASKS_PAGINATION.INITIAL_PAGE,
+          limit || TASKS_PAGINATION.DEFAULT_LIMIT
+        );
+        
+        const tasksFromResponse = response.data.tasks || [];
+        const paginationInfo = response.data.pagination || {};
 
-      setState((prev) => {
-        const newTasks =
-          page === TASKS_PAGINATION.INITIAL_PAGE
-            ? tasksFromResponse
-            : [...prev.tasks, ...tasksFromResponse];
+        setState((prev) => {
+          const newTasks =
+            page === TASKS_PAGINATION.INITIAL_PAGE
+              ? tasksFromResponse
+              : [...prev.tasks, ...tasksFromResponse];
 
-        return {
-          tasks: newTasks,
-          hasMore: paginationInfo.hasNext || tasksFromResponse.length >= (limit || TASKS_PAGINATION.DEFAULT_LIMIT),
-          currentPage: page,
-          totalTasks: paginationInfo.total || prev.totalTasks + tasksFromResponse.length,
-          completedCount: paginationInfo.counts?.completed || 0,
-          pendingCount: paginationInfo.counts?.pending || 0,
-          overdueCount: paginationInfo.counts?.overdue || 0,
+          return {
+            tasks: newTasks,
+            hasMore: paginationInfo.hasNext || tasksFromResponse.length >= (limit || TASKS_PAGINATION.DEFAULT_LIMIT),
+            currentPage: page,
+            totalTasks: paginationInfo.total || prev.totalTasks + tasksFromResponse.length,
+            completedCount: paginationInfo.counts?.completed || 0,
+            pendingCount: paginationInfo.counts?.pending || 0,
+            overdueCount: paginationInfo.counts?.overdue || 0,
+            loading: false,
+            loadingMore: false,
+            error: null,
+          };
+        });
+      } catch (error) {
+        console.error("Error loading tasks:", error);
+        setState((prev) => ({
+          ...prev,
+          error: error.message || "Error cargando tareas",
           loading: false,
           loadingMore: false,
-          error: null,
-        };
-      });
-    } catch (error) {
-      console.error("Error loading tasks:", error);
-      setState((prev) => ({
-        ...prev,
-        error: error.message || "Error cargando tareas",
-        loading: false,
-        loadingMore: false,
-      }));
-    }
-  },
-  [userId]
-);
+        }));
+      }
+    },
+    [userId]
+  );
 
   const loadMoreTasks = useCallback(async () => {
     if (state.loadingMore || !state.hasMore) {

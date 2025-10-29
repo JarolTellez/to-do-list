@@ -1,23 +1,23 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { formatDateForDisplay } from '../../utils/formatDate';
 import { TASK_PRIORITIES } from '../../utils/constants/taskConstans';
 
-const TaskItem = ({ task, onToggleComplete, onEditTask, onDeleteTask }) => {
-  const handleToggleComplete = () => {
+const TaskItem = memo(({ task, onToggleComplete, onEditTask, onDeleteTask }) => {
+  const handleToggleComplete = useCallback(() => {
     if (!task.isCompleted) {
       onToggleComplete(task.id, !task.isCompleted);
     }
-  };
+  }, [task.isCompleted, task.id, onToggleComplete]);
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     if (!task.isCompleted) {
       onEditTask(task);
     }
-  };
+  }, [task.isCompleted, task, onEditTask]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     onDeleteTask(task.id);
-  };
+  }, [task.id, onDeleteTask]);
 
   const canEdit = !task.isCompleted;
   const displayTags = task.tags || [];
@@ -104,6 +104,21 @@ const TaskItem = ({ task, onToggleComplete, onEditTask, onDeleteTask }) => {
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.task.id === nextProps.task.id &&
+    prevProps.task.isCompleted === nextProps.task.isCompleted &&
+    prevProps.task.name === nextProps.task.name &&
+    prevProps.task.description === nextProps.task.description &&
+    prevProps.task.scheduledDate === nextProps.task.scheduledDate &&
+    prevProps.task.priority === nextProps.task.priority &&
+    JSON.stringify(prevProps.task.tags) === JSON.stringify(nextProps.task.tags) &&
+    prevProps.onToggleComplete === nextProps.onToggleComplete &&
+    prevProps.onEditTask === nextProps.onEditTask &&
+    prevProps.onDeleteTask === nextProps.onDeleteTask
+  );
+});
+
+TaskItem.displayName = 'TaskItem';
 
 export default TaskItem;

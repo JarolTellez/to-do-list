@@ -95,7 +95,6 @@ export const useSessions = () => {
 
     try {
       const response = await closeAllSessions();
-      // Recargar sesiones después de cerrar todas
       await loadSessions(SESSIONS_PAGINATION.INITIAL_PAGE, SESSIONS_PAGINATION.DEFAULT_LIMIT);
       return response;
     } catch (error) {
@@ -113,7 +112,6 @@ export const useSessions = () => {
 
     try {
       const response = await closeSession(sessionId);
-      // Actualizar lista localmente
       setState((prev) => ({
         ...prev,
         sessions: prev.sessions.filter((session) => session.id !== sessionId),

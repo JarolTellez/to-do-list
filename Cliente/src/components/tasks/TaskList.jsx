@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import InfiniteScrollList from '../common/InfiniteScrollList';
 import TaskItem from './TaskItem';
 
-const TaskList = ({ 
+const TaskList = memo(({ 
   tasks, 
   onToggleComplete, 
   onEditTask, 
@@ -13,14 +13,14 @@ const TaskList = ({
   onLoadMore,
   emptyMessage 
 }) => {
-  const renderTaskItem = (task) => (
+  const renderTaskItem = useCallback((task) => (
     <TaskItem 
       task={task}
       onToggleComplete={onToggleComplete}
       onEditTask={onEditTask}
       onDeleteTask={onDeleteTask}
     />
-  );
+  ), [onToggleComplete, onEditTask, onDeleteTask]);
 
   return (
     <div className="task-list-wrapper">
@@ -38,6 +38,8 @@ const TaskList = ({
       />
     </div>
   );
-};
+});
+
+TaskList.displayName = 'TaskList';
 
 export default TaskList;
