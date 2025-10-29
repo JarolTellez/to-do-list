@@ -1,28 +1,29 @@
-@import './base/reset.css';
-@import './base/variables.css';
+@import "./base/reset.css";
+@import "./base/variables.css";
 
 /* Layout Styles */
-@import './layout/appLayout.css';
+@import "./layout/appLayout.css";
 
 /* Auth Components */
-@import './components/auth/authForms.css';
+@import "./components/auth/authForms.css";
 
 /* Common Components */
-@import './components/common/confirmModal.css';
-@import './components/common/fullScreenLoader.css';
-@import './components/common/inlineLoader.css';
-@import './components/common/loadingScroll.css';
-@import './components/common/toast.css';
+@import "./components/common/confirmModal.css";
+@import "./components/common/fullScreenLoader.css";
+@import "./components/common/inlineLoader.css";
+@import "./components/common/loadingScroll.css";
+@import "./components/common/toast.css";
 
 /* Task Components */
-@import './components/tasks/taskLists.css';
-@import './components/tasks/taskItem.css';
-@import './components/tasks/taskModal.css';
-@import './components/tasks/sidebar.css';
+@import "./components/tasks/taskLists.css";
+@import "./components/tasks/taskItem.css";
+@import "./components/tasks/taskModal.css";
+@import "./components/tasks/sidebar.css";
 
 /* User Components */
-@import './components/user/userModal.css';
+@import "./components//user/userModal.css";
+
 
 /* Utility Styles */
-@import './utils/responsive.css';
-@import './utils/utilsClasses.css';
+@import "./utils/responsive.css";
+@import "./utils/utilsClasses.css";
