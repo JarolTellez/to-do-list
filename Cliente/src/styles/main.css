@@ -12,6 +12,8 @@
 @import "./components/common/fullScreenLoader.css";
 @import "./components/common/loadingScroll.css";
 @import "./components/common/toast.css";
+@import "./components/common/tagInput.css";
+@import "./components/common/loadingSpinner.css";
 
 /* Task Components */
 @import "./components/tasks/taskLists.css";
@@ -20,8 +22,7 @@
 @import "./components/tasks/sidebar.css";
 
 /* User Components */
-@import "./components//user/userModal.css";
-
+@import "./components/user/userModal.css";
 
 /* Utility Styles */
 @import "./utils/responsive.css";

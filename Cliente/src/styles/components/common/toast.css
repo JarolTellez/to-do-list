@@ -77,6 +77,32 @@
   background: #6c757d;
 }
 
+.toast-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.toast-close-btn:hover {
+  opacity: 0.8;
+}
+
 .loading-container, .error-container {
   display: flex;
   flex-direction: column;

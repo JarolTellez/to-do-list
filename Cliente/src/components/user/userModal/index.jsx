@@ -10,7 +10,7 @@ import SessionsTab from "./SessionsTab";
 import DangerZoneTab from "./DeleteAccountTab";
 import ConfirmModal from "../../common/ConfirmModal";
 import { useNavigate } from "react-router-dom";
-import { useAuthContext } from '../../../contexts/AuthContext';
+import { useAuthContext } from "../../../contexts/AuthContext";
 
 const UserModal = ({ user, onClose, onLogout }) => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -26,9 +26,16 @@ const UserModal = ({ user, onClose, onLogout }) => {
 
   const { showToast } = useToast();
   const { startFullScreenLoading, stopFullScreenLoading } = useLoading();
-  const { updateProfile, updatePassword, deleteAccount } = useUser();
+
+  const {
+    updateProfile,
+    updatePassword,
+    deleteAccount,
+    loading: userLoading,
+  } = useUser();
+
   const { closeAllSessions } = useSessions();
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const { logout: contextLogout } = useAuthContext();
 
   const showConfirmModal = (config) => {
@@ -76,6 +83,7 @@ const UserModal = ({ user, onClose, onLogout }) => {
       },
     });
   };
+
   const handleUpdateProfile = async (profileData) => {
     showConfirmModal({
       type: "warning",
@@ -139,6 +147,7 @@ const UserModal = ({ user, onClose, onLogout }) => {
           <li>
             Deberás usar tu nueva contraseña para futuros inicios de sesión
           </li>
+          <li>La sesión se cerrará automáticamente por seguridad</li>
         </ul>
       ),
       confirmText: "Cambiar Contraseña",
@@ -155,27 +164,35 @@ const UserModal = ({ user, onClose, onLogout }) => {
             response.message || "Contraseña actualizada exitosamente",
             "success"
           );
+
+          startFullScreenLoading(
+            "Contraseña actualizada",
+            "Cerrando sesión por seguridad..."
+          );
+          setTimeout(() => {
+            onLogout();
+            stopFullScreenLoading();
+          }, 1500);
         } catch (error) {
           showToast(
             error.message || "Error al cambiar la contraseña",
             "error",
             6000
           );
-        } finally {
           stopFullScreenLoading();
         }
       },
     });
   };
 
-   const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async () => {
     showConfirmModal({
-      type: 'danger',
-      title: 'Eliminar Cuenta',
-      message: '¿ESTÁS ABSOLUTAMENTE SEGURO?',
+      type: "danger",
+      title: "Eliminar Cuenta",
+      message: "¿ESTÁS ABSOLUTAMENTE SEGURO?",
       details: (
         <div>
-          <p style={{ marginBottom: '10px', fontWeight: 'bold', color: '#dc3545' }}>
+          <p className="delete-account-critical-warning">
             ⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️
           </p>
           <ul>
@@ -186,29 +203,31 @@ const UserModal = ({ user, onClose, onLogout }) => {
           </ul>
         </div>
       ),
-      confirmText: 'ELIMINAR CUENTA',
+      confirmText: "ELIMINAR CUENTA",
       onConfirm: async () => {
         closeConfirmModal();
-        startFullScreenLoading("Eliminando cuenta", "Esta acción es irreversible. Por favor, espera...");
-        
+        startFullScreenLoading(
+          "Eliminando cuenta",
+          "Esta acción es irreversible. Por favor, espera..."
+        );
+
         try {
           await deleteAccount();
-          
+
           await contextLogout();
-          
+
           showToast("Cuenta eliminada exitosamente", "success");
-          
+
           setTimeout(() => {
-            stopFullScreenLoading(); 
-            navigate('/login', { replace: true });
+            stopFullScreenLoading();
+            navigate("/login", { replace: true });
           }, 1500);
-          
         } catch (error) {
           console.error("Error eliminando cuenta:", error);
-          showToast(error.message || 'Error eliminando cuenta', 'error', 5000);
-          stopFullScreenLoading(); 
+          showToast(error.message || "Error eliminando cuenta", "error", 5000);
+          stopFullScreenLoading();
         }
-      }
+      },
     });
   };
 
@@ -242,7 +261,7 @@ const UserModal = ({ user, onClose, onLogout }) => {
           );
 
           setTimeout(() => {
-            onLogout(); 
+            onLogout();
             stopFullScreenLoading();
           }, 2000);
         } catch (error) {
@@ -252,6 +271,7 @@ const UserModal = ({ user, onClose, onLogout }) => {
       },
     });
   };
+
   const renderTabContent = () => {
     const commonProps = {
       user,
@@ -263,21 +283,21 @@ const UserModal = ({ user, onClose, onLogout }) => {
 
     switch (activeTab) {
       case "profile":
-        return <UserProfileTab {...commonProps} />;
+        return <UserProfileTab {...commonProps} loading={userLoading} />;
       case "password":
-        return <ChangePasswordTab {...commonProps} />;
+        return <ChangePasswordTab {...commonProps} loading={userLoading} />;
       case "sessions":
         return <SessionsTab {...commonProps} />;
       case "danger":
-        return <DangerZoneTab {...commonProps} />;
+        return <DangerZoneTab {...commonProps} loading={userLoading} />;
       default:
-        return <UserProfileTab {...commonProps} />;
+        return <UserProfileTab {...commonProps} loading={userLoading} />;
     }
   };
 
   return (
     <>
-      <div className="modal" style={{ display: "flex" }}>
+      <div className="modal flex-display">
         <div className="modal-content user-modal-content-wrapper">
           <div className="user-modal-header">
             <h2>Configuración de Usuario</h2>
@@ -291,10 +311,18 @@ const UserModal = ({ user, onClose, onLogout }) => {
           <div className="user-modal-main-content">{renderTabContent()}</div>
 
           <div className="user-modal-actions">
-            <button className="user-modal-close-button" onClick={onClose}>
+            <button
+              className="user-modal-close-button"
+              onClick={onClose}
+              disabled={userLoading}
+            >
               Cerrar
             </button>
-            <button className="user-modal-logout-btn" onClick={handleLogout}>
+            <button
+              className="user-modal-logout-btn"
+              onClick={handleLogout}
+              disabled={userLoading}
+            >
               Cerrar Sesión
             </button>
           </div>
@@ -310,6 +338,7 @@ const UserModal = ({ user, onClose, onLogout }) => {
         details={confirmModal.details}
         confirmText={confirmModal.confirmText}
         type={confirmModal.type}
+        loading={userLoading}
       />
     </>
   );

@@ -203,3 +203,7 @@
     width: 100%;
   }
 }
+
+.confirm-modal-overlay.flex-display {
+  display: flex !important;
+}

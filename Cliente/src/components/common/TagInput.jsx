@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { loadTags } from '../../services/tags';
+import '../../styles/components/common/tagInput.css';
 
-const TagInput = ({ selectedTags, onTagsChange }) => {
+const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -120,7 +121,7 @@ const TagInput = ({ selectedTags, onTagsChange }) => {
   };
 
   return (
-    <div id="tag-input-container">
+    <div id="tag-input-container"  className={disabled ? 'disabled' : ''}>
       {errorMessage && (
         <div className="tag-error-message">
           {errorMessage}

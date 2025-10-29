@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState, useCallback } from "react";
 import {
   updateUserProfile,
   changePassword,
@@ -6,59 +6,71 @@ import {
 } from "../services/user";
 
 export const useUser = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [state, setState] = useState({
+    loading: false,
+    error: null
+  });
 
   const updateProfile = useCallback(async (profileData) => {
-    setLoading(true);
-    setError(null);
+    setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
       const result = await updateUserProfile(profileData);
       return result;
     } catch (error) {
-      setError(error.message || "Error actualizando perfil");
+      setState(prev => ({ 
+        ...prev, 
+        error: error.message || "Error actualizando perfil" 
+      }));
       throw error;
     } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, loading: false }));
     }
   }, []);
 
   const updatePassword = useCallback(async (passwordData) => {
-    setLoading(true);
-    setError(null);
+    setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
       const result = await changePassword(passwordData);
       return result;
     } catch (error) {
-      setError(error.message || "Error cambiando contraseña");
+      setState(prev => ({ 
+        ...prev, 
+        error: error.message || "Error cambiando contraseña" 
+      }));
       throw error;
     } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, loading: false }));
     }
   }, []);
 
   const deleteAccount = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
       const result = await deleteUserAccount();
       return result;
     } catch (error) {
-      setError(error.message || "Error eliminando cuenta");
+      setState(prev => ({ 
+        ...prev, 
+        error: error.message || "Error eliminando cuenta" 
+      }));
       throw error;
     } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, loading: false }));
     }
   }, []);
 
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
+  }, []);
+
   return {
-    loading,
-    error,
+    ...state,
     updateProfile,
     updatePassword,
     deleteAccount,
+    clearError,
   };
 };

@@ -29,6 +29,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
 }
 
 .user-modal-close-btn:hover {
@@ -42,6 +43,7 @@
   border-bottom: 1px solid #dee2e6;
   padding: 0 25px;
   margin-top: 15px;
+  overflow-x: auto;
 }
 
 .user-tab-btn {
@@ -53,6 +55,8 @@
   font-size: 14px;
   color: #6c757d;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .user-tab-btn:hover {
@@ -128,6 +132,7 @@
 .user-btn-primary:hover:not(:disabled) {
   background: #0056b3;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
 }
 
 .user-btn-secondary {
@@ -162,12 +167,14 @@
 .user-btn-danger:hover:not(:disabled) {
   background: #c82333;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
 .user-btn-danger:disabled {
   background: #6c757d;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 .user-btn-sm {
@@ -181,12 +188,15 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .user-sessions-header h3 {
   margin: 0;
   color: #333;
 }
+
 .user-session-item {
   display: flex;
   justify-content: space-between;
@@ -197,6 +207,7 @@
   background: #f8f9fa;
   width: 100%;
   transition: all 0.3s ease;
+  margin-bottom: 10px;
 }
 
 .user-session-item.current {
@@ -250,57 +261,6 @@
   min-width: 60px;
 }
 
-/* sessions responsice */
-@media (max-width: 768px) {
-  .user-session-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .user-session-info {
-    width: 100%;
-  }
-
-  .user-session-platform {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-
-  .user-session-details div {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-
-  .user-session-details strong {
-    min-width: auto;
-  }
-}
-
-.user-tab-content {
-  animation: fadeIn 0.3s ease;
-  width: 100%;
-}
-
-.user-sessions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  width: 100%;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.user-sessions-header h3 {
-  margin: 0;
-  color: #333;
-  flex: 1;
-  min-width: 200px;
-}
-
 .user-modal-actions {
   display: flex;
   justify-content: space-between;
@@ -308,6 +268,8 @@
   border-top: 1px solid #dee2e6;
   background: #f8f9fa;
   border-radius: 0 0 12px 12px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .user-modal-close-button {
@@ -322,8 +284,9 @@
   transition: all 0.3s ease;
 }
 
-.user-modal-close-button:hover {
+.user-modal-close-button:hover:not(:disabled) {
   background: #5a6268;
+  transform: translateY(-1px);
 }
 
 .user-modal-logout-btn {
@@ -338,8 +301,9 @@
   transition: all 0.3s ease;
 }
 
-.user-modal-logout-btn:hover {
+.user-modal-logout-btn:hover:not(:disabled) {
   background: #c82333;
+  transform: translateY(-1px);
 }
 
 /* loading state */
@@ -354,11 +318,13 @@
   display: flex;
   gap: 10px;
   margin-top: 15px;
+  flex-wrap: wrap;
 }
 
 .user-form-buttons .user-btn-primary,
 .user-form-buttons .user-btn-secondary {
   flex: 1;
+  min-width: 120px;
 }
 
 /* disabled states */
@@ -370,6 +336,111 @@
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
+  box-shadow: none !important;
+}
+
+/* DeleteAccountTab styles */
+.delete-account-container {
+  text-align: center;
+  padding: 20px;
+}
+
+.delete-account-title {
+  color: #dc3545;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.delete-account-warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.delete-account-warning-title {
+  color: #856404;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-account-warning-text {
+  color: #856404;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.delete-account-list {
+  color: #856404;
+  margin-bottom: 15px;
+  padding-left: 20px;
+}
+
+.delete-account-list li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.delete-account-list li:last-child {
+  margin-bottom: 0;
+}
+
+.delete-account-details {
+  text-align: left;
+}
+
+.delete-account-critical-warning {
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #dc3545;
+  text-align: center;
+  padding: 10px;
+  background: #f8d7da;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+}
+
+.delete-account-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  width: 100%;
+  max-width: 250px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* sessions list */
+.user-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.user-sessions-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.user-sessions-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.user-sessions-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.user-sessions-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 /* responsive */
@@ -381,16 +452,27 @@
 
   .user-modal-main-content {
     padding: 15px;
+    max-height: 50vh;
   }
 
   .user-modal-tabs-container {
     padding: 0 15px;
+    overflow-x: auto;
+  }
+
+  .user-tab-btn {
+    padding: 10px 15px;
+    font-size: 13px;
   }
 
   .user-modal-actions {
     padding: 15px;
     flex-direction: column;
-    gap: 10px;
+  }
+
+  .user-modal-close-button,
+  .user-modal-logout-btn {
+    width: 100%;
   }
 
   .user-session-item {
@@ -408,4 +490,57 @@
   .user-form-buttons {
     flex-direction: column;
   }
+
+  .user-form-buttons .user-btn-primary,
+  .user-form-buttons .user-btn-secondary {
+    width: 100%;
+  }
+
+  .delete-account-container {
+    padding: 15px;
+  }
+  
+  .delete-account-warning-box {
+    padding: 15px;
+  }
+  
+  .delete-account-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-modal-header {
+    padding: 15px 15px 0;
+  }
+
+  .user-modal-header h2 {
+    font-size: 1.3em;
+  }
+
+  .user-tab-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .user-session-platform {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .user-session-details div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .user-session-details strong {
+    min-width: auto;
+  }
+}
+
+.user-modal-overlay.flex-display {
+  display: flex !important;
 }

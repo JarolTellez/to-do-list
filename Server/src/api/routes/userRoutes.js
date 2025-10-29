@@ -10,8 +10,8 @@ module.exports = (userController) => {
     .delete(validateAccessToken,userController.deleteUser.bind(userController));
 
   router
-    .route("/password")
-    .put(validateAccessToken,userController.updateUserPassword.bind(userController));
+    .route("/change-password")
+    .patch(validateAccessToken,userController.updateUserPassword.bind(userController));
 
 
   return router;
