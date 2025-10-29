@@ -2,31 +2,33 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { authService } from "../services/auth";
 
 export const useAuth = () => {
-  const [authState, setAuthState] = useState({
+  const [state, setState] = useState({
     user: null,
     isAuthenticated: false,
     loading: true,
+    error: null
   });
 
-  const updateAuthState = useCallback((updates) => {
-    setAuthState((prev) => ({ ...prev, ...updates }));
+  const updateState = useCallback((updates) => {
+    setState(prev => ({ ...prev, ...updates }));
   }, []);
 
-  const clearAuthState = useCallback(() => {
-    setAuthState({
+  const clearState = useCallback(() => {
+    setState({
       user: null,
       isAuthenticated: false,
       loading: false,
+      error: null
     });
     authService.clearLocalState();
   }, []);
 
   const verifySession = useCallback(async () => {
     try {
-      updateAuthState({ loading: true });
+      updateState({ loading: true, error: null });
       const result = await authService.verifySession();
 
-      updateAuthState({
+      updateState({
         isAuthenticated: result.isAuthenticated,
         user: result.user,
         loading: false,
@@ -35,18 +37,18 @@ export const useAuth = () => {
       return result;
     } catch (error) {
       console.warn("Error verifying session:", error);
-      clearAuthState();
+      clearState();
       return { isAuthenticated: false, user: null };
     }
-  }, [updateAuthState, clearAuthState]);
+  }, [updateState, clearState]);
 
   const login = useCallback(
     async (username, password) => {
       try {
-        updateAuthState({ loading: true });
+        updateState({ loading: true, error: null });
         const response = await authService.login(username, password);
 
-        updateAuthState({
+        updateState({
           isAuthenticated: true,
           user: response.data,
           loading: false,
@@ -54,26 +56,32 @@ export const useAuth = () => {
 
         return response;
       } catch (error) {
-        updateAuthState({ loading: false });
+        updateState({ 
+          loading: false, 
+          error: error.message || "Error en inicio de sesión" 
+        });
         throw error;
       }
     },
-    [updateAuthState]
+    [updateState]
   );
 
   const register = useCallback(
     async (userData) => {
       try {
-        updateAuthState({ loading: true });
+        updateState({ loading: true, error: null });
         const response = await authService.register(userData);
-        updateAuthState({ loading: false });
+        updateState({ loading: false });
         return response;
       } catch (error) {
-        updateAuthState({ loading: false });
+        updateState({ 
+          loading: false, 
+          error: error.message || "Error en registro" 
+        });
         throw error;
       }
     },
-    [updateAuthState]
+    [updateState]
   );
 
   const logout = useCallback(async () => {
@@ -89,24 +97,29 @@ export const useAuth = () => {
       ) {
         return { data: { success: true }, message: "Sesión cerrada" };
       }
-
       throw error;
     } finally {
-      clearAuthState();
+      clearState();
     }
-  }, [clearAuthState]);
+  }, [clearState]);
+
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
+  }, []);
+
   useEffect(() => {
     verifySession();
   }, [verifySession]);
 
   return useMemo(
     () => ({
-      ...authState,
+      ...state,
       login,
       register,
       logout,
       verifySession,
+      clearError,
     }),
-    [authState, login, register, logout, verifySession]
+    [state, login, register, logout, verifySession, clearError]
   );
 };

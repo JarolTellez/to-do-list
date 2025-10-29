@@ -210,7 +210,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
   const isLoading = loading;
 
   return (
-    <div className="modal" style={{ display: 'flex' }}>
+    <div className="modal flex-display">
       <div className="modal-content">
         <form onSubmit={handleSubmit}>
           <div className="modal-form-container">

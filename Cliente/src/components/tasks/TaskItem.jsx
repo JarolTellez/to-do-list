@@ -79,7 +79,7 @@ const TaskItem = ({ task, onToggleComplete, onEditTask, onDeleteTask }) => {
               className="task-priority-bar" 
               style={{ 
                 width: `${task.priority * 20}%`,
-                background: `linear-gradient(to right, rgba(0, 128, 0, 0.3), ${priorityColor})`
+                backgroundColor: priorityColor
               }}
             >
               <span className="task-priority-number">{task.priority}</span>

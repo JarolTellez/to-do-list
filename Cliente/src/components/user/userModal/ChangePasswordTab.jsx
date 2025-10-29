@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const ChangePasswordTab = ({ onUpdatePassword }) => {
+const ChangePasswordTab = ({ onUpdatePassword, loading }) => {
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -57,6 +57,7 @@ const ChangePasswordTab = ({ onUpdatePassword }) => {
             onChange={(e) => handleInputChange("currentPassword", e.target.value)}
             className="user-form-input"
             placeholder="Ingresa tu contraseña actual"
+            disabled={loading}
           />
           {formErrors.currentPassword && <span className="user-form-error">{formErrors.currentPassword}</span>}
         </div>
@@ -68,6 +69,7 @@ const ChangePasswordTab = ({ onUpdatePassword }) => {
             onChange={(e) => handleInputChange("newPassword", e.target.value)}
             className="user-form-input"
             placeholder="Ingresa tu nueva contraseña"
+            disabled={loading}
           />
           {formErrors.newPassword && <span className="user-form-error">{formErrors.newPassword}</span>}
         </div>
@@ -79,14 +81,15 @@ const ChangePasswordTab = ({ onUpdatePassword }) => {
             onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
             className="user-form-input"
             placeholder="Confirma tu nueva contraseña"
+            disabled={loading}
           />
           {formErrors.confirmPassword && <span className="user-form-error">{formErrors.confirmPassword}</span>}
         </div>
         <div className="user-form-buttons">
-          <button type="submit" className="user-btn-primary">
-            Cambiar Contraseña
+          <button type="submit" className="user-btn-primary" disabled={loading}>
+            {loading ? 'Cambiando Contraseña...' : 'Cambiar Contraseña'}
           </button>
-          <button type="button" className="user-btn-secondary" onClick={resetForm}>
+          <button type="button" className="user-btn-secondary" onClick={resetForm} disabled={loading}>
             Limpiar
           </button>
         </div>
