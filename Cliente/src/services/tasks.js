@@ -43,11 +43,9 @@ class TaskService {
   }
 
   async delete(taskId) {
-    const userId = sessionStorage.getItem("userId");
     const response = await apiClient.api.delete("/task/", {
       data: {
         taskId: taskId,
-        userId: userId,
       },
     });
     return { data: response.data, message: response.message };

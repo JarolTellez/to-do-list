@@ -25,7 +25,6 @@ export class AuthService {
         tokenType: response.data.tokenType,
       };
 
-      this.saveUserInfo(userData);
       return authResponse;
     } catch (error) {
       console.error("Error in login:", error);
@@ -103,23 +102,6 @@ export class AuthService {
       console.error("Error creating user:", error);
       throw error;
     }
-  }
-
-  saveUserInfo(userData) {
-    if (userData && userData.id) {
-      sessionStorage.setItem("userId", userData.id);
-      sessionStorage.setItem("userEmail", userData.email || "");
-      sessionStorage.setItem("userUsername", userData.username || "");
-    }
-  }
-
-  clearLocalState() {
-    sessionStorage.removeItem("userId");
-    sessionStorage.removeItem("userEmail");
-    sessionStorage.removeItem("userUsername");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("rememberMe");
-    localStorage.removeItem("userPreferences");
   }
 }
 
