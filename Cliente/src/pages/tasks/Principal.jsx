@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Sidebar from "../../components/tasks/Sidebar";
 import TaskList from "../../components/tasks/TaskList";
 import TaskModal from "../../components/tasks/TaskModal";
@@ -66,14 +66,13 @@ const Principal = ({ user, onLogout }) => {
       pendingCount,
       overdueCount,
     };
-  }, [tasks, totalTasks, completedCount, pendingCount, overdueCount]);
-
+  }, [totalTasks, completedCount, pendingCount, overdueCount]);
 
   const filteredTasks = useMemo(() => {
     return applyFilters(tasks);
   }, [tasks, applyFilters]);
 
-  const showConfirmModal = (config) => {
+  const showConfirmModal = useCallback((config) => {
     setConfirmModal({
       isOpen: true,
       type: config.type || "warning",
@@ -83,56 +82,68 @@ const Principal = ({ user, onLogout }) => {
       confirmText: config.confirmText || "Confirmar",
       onConfirm: config.onConfirm,
     });
-  };
+  }, []);
 
-  const closeConfirmModal = () => {
+  const closeConfirmModal = useCallback(() => {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-  };
+  }, []);
 
-  const handleAddTask = async (taskData) => {
-    try {
-      await addTask(taskData);
-      setShowModal(false);
-    } catch (error) {
-       // Error already handled by useTasks
-    }
-  };
+  const handleAddTask = useCallback(
+    async (taskData) => {
+      try {
+        await addTask(taskData);
+        setShowModal(false);
+      } catch (error) {
+        // Error already handled by useTasks
+      }
+    },
+    [addTask]
+  );
 
-  const handleEditTask = async (taskData) => {
-    try {
-      await updateTask(taskData);
-      setShowModal(false);
-      setEditingTask(null);
-    } catch (error) {
-       // Error already handled by useTasks
-    }
-  };
+  const handleEditTask = useCallback(
+    async (taskData) => {
+      try {
+        await updateTask(taskData);
+        setShowModal(false);
+        setEditingTask(null);
+      } catch (error) {
+        // Error already handled by useTasks
+      }
+    },
+    [updateTask]
+  );
 
-  const handleDeleteTask = async (taskId) => {
-    try {
-      await deleteTask(taskId);
-    } catch (error) {
-       // Error already handled by useTasks
-    }
-  };
+  const handleDeleteTask = useCallback(
+    async (taskId) => {
+      try {
+        await deleteTask(taskId);
+      } catch (error) {
+        // Error already handled by useTasks
+      }
+    },
+    [deleteTask]
+  );
 
-  const handleToggleComplete = async (taskId, isCompleted) => {
-    try {
-      await toggleTaskCompletion(taskId, isCompleted);
-    } catch (error) {
-       // Error already handled by useTasks
-    }
-  };
+  const handleToggleComplete = useCallback(
+    async (taskId, isCompleted) => {
+      try {
+        await toggleTaskCompletion(taskId, isCompleted);
+      } catch (error) {
+        // Error already handled by useTasks
+      }
+    },
+    [toggleTaskCompletion]
+  );
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     try {
       await refreshTasks();
     } catch (error) {
-       // Error already handled by useTasks
+      // Error already handled by useTasks
     }
-  };
+  }, [refreshTasks]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     showConfirmModal({
       type: "warning",
       title: "Cerrar Sesión",
@@ -160,30 +171,37 @@ const Principal = ({ user, onLogout }) => {
         }
       },
     });
-  };
+  }, [
+    showConfirmModal,
+    closeConfirmModal,
+    startFullScreenLoading,
+    onLogout,
+    showToast,
+    stopFullScreenLoading,
+  ]);
 
-  const openAddModal = () => {
+  const openAddModal = useCallback(() => {
     setEditingTask(null);
     setShowModal(true);
-  };
+  }, []);
 
-  const openEditModal = (task) => {
+  const openEditModal = useCallback((task) => {
     setEditingTask(task);
     setShowModal(true);
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setShowModal(false);
     setEditingTask(null);
-  };
+  }, []);
 
-  const openUserModal = () => {
+  const openUserModal = useCallback(() => {
     setShowUserModal(true);
-  };
+  }, []);
 
-  const closeUserModal = () => {
+  const closeUserModal = useCallback(() => {
     setShowUserModal(false);
-  };
+  }, []);
 
   if (tasksLoading && tasks.length === 0) {
     return (
@@ -244,8 +262,7 @@ const Principal = ({ user, onLogout }) => {
                 + Nueva Tarea
               </button>
               <span className="task-count">
-                {totalTasks}{" "}
-                {totalTasks === 1 ? "tarea" : "tareas"}
+                {totalTasks} {totalTasks === 1 ? "tarea" : "tareas"}
                 {hasActiveFilters && " (filtradas)"}
                 {tasksLoadingMore && " - Cargando..."}
               </span>

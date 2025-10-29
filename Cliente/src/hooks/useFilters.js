@@ -13,7 +13,6 @@ export const useFilters = () => {
   }), [filter, dateFilter, priorityFilter]);
 
   const applyFilters = useCallback((tasks) => {
-
     if (!tasks || tasks.length === 0) {
       return [];
     }
@@ -31,7 +30,6 @@ export const useFilters = () => {
       filterSort.addSorter('priority-asc');
     }
     
-
     if (filterConfig.date === 'upcoming') {
       filterSort.addSorter('upcoming');
     }
@@ -45,7 +43,7 @@ export const useFilters = () => {
     return result;
   }, [filterConfig]);
 
-  const actions = {
+  const actions = useMemo(() => ({
     setFilter: (value) => {
       setFilter(current => {
         const newValue = current === value ? null : value;
@@ -72,7 +70,7 @@ export const useFilters = () => {
       setPriorityFilter(null);
       setDateFilter(null);
     }
-  };
+  }), []);
 
   const hasActiveFilters = useMemo(() => 
     !!(filter || priorityFilter || dateFilter),
