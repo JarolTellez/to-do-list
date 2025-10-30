@@ -48,9 +48,7 @@ export class AuthService {
       }
 
       throw error;
-    } finally {
-      this.clearLocalState();
-    }
+    } 
   }
 
   async verifySession() {

@@ -130,8 +130,6 @@ class ApiClient {
   }
 
   handlePersistentAuthError() {
-    authService.clearLocalState();
-
     if (typeof window !== "undefined" && window.dispatchEvent) {
       window.dispatchEvent(new CustomEvent("auth:session-expired"));
     }

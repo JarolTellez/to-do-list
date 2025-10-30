@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
 const InfiniteScrollList = ({
@@ -13,8 +13,9 @@ const InfiniteScrollList = ({
   loadingMoreMessage = "Cargando más elementos...",
   className = "",
   listClassName = "",
+  scrollContainerRef = null
 }) => {
-  const { setObserverRef } = useInfiniteScroll(onLoadMore, hasMore, loadingMore);
+  const { setObserverRef } = useInfiniteScroll(onLoadMore, hasMore, loadingMore, 0.1, scrollContainerRef);
 
   if (loading && items.length === 0) {
     return (
@@ -41,10 +42,15 @@ const InfiniteScrollList = ({
             {renderItem(item)}
           </div>
         ))}
+        
+        {hasMore && (
+          <div 
+            ref={setObserverRef} 
+            className="scroll-detector"
+            style={{ height: '20px', background: 'transparent' }}
+          />
+        )}
       </div>
-      {hasMore && (
-        <div ref={setObserverRef} className="scroll-detector" />
-      )}
       
       {loadingMore && (
         <div className="footer-message">

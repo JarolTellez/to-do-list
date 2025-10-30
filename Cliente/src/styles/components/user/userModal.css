@@ -415,35 +415,82 @@
   display: block;
 }
 
-/* sessions list */
-.user-sessions-list {
+.sessions-scroll-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sessions-scroll-container .infinite-scroll-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sessions-scroll-container .user-sessions-list {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 10px;
   max-height: 300px;
   overflow-y: auto;
   padding-right: 5px;
+  width: 100%;
+  min-height: 0;
 }
 
-.user-sessions-list::-webkit-scrollbar {
+.sessions-scroll-container .scroll-detector {
+  height: 20px;
+  width: 100%;
+  background: transparent;
+  margin: 5px 0;
+}
+
+.sessions-scroll-container .footer-message {
+  width: 100% !important;
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 10px 0 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1 / -1; 
+}
+
+.sessions-scroll-container .footer-message .spinner-small {
+  margin: 0 auto 10px auto;
+}
+
+.sessions-scroll-container .user-sessions-list > .footer-message {
+  margin-top: 20px !important;
+  order: 9999; 
+}
+
+.sessions-scroll-container .user-sessions-list::-webkit-scrollbar {
   width: 6px;
 }
 
-.user-sessions-list::-webkit-scrollbar-track {
+.sessions-scroll-container .user-sessions-list::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 3px;
 }
 
-.user-sessions-list::-webkit-scrollbar-thumb {
+.sessions-scroll-container .user-sessions-list::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 3px;
 }
 
-.user-sessions-list::-webkit-scrollbar-thumb:hover {
+.sessions-scroll-container .user-sessions-list::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
 
-/* responsive */
 @media (max-width: 768px) {
   .user-modal-content-wrapper {
     max-width: 95%;
@@ -507,6 +554,10 @@
   .delete-account-btn {
     padding: 10px 20px;
     font-size: 14px;
+  }
+
+  .user-sessions-list {
+    max-height: 250px;
   }
 }
 

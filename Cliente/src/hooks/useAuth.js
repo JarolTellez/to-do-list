@@ -20,7 +20,6 @@ export const useAuth = () => {
       loading: false,
       error: null
     });
-    authService.clearLocalState();
   }, []);
 
   const verifySession = useCallback(async () => {
