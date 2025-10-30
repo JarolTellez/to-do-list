@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import Sidebar from "../../components/tasks/Sidebar";
+import Sidebar from "../../components/tasks/SideBar";
 import TaskList from "../../components/tasks/TaskList";
 import TaskModal from "../../components/tasks/TaskModal";
 import UserModal from "../../components/user/UserModal";
