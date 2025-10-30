@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { FilterSort } from '../utils/FilterSort';
+import { FilterSort } from '../utils/filterSort';
 
 export const useFilters = () => {
   const [filter, setFilter] = useState(null);
