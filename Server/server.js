@@ -19,18 +19,11 @@ const PORT = process.env.PORT || 3000;
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-   const allowedOrigins= [
-       "http://localhost:5173",
-      "http://localhost:3000",
-      process.env.FRONTEND_URL,
-      "https://to-do-list-cmj7w0wka-jarol-tellezs-projects.vercel.app",
-      "https://to-do-list-ashy-phi-50.vercel.app", 
-      "https://*.vercel.app"
-    ].filter(Boolean);
 
     if (
-      allowedOrigins.indexOf(origin) !== -1 ||
-      allowedOrigins.some((allowed) => origin.includes(allowed))
+      origin.includes("vercel.app") ||
+      origin.includes("localhost:") ||
+      origin === process.env.FRONTEND_URL
     ) {
       callback(null, true);
     } else {
@@ -38,7 +31,6 @@ const corsOptions = {
       callback(new Error("No permitido por CORS"));
     }
   },
-
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Dispositivo-Info"],
@@ -71,18 +63,18 @@ app.use("/tag", tagRouter);
 app.use(errorHandler);
 
 app.get("/health", (req, res) => {
-  res.json({ 
-    status: "OK", 
+  res.json({
+    status: "OK",
     message: "Backend funcionando",
     environment: process.env.NODE_ENV,
-    frontendUrl: process.env.FRONTEND_URL
+    frontendUrl: process.env.FRONTEND_URL,
   });
 });
 
 app.get("/", (req, res) => {
-  res.json({ 
+  res.json({
     message: "API To-Do List funcionando",
-    environment: process.env.NODE_ENV 
+    environment: process.env.NODE_ENV,
   });
 });
 
