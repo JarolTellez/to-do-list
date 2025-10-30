@@ -1,0 +1,101 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username String   @unique @map("user_name")
+  email     String   @unique
+  password  String
+  rol       String   @default("user")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tasks    Task[]
+  sessions Session[]
+  userTags UserTag[]
+
+  @@map("users")
+}
+
+model Task {
+  id              Int      @id @default(autoincrement())
+  name            String
+  description     String?
+  scheduledDate   DateTime? @map("scheduled_date")
+  isCompleted     Boolean  @default(false) @map("is_completed")
+  priority        Int?   
+  createdAt       DateTime @default(now()) @map("created_at")
+  lastUpdateDate  DateTime @updatedAt @map("last_update_date")
+  userId          Int      @map("user_id")
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskTags TaskTag[]
+
+  @@map("tasks")
+}
+
+model Tag {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  userTags UserTag[]
+  taskTags TaskTag[]
+
+  @@map("tags")
+}
+
+model Session {
+  id               Int      @id @default(autoincrement())
+  refreshTokenHash String   @map("refresh_token_hash") @unique
+  userAgent        String?  @map("user_agent")
+  ip               String?
+  expiresAt        DateTime @map("expires_at")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  userId           Int      @map("user_id")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model UserTag {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    Int      @map("user_id")
+  tagId     Int      @map("tag_id")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tagId])
+  @@map("user_tag")
+}
+
+model TaskTag {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  taskId    Int      @map("task_id")
+  tagId     Int      @map("tag_id")
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, tagId])
+  @@map("task_tag")
+}
