@@ -20,13 +20,12 @@ const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
    const allowedOrigins= [
-      "http://127.0.0.1:5500",
-      "http://localhost:5500",
-      "http://localhost:5173",
+       "http://localhost:5173",
       "http://localhost:3000",
       process.env.FRONTEND_URL,
-      "https://tu-frontend.vercel.app",
-      "https://*.vercel.app",
+      "https://to-do-list-cmj7w0wka-jarol-tellezs-projects.vercel.app",
+      "https://to-do-list-ashy-phi-50.vercel.app", 
+      "https://*.vercel.app"
     ].filter(Boolean);
 
     if (
@@ -70,6 +69,22 @@ app.use("/tag", tagRouter);
 
 // Middleware que se ejecuta solo si hay next(error)
 app.use(errorHandler);
+
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    message: "Backend funcionando",
+    environment: process.env.NODE_ENV,
+    frontendUrl: process.env.FRONTEND_URL
+  });
+});
+
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "API To-Do List funcionando",
+    environment: process.env.NODE_ENV 
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
