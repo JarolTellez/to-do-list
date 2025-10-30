@@ -13,16 +13,33 @@ const {
 const { errorHandler } = require("./src/api/middlewares/errorHandler");
 const app = express();
 const cors = require("cors");
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Configuración de CORS
 const corsOptions = {
-  origin: [
-    "http://127.0.0.1:5500",
-    "http://localhost:5500",
-    "http://localhost:5173",
-    
-  ],
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    allowedOrigins: [
+      "http://127.0.0.1:5500",
+      "http://localhost:5500",
+      "http://localhost:5173",
+      "http://localhost:3000",
+      process.env.FRONTEND_URL,
+      "https://tu-frontend.vercel.app",
+      "https://*.vercel.app",
+    ].filter(Boolean);
+
+    if (
+      allowedOrigins.indexOf(origin) !== -1 ||
+      allowedOrigins.some((allowed) => origin.includes(allowed))
+    ) {
+      callback(null, true);
+    } else {
+      console.log("Bloqueado por CORS:", origin);
+      callback(new Error("No permitido por CORS"));
+    }
+  },
+
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Dispositivo-Info"],
@@ -56,4 +73,5 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+  console.log(`Entorno: ${process.env.NODE_ENV}`);
 });
