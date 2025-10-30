@@ -1,60 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const { execSync } = require('child_execute');
-const fs = require('fs');
-const app = express();
-const cors = require("cors");
-const PORT = process.env.PORT || 3000;
-
-console.log('Verificando base de datos...');
-
-console.log('Variables:');
-console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Si' : 'No');
-console.log('MYSQL_URL:', process.env.MYSQL_URL ? 'Si' : 'No');
-
-const schemaPath = 'prisma/schema.prisma';
-if (fs.existsSync(schemaPath)) {
-  console.log('Schema encontrado');
-} else {
-  console.log('Schema no encontrado');
-  console.log('Archivos:', fs.readdirSync('.'));
-}
-
-console.log('Ejecutando migraciones...');
-try {
-  execSync('npx prisma generate', {
-    encoding: 'utf8',
-    timeout: 60000
-  });
-
-  const pushOutput = execSync('npx prisma db push --force --skip-generate', {
-    encoding: 'utf8', 
-    timeout: 120000
-  });
-  console.log('Migraciones completadas');
-
-} catch (error) {
-  console.log('Error:', error.message);
-}
-
-try {
-  const { PrismaClient } = require('@prisma/client');
-  const prisma = new PrismaClient();
-  
-  const tables = await prisma.$queryRaw`SHOW TABLES LIKE 'users'`;
-  
-  if (tables && tables.length > 0) {
-    console.log('Tabla users existe');
-  } else {
-    console.log('Tabla users NO existe');
-  }
-  
-  await prisma.$disconnect();
-} catch (dbError) {
-  console.log('Error:', dbError.message);
-}
-
 const {
   taskController,
   tagController,
@@ -65,7 +11,11 @@ const {
   jwtAuth,
 } = require("./src/infrastructure/config/dependencies");
 const { errorHandler } = require("./src/api/middlewares/errorHandler");
+const app = express();
+const cors = require("cors");
+const PORT = process.env.PORT || 3000;
 
+// Configuración de CORS
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
@@ -77,7 +27,8 @@ const corsOptions = {
     ) {
       callback(null, true);
     } else {
-      callback(new Error("No permitido"));
+      console.log("Bloqueado por CORS:", origin);
+      callback(new Error("No permitido por CORS"));
     }
   },
   credentials: true,
@@ -88,13 +39,16 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
+// services
 app.set("sessionService", sessionService);
 app.set("authService", authService);
 app.set("jwtAuth", jwtAuth);
 
+// Middlewares
 app.use(cookieParser());
 app.use(express.json());
 
+// Configuración de rutas
 const authRouter = require("./src/api/routes/authRoutes")(authController);
 const userRouter = require("./src/api/routes/userRoutes")(userController);
 const taskRouter = require("./src/api/routes/taskRoutes")(taskController);
@@ -105,21 +59,26 @@ app.use("/user", userRouter);
 app.use("/task", taskRouter);
 app.use("/tag", tagRouter);
 
+// Middleware que se ejecuta solo si hay next(error)
 app.use(errorHandler);
 
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
-    message: "Backend funcionando"
+    message: "Backend funcionando",
+    environment: process.env.NODE_ENV,
+    frontendUrl: process.env.FRONTEND_URL,
   });
 });
 
 app.get("/", (req, res) => {
   res.json({
-    message: "API funcionando"
+    message: "API To-Do List funcionando",
+    environment: process.env.NODE_ENV,
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor en http://localhost:${PORT}`);
+  console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+  console.log(`Entorno: ${process.env.NODE_ENV}`);
 });
