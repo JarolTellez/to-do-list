@@ -1,7 +1,7 @@
 import { API_CONFIG, ERROR_MESSAGES, HTTP_STATUS_CODES } from "../../../utils/constants/appConstants";
 import { authService } from "../../auth";
 import { handleErrorResponse, handleApiResponse } from "../utils/httpUtils";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiError";
 
 class ApiClient {
   constructor() {
