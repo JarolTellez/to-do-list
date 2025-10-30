@@ -1,26 +1,28 @@
 {
-    "scripts": {
-        "test": "jest",
-        "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage",
-        "test:userTagDAO": "jest tests/unit/infraestructura/daos/userTagDAO.test.js",
-        "start": "node index.js",
-        "dev": "nodemon index.js"
-    },
-    "dependencies": {
-        "@prisma/client": "^5.22.0",
-        "bcryptjs": "^2.4.3",
-        "cookie-parser": "^1.4.7",
-        "cors": "^2.8.5",
-        "dotenv": "^16.6.1",
-        "express": "^4.21.0",
-        "jsonwebtoken": "^9.0.2",
-        "mysql": "^2.18.1",
-        "mysql2": "^3.11.0",
-        "winston": "^3.17.0"
-    },
-    "devDependencies": {
-        "jest": "^29.7.0",
-        "prisma": "^5.22.0"
-    }
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:userTagDAO": "jest tests/unit/infraestructura/daos/userTagDAO.test.js",
+    "build": "prisma generate",
+    "start": "node server.js",
+    "dev": "nodemon index.js",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.11.0",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "prisma": "^5.22.0"
+  }
 }
