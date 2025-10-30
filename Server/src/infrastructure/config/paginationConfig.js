@@ -1,0 +1,15 @@
+const PAGINATION_CONFIG = {
+  MAX_LIMIT: 100,
+  DEFAULT_LIMIT: 20,
+  DEFAULT_PAGE: 1,
+  MAX_PAGE_SIZE: 200,
+
+  ENTITY_LIMITS: {
+    SESSIONS: 50,
+    USERS: 100,
+    TASKS: 100,
+    TAGS: 500,
+  },
+};
+
+module.exports = PAGINATION_CONFIG;

@@ -1,0 +1,181 @@
+@media (max-width: 768px) {
+  .app-content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    min-height: auto;
+    position: relative;
+    order: 1;
+    top: 0;
+  }
+  
+  .main-content {
+    order: 2;
+    padding: 15px;
+    min-height: auto;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .task-list {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .task-container {
+    min-height: 180px;
+    max-height: 220px;
+  }
+  
+  .content-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .main-task {
+    padding-right: 35px;
+  }
+
+
+  .modal {
+    padding: 15px;
+  }
+  
+  .modal-content {
+    max-width: 100%;
+    margin: 0;
+  }
+  
+  .task-container {
+    padding: 20px;
+  }
+  
+  .priority-selector {
+    gap: 5px;
+  }
+  
+  .priority-label {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+  
+  .modal-buttons {
+    flex-direction: column;
+  }
+  
+  .add-modal, 
+  .cancel-modal, 
+  .clear-modal, 
+  .delete-modal {
+    width: 100%;
+  }
+
+  /* modal responsive */
+  .user-modal {
+    max-width: 95%;
+    margin: 10px;
+  }
+  
+  .user-modal-tabs {
+    padding: 0 15px;
+  }
+  
+  .user-modal-content {
+    padding: 15px;
+  }
+  
+  .user-modal-footer {
+    padding: 15px;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .session-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .sessions-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar, .main-content {
+    padding: 10px;
+  }
+  
+  .modal-content {
+    width: 95%;
+    padding: 20px;
+  }
+  
+  .modal-buttons {
+    flex-direction: column;
+  }
+  
+  .header-content {
+    padding: 0 15px;
+  }
+  
+  .header-content h1 {
+    font-size: 20px;
+  }
+  
+  .task-container {
+    min-height: 170px;
+    max-height: 200px;
+    padding: 10px;
+  }
+  
+  .tags-container {
+    min-height: 28px;
+  }
+  
+  .tags {
+    max-height: 35px;
+  }
+  
+  .task-title {
+    font-size: 14px;
+    max-height: 32px;
+  }
+  
+  .scroll-title-description {
+    font-size: 12px;
+    max-height: 30px;
+  }
+
+  /* modal mobile */
+  .modal {
+    padding: 10px;
+  }
+  
+  .task-container {
+    padding: 15px;
+  }
+  
+  .priority-label {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  
+  .task-name, 
+  .task-description, 
+  input[type="datetime-local"] {
+    padding: 10px 12px;
+  }
+}

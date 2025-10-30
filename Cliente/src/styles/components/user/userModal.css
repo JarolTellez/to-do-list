@@ -1,0 +1,597 @@
+.user-modal-content-wrapper {
+  max-width: 600px;
+  background: white !important;
+}
+
+.user-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px 0;
+  border-bottom: none;
+}
+
+.user-modal-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5em;
+}
+
+.user-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.user-modal-close-btn:hover {
+  color: #333;
+  background: #f8f9fa;
+  border-radius: 50%;
+}
+
+.user-modal-tabs-container {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0 25px;
+  margin-top: 15px;
+  overflow-x: auto;
+}
+
+.user-tab-btn {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: #6c757d;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.user-tab-btn:hover {
+  color: #007bff;
+}
+
+.user-tab-active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  font-weight: 600;
+}
+
+.user-modal-main-content {
+  padding: 20px 25px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.user-tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+.user-form-group {
+  margin-bottom: 15px;
+}
+
+.user-form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.user-form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.user-form-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.user-form-group.error .user-form-input {
+  border-color: #dc3545;
+}
+
+.user-form-error {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+
+.user-btn-primary {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-btn-primary:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.user-btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-btn-secondary:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.user-btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-btn-danger:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.user-btn-danger:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.user-btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* sessions */
+.user-sessions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-sessions-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.user-session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+  width: 100%;
+  transition: all 0.3s ease;
+  margin-bottom: 10px;
+}
+
+.user-session-item.current {
+  background: #e7f3ff;
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+.user-session-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-session-platform {
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.user-current-badge {
+  background: #28a745;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.user-session-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-session-details div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.user-session-details strong {
+  color: #495057;
+  min-width: 60px;
+}
+
+.user-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 25px;
+  border-top: 1px solid #dee2e6;
+  background: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-modal-close-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-modal-close-button:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.user-modal-logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.user-modal-logout-btn:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* loading state */
+.user-loading {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
+
+/* form layout */
+.user-form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.user-form-buttons .user-btn-primary,
+.user-form-buttons .user-btn-secondary {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* disabled states */
+.user-btn-primary:disabled,
+.user-btn-secondary:disabled,
+.user-btn-danger:disabled,
+.user-modal-close-button:disabled,
+.user-modal-logout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* DeleteAccountTab styles */
+.delete-account-container {
+  text-align: center;
+  padding: 20px;
+}
+
+.delete-account-title {
+  color: #dc3545;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.delete-account-warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.delete-account-warning-title {
+  color: #856404;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-account-warning-text {
+  color: #856404;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.delete-account-list {
+  color: #856404;
+  margin-bottom: 15px;
+  padding-left: 20px;
+}
+
+.delete-account-list li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.delete-account-list li:last-child {
+  margin-bottom: 0;
+}
+
+.delete-account-details {
+  text-align: left;
+}
+
+.delete-account-critical-warning {
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #dc3545;
+  text-align: center;
+  padding: 10px;
+  background: #f8d7da;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+}
+
+.delete-account-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  width: 100%;
+  max-width: 250px;
+  margin: 0 auto;
+  display: block;
+}
+
+.sessions-scroll-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sessions-scroll-container .infinite-scroll-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sessions-scroll-container .user-sessions-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+  width: 100%;
+  min-height: 0;
+}
+
+.sessions-scroll-container .scroll-detector {
+  height: 20px;
+  width: 100%;
+  background: transparent;
+  margin: 5px 0;
+}
+
+.sessions-scroll-container .footer-message {
+  width: 100% !important;
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 10px 0 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1 / -1; 
+}
+
+.sessions-scroll-container .footer-message .spinner-small {
+  margin: 0 auto 10px auto;
+}
+
+.sessions-scroll-container .user-sessions-list > .footer-message {
+  margin-top: 20px !important;
+  order: 9999; 
+}
+
+.sessions-scroll-container .user-sessions-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sessions-scroll-container .user-sessions-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.sessions-scroll-container .user-sessions-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.sessions-scroll-container .user-sessions-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+@media (max-width: 768px) {
+  .user-modal-content-wrapper {
+    max-width: 95%;
+    margin: 10px;
+  }
+
+  .user-modal-main-content {
+    padding: 15px;
+    max-height: 50vh;
+  }
+
+  .user-modal-tabs-container {
+    padding: 0 15px;
+    overflow-x: auto;
+  }
+
+  .user-tab-btn {
+    padding: 10px 15px;
+    font-size: 13px;
+  }
+
+  .user-modal-actions {
+    padding: 15px;
+    flex-direction: column;
+  }
+
+  .user-modal-close-button,
+  .user-modal-logout-btn {
+    width: 100%;
+  }
+
+  .user-session-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .user-sessions-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .user-form-buttons {
+    flex-direction: column;
+  }
+
+  .user-form-buttons .user-btn-primary,
+  .user-form-buttons .user-btn-secondary {
+    width: 100%;
+  }
+
+  .delete-account-container {
+    padding: 15px;
+  }
+  
+  .delete-account-warning-box {
+    padding: 15px;
+  }
+  
+  .delete-account-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .user-sessions-list {
+    max-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-modal-header {
+    padding: 15px 15px 0;
+  }
+
+  .user-modal-header h2 {
+    font-size: 1.3em;
+  }
+
+  .user-tab-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .user-session-platform {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .user-session-details div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .user-session-details strong {
+    min-width: auto;
+  }
+}
+
+.user-modal-overlay.flex-display {
+  display: flex !important;
+}
