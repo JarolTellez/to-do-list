@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import Sidebar from "../../components/tasks/SideBar";
 import TaskList from "../../components/tasks/TaskList";
 import TaskModal from "../../components/tasks/TaskModal";
-import UserModal from "../../components/user/UserModal";
+import UserModal from "../../components/user/userModal/index";
 import { useToast } from "../../contexts/ToastContexts";
 import { useTasks } from "../../hooks/useTasks";
 import { useFilters } from "../../hooks/useFilters";
