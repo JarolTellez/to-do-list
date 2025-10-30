@@ -36,7 +36,7 @@ export const PAGINATION_CONFIG = {
   },
   SESSIONS: {
     INITIAL_PAGE: 1,
-    DEFAULT_LIMIT: 50,
+    DEFAULT_LIMIT: 5,
   },
   USERS: {
     INITIAL_PAGE: 1,

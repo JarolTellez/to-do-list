@@ -6,10 +6,6 @@ import { LoadingProvider } from "./contexts/LoadingContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <LoadingProvider>
-      <ToastProvider>
         <App />
-      </ToastProvider>
-    </LoadingProvider>
   </React.StrictMode>
 );

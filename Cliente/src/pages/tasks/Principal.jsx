@@ -93,9 +93,7 @@ const Principal = ({ user, onLogout }) => {
       try {
         await addTask(taskData);
         setShowModal(false);
-      } catch (error) {
-        // Error already handled by useTasks
-      }
+      } catch (error) {}
     },
     [addTask]
   );
@@ -106,9 +104,7 @@ const Principal = ({ user, onLogout }) => {
         await updateTask(taskData);
         setShowModal(false);
         setEditingTask(null);
-      } catch (error) {
-        // Error already handled by useTasks
-      }
+      } catch (error) {}
     },
     [updateTask]
   );
@@ -117,9 +113,7 @@ const Principal = ({ user, onLogout }) => {
     async (taskId) => {
       try {
         await deleteTask(taskId);
-      } catch (error) {
-        // Error already handled by useTasks
-      }
+      } catch (error) {}
     },
     [deleteTask]
   );
@@ -128,9 +122,7 @@ const Principal = ({ user, onLogout }) => {
     async (taskId, isCompleted) => {
       try {
         await toggleTaskCompletion(taskId, isCompleted);
-      } catch (error) {
-        // Error already handled by useTasks
-      }
+      } catch (error) {}
     },
     [toggleTaskCompletion]
   );
@@ -138,9 +130,7 @@ const Principal = ({ user, onLogout }) => {
   const handleRefresh = useCallback(async () => {
     try {
       await refreshTasks();
-    } catch (error) {
-      // Error already handled by useTasks
-    }
+    } catch (error) {}
   }, [refreshTasks]);
 
   const handleLogout = useCallback(() => {
@@ -162,7 +152,6 @@ const Principal = ({ user, onLogout }) => {
           await onLogout();
           showToast("Sesión cerrada exitosamente", "success");
         } catch (error) {
-          console.error("Error durante logout:", error);
           showToast("Sesión cerrada", "success");
         } finally {
           setTimeout(() => {

@@ -1,18 +1,16 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useSessions } from "../../../hooks/useSessions";
 import InfiniteScrollList from "../../common/InfiniteScrollList";
 
-const SessionsTab = ({
-  onCloseAllSessions,
-}) => {
+const SessionsTab = ({ onCloseAllSessions }) => {
   const { 
     sessions, 
     loading, 
     loadingMore, 
     hasMore, 
-    loadMoreSessions,
-    closeAllSessions 
+    loadMoreSessions 
   } = useSessions();
+  const scrollContainerRef = useRef(null);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("es-ES", {
@@ -100,18 +98,21 @@ const SessionsTab = ({
         </button>
       </div>
 
-      <InfiniteScrollList
-        items={sessions}
-        renderItem={renderSessionItem}
-        loading={loading}
-        loadingMore={loadingMore}
-        hasMore={hasMore}
-        onLoadMore={loadMoreSessions}
-        emptyMessage="No hay sesiones activas"
-        loadingMessage="Cargando sesiones..."
-        loadingMoreMessage="Cargando más sesiones..."
-        listClassName="user-sessions-list"
-      />
+      <div ref={scrollContainerRef} className="sessions-scroll-container">
+        <InfiniteScrollList
+          items={sessions}
+          renderItem={renderSessionItem}
+          loading={loading}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMore={loadMoreSessions}
+          emptyMessage="No hay sesiones activas"
+          loadingMessage="Cargando sesiones..."
+          loadingMoreMessage="Cargando más sesiones..."
+          listClassName="user-sessions-list"
+          scrollContainerRef={scrollContainerRef}
+        />
+      </div>
     </div>
   );
 };
