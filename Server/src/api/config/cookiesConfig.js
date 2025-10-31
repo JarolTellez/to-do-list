@@ -5,6 +5,7 @@ const COOKIE_OPTIONS = {
   // sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   sameSite: "none",
   path: "/",
+  domain: ".railway.app"
 };
 
 const REFRESH_TOKEN_OPTIONS = {

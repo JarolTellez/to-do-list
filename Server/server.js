@@ -89,6 +89,18 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.get("/check-cookies", (req, res) => {
+  console.log("Cookies recibidas:", req.cookies);
+  console.log("User Agent:", req.headers["user-agent"]);
+  
+  res.json({
+    accessToken: !!req.cookies.accessToken,
+    refreshToken: !!req.cookies.refreshToken,
+    allCookies: req.cookies,
+    userAgent: req.headers["user-agent"],
+    isMobile: /mobile/i.test(req.headers["user-agent"])
+  });
+});
 app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en puerto:${PORT}`);
+  console.log(`Servidor ejecutandose en puerto:${PORT}`);
 });
