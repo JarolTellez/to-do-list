@@ -4,8 +4,7 @@ const COOKIE_OPTIONS = {
   //secure: process.env.NODE_ENV === "production",
   // sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   sameSite: "none",
-  path: "/",
-  domain: ".railway.app"
+  path: "/"
 };
 
 const REFRESH_TOKEN_OPTIONS = {

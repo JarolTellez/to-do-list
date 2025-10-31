@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'https://to-do-list-ashy-phi-50.vercel.app',
+  'https://to-do-list-psi-roan-29.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173'
 ].filter(Boolean);
