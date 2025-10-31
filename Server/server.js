@@ -15,28 +15,28 @@ const app = express();
 const cors = require("cors");
 const PORT = process.env.PORT || 3000;
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://to-do-list-ashy-phi-50.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173'
+].filter(Boolean);
+
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    const allowedOrigins = [
-      process.env.FRONTEND_URL,
-      'https://tu-frontend.vercel.app',
-      'https://tu-frontend.netlify.app',
-      'http://localhost:3000',
-      'http://localhost:5173'
-    ].filter(Boolean);
-
-    const isAllowed = allowedOrigins.some(allowedOrigin => 
-      origin.includes(allowedOrigin) || origin === allowedOrigin
-    );
-
-    if (isAllowed) {
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('No permitido por CORS'));
+      const isAllowed = allowedOrigins.some(allowedOrigin => 
+        origin.includes(allowedOrigin.replace(/https?:\/\//, ''))
+      );
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('No permitido por CORS'));
+      }
     }
   },
   credentials: true,
@@ -48,17 +48,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-// Headers adicionales para compatibilidad
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  const requestOrigin = req.headers.origin;
-  if (requestOrigin) {
-    res.header('Access-Control-Allow-Origin', requestOrigin);
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
   }
-  
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Dispositivo-Info');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   next();
 });
 
@@ -84,20 +85,10 @@ app.use(errorHandler);
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
-    message: "Backend funcionando",
-    environment: process.env.NODE_ENV,
-    frontendUrl: process.env.FRONTEND_URL,
-  });
-});
-
-app.get("/", (req, res) => {
-  res.json({
-    message: "API To-Do List funcionando",
-    environment: process.env.NODE_ENV,
+    message: "Backend funcionando"
   });
 });
 
 app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en puerto:${PORT}`);
-  console.log(`Entorno: ${process.env.NODE_ENV}`);
 });
