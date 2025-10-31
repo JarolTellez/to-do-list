@@ -15,53 +15,19 @@ const app = express();
 const cors = require("cors");
 const PORT = process.env.PORT || 3000;
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  'https://to-do-list-psi-roan-29.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5173'
-].filter(Boolean);
-
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      const isAllowed = allowedOrigins.some(allowedOrigin => 
-        origin.includes(allowedOrigin.replace(/https?:\/\//, ''))
-      );
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        callback(new Error('No permitido por CORS'));
-      }
-    }
-  },
+  origin: [
+    'https://to-do-list-6mai9lv7r-jarol-tellezs-projects.vercel.app',
+    'https://to-do-list-psi-roan-29.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Dispositivo-Info"],
-  exposedHeaders: ["Set-Cookie"]
+  allowedHeaders: ["Content-Type", "Authorization", "Dispositivo-Info"]
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Dispositivo-Info');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
 
 app.set("sessionService", sessionService);
 app.set("authService", authService);
@@ -90,9 +56,6 @@ app.get("/health", (req, res) => {
 });
 
 app.get("/check-cookies", (req, res) => {
-  console.log("Cookies recibidas:", req.cookies);
-  console.log("User Agent:", req.headers["user-agent"]);
-  
   res.json({
     accessToken: !!req.cookies.accessToken,
     refreshToken: !!req.cookies.refreshToken,
@@ -101,6 +64,7 @@ app.get("/check-cookies", (req, res) => {
     isMobile: /mobile/i.test(req.headers["user-agent"])
   });
 });
+
 app.listen(PORT, () => {
   console.log(`Servidor ejecutandose en puerto:${PORT}`);
 });
