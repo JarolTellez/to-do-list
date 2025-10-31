@@ -74,6 +74,6 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+  console.log(`Servidor ejecutándose en puerto:${PORT}`);
   console.log(`Entorno: ${process.env.NODE_ENV}`);
 });
