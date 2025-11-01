@@ -1,4 +1,8 @@
-import { API_CONFIG, ERROR_MESSAGES, HTTP_STATUS_CODES } from "../../../utils/constants/appConstants";
+import {
+  API_CONFIG,
+  ERROR_MESSAGES,
+  HTTP_STATUS_CODES,
+} from "../../../utils/constants/appConstants";
 import { authService } from "../../auth";
 import { handleErrorResponse, handleApiResponse } from "../utils/httpUtils";
 import { ApiError } from "../utils/apiError";
@@ -8,6 +12,7 @@ class ApiClient {
     this.baseURL = API_CONFIG.BASE_URL;
     this.retryCount = 0;
     this.pendingRequests = new Map();
+    this.authErrorHandled = false;
   }
 
   async request(url, options = {}) {
@@ -34,8 +39,10 @@ class ApiClient {
       const result = await handleApiResponse(response);
 
       if (!result.success) {
-        if (response.status === HTTP_STATUS_CODES.UNAUTHORIZED && 
-            this.retryCount < API_CONFIG.RETRY_ATTEMPTS) {
+        if (
+          response.status === HTTP_STATUS_CODES.UNAUTHORIZED &&
+          this.retryCount < API_CONFIG.RETRY_ATTEMPTS
+        ) {
           return await this.handleAuthError(url, options);
         }
 
@@ -91,12 +98,11 @@ class ApiClient {
         );
       }
 
-      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        throw new ApiError(
-          ERROR_MESSAGES.NETWORK_ERROR,
-          0,
-          "NETWORK_ERROR"
-        );
+      if (
+        error.message?.includes("Failed to fetch") ||
+        error.message?.includes("NetworkError")
+      ) {
+        throw new ApiError(ERROR_MESSAGES.NETWORK_ERROR, 0, "NETWORK_ERROR");
       }
 
       throw new ApiError(
@@ -130,9 +136,16 @@ class ApiClient {
   }
 
   handlePersistentAuthError() {
+    if (this.authErrorHandled) return;
+
+    this.authErrorHandled = true;
+
     if (typeof window !== "undefined" && window.dispatchEvent) {
       window.dispatchEvent(new CustomEvent("auth:session-expired"));
     }
+    setTimeout(() => {
+      this.authErrorHandled = false;
+    }, 2000);
   }
 
   generateRequestKey(url, options) {

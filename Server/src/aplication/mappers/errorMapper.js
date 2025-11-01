@@ -15,7 +15,6 @@ class ErrorMapper {
    * Map from domain error to appError
    */
   mapDomainErrorToApplicationError(domainError) {
-    console.log("ENTRO AL DOMAIN ERROR MAPPER EN CAPA DE APLICAICON");
     if (!domainError.isDomainError) {
       return domainError;
     }
