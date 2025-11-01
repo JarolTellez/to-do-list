@@ -17,7 +17,10 @@ const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
         const response = await loadTags();
         setAvailableTags(response.data);
       } catch (error) {
-        console.error('Error loading tags:', error);
+        if (error.status !== 401) {
+          console.error('Error loading tags:', error);
+        }
+        setAvailableTags([]);
       }
     };
     loadAvailableTags();

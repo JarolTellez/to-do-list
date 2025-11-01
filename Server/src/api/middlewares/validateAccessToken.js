@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { clearAuthCookies } = require("../utils/cookieUtils");
 
 const validateAccessToken = async (req, res, next) => {
   try {
@@ -8,6 +9,7 @@ const validateAccessToken = async (req, res, next) => {
     const accessToken = req.cookies.accessToken;
 
     if (!accessToken) {
+      clearAuthCookies(res);
       return res.status(401).json({
         success: false,
         message: "Token de acceso no puede estar vacío",
@@ -23,6 +25,7 @@ const validateAccessToken = async (req, res, next) => {
     );
 
     if (!isSessionActive) {
+      clearAuthCookies(res);
       return res.status(401).json({
         status: "error",
         message: "Sesión expirada o cerrada",
@@ -41,7 +44,7 @@ const validateAccessToken = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Error validando token:", error);
-
+    clearAuthCookies(res);
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,

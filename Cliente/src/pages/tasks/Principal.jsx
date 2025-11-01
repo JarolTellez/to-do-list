@@ -150,7 +150,6 @@ const Principal = ({ user, onLogout }) => {
 
         try {
           await onLogout();
-          showToast("Sesión cerrada exitosamente", "success");
         } catch (error) {
           showToast("Sesión cerrada", "success");
         } finally {

@@ -71,7 +71,6 @@ const UserModal = ({ user, onClose, onLogout }) => {
 
         try {
           await onLogout();
-          showToast("Sesión cerrada exitosamente", "success");
         } catch (error) {
           console.error("Error durante logout:", error);
           showToast("Sesión cerrada", "success");

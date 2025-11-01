@@ -74,6 +74,9 @@ export const ToastProvider = ({ children }) => {
           setTaskToasts((prev) => prev.filter((toast) => toast.id !== id));
         }, 3000);
       },
+      dismiss: () => {
+        setTaskToasts((prev) => prev.filter((toast) => toast.id !== id));
+      }
     };
   }, []);
 
@@ -86,7 +89,7 @@ export const ToastProvider = ({ children }) => {
     <ToastContext.Provider value={value}>
       {children}
 
-      {/* Toasts normales (arriba en medio) */}
+      {/* toast to header */}
       <div className="normal-toast-container">
         {normalToasts.map((toast) => (
           <Toast
@@ -100,7 +103,7 @@ export const ToastProvider = ({ children }) => {
         ))}
       </div>
 
-      {/* Toasts para tareas (esquina abajo) */}
+      {/* toast to corner down */}
       <div className="task-toast-container">
         {taskToasts.map((toast) => (
           <Toast

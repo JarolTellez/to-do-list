@@ -118,7 +118,7 @@ export const useTasks = (userId) => {
           page || TASKS_PAGINATION.INITIAL_PAGE,
           limit || TASKS_PAGINATION.DEFAULT_LIMIT
         );
-        
+
         const tasksFromResponse = response.data.tasks || [];
         const paginationInfo = response.data.pagination || {};
 
@@ -130,9 +130,14 @@ export const useTasks = (userId) => {
 
           return {
             tasks: newTasks,
-            hasMore: paginationInfo.hasNext || tasksFromResponse.length >= (limit || TASKS_PAGINATION.DEFAULT_LIMIT),
+            hasMore:
+              paginationInfo.hasNext ||
+              tasksFromResponse.length >=
+                (limit || TASKS_PAGINATION.DEFAULT_LIMIT),
             currentPage: page,
-            totalTasks: paginationInfo.total || prev.totalTasks + tasksFromResponse.length,
+            totalTasks:
+              paginationInfo.total ||
+              prev.totalTasks + tasksFromResponse.length,
             completedCount: paginationInfo.counts?.completed || 0,
             pendingCount: paginationInfo.counts?.pending || 0,
             overdueCount: paginationInfo.counts?.overdue || 0,
@@ -143,12 +148,21 @@ export const useTasks = (userId) => {
         });
       } catch (error) {
         console.error("Error loading tasks:", error);
-        setState((prev) => ({
-          ...prev,
-          error: error.message || "Error cargando tareas",
-          loading: false,
-          loadingMore: false,
-        }));
+
+        if (error.status !== 401) {
+          setState((prev) => ({
+            ...prev,
+            error: error.message || "Error cargando tareas",
+            loading: false,
+            loadingMore: false,
+          }));
+        } else {
+          setState((prev) => ({
+            ...prev,
+            loading: false,
+            loadingMore: false,
+          }));
+        }
       }
     },
     [userId]
@@ -187,7 +201,11 @@ export const useTasks = (userId) => {
         toast.success();
         return response;
       } catch (error) {
-        toast.error(error.message);
+        if (error.status === 401) {
+          toast.dismiss();
+        } else {
+          toast.error(error.message);
+        }
         throw error;
       }
     },
@@ -221,7 +239,11 @@ export const useTasks = (userId) => {
         toast.success();
         return response;
       } catch (error) {
-        toast.error(error.message);
+        if (error.status === 401) {
+          toast.dismiss();
+        } else {
+          toast.error(error.message);
+        }
         throw error;
       }
     },
@@ -247,7 +269,11 @@ export const useTasks = (userId) => {
         toast.success();
         return response;
       } catch (error) {
-        toast.error(error.message);
+        if (error.status === 401) {
+          toast.dismiss();
+        } else {
+          toast.error(error.message);
+        }
         throw error;
       }
     },
@@ -282,7 +308,11 @@ export const useTasks = (userId) => {
         toast.success();
         return response;
       } catch (error) {
-        toast.error(error.message);
+        if (error.status === 401) {
+          toast.dismiss();
+        } else {
+          toast.error(error.message);
+        }
         throw error;
       }
     },
