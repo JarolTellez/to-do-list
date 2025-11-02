@@ -1,0 +1,148 @@
+.app-header {
+  background: white;
+  padding: 15px 0;
+  border-bottom: 1px solid #dee2e6;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header-content h1 {
+  font-size: 24px;
+  color: #007bff;
+  margin: 0;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-family: inherit;
+}
+
+.user-actions span {
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.logout-btn:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.user-info-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.user-info-btn:hover {
+  background: #e9ecef;
+}
+
+/* mobile styles  */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 12px 0;
+  }
+  
+  .header-content {
+    padding: 0 15px;
+  }
+  
+  .header-content h1 {
+    font-size: 18px; 
+  }
+  
+  .user-actions span {
+    font-size: 13px;
+  }
+  
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 13px; 
+    height: 36px;
+  }
+  
+  .user-info-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-content {
+    padding: 0 12px;
+  }
+  
+  .header-content h1 {
+    font-size: 16px;
+  }
+  
+  .user-actions {
+    gap: 10px;
+  }
+  
+  .user-actions span {
+    font-size: 12px;
+  }
+  
+  .logout-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 390px) {
+  .header-content h1 {
+    font-size: 15px;
+  }
+  
+  .user-actions span {
+    display: none; 
+  }
+  
+  .user-actions {
+    gap: 8px;
+  }
+}
