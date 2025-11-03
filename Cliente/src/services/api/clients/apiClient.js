@@ -41,9 +41,10 @@ class ApiClient {
       if (!result.success) {
         if (
           response.status === HTTP_STATUS_CODES.UNAUTHORIZED &&
+          result.code === "TOKEN_EXPIRED" &&
           this.retryCount < API_CONFIG.RETRY_ATTEMPTS
         ) {
-          return await this.handleAuthError(url, options);
+          return await this.handleTokenRefresh(url, options);
         }
 
         throw new ApiError(
@@ -56,13 +57,46 @@ class ApiClient {
       this.resetRetryCount();
       return result;
     } catch (error) {
+      if (
+        error.status === HTTP_STATUS_CODES.UNAUTHORIZED &&
+        error.code === "TOKEN_EXPIRED"
+      ) {
+        return await this.handleTokenRefresh(url, options);
+      }
+
       if (error.status === HTTP_STATUS_CODES.UNAUTHORIZED) {
-        this.handlePersistentAuthError();
+        this.handlePersistentAuthError(error);
       }
       throw error;
     }
   }
 
+  async handleTokenRefresh(url, options) {
+    try {
+      console.log("Token expirado, intentando refrescar");
+      await authService.refreshAccessToken();
+      this.retryCount++;
+
+      const retryResponse = await this.makeRequest(url, options);
+      const retryResult = await handleApiResponse(retryResponse);
+
+      if (retryResult.success) {
+        this.resetRetryCount();
+        console.log("Token refrescado exitosamente");
+        return retryResult;
+      } else {
+        const error = await handleErrorResponse(retryResponse);
+        throw error;
+      }
+    } catch (refreshError) {
+      console.error(" Error al refrescar token:", refreshError);
+
+      if (refreshError.status === HTTP_STATUS_CODES.UNAUTHORIZED) {
+        this.handlePersistentAuthError();
+      }
+      throw refreshError;
+    }
+  }
   async makeRequest(url, options) {
     const defaultOptions = {
       credentials: "include",

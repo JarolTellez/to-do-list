@@ -331,7 +331,8 @@ const tagController = new TagController({
 const authController = new AuthController({
   authService,
   userMapper,
-  sessionMapper
+  sessionMapper,
+  errorFactory
 });
 const userController = new UserController({
   userService,
@@ -347,7 +348,6 @@ module.exports = {
   tagService,
   authService,
   sessionService,
-  authService,
   taskDAO,
   tagDAO,
   userDAO,
@@ -355,4 +355,5 @@ module.exports = {
   tagMapper,
   userMapper,
   jwtAuth,
+  errorFactory
 };
