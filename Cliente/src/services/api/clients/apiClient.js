@@ -41,7 +41,7 @@ class ApiClient {
       if (!result.success) {
         if (
           response.status === HTTP_STATUS_CODES.UNAUTHORIZED &&
-          result.code === "TOKEN_EXPIRED" &&
+          result.code === "ACCESS_TOKEN_EXPIRED" &&
           this.retryCount < API_CONFIG.RETRY_ATTEMPTS
         ) {
           return await this.handleTokenRefresh(url, options);
@@ -59,7 +59,7 @@ class ApiClient {
     } catch (error) {
       if (
         error.status === HTTP_STATUS_CODES.UNAUTHORIZED &&
-        error.code === "TOKEN_EXPIRED"
+        error.code === "ACCESS_TOKEN_EXPIRED"
       ) {
         return await this.handleTokenRefresh(url, options);
       }

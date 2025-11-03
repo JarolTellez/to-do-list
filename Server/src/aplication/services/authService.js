@@ -247,43 +247,56 @@ class AuthService {
       this.validator.validateRequired(["refreshToken"], { refreshToken });
 
       return this.dbManager.withTransaction(async (dbClient) => {
-        const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
-        const refreshTokenHash =
-          this.jwtAuth.createHashRefreshToken(refreshToken);
-        const sessionValidation = await this.sessionService.validateSession(
-          decoded.sub,
-          refreshTokenHash,
-          dbClient
-        );
-
-        if (!sessionValidation) {
-          throw this.errorFactory.createAuthenticationError(
-            "Sesión inválida o expirada",
-            {
-              userId: decoded.sub,
-              operation: "refreshAccessToken",
-            }
+        try {
+          const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
+          const refreshTokenHash =
+            this.jwtAuth.createHashRefreshToken(refreshToken);
+          const sessionValidation = await this.sessionService.validateSession(
+            decoded.sub,
+            refreshTokenHash,
+            dbClient
           );
+
+          if (!sessionValidation) {
+            throw this.errorFactory.createAuthenticationError(
+              "Sesión inválida o expirada",
+              {
+                userId: decoded.sub,
+                operation: "refreshAccessToken",
+              },
+              this.errorFactory.ErrorCodes.INVALID_SESSION
+            );
+          }
+
+          const user = await this.userService.validateUserExistenceById(
+            decoded.sub,
+            dbClient
+          );
+
+          const accessToken = this.jwtAuth.createAccessToken({
+            userId: user.id,
+            email: user.email,
+            rol: user.rol,
+            sessionId: sessionValidation.id,
+          });
+
+          return {
+            accessToken: accessToken,
+            user,
+            expiresIn: this.appConfig.jwt.access.expiresIn,
+            tokenType: "Bearer",
+            sessionId: sessionValidation.id,
+          };
+        } catch (error) {
+          if (
+            error.name === "TokenExpiredError" ||
+            error.code === "UNAUTHORIZED" ||
+            this.errorFactory.ErrorCodes.REFRESH_TOKEN_EXPIRED
+          ) {
+            await this.cleanupInvalidSession(refreshToken, dbClient);
+          }
+          throw error;
         }
-        const user = await this.userService.validateUserExistenceById(
-          decoded.sub,
-          dbClient
-        );
-
-        const accessToken = this.jwtAuth.createAccessToken({
-          userId: user.id,
-          email: user.email,
-          rol: user.rol,
-          sessionId: sessionValidation.id,
-        });
-
-        return {
-          accessToken: accessToken,
-          user,
-          expiresIn: this.appConfig.jwt.access.expiresIn,
-          tokenType: "Bearer",
-          sessionId: sessionValidation.id,
-        };
       }, externalDbClient);
     });
   }

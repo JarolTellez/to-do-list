@@ -72,10 +72,15 @@ class AuthController {
       const refreshToken = req.cookies.refreshToken;
 
       if (!refreshToken) {
-        return res.status(401).json({
-          success: false,
-          message: "No hay sesión activa",
-        });
+        return next(
+          this.errorFactory.createAuthenticationError(
+            "No hay sesión activa",
+            {
+              operation: "refreshAccessToken",
+            },
+            this.errorFactory.ErrorCodes.NO_ACTIVE_SESSION
+          )
+        );
       }
 
       const result = await this.authService.refreshAccessToken(refreshToken);
@@ -98,6 +103,18 @@ class AuthController {
     try {
       const accessToken = req.cookies.accessToken;
       const refreshToken = req.cookies.refreshToken;
+
+      if (!refreshToken) {
+        return next(
+          this.errorFactory.createAuthenticationError(
+            "No hay sesión activa",
+            {
+              operation: "verifySession",
+            },
+            this.errorFactory.ErrorCodes.NO_ACTIVE_SESSION
+          )
+        );
+      }
 
       const result = await this.authService.verifyUserSession({
         accessToken,
@@ -123,11 +140,15 @@ class AuthController {
         });
       } else {
         clearAuthCookies(res);
-        return res.status(200).json({
-          success: false,
-          message: "No hay sesión activa",
-          isAuthenticated: false,
-        });
+        return next(
+          this.errorFactory.createAuthenticationError(
+            "Sesión no válida",
+            {
+              operation: "verifySession",
+            },
+            this.errorFactory.ErrorCodes.INVALID_SESSION
+          )
+        );
       }
     } catch (error) {
       clearAuthCookies(res);
