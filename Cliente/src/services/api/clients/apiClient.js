@@ -73,7 +73,6 @@ class ApiClient {
 
   async handleTokenRefresh(url, options) {
     try {
-      console.log("Token expirado, intentando refrescar");
       await authService.refreshAccessToken();
       this.retryCount++;
 
@@ -82,21 +81,21 @@ class ApiClient {
 
       if (retryResult.success) {
         this.resetRetryCount();
-        console.log("Token refrescado exitosamente");
         return retryResult;
       } else {
         const error = await handleErrorResponse(retryResponse);
         throw error;
       }
     } catch (refreshError) {
-      console.error(" Error al refrescar token:", refreshError);
+      console.error("Error al refrescar token:", refreshError);
 
       if (refreshError.status === HTTP_STATUS_CODES.UNAUTHORIZED) {
-        this.handlePersistentAuthError();
+        this.handlePersistentAuthError(refreshError);
       }
       throw refreshError;
     }
   }
+
   async makeRequest(url, options) {
     const defaultOptions = {
       credentials: "include",
@@ -149,34 +148,27 @@ class ApiClient {
     }
   }
 
-  async handleAuthError(url, options) {
-    try {
-      await authService.refreshAccessToken();
-      this.retryCount++;
-
-      const retryResponse = await this.makeRequest(url, options);
-
-      if (retryResponse.ok) {
-        this.resetRetryCount();
-        return await handleApiResponse(retryResponse);
-      } else {
-        const error = await handleErrorResponse(retryResponse);
-        throw error;
-      }
-    } catch (refreshError) {
-      this.handlePersistentAuthError();
-      throw refreshError;
-    }
-  }
-
-  handlePersistentAuthError() {
+  handlePersistentAuthError(error) {
     if (this.authErrorHandled) return;
 
     this.authErrorHandled = true;
 
-    if (typeof window !== "undefined" && window.dispatchEvent) {
-      window.dispatchEvent(new CustomEvent("auth:session-expired"));
+    const currentPath = window.location.pathname;
+    const isAuthPage = currentPath === "/login" || currentPath === "/register";
+
+    const isSessionError =
+      error?.code === "NO_ACTIVE_SESSION" ||
+      error?.code === "INVALID_SESSION" ||
+      (error?.message &&
+        (error.message.includes("No hay sesión activa") ||
+          error.message.includes("Sesión no válida")));
+
+    if (!(isSessionError && isAuthPage)) {
+      if (typeof window !== "undefined" && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent("auth:session-expired"));
+      }
     }
+
     setTimeout(() => {
       this.authErrorHandled = false;
     }, 2000);

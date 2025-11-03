@@ -48,7 +48,7 @@ export class AuthService {
       }
 
       throw error;
-    } 
+    }
   }
 
   async verifySession() {
@@ -62,8 +62,11 @@ export class AuthService {
       };
     } catch (error) {
       console.error("Error verifying session:", error);
-
-      if (error.message?.includes("No hay sesión activa")) {
+      if (
+        error.message?.includes("No hay sesión activa") ||
+        error.code === "NO_ACTIVE_SESSION" ||
+        error.code === "INVALID_SESSION"
+      ) {
         return {
           isAuthenticated: false,
           user: null,
