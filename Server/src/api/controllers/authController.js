@@ -69,21 +69,12 @@ class AuthController {
 
   async refreshAccessToken(req, res, next) {
     try {
-      const refreshToken = req.cookies.refreshToken;
+      const { userId, sessionId } = req.user;
 
-      if (!refreshToken) {
-        return next(
-          this.errorFactory.createAuthenticationError(
-            "No hay sesión activa",
-            {
-              operation: "refreshAccessToken",
-            },
-            this.errorFactory.ErrorCodes.NO_ACTIVE_SESSION
-          )
-        );
-      }
-
-      const result = await this.authService.refreshAccessToken(refreshToken);
+      const result = await this.authService.refreshAccessToken(
+        userId,
+        sessionId
+      );
 
       res.cookie("accessToken", result.accessToken, ACCESS_TOKEN_OPTIONS);
       result.user = this.userMapper.domainToResponse(result.user);
