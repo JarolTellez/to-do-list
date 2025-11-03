@@ -316,6 +316,7 @@ import { useFilters } from "../../hooks/useFilters";
 import { useLoading } from "../../contexts/LoadingContext";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { APP_CONFIG } from "../../utils/constants/appConstants";
+import { FaUserCircle, FaBars, FaPlus, FaTasks, FaListAlt, FaClipboardList, FaStickyNote } from "react-icons/fa";
 
 const Principal = ({ user, onLogout }) => {
   const [showModal, setShowModal] = useState(false);
@@ -559,7 +560,7 @@ const Principal = ({ user, onLogout }) => {
           <div className="user-actions">
             <span>Hola, {user?.username}</span>
             <button onClick={openUserModal} className="user-info-btn">
-              👤
+              <FaUserCircle size={24} color="#4A5568" />
             </button>
             <button onClick={handleLogout} className="logout-btn">
               Cerrar Sesión
@@ -588,9 +589,10 @@ const Principal = ({ user, onLogout }) => {
           <div className="content-header">
             <div className="header-left">
               <button onClick={openAddModal} className="add-task-btn">
-                + Nueva Tarea
+                <FaPlus /> Nueva Tarea
               </button>
               <span className="task-count">
+                 <FaTasks className="task-count-icon" />
                 {totalTasks} {totalTasks === 1 ? "tarea" : "tareas"}
                 {hasActiveFilters && " (filtradas)"}
                 {tasksLoadingMore && " - Cargando..."}
@@ -615,13 +617,13 @@ const Principal = ({ user, onLogout }) => {
           />
         </main>
 
-        {/* Botón flotante para abrir sidebar en móvil */}
+        {/* side bar button mobile */}
         <button
           className="sidebar-toggle"
           onClick={toggleSidebarMobile}
           aria-label="Abrir menú de filtros"
         >
-          ☰
+          <FaBars />
         </button>
       </div>
 

@@ -182,7 +182,7 @@ class AuthService {
         try {
           if (accessToken) {
             try {
-              const decoded = this.jwtAuth.verifyAccessToken(accessToken);
+              const decoded = this.jwtAuth.decodeToken(accessToken);
 
               userData = await this.userService.validateUserExistenceById(
                 decoded.sub,
@@ -243,31 +243,30 @@ class AuthService {
   }
 
   async refreshAccessToken(userId, sessionId, externalDbClient = null) {
-  return this.errorMapper.executeWithErrorMapping(async () => {
-    return this.dbManager.withTransaction(async (dbClient) => {
-      const user = await this.userService.validateUserExistenceById(
-        userId, 
-        dbClient
-      );
+    return this.errorMapper.executeWithErrorMapping(async () => {
+      return this.dbManager.withTransaction(async (dbClient) => {
+        const user = await this.userService.validateUserExistenceById(
+          userId,
+          dbClient
+        );
 
-      const accessToken = this.jwtAuth.createAccessToken({
-        userId: user.id,
-        email: user.email,
-        rol: user.rol,
-        sessionId: sessionId,
-      });
+        const accessToken = this.jwtAuth.createAccessToken({
+          userId: user.id,
+          email: user.email,
+          rol: user.rol,
+          sessionId: sessionId,
+        });
 
-      return {
-        accessToken: accessToken,
-        user,
-        expiresIn: this.appConfig.jwt.access.expiresIn,
-        tokenType: "Bearer",
-        sessionId: sessionId,
-      };
-    }, externalDbClient);
-  });
-}
-
+        return {
+          accessToken: accessToken,
+          user,
+          expiresIn: this.appConfig.jwt.access.expiresIn,
+          tokenType: "Bearer",
+          sessionId: sessionId,
+        };
+      }, externalDbClient);
+    });
+  }
 
   async cleanupInvalidSession(refreshToken, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {

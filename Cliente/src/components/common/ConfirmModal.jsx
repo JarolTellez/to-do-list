@@ -1,4 +1,5 @@
 import React from "react";
+import { FaExclamationTriangle, FaCheck, FaInfo } from "react-icons/fa";
 import "../../styles/components/common/confirmModal.css";
 
 const ConfirmModal = ({
@@ -18,13 +19,13 @@ const ConfirmModal = ({
   const getIcon = () => {
     switch (type) {
       case "danger":
-        return "⚠️";
+        return <FaExclamationTriangle className="confirm-icon" />;
       case "success":
-        return "✅";
+        return <FaCheck className="confirm-icon" />;
       case "info":
-        return "ℹ️";
+        return <FaInfo className="confirm-icon" />;
       default:
-        return "⚠️";
+        return <FaExclamationTriangle className="confirm-icon" />;
     }
   };
 
