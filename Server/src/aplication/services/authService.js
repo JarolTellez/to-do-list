@@ -242,64 +242,32 @@ class AuthService {
     });
   }
 
-  async refreshAccessToken(refreshToken, externalDbClient = null) {
-    return this.errorMapper.executeWithErrorMapping(async () => {
-      this.validator.validateRequired(["refreshToken"], { refreshToken });
+  async refreshAccessToken(userId, sessionId, externalDbClient = null) {
+  return this.errorMapper.executeWithErrorMapping(async () => {
+    return this.dbManager.withTransaction(async (dbClient) => {
+      const user = await this.userService.validateUserExistenceById(
+        userId, 
+        dbClient
+      );
 
-      return this.dbManager.withTransaction(async (dbClient) => {
-        try {
-          const decoded = this.jwtAuth.verifyRefreshToken(refreshToken);
-          const refreshTokenHash =
-            this.jwtAuth.createHashRefreshToken(refreshToken);
-          const sessionValidation = await this.sessionService.validateSession(
-            decoded.sub,
-            refreshTokenHash,
-            dbClient
-          );
+      const accessToken = this.jwtAuth.createAccessToken({
+        userId: user.id,
+        email: user.email,
+        rol: user.rol,
+        sessionId: sessionId,
+      });
 
-          if (!sessionValidation) {
-            throw this.errorFactory.createAuthenticationError(
-              "Sesión inválida o expirada",
-              {
-                userId: decoded.sub,
-                operation: "refreshAccessToken",
-              },
-              this.errorFactory.ErrorCodes.INVALID_SESSION
-            );
-          }
+      return {
+        accessToken: accessToken,
+        user,
+        expiresIn: this.appConfig.jwt.access.expiresIn,
+        tokenType: "Bearer",
+        sessionId: sessionId,
+      };
+    }, externalDbClient);
+  });
+}
 
-          const user = await this.userService.validateUserExistenceById(
-            decoded.sub,
-            dbClient
-          );
-
-          const accessToken = this.jwtAuth.createAccessToken({
-            userId: user.id,
-            email: user.email,
-            rol: user.rol,
-            sessionId: sessionValidation.id,
-          });
-
-          return {
-            accessToken: accessToken,
-            user,
-            expiresIn: this.appConfig.jwt.access.expiresIn,
-            tokenType: "Bearer",
-            sessionId: sessionValidation.id,
-          };
-        } catch (error) {
-          if (
-            error.name === "TokenExpiredError" ||
-            error.code === "UNAUTHORIZED" ||
-            this.errorFactory.ErrorCodes.REFRESH_TOKEN_EXPIRED
-          ) {
-            await this.cleanupInvalidSession(refreshToken, dbClient);
-          }
-          throw error;
-        }
-      }, externalDbClient);
-    });
-  }
 
   async cleanupInvalidSession(refreshToken, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {

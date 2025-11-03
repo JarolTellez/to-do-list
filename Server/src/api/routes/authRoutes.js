@@ -1,5 +1,6 @@
 const express = require("express");
 const { validateAccessToken } = require("../middlewares/validateAccessToken");
+const { validateRefreshToken } = require("../middlewares/validateRefreshToken");
 module.exports = (authController) => {
   const router = express.Router();
 
@@ -11,7 +12,7 @@ module.exports = (authController) => {
 
   router
     .route("/refresh-access-token")
-    .post(authController.refreshAccessToken.bind(authController));
+    .post(validateRefreshToken, authController.refreshAccessToken.bind(authController));
 
   router
     .route("/active-sessions")
