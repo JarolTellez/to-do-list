@@ -273,12 +273,14 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
 
             <div className="modal-tags-section">
               <label className="modal-label">Etiquetas</label>
-              <TagInput
-                selectedTags={tags}
-                onTagsChange={setTags}
-                availableTags={availableTags}
-                disabled={isLoading || tagsLoading}
-              />
+              <div className="modal-tags-container">
+                <TagInput
+                  selectedTags={tags}
+                  onTagsChange={setTags}
+                  availableTags={availableTags}
+                  disabled={isLoading || tagsLoading}
+                />
+              </div>
               {tagsLoading && (
                 <p
                   style={{
