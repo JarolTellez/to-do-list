@@ -1,4 +1,5 @@
 import React from 'react';
+import { FaExclamationTriangle, FaTrash } from "react-icons/fa";
 
 const DeleteAccountTab = ({ onDeleteAccount, loading }) => {
   const handleDeleteAccount = () => {
@@ -11,7 +12,7 @@ const DeleteAccountTab = ({ onDeleteAccount, loading }) => {
         <h3 className="delete-account-title">Eliminar Cuenta</h3>
         
         <div className="delete-account-warning-box">
-          <h4 className="delete-account-warning-title">⚠️ Advertencia Crítica</h4>
+          <h4 className="delete-account-warning-title"> <FaExclamationTriangle />  Advertencia Crítica</h4>
           <p className="delete-account-warning-text">
             Esta acción <strong>NO SE PUEDE DESHACER</strong>
           </p>
@@ -27,7 +28,8 @@ const DeleteAccountTab = ({ onDeleteAccount, loading }) => {
           onClick={handleDeleteAccount}
           disabled={loading}
         >
-          {loading ? 'Eliminando...' : '🗑️ ELIMINAR CUENTA'}
+       
+          {loading ? 'Eliminando...' : ' ELIMINAR CUENTA'}
         </button>
       </div>
     </div>

@@ -6,11 +6,11 @@ export const useAuth = () => {
     user: null,
     isAuthenticated: false,
     loading: true,
-    error: null
+    error: null,
   });
 
   const updateState = useCallback((updates) => {
-    setState(prev => ({ ...prev, ...updates }));
+    setState((prev) => ({ ...prev, ...updates }));
   }, []);
 
   const clearState = useCallback(() => {
@@ -18,7 +18,7 @@ export const useAuth = () => {
       user: null,
       isAuthenticated: false,
       loading: false,
-      error: null
+      error: null,
     });
   }, []);
 
@@ -36,10 +36,26 @@ export const useAuth = () => {
       return result;
     } catch (error) {
       console.warn("Error verifying session:", error);
-      clearState();
+      if (
+        error.message?.includes("No hay sesión activa") ||
+        error.code === "NO_ACTIVE_SESSION" ||
+        error.code === "INVALID_SESSION"
+      ) {
+        updateState({
+          isAuthenticated: false,
+          user: null,
+          loading: false,
+        });
+      } else {
+        updateState({
+          loading: false,
+          error: error.message || "Error verificando sesión",
+        });
+      }
+
       return { isAuthenticated: false, user: null };
     }
-  }, [updateState, clearState]);
+  }, [updateState]);
 
   const login = useCallback(
     async (username, password) => {
@@ -55,9 +71,9 @@ export const useAuth = () => {
 
         return response;
       } catch (error) {
-        updateState({ 
-          loading: false, 
-          error: error.message || "Error en inicio de sesión" 
+        updateState({
+          loading: false,
+          error: error.message || "Error en inicio de sesión",
         });
         throw error;
       }
@@ -73,9 +89,9 @@ export const useAuth = () => {
         updateState({ loading: false });
         return response;
       } catch (error) {
-        updateState({ 
-          loading: false, 
-          error: error.message || "Error en registro" 
+        updateState({
+          loading: false,
+          error: error.message || "Error en registro",
         });
         throw error;
       }
@@ -103,7 +119,7 @@ export const useAuth = () => {
   }, [clearState]);
 
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
   }, []);
 
   useEffect(() => {

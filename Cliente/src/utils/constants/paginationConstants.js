@@ -6,7 +6,7 @@ export const PAGINATION_DEFAULTS = {
 
 export const ENTITY_PAGINATION_LIMITS = {
   TASKS: {
-    DEFAULT_LIMIT: 10,
+    DEFAULT_LIMIT: 20,
     MAX_LIMIT: 50,
   },
   USERS: {
@@ -14,11 +14,11 @@ export const ENTITY_PAGINATION_LIMITS = {
     MAX_LIMIT: 100,
   },
   TAGS: {
-    DEFAULT_LIMIT: 25,
+    DEFAULT_LIMIT: 50,
     MAX_LIMIT: 200,
   },
   SESSIONS: {
-    DEFAULT_LIMIT: 15,
+    DEFAULT_LIMIT: 10,
     MAX_LIMIT: 50,
   },
 };
@@ -36,7 +36,7 @@ export const PAGINATION_CONFIG = {
   },
   SESSIONS: {
     INITIAL_PAGE: 1,
-    DEFAULT_LIMIT: 5,
+    DEFAULT_LIMIT: 10,
   },
   USERS: {
     INITIAL_PAGE: 1,

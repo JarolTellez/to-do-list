@@ -78,7 +78,6 @@ const errorHandler = (error, req, res, next) => {
             );
         }
         else if (error.code === 'VALIDATION_ERROR' || error.code === 'ValidatorError') {
-            console.log("LLEGO AL ERROR HANDLER");
             appError = new ValidationError(
                 'Error de validación de datos',
                 isProduction ? null : { 

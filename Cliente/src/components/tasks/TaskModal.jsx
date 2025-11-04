@@ -1,59 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import TagInput from '../common/TagInput';
-import { formatDateForDateTimeInput } from '../../utils/formatDate';
-import { taskMappers } from '../../mappers/taskMapper';
-import { useToast } from '../../contexts/ToastContexts';
-import ConfirmModal from '../common/ConfirmModal';
-import { loadTags } from '../../services/tags'; 
-import { useAuthContext } from '../../contexts/AuthContext'; 
+import React, { useState, useEffect } from "react";
+import TagInput from "../common/TagInput";
+import { formatDateForDateTimeInput } from "../../utils/formatDate";
+import { taskMappers } from "../../mappers/taskMapper";
+import { useToast } from "../../contexts/ToastContexts";
+import ConfirmModal from "../common/ConfirmModal";
+import { useAuthContext } from "../../contexts/AuthContext";
+import { useTags } from "../../hooks/useTags";
 
 const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
   const { showToast } = useToast();
-    const { user } = useAuthContext(); 
+  const { user } = useAuthContext();
+  const {
+    tags: availableTags,
+    loading: tagsLoading,
+    error: tagsError,
+  } = useTags();
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    scheduledDate: '',
-    priority: ''
+    name: "",
+    description: "",
+    scheduledDate: "",
+    priority: "",
   });
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [nameError, setNameError] = useState('');
-  const [descriptionError, setDescriptionError] = useState('');
-  const [availableTags, setAvailableTags] = useState([]);
+  const [nameError, setNameError] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
-    type: 'warning',
-    title: '',
-    message: '',
-    confirmText: 'Confirmar',
+    type: "warning",
+    title: "",
+    message: "",
+    confirmText: "Confirmar",
     onConfirm: null,
-    loading: false
+    loading: false,
   });
-
   useEffect(() => {
-    const loadAvailableTags = async () => {
-      try {
-        const response = await loadTags();
-        setAvailableTags(response.data || []);
-      } catch (error) {
-        console.error('Error loading tags:', error);
-        showToast('Error cargando etiquetas', 'error', 3000);
-      }
-    };
-    
-    loadAvailableTags();
-  }, [showToast]);
+    if (tagsError && tagsError.status !== 401) {
+      showToast(tagsError.message || "Error cargando etiquetas", "error", 3000);
+    }
+  }, [tagsError, showToast]);
 
   useEffect(() => {
     if (task) {
       setFormData({
-        name: task.name || '',
-        description: task.description || '',
-        scheduledDate: task.scheduledDate ? formatDateForDateTimeInput(new Date(task.scheduledDate)) : '',
-        priority: task.priority?.toString() || ''
+        name: task.name || "",
+        description: task.description || "",
+        scheduledDate: task.scheduledDate
+          ? formatDateForDateTimeInput(new Date(task.scheduledDate))
+          : "",
+        priority: task.priority?.toString() || "",
       });
 
       if (task.tags && task.tags.length > 0) {
@@ -61,54 +58,56 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
       } else {
         setTags([]);
       }
-      
     } else {
       setFormData({
-        name: '',
-        description: '',
-        scheduledDate: '',
-        priority: ''
+        name: "",
+        description: "",
+        scheduledDate: "",
+        priority: "",
       });
       setTags([]);
     }
-    
-    setNameError('');
-    setDescriptionError('');
+
+    setNameError("");
+    setDescriptionError("");
   }, [task]);
 
   const validateForm = () => {
     let isValid = true;
-    
+
     if (!formData.name.trim()) {
-      setNameError('El título es obligatorio');
+      setNameError("El título es obligatorio");
       isValid = false;
     } else if (formData.name.length > 50) {
-      setNameError('El título no puede superar 50 caracteres');
+      setNameError("El título no puede superar 50 caracteres");
       isValid = false;
     } else {
-      setNameError('');
+      setNameError("");
     }
 
     if (formData.description.length > 255) {
-      setDescriptionError('La descripción no puede superar 255 caracteres');
+      setDescriptionError("La descripción no puede superar 255 caracteres");
       isValid = false;
     } else {
-      setDescriptionError('');
+      setDescriptionError("");
     }
 
     return isValid;
   };
 
   const handlePriorityChange = (priorityNumber) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      priority: prev.priority === priorityNumber.toString() ? '' : priorityNumber.toString()
+      priority:
+        prev.priority === priorityNumber.toString()
+          ? ""
+          : priorityNumber.toString(),
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -122,14 +121,14 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
         scheduledDate: formData.scheduledDate || null,
         priority: formData.priority ? parseInt(formData.priority) : null,
         userId: isEditing ? task.userId : user?.id,
-        tags: tags, 
+        tags: tags,
         isCompleted: isEditing ? task.isCompleted : false,
         createdAt: isEditing ? task.createdAt : new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       let taskToSave;
-      
+
       if (isEditing) {
         taskToSave = taskMappers.inputToTask(formTaskData);
         taskToSave.validateForUpdate();
@@ -139,45 +138,61 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
       }
 
       await onSave(taskToSave);
-      
     } catch (error) {
-      console.error(`Error en ${isEditing ? 'actualización' : 'creación'} de tarea:`, error);
-      
-      if (Array.isArray(error)) {
-        const firstError = error[0];
-        showToast(`Error de validación: ${firstError.message}`, 'error', 6000);
-      } else {
-        const errorMessage = error.message || `Error al ${isEditing ? 'actualizar' : 'crear'} la tarea`;
-        showToast(errorMessage, 'error', 6000);
+      console.error(
+        `Error en ${isEditing ? "actualización" : "creación"} de tarea:`,
+        error
+      );
+
+      if (error.status !== 401) {
+        if (Array.isArray(error)) {
+          const firstError = error[0];
+          showToast(
+            `Error de validación: ${firstError.message}`,
+            "error",
+            6000
+          );
+        } else {
+          const errorMessage =
+            error.message ||
+            `Error al ${isEditing ? "actualizar" : "crear"} la tarea`;
+          showToast(errorMessage, "error", 6000);
+        }
       }
-      
-      setNameError('');
-      setDescriptionError('');
+
+      setNameError("");
+      setDescriptionError("");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-   setConfirmModal({
+    setConfirmModal({
       isOpen: true,
-      type: 'danger',
-      title: 'Eliminar Tarea',
-      message: '¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer.',
-      confirmText: 'Eliminar',
+      type: "danger",
+      title: "Eliminar Tarea",
+      message:
+        "¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer.",
+      confirmText: "Eliminar",
       loading: false,
       onConfirm: async () => {
-        setConfirmModal(prev => ({ ...prev, loading: true }));
-        
+        setConfirmModal((prev) => ({ ...prev, loading: true }));
+
         try {
           await onDelete(task.id);
-          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
           onClose();
         } catch (error) {
-          setConfirmModal(prev => ({ ...prev, loading: false }));
-          showToast('Error al eliminar la tarea', 'error', 6000);
+          if (error.status !== 401) {
+            setConfirmModal((prev) => ({ ...prev, loading: false }));
+            showToast("Error al eliminar la tarea", "error", 6000);
+          } else {
+            setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+            onClose();
+          }
         }
-      }
+      },
     });
   };
 
@@ -186,27 +201,27 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
       handleDelete();
     } else {
       setFormData({
-        name: '',
-        description: '',
-        scheduledDate: '',
-        priority: ''
+        name: "",
+        description: "",
+        scheduledDate: "",
+        priority: "",
       });
       setTags([]);
-      setNameError('');
-      setDescriptionError('');
+      setNameError("");
+      setDescriptionError("");
     }
   };
 
   const closeConfirmModal = () => {
-    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    if (name === 'name') setNameError('');
-    if (name === 'description') setDescriptionError('');
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "name") setNameError("");
+    if (name === "description") setDescriptionError("");
   };
 
   const isLoading = loading;
@@ -217,34 +232,36 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
         <form onSubmit={handleSubmit}>
           <div className="modal-form-container">
             <div className="modal-inputs-container">
-              <input 
-                type="text" 
-                className="modal-task-name" 
+              <input
+                type="text"
+                className="modal-task-name"
                 name="name"
-                maxLength="50" 
-                placeholder="Título de la tarea" 
+                maxLength="50"
+                placeholder="Título de la tarea"
                 value={formData.name}
                 onChange={handleInputChange}
-                required 
+                required
                 disabled={isLoading}
               />
               {nameError && <p className="modal-error-message">{nameError}</p>}
-              
-              <textarea 
-                className="modal-task-description" 
+
+              <textarea
+                className="modal-task-description"
                 name="description"
-                maxLength="255" 
+                maxLength="255"
                 placeholder="Descripción"
                 value={formData.description}
                 onChange={handleInputChange}
                 disabled={isLoading}
                 rows="3"
               />
-              {descriptionError && <p className="modal-error-message">{descriptionError}</p>}
+              {descriptionError && (
+                <p className="modal-error-message">{descriptionError}</p>
+              )}
 
               <label className="modal-label">Fecha programada</label>
-              <input 
-                type="datetime-local" 
+              <input
+                type="datetime-local"
                 className="modal-datetime-input"
                 name="scheduledDate"
                 value={formData.scheduledDate}
@@ -256,30 +273,45 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
 
             <div className="modal-tags-section">
               <label className="modal-label">Etiquetas</label>
-              <TagInput 
-                selectedTags={tags}
-                onTagsChange={setTags}
-                availableTags={availableTags}
-                disabled={isLoading}
-              />
+              <div className="modal-tags-container">
+                <TagInput
+                  selectedTags={tags}
+                  onTagsChange={setTags}
+                  availableTags={availableTags}
+                  disabled={isLoading || tagsLoading}
+                />
+              </div>
+              {tagsLoading && (
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "#6c757d",
+                    marginTop: "5px",
+                  }}
+                >
+                  Cargando etiquetas...
+                </p>
+              )}
             </div>
 
             <div className="modal-priority-container">
               <label className="modal-label">Nivel de Prioridad</label>
               <div className="modal-priority-selector">
-                {[1, 2, 3, 4, 5].map(num => (
+                {[1, 2, 3, 4, 5].map((num) => (
                   <label key={num} className="modal-priority-option">
-                    <input 
+                    <input
                       type="checkbox"
-                      name="priority" 
+                      name="priority"
                       value={num.toString()}
                       checked={formData.priority === num.toString()}
                       onChange={() => !isLoading && handlePriorityChange(num)}
                       disabled={isLoading}
-                      style={{ display: 'none' }}
+                      style={{ display: "none" }}
                     />
-                    <span 
-                      className={`modal-priority-label ${formData.priority === num.toString() ? 'active' : ''} ${isLoading ? 'disabled' : ''}`}
+                    <span
+                      className={`modal-priority-label ${
+                        formData.priority === num.toString() ? "active" : ""
+                      } ${isLoading ? "disabled" : ""}`}
                     >
                       {num}
                     </span>
@@ -289,30 +321,34 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
             </div>
 
             <div className="modal-buttons-container">
-              <button 
-                type="submit" 
-                className="modal-add-btn" 
+              <button
+                type="submit"
+                className="modal-add-btn"
                 disabled={isLoading}
               >
-                {isLoading ? 'Guardando...' : (isEditing ? 'Actualizar Tarea' : 'Crear Tarea')}
+                {isLoading
+                  ? "Guardando..."
+                  : isEditing
+                  ? "Actualizar Tarea"
+                  : "Crear Tarea"}
               </button>
-              
-              <button 
-                type="button" 
-                className="modal-cancel-btn" 
+
+              <button
+                type="button"
+                className="modal-cancel-btn"
                 onClick={onClose}
                 disabled={isLoading}
               >
                 Cancelar
               </button>
-              
-              <button 
-                type="button" 
-                className={isEditing ? "modal-delete-btn" : "modal-clear-btn"} 
+
+              <button
+                type="button"
+                className={isEditing ? "modal-delete-btn" : "modal-clear-btn"}
                 onClick={handleClear}
                 disabled={isLoading}
               >
-                {isEditing ? 'Eliminar Tarea' : 'Limpiar Formulario'}
+                {isEditing ? "Eliminar Tarea" : "Limpiar Formulario"}
               </button>
             </div>
           </div>

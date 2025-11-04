@@ -1,8 +1,10 @@
 @import "./base/reset.css";
 @import "./base/variables.css";
+@import "./base/typography.css"; 
 
 /* Layout Styles */
 @import "./layout/appLayout.css";
+@import "./layout/header.css";
 
 /* Auth Components */
 @import "./components/auth/authForms.css";
@@ -20,6 +22,7 @@
 @import "./components/tasks/taskItem.css";
 @import "./components/tasks/taskModal.css";
 @import "./components/tasks/sidebar.css";
+@import "./components/tasks/contentHeader.css";
 
 /* User Components */
 @import "./components/user/userModal.css";

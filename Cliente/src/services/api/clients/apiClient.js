@@ -1,4 +1,8 @@
-import { API_CONFIG, ERROR_MESSAGES, HTTP_STATUS_CODES } from "../../../utils/constants/appConstants";
+import {
+  API_CONFIG,
+  ERROR_MESSAGES,
+  HTTP_STATUS_CODES,
+} from "../../../utils/constants/appConstants";
 import { authService } from "../../auth";
 import { handleErrorResponse, handleApiResponse } from "../utils/httpUtils";
 import { ApiError } from "../utils/apiError";
@@ -8,6 +12,7 @@ class ApiClient {
     this.baseURL = API_CONFIG.BASE_URL;
     this.retryCount = 0;
     this.pendingRequests = new Map();
+    this.authErrorHandled = false;
   }
 
   async request(url, options = {}) {
@@ -34,9 +39,12 @@ class ApiClient {
       const result = await handleApiResponse(response);
 
       if (!result.success) {
-        if (response.status === HTTP_STATUS_CODES.UNAUTHORIZED && 
-            this.retryCount < API_CONFIG.RETRY_ATTEMPTS) {
-          return await this.handleAuthError(url, options);
+        if (
+          response.status === HTTP_STATUS_CODES.UNAUTHORIZED &&
+          result.code === "ACCESS_TOKEN_EXPIRED" &&
+          this.retryCount < API_CONFIG.RETRY_ATTEMPTS
+        ) {
+          return await this.handleTokenRefresh(url, options);
         }
 
         throw new ApiError(
@@ -49,10 +57,42 @@ class ApiClient {
       this.resetRetryCount();
       return result;
     } catch (error) {
+      if (
+        error.status === HTTP_STATUS_CODES.UNAUTHORIZED &&
+        error.code === "ACCESS_TOKEN_EXPIRED"
+      ) {
+        return await this.handleTokenRefresh(url, options);
+      }
+
       if (error.status === HTTP_STATUS_CODES.UNAUTHORIZED) {
-        this.handlePersistentAuthError();
+        this.handlePersistentAuthError(error);
       }
       throw error;
+    }
+  }
+
+  async handleTokenRefresh(url, options) {
+    try {
+      await authService.refreshAccessToken();
+      this.retryCount++;
+
+      const retryResponse = await this.makeRequest(url, options);
+      const retryResult = await handleApiResponse(retryResponse);
+
+      if (retryResult.success) {
+        this.resetRetryCount();
+        return retryResult;
+      } else {
+        const error = await handleErrorResponse(retryResponse);
+        throw error;
+      }
+    } catch (refreshError) {
+      console.error("Error al refrescar token:", refreshError);
+
+      if (refreshError.status === HTTP_STATUS_CODES.UNAUTHORIZED) {
+        this.handlePersistentAuthError(refreshError);
+      }
+      throw refreshError;
     }
   }
 
@@ -91,12 +131,11 @@ class ApiClient {
         );
       }
 
-      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-        throw new ApiError(
-          ERROR_MESSAGES.NETWORK_ERROR,
-          0,
-          "NETWORK_ERROR"
-        );
+      if (
+        error.message?.includes("Failed to fetch") ||
+        error.message?.includes("NetworkError")
+      ) {
+        throw new ApiError(ERROR_MESSAGES.NETWORK_ERROR, 0, "NETWORK_ERROR");
       }
 
       throw new ApiError(
@@ -109,30 +148,30 @@ class ApiClient {
     }
   }
 
-  async handleAuthError(url, options) {
-    try {
-      await authService.refreshAccessToken();
-      this.retryCount++;
+  handlePersistentAuthError(error) {
+    if (this.authErrorHandled) return;
 
-      const retryResponse = await this.makeRequest(url, options);
+    this.authErrorHandled = true;
 
-      if (retryResponse.ok) {
-        this.resetRetryCount();
-        return await handleApiResponse(retryResponse);
-      } else {
-        const error = await handleErrorResponse(retryResponse);
-        throw error;
+    const currentPath = window.location.pathname;
+    const isAuthPage = currentPath === "/login" || currentPath === "/register";
+
+    const isSessionError =
+      error?.code === "NO_ACTIVE_SESSION" ||
+      error?.code === "INVALID_SESSION" ||
+      (error?.message &&
+        (error.message.includes("No hay sesión activa") ||
+          error.message.includes("Sesión no válida")));
+
+    if (!(isSessionError && isAuthPage)) {
+      if (typeof window !== "undefined" && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent("auth:session-expired"));
       }
-    } catch (refreshError) {
-      this.handlePersistentAuthError();
-      throw refreshError;
     }
-  }
 
-  handlePersistentAuthError() {
-    if (typeof window !== "undefined" && window.dispatchEvent) {
-      window.dispatchEvent(new CustomEvent("auth:session-expired"));
-    }
+    setTimeout(() => {
+      this.authErrorHandled = false;
+    }, 2000);
   }
 
   generateRequestKey(url, options) {

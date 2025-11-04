@@ -222,7 +222,7 @@ class UserService {
         );
 
         if (!isCurrentPasswordValid) {
-          throw this.errorFactory.createAuthenticationError(
+          throw this.errorFactory.createValidationError(
             "La contraseña actual es incorrecta",
             {
               userId: updatePasswordRequestDTO.userId,
@@ -368,7 +368,7 @@ class UserService {
       }
 
       if (!user) {
-        throw this.errorFactory.createAuthenticationError(
+        throw this.errorFactory.createValidationError(
           "Credenciales inválidas",
           {
             identifier: identifier,
@@ -383,7 +383,7 @@ class UserService {
         user.password
       );
       if (!isPasswordValid) {
-        throw this.errorFactory.createAuthenticationError(
+        throw this.errorFactory.createValidationError(
           "Credenciales inválidas",
           {
             userId: user.id,
