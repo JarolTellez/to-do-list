@@ -114,7 +114,7 @@ class JwtAuth {
             tokenType: "access",
             expired: true,
           },
-          this.errorFactory.ErrorCodes.TOKEN_EXPIRED
+          this.errorFactory.ErrorCodes.ACCESS_TOKEN_EXPIRED
         );
       }
       throw this.errorFactory.createAuthenticationError(
@@ -124,7 +124,7 @@ class JwtAuth {
           tokenType: "access",
           invalid: true,
         },
-        this.errorFactory.ErrorCodes.INVALID_TOKEN
+        this.errorFactory.ErrorCodes.INVALID_ACCESS_TOKEN 
       );
     }
   }
@@ -150,7 +150,7 @@ class JwtAuth {
             tokenType: "refresh",
             expired: true,
           },
-          this.errorFactory.ErrorCodes.TOKEN_EXPIRED
+          this.errorFactory.ErrorCodes.REFRESH_TOKEN_EXPIRED
         );
       }
       throw this.errorFactory.createAuthenticationError(
@@ -160,7 +160,7 @@ class JwtAuth {
           tokenType: "refresh",
           invalid: true,
         },
-        this.errorFactory.ErrorCodes.INVALID_TOKEN
+        this.errorFactory.ErrorCodes.INVALID_REFRESH_TOKEN
       );
     }
   }
