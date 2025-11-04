@@ -21,7 +21,7 @@ const AppRouter = () => {
   return (
     <Router>
       <Routes>
-        {/* Public routess */}
+        {/* public routes*/}
         <Route
           path="/login"
           element={
@@ -35,7 +35,7 @@ const AppRouter = () => {
           }
         />
 
-        {/* Main protected route*/}
+        {/* main route - auth only */}
         <Route
           path="/"
           element={
@@ -47,7 +47,7 @@ const AppRouter = () => {
           }
         />
 
-        {/* Default route */}
+        {/* default route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

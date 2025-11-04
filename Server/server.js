@@ -9,6 +9,7 @@ const {
   authService,
   sessionService,
   jwtAuth,
+  errorFactory
 } = require("./src/infrastructure/config/dependencies");
 const { errorHandler } = require("./src/api/middlewares/errorHandler");
 const app = express();
@@ -55,6 +56,7 @@ app.use((req, res, next) => {
 app.set("sessionService", sessionService);
 app.set("authService", authService);
 app.set("jwtAuth", jwtAuth);
+app.set("errorFactory", errorFactory);
 
 app.use(cookieParser());
 app.use(express.json());

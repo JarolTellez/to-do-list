@@ -56,18 +56,31 @@ export const AuthProvider = ({ children }) => {
       if (logoutInProgress.current) {
         return;
       }
-      startFullScreenLoading("Sesión expirada", "Redirigiendo al login...");
 
-      try {
-        await enhancedLogout(true); 
-        showToast("Tu sesión ha expirado", "warning");
-      } catch (error) {
-        console.error("Error durante logout automático:", error);
-        showToast("Sesión expirada", "warning");
-      } finally {
-        setTimeout(() => {
-          stopFullScreenLoading();
-        }, 1000);
+      const currentPath = window.location.pathname;
+      const isLoginPage =
+        currentPath === "/login" || currentPath === "/register";
+
+      if (!isLoginPage) {
+        startFullScreenLoading("Sesión expirada", "Redirigiendo al login...");
+
+        try {
+          await enhancedLogout(true);
+          showToast("Tu sesión ha expirado", "warning");
+        } catch (error) {
+          console.error("Error durante logout automático:", error);
+          showToast("Sesión expirada", "warning");
+        } finally {
+          setTimeout(() => {
+            stopFullScreenLoading();
+          }, 1000);
+        }
+      } else {
+        try {
+          await enhancedLogout(true);
+        } catch (error) {
+          console.warn("Error en logout silencioso:", error);
+        }
       }
     };
 
@@ -85,7 +98,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     ...auth,
-    logout: enhancedLogout, 
+    logout: enhancedLogout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

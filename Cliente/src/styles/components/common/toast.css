@@ -65,8 +65,8 @@
 }
 
 .toast.warning {
-  background: #ffc107;
-  color: #212529;
+  background: #ff9431;
+  color: #f9fcff;
 }
 
 .toast.info {
