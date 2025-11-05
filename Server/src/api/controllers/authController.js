@@ -90,62 +90,60 @@ class AuthController {
   }
 
   async verifySession(req, res, next) {
-    try {
-      const accessToken = req.cookies.accessToken;
-      const refreshToken = req.cookies.refreshToken;
+  try {
+    const accessToken = req.cookies.accessToken;
+    const refreshToken = req.cookies.refreshToken;
 
-      if (!refreshToken) {
-        return next(
-          this.errorFactory.createAuthenticationError(
-            "No hay sesión activa",
-            {
-              operation: "verifySession",
-            },
-            this.errorFactory.ErrorCodes.NO_ACTIVE_SESSION
-          )
-        );
-      }
-
-      const result = await this.authService.verifyUserSession({
-        accessToken,
-        refreshToken,
+    if (!refreshToken) {
+      return res.status(200).json({
+        success: true,
+        message: "No hay sesión activa",
+        isAuthenticated: false,
+        data: null,
+        tokenRefreshed: false
       });
-
-      if (result.isAuthenticated) {
-        const mappedUser = this.userMapper.domainToResponse(result.user);
-        if (result.newAccessToken) {
-          res.cookie(
-            "accessToken",
-            result.newAccessToken,
-            ACCESS_TOKEN_OPTIONS
-          );
-        }
-
-        return res.status(200).json({
-          success: true,
-          message: "Sesión activa",
-          isAuthenticated: true,
-          data: mappedUser,
-          tokenRefreshed: !!result.newAccessToken,
-        });
-      } else {
-        console.log("entro al error");
-        clearAuthCookies(res);
-        return next(
-          this.errorFactory.createAuthenticationError(
-            "Sesión no válida",
-            {
-              operation: "verifySession",
-            },
-            this.errorFactory.ErrorCodes.INVALID_SESSION
-          )
-        );
-      }
-    } catch (error) {
-      clearAuthCookies(res);
-      next(error);
     }
+
+    const result = await this.authService.verifyUserSession({
+      accessToken,
+      refreshToken,
+    });
+
+    if (result.isAuthenticated) {
+      const mappedUser = this.userMapper.domainToResponse(result.user);
+      if (result.newAccessToken) {
+        res.cookie("accessToken", result.newAccessToken, ACCESS_TOKEN_OPTIONS);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Sesión activa",
+        isAuthenticated: true,
+        data: mappedUser,
+        tokenRefreshed: !!result.newAccessToken,
+      });
+    } else {
+      clearAuthCookies(res);
+      return res.status(200).json({
+        success: true,
+        message: "Sesión no válida o expirada",
+        isAuthenticated: false,
+        data: null,
+        tokenRefreshed: false
+      });
+    }
+  } catch (error) {
+    console.error("Error en verifySession:", error);
+    clearAuthCookies(res);
+    return res.status(200).json({
+      success: true,
+      message: "Error verificando sesión",
+      isAuthenticated: false,
+      data: null,
+      tokenRefreshed: false
+    });
   }
+}
 
   async closeAllUserSessions(req, res, next) {
     try {
