@@ -1,9 +1,10 @@
+const { clearAuthCookies } = require("../utils/cookieUtils");
 const validateAccessToken = async (req, res, next) => {
-  try {
-    const jwtAuth = req.app.get("jwtAuth");
-    const sessionService = req.app.get("sessionService");
-    const errorFactory = req.app.get("errorFactory");
+  const jwtAuth = req.app.get("jwtAuth");
+  const sessionService = req.app.get("sessionService");
+  const errorFactory = req.app.get("errorFactory");
 
+  try {
     const accessToken = req.cookies.accessToken;
 
     if (!accessToken) {
@@ -23,6 +24,7 @@ const validateAccessToken = async (req, res, next) => {
     );
 
     if (!isSessionActive) {
+      clearAuthCookies(res);
       return next(
         errorFactory.createAuthenticationError(
           "Sesión expirada o cerrada",
@@ -44,29 +46,14 @@ const validateAccessToken = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Error validando token:", error);
-    if (error.name === "TokenExpiredError") {
-      return next(
-        errorFactory.createAuthenticationError(
-          "Token de acceso expirado",
-          {
-            operation: "validateAccessToken",
-            expired: true,
-          },
-          errorFactory.ErrorCodes.ACCESS_TOKEN_EXPIRED
-        )
-      );
-    }
 
-    if (error.name === "JsonWebTokenError") {
-      return next(
-        errorFactory.createAuthenticationError(
-          "Token de acceso inválido",
-          {
-            operation: "validateAccessToken",
-          },
-          errorFactory.ErrorCodes.INVALID_ACCESS_TOKEN
-        )
-      );
+    if (
+      !(
+        error.errorCode === errorFactory.ErrorCodes.ACCESS_TOKEN_EXPIRED ||
+        error.errorCode === errorFactory.ErrorCodes.INVALID_ACCESS_TOKEN
+      )
+    ) {
+      clearAuthCookies(res);
     }
 
     next(error);

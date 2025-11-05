@@ -73,6 +73,7 @@ class ApiClient {
 
   async handleTokenRefresh(url, options) {
     try {
+      console.log("Renovando access token");
       await authService.refreshAccessToken();
       this.retryCount++;
 
@@ -81,6 +82,7 @@ class ApiClient {
 
       if (retryResult.success) {
         this.resetRetryCount();
+        console.log("Access token renovado");
         return retryResult;
       } else {
         const error = await handleErrorResponse(retryResponse);
