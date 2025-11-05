@@ -62,7 +62,6 @@ class AuthController {
       });
     } catch (error) {
       clearAuthCookies(res);
-
       next(error);
     }
   }
@@ -130,6 +129,7 @@ class AuthController {
           tokenRefreshed: !!result.newAccessToken,
         });
       } else {
+        console.log("entro al error");
         clearAuthCookies(res);
         return next(
           this.errorFactory.createAuthenticationError(
