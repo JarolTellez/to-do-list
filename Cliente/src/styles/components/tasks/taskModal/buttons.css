@@ -1,0 +1,67 @@
+.modal-buttons-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.modal-add-btn {
+  grid-column: 1 / -1;
+  background: #007bff;
+  color: white;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+}
+
+.modal-cancel-btn {
+  background: #6c757d;
+  color: white;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+}
+
+.modal-clear-btn {
+  background: #ffc107;
+  color: #212529;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+}
+
+.modal-delete-btn {
+  background: #dc3545;
+  color: white;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+}
+
+.modal-add-btn,
+.modal-cancel-btn,
+.modal-clear-btn,
+.modal-delete-btn {
+  padding: 10px 16px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+.modal-add-btn:hover:not(:disabled),
+.modal-cancel-btn:hover:not(:disabled),
+.modal-clear-btn:hover:not(:disabled),
+.modal-delete-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-add-btn:disabled,
+.modal-cancel-btn:disabled,
+.modal-clear-btn:disabled,
+.modal-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
