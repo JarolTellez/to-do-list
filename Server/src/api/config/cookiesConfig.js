@@ -1,8 +1,10 @@
+const isProduction = process.env.NODE_ENV === "production";
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  domain: process.env.NODE_ENV === "production" ? ".todolistjt.com" : undefined,
+  secure: isProduction,
+  sameSite: isProduction ? "strict" : "lax",
+
 };
 
 const REFRESH_TOKEN_OPTIONS = {
