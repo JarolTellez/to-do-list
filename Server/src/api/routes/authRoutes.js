@@ -30,7 +30,7 @@ module.exports = (authController) => {
 
   router
     .route("/verify-session")
-    .get(authController.verifySession.bind(authController));
+    .get(validateRefreshToken,authController.verifySession.bind(authController));
 
   // router
   //   .route("/sessions/:sessionId/close")
