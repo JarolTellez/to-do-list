@@ -1,0 +1,65 @@
+.user-modal-tabs-container {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0 25px;
+  margin-top: 15px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.user-modal-tabs-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.user-modal-tabs-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.user-modal-tabs-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.user-modal-tabs-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.user-tab-btn {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: var(--text-base);
+  color: #6c757d;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: var(--font-medium);
+  font-family: inherit;
+}
+
+.user-tab-btn:hover {
+  color: #007bff;
+}
+
+.user-tab-active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  font-weight: var(--font-semibold);
+}
+
+.user-tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
