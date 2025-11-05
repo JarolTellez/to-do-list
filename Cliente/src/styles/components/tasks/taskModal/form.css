@@ -1,0 +1,56 @@
+.modal-inputs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-task-name,
+.modal-task-description {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.2s ease;
+  font-size: var(--text-base);
+  font-weight: var(--font-normal);
+}
+
+.modal-task-name:focus,
+.modal-task-description:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.modal-task-description {
+  resize: vertical;
+  min-height: 70px;
+  line-height: var(--leading-normal);
+}
+
+.modal-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: var(--font-medium);
+  color: #374151;
+  font-size: var(--text-sm);
+  letter-spacing: 0.01em;
+}
+
+.modal-datetime-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: var(--text-base);
+  background: white;
+  font-weight: var(--font-normal);
+}
+
+.modal-error-message {
+  color: #dc3545;
+  font-size: var(--text-xs);
+  margin: 4px 0 0 0;
+  font-weight: var(--font-medium);
+}

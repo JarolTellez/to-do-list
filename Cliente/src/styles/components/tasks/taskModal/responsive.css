@@ -1,0 +1,180 @@
+@media (max-width: 768px) {
+  .modal {
+    padding: 5px;
+    align-items: center;
+  }
+
+  .modal-content {
+    max-width: 98%;
+    width: 98%;
+    max-height: 85vh;
+    animation: modalAppearMobile 0.3s ease;
+  }
+
+  @keyframes modalAppearMobile {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .modal-form-container {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .modal-task-name,
+  .modal-task-description,
+  .modal-datetime-input {
+    padding: 10px 12px;
+    font-size: var(--mobile-text-sm);
+    min-height: auto;
+  }
+
+  .modal-task-description {
+    min-height: 60px;
+    max-height: 80px;
+  }
+
+  .modal-label {
+    font-size: var(--mobile-text-sm);
+    margin-bottom: 4px;
+  }
+
+  .modal-priority-container {
+    padding: 10px;
+    margin: 4px 0;
+  }
+
+  .modal-priority-label {
+    width: 30px;
+    height: 30px;
+    font-size: var(--mobile-text-sm);
+  }
+
+  /* Reorganize buttons for mobile */
+  .modal-buttons-container {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .modal-add-btn {
+    grid-column: 1;
+    order: 1;
+  }
+
+  .modal-cancel-btn {
+    order: 2;
+  }
+
+  .modal-clear-btn,
+  .modal-delete-btn {
+    order: 3;
+  }
+
+  .modal-add-btn,
+  .modal-cancel-btn,
+  .modal-clear-btn,
+  .modal-delete-btn {
+    height: 38px;
+    font-size: var(--mobile-text-sm);
+    padding: 8px 12px;
+  }
+
+  /* Tags responsive */
+  .modal-tags-container .tags-list {
+    max-height: 45px;
+    min-height: 45px;
+  }
+
+  .modal-tags-container #tag-input {
+    min-height: 35px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal {
+    padding: 2px;
+  }
+
+  .modal-content {
+    max-width: 99%;
+    max-height: 90vh;
+  }
+
+  .modal-form-container {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .modal-task-name,
+  .modal-task-description,
+  .modal-datetime-input {
+    padding: 8px 10px;
+  }
+
+  .modal-task-description {
+    min-height: 50px;
+    max-height: 70px;
+  }
+
+  .modal-priority-container {
+    padding: 8px;
+  }
+
+  .modal-priority-label {
+    width: 28px;
+    height: 28px;
+    font-size: var(--mobile-text-xs);
+  }
+
+  .modal-buttons-container {
+    gap: 4px;
+  }
+
+  .modal-add-btn,
+  .modal-cancel-btn,
+  .modal-clear-btn,
+  .modal-delete-btn {
+    height: 36px;
+    padding: 6px 10px;
+    font-size: var(--mobile-text-xs);
+  }
+
+  .modal-label {
+    font-size: var(--mobile-text-xs);
+  }
+
+  
+  .modal-tags-container .tags-list {
+    max-height: 40px;
+    min-height: 40px;
+  }
+
+  .modal-tags-container #tag-input {
+    min-height: 30px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .modal-content {
+    max-width: 90%;
+  }
+
+  .modal-form-container {
+    padding: 18px;
+  }
+}
+
+@supports (padding: max(0px)) {
+  .modal {
+    padding: max(5px, env(safe-area-inset-top))
+      max(5px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom))
+      max(5px, env(safe-area-inset-left));
+  }
+}

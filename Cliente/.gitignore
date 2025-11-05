@@ -16,6 +16,10 @@ build/
 dist-ssr
 *.tsbuildinfo
 
+
+.vite/
+
+
 .env
 .env.*
 .env.local

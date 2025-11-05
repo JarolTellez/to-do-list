@@ -281,17 +281,6 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
                   disabled={isLoading || tagsLoading}
                 />
               </div>
-              {tagsLoading && (
-                <p
-                  style={{
-                    fontSize: "12px",
-                    color: "#6c757d",
-                    marginTop: "5px",
-                  }}
-                >
-                  Cargando etiquetas...
-                </p>
-              )}
             </div>
 
             <div className="modal-priority-container">
