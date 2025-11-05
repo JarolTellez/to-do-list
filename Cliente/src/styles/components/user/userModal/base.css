@@ -1,0 +1,113 @@
+.user-modal-content-wrapper {
+  max-width: 620px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modalAppear 0.3s;
+  overflow: hidden;
+  font-family: inherit;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.user-modal-content-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.user-modal-content-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.user-modal-content-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.user-modal-content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.user-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px 0;
+}
+
+.user-modal-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  font-family: inherit;
+}
+
+.user-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  font-family: inherit;
+}
+
+.user-modal-close-btn:hover {
+  color: #333;
+  background: #f8f9fa;
+}
+
+.user-modal-main-content {
+  padding: 20px 25px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.user-modal-main-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.user-modal-main-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.user-modal-main-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.user-modal-main-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.user-modal-overlay.flex-display {
+  display: flex !important;
+}
+
+@supports (padding: max(0px)) {
+  .user-modal-content-wrapper {
+    margin: max(5px, env(safe-area-inset-top))
+      max(5px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom))
+      max(5px, env(safe-area-inset-left));
+  }
+}
