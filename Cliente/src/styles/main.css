@@ -20,12 +20,23 @@
 /* Task Components */
 @import "./components/tasks/taskLists.css";
 @import "./components/tasks/taskItem.css";
-@import "./components/tasks/taskModal.css";
+@import "./components/tasks/taskModal/base.css";
+@import "./components/tasks/taskModal/form.css";
+@import "./components/tasks/taskModal/priority.css";
+@import "./components/tasks/taskModal/tagsInput.css";
+@import "./components/tasks/taskModal/buttons.css";
+@import "./components/tasks/taskModal/responsive.css";
 @import "./components/tasks/sidebar.css";
 @import "./components/tasks/contentHeader.css";
 
 /* User Components */
-@import "./components/user/userModal.css";
+@import "./components/user/userModal/base.css";
+@import "./components/user/userModal/tabs.css";
+@import "./components/user/userModal/sessions.css";
+@import "./components/user/userModal/forms.css";
+@import "./components/user/userModal/buttons.css";
+@import "./components/user/userModal/delete.css";
+@import "./components/user/userModal/responsive.css";
 
 /* Utility Styles */
 @import "./utils/responsive.css";

@@ -1,0 +1,191 @@
+@media (max-width: 768px) {
+  .user-modal-content-wrapper {
+    max-width: 98%;
+    width: 98%;
+    max-height: 85vh;
+    animation: modalAppearMobile 0.3s ease;
+  }
+
+  @keyframes modalAppearMobile {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .user-modal-main-content {
+    padding: 16px 18px;
+    max-height: 350px;
+  }
+
+  .user-modal-tabs-container {
+    padding: 0 18px;
+  }
+
+  .user-tab-btn {
+    padding: 10px 14px;
+    font-size: var(--mobile-text-sm);
+  }
+
+  .user-form-group {
+    margin-bottom: 16px;
+  }
+
+  .user-form-group label {
+    font-size: var(--mobile-text-sm);
+    margin-bottom: 6px;
+  }
+
+  .user-form-input {
+    padding: 10px 12px;
+    font-size: var(--mobile-text-base);
+  }
+
+  .user-session-item {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+
+  .user-session-platform {
+    font-size: var(--mobile-text-sm);
+  }
+
+  .user-session-details div {
+    font-size: var(--mobile-text-xs);
+  }
+
+  .user-session-details strong {
+    font-size: var(--mobile-text-xs);
+    min-width: 60px;
+  }
+
+  .user-btn-primary,
+  .user-btn-secondary,
+  .user-btn-danger {
+    font-size: var(--mobile-text-sm);
+    padding: 10px 14px;
+    height: 40px;
+  }
+
+  .user-form-buttons {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .user-form-buttons .user-btn-primary,
+  .user-form-buttons .user-btn-secondary {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .user-modal-actions {
+    padding: 16px 18px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .user-modal-close-button,
+  .user-modal-logout-btn {
+    width: 100%;
+    font-size: var(--mobile-text-sm);
+    padding: 10px 14px;
+    height: 40px;
+  }
+
+  .delete-account-container {
+    padding: 16px;
+  }
+
+  .delete-account-warning-box {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .delete-account-title {
+    font-size: var(--mobile-text-lg);
+    margin-bottom: 16px;
+  }
+
+  .delete-account-critical-warning {
+    padding: 12px;
+    margin: 16px 0;
+    font-size: var(--mobile-text-base);
+  }
+
+  .delete-account-btn {
+    padding: 14px 20px;
+    font-size: var(--mobile-text-base);
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-modal-content-wrapper {
+    max-width: 99%;
+    max-height: 90vh;
+  }
+
+  .user-modal-main-content {
+    padding: 14px 16px;
+    max-height: 300px;
+  }
+
+  .user-modal-header {
+    padding: 16px 18px 0;
+  }
+
+  .user-modal-tabs-container {
+    padding: 0 16px;
+  }
+
+  .user-tab-btn {
+    padding: 8px 10px;
+    font-size: var(--mobile-text-xs);
+  }
+
+  .user-form-input {
+    padding: 8px 10px;
+  }
+
+  .user-session-item {
+    padding: 10px 12px;
+  }
+
+  .user-session-platform {
+    font-size: var(--mobile-text-xs);
+  }
+
+  .user-btn-primary,
+  .user-btn-secondary,
+  .user-btn-danger {
+    font-size: var(--mobile-text-xs);
+    padding: 8px 10px;
+    height: 36px;
+  }
+
+  .user-modal-close-button,
+  .user-modal-logout-btn {
+    padding: 8px 10px;
+    height: 36px;
+    font-size: var(--mobile-text-xs);
+  }
+
+  .delete-account-container {
+    padding: 14px;
+  }
+
+  .delete-account-warning-box {
+    padding: 14px;
+  }
+
+  .delete-account-critical-warning {
+    padding: 10px;
+    margin: 14px 0;
+  }
+}

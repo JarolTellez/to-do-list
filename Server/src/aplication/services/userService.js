@@ -111,6 +111,15 @@ class UserService {
             }
           );
         }
+           if (updateUserRequestDTO.email==existingUser.email && updateUserRequestDTO.username==existingUser.username) {
+          throw this.errorFactory.createValidationError(
+            "Los datos nuevos deben ser diferentes a los actuales",
+            {
+              userId: updateUserRequestDTO.id,
+              operation: "updateUser",
+            }
+          );
+        }
         if (
           updateUserRequestDTO.email &&
           updateUserRequestDTO.email !== existingUser.email
@@ -228,6 +237,24 @@ class UserService {
               userId: updatePasswordRequestDTO.userId,
               operation: "updatePassword",
               errorType: "invalid_current_password",
+            }
+          );
+        }
+
+         const isSamePassword = await this.bcrypt.compare(
+          updatePasswordRequestDTO.newPassword,
+          user.password
+        );
+        console.log("NUEVA: ", isSamePassword);
+
+        if (isSamePassword) {
+           console.log("entro");
+          throw this.errorFactory.createValidationError(
+            "La nueva contraseña debe ser diferente a la actual",
+            {
+              userId: updatePasswordRequestDTO.userId,
+              operation: "updatePassword",
+              errorType: "invalid_password",
             }
           );
         }
