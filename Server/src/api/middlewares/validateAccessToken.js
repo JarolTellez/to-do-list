@@ -1,4 +1,9 @@
 const { clearAuthCookies } = require("../utils/cookieUtils");
+/**
+ * Authentication middleware for validating access tokens in API requests
+ * @middleware validateAccessToken
+ * @description Validates access token from cookies and attaches user information to request
+ */
 const validateAccessToken = async (req, res, next) => {
   const jwtAuth = req.app.get("jwtAuth");
   const sessionService = req.app.get("sessionService");

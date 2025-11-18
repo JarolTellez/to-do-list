@@ -11,10 +11,26 @@ export const useToast = () => {
   return context;
 };
 
+/**
+ * Toast notification management context
+ * @context ToastProvider
+ * @description Manages toast notifications for user feedback
+ * @param {Object} props - Component properties
+ * @param {ReactNode} props.children - Child components
+ * @returns {JSX.Element} Toast context provider
+ */
 export const ToastProvider = ({ children }) => {
   const [normalToasts, setNormalToasts] = useState([]);
   const [taskToasts, setTaskToasts] = useState([]);
 
+  /**
+   * Shows a standard toast notification
+   * @function showToast
+   * @param {string} message - Toast message content
+   * @param {string} type - Toast type (info, success, error, warning)
+   * @param {number} duration - Display duration in milliseconds
+   * @returns {string} Toast ID for manual dismissal
+   */
   const showToast = useCallback((message, type = "info", duration = 4000) => {
     const id = Date.now() + Math.random();
     const newToast = {
@@ -33,6 +49,13 @@ export const ToastProvider = ({ children }) => {
     return id;
   }, []);
 
+  /**
+   * Shows a task-specific toast with loading states
+   * @function showTaskToast
+   * @param {string} loadingMessage - Message during loading state
+   * @param {string} successMessage - Message on success
+   * @returns {Object} Toast control methods
+   */
   const showTaskToast = useCallback((loadingMessage, successMessage) => {
     const id = Date.now() + Math.random();
 
@@ -76,7 +99,7 @@ export const ToastProvider = ({ children }) => {
       },
       dismiss: () => {
         setTaskToasts((prev) => prev.filter((toast) => toast.id !== id));
-      }
+      },
     };
   }, []);
 

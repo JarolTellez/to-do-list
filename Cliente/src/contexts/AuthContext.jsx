@@ -11,12 +11,27 @@ import { useToast } from "../contexts/ToastContexts";
 
 const AuthContext = createContext(null);
 
+/**
+ * Authentication context provider for managing user authentication state
+ * @context AuthProvider
+ * @description Provides authentication state and methods throughout the application
+ * @param {Object} props - Component properties
+ * @param {ReactNode} props.children - Child components
+ * @returns {JSX.Element} Authentication context provider
+ */
 export const AuthProvider = ({ children }) => {
   const auth = useAuth();
   const { startFullScreenLoading, stopFullScreenLoading } = useLoading();
   const { showToast } = useToast();
   const logoutInProgress = useRef(false);
 
+  /**
+   * Enhanced logout function with session expiration handling
+   * @async
+   * @function enhancedLogout
+   * @param {boolean} isAutoLogout - Whether logout is triggered automatically
+   * @returns {Promise<Object>} Logout result
+   */
   const enhancedLogout = useCallback(
     async (isAutoLogout = false) => {
       if (logoutInProgress.current) {
@@ -52,6 +67,11 @@ export const AuthProvider = ({ children }) => {
   );
 
   useEffect(() => {
+    /**
+     * Handles session expired events
+     * @async
+     * @function handleSessionExpired
+     */
     const handleSessionExpired = async () => {
       if (logoutInProgress.current) {
         return;

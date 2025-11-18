@@ -1,13 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { loadTags } from '../../services/tags';
-import '../../styles/components/common/tagInput.css';
+import React, { useState, useEffect, useRef } from "react";
+import { loadTags } from "../../services/tags";
+import "../../styles/components/common/tagInput.css";
 
-const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
-  const [inputValue, setInputValue] = useState('');
+/**
+ * Tag input component with autocomplete suggestions
+ * @component TagInput
+ * @description Handles tag selection with search and suggestion functionality
+ * @param {Object} props - Component properties
+ * @param {Array} props.selectedTags - Currently selected tags
+ * @param {Function} props.onTagsChange - Callback when tags change
+ * @param {boolean} props.disabled - Whether the input is disabled
+ * @returns {JSX.Element} Tag input interface
+ */
+const TagInput = ({ selectedTags, onTagsChange, disabled = false }) => {
+  const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [availableTags, setAvailableTags] = useState([]);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
@@ -18,7 +28,7 @@ const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
         setAvailableTags(response.data);
       } catch (error) {
         if (error.status !== 401) {
-          console.error('Error loading tags:', error);
+          console.error("Error loading tags:", error);
         }
         setAvailableTags([]);
       }
@@ -29,9 +39,10 @@ const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (inputValue.trim()) {
-        const filtered = availableTags.filter(tag => 
-          tag.name.toLowerCase().includes(inputValue.toLowerCase()) &&
-          !isTagAlreadySelected(tag.name)
+        const filtered = availableTags.filter(
+          (tag) =>
+            tag.name.toLowerCase().includes(inputValue.toLowerCase()) &&
+            !isTagAlreadySelected(tag.name)
         );
         setSuggestions(filtered);
         setShowSuggestions(true);
@@ -44,79 +55,113 @@ const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
     fetchSuggestions();
   }, [inputValue, selectedTags, availableTags]);
 
+  /**
+   * Normalizes tag name to consistent format
+   * @function normalizeTagName
+   * @param {string} tagName - Raw tag name
+   * @returns {string} Normalized tag name
+   */
   const normalizeTagName = (tagName) => {
     if (!tagName || tagName.length === 0) return tagName;
     return tagName.charAt(0).toUpperCase() + tagName.slice(1).toLowerCase();
   };
 
+  /**
+   * Checks if tag is already selected
+   * @function isTagAlreadySelected
+   * @param {string} tagName - Tag name to check
+   * @returns {boolean} Whether tag is already selected
+   */
   const isTagAlreadySelected = (tagName) => {
     const normalizedInput = normalizeTagName(tagName);
-    return selectedTags.some(tag => 
-      normalizeTagName(tag.name) === normalizedInput
+    return selectedTags.some(
+      (tag) => normalizeTagName(tag.name) === normalizedInput
     );
   };
 
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
-    setErrorMessage('');
+    setErrorMessage("");
   };
 
+  /**
+   * Handles keyboard events for tag input
+   * @function handleKeyDown
+   * @param {Event} e - Keyboard event
+   */
   const handleKeyDown = (e) => {
-    if ((e.key === ' ' || e.key === 'Enter') && inputValue.trim()) {
+    if ((e.key === " " || e.key === "Enter") && inputValue.trim()) {
       e.preventDefault();
-      
+
       const normalizedTagName = normalizeTagName(inputValue.trim());
-      
+
       if (isTagAlreadySelected(normalizedTagName)) {
         setErrorMessage(`La etiqueta "${normalizedTagName}" ya está agregada`);
         return;
       }
 
-      addTag({ 
-        id: Date.now(), 
-        name: normalizedTagName 
+      addTag({
+        id: Date.now(),
+        name: normalizedTagName,
       });
-      setInputValue('');
+      setInputValue("");
     }
   };
 
+  /**
+   * Adds a new tag to selection
+   * @function addTag
+   * @param {Object} tag - Tag object to add
+   */
   const addTag = (tag) => {
     const normalizedTag = {
       ...tag,
-      name: normalizeTagName(tag.name)
+      name: normalizeTagName(tag.name),
     };
 
     if (!isTagAlreadySelected(normalizedTag.name)) {
       onTagsChange([...selectedTags, normalizedTag]);
-      setErrorMessage('');
+      setErrorMessage("");
     } else {
       setErrorMessage(`La etiqueta "${normalizedTag.name}" ya está agregada`);
     }
-    
-    setInputValue('');
+
+    setInputValue("");
     setShowSuggestions(false);
   };
 
+  /**
+   * Removes tag from selection
+   * @function removeTag
+   * @param {string} tagId - ID of tag to remove
+   */
   const removeTag = (tagId) => {
-    onTagsChange(selectedTags.filter(tag => tag.id !== tagId));
-    setErrorMessage('');
+    onTagsChange(selectedTags.filter((tag) => tag.id !== tagId));
+    setErrorMessage("");
   };
 
+  /**
+   * Selects tag from suggestions
+   * @function selectSuggestion
+   * @param {Object} tag - Tag object to select
+   */
   const selectSuggestion = (tag) => {
     if (isTagAlreadySelected(tag.name)) {
       setErrorMessage(`La etiqueta "${tag.name}" ya está agregada`);
       return;
     }
-    
+
     addTag(tag);
   };
 
   const handleInputBlur = (e) => {
-    if (suggestionsRef.current && suggestionsRef.current.contains(e.relatedTarget)) {
-      return; 
+    if (
+      suggestionsRef.current &&
+      suggestionsRef.current.contains(e.relatedTarget)
+    ) {
+      return;
     }
-    
 
     setTimeout(() => {
       setShowSuggestions(false);
@@ -124,18 +169,14 @@ const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
   };
 
   return (
-    <div id="tag-input-container"  className={disabled ? 'disabled' : ''}>
-      {errorMessage && (
-        <div className="tag-error-message">
-          {errorMessage}
-        </div>
-      )}
+    <div id="tag-input-container" className={disabled ? "disabled" : ""}>
+      {errorMessage && <div className="tag-error-message">{errorMessage}</div>}
 
       <ul id="tags-list" className="tags-list">
-        {selectedTags.map(tag => (
+        {selectedTags.map((tag) => (
           <li key={tag.id}>
             {tag.name}
-            <button 
+            <button
               type="button"
               className="remove-tag-btn"
               onClick={() => removeTag(tag.id)}
@@ -145,11 +186,11 @@ const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
           </li>
         ))}
       </ul>
-      
-      <input 
+
+      <input
         ref={inputRef}
-        type="text" 
-        id="tag-input" 
+        type="text"
+        id="tag-input"
         placeholder="Escribe para buscar o agregar etiquetas (presiona Espacio o Enter)"
         value={inputValue}
         onChange={handleInputChange}
@@ -161,21 +202,17 @@ const TagInput = ({ selectedTags, onTagsChange,  disabled = false}) => {
           }
         }}
       />
-      
+
       {showSuggestions && suggestions.length > 0 && (
-        <ul 
-          ref={suggestionsRef}
-          id="suggestions" 
-          className="dropdown active"
-        >
-          {suggestions.map(tag => (
-            <li 
-              key={tag.id} 
+        <ul ref={suggestionsRef} id="suggestions" className="dropdown active">
+          {suggestions.map((tag) => (
+            <li
+              key={tag.id}
               onClick={() => selectSuggestion(tag)}
               className="suggestion-item"
-              tabIndex={0} 
+              tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   selectSuggestion(tag);
                 }
               }}

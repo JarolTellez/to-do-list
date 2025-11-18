@@ -1,25 +1,45 @@
-import React, { useState } from 'react';
-import { useToast } from '../../contexts/ToastContexts';
+import React, { useState } from "react";
+import { useToast } from "../../contexts/ToastContexts";
 
+/**
+ * User registration form component
+ * @component RegisterForm
+ * @description Handles new user registration with validation
+ * @param {Object} props - Component properties
+ * @param {Function} props.onRegister - Callback function for registration submission
+ * @param {Function} props.onSwitchToLogin - Callback to switch to login view
+ * @returns {JSX.Element} Registration form interface
+ */
 const RegisterForm = ({ onRegister, onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: ''
+    username: "",
+    email: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
+  /**
+   * Handles form submission for user registration
+   * @async
+   * @function handleSubmit
+   * @param {Event} e - Form submission event
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.username.trim() || !formData.email.trim() || !formData.password.trim()) {
-      showToast('Por favor completa todos los campos', 'warning');
+
+    if (
+      !formData.username.trim() ||
+      !formData.email.trim() ||
+      !formData.password.trim()
+    ) {
+      showToast("Por favor completa todos los campos", "warning");
       return;
     }
 
     if (formData.password.length < 6) {
-      showToast('La contraseña debe tener al menos 6 caracteres', 'warning');
+      showToast("La contraseña debe tener al menos 6 caracteres", "warning");
       return;
     }
 
@@ -34,9 +54,9 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -44,39 +64,41 @@ const RegisterForm = ({ onRegister, onSwitchToLogin }) => {
     <div className="container">
       <h1>Registrar</h1>
       <form onSubmit={handleSubmit}>
-        <input 
-          type="text" 
+        <input
+          type="text"
           name="username"
-          placeholder="Usuario" 
+          placeholder="Usuario"
           value={formData.username}
           onChange={handleChange}
-          required 
+          required
           disabled={loading}
         />
-        <input 
-          type="email" 
+        <input
+          type="email"
           name="email"
-          placeholder="Correo" 
+          placeholder="Correo"
           value={formData.email}
           onChange={handleChange}
-          required 
+          required
           disabled={loading}
         />
-        <input 
-          type="password" 
+        <input
+          type="password"
           name="password"
-          placeholder="Contraseña" 
+          placeholder="Contraseña"
           value={formData.password}
           onChange={handleChange}
-          required 
+          required
           disabled={loading}
         />
-        
+
         <button type="submit" disabled={loading}>
-          {loading ? 'Registrando...' : 'Registrar'}
+          {loading ? "Registrando..." : "Registrar"}
         </button>
       </form>
-      <a href="#login" onClick={onSwitchToLogin}>Iniciar Sesión</a>
+      <a href="#login" onClick={onSwitchToLogin}>
+        Iniciar Sesión
+      </a>
     </div>
   );
 };

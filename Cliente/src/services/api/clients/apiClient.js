@@ -7,6 +7,11 @@ import { authService } from "../../auth";
 import { handleErrorResponse, handleApiResponse } from "../utils/httpUtils";
 import { ApiError } from "../utils/apiError";
 
+/**
+ * HTTP API client with request management and error handling
+ * @class ApiClient
+ * @description Handles all API communications with retry logic, token refresh, and error management
+ */
 class ApiClient {
   constructor() {
     this.baseURL = API_CONFIG.BASE_URL;
@@ -15,6 +20,14 @@ class ApiClient {
     this.authErrorHandled = false;
   }
 
+  /**
+   * Main request method with request deduplication
+   * @async
+   * @function request
+   * @param {string} url - API endpoint URL
+   * @param {Object} options - Fetch options
+   * @returns {Promise<Object>} API response data
+   */
   async request(url, options = {}) {
     const requestKey = this.generateRequestKey(url, options);
 
@@ -33,6 +46,15 @@ class ApiClient {
     }
   }
 
+  /**
+   * Executes API request with error handling and token refresh
+   * @async
+   * @function executeRequest
+   * @param {string} url - API endpoint URL
+   * @param {Object} options - Fetch options
+   * @returns {Promise<Object>} API response data
+   * @throws {ApiError} When request fails
+   */
   async executeRequest(url, options) {
     try {
       const response = await this.makeRequest(url, options);
@@ -71,6 +93,15 @@ class ApiClient {
     }
   }
 
+  /**
+   * Handles access token refresh and request retry
+   * @async
+   * @function handleTokenRefresh
+   * @param {string} url - Original request URL
+   * @param {Object} options - Original request options
+   * @returns {Promise<Object>} Retried request result
+   * @throws {ApiError} When token refresh fails
+   */
   async handleTokenRefresh(url, options) {
     try {
       console.log("Renovando access token");
@@ -98,6 +129,15 @@ class ApiClient {
     }
   }
 
+  /**
+   * Makes actual HTTP request with timeout
+   * @async
+   * @function makeRequest
+   * @param {string} url - API endpoint URL
+   * @param {Object} options - Fetch options
+   * @returns {Promise<Response>} Fetch response
+   * @throws {ApiError} When request fails
+   */
   async makeRequest(url, options) {
     const defaultOptions = {
       credentials: "include",
@@ -150,6 +190,11 @@ class ApiClient {
     }
   }
 
+  /**
+   * Handles persistent authentication errors and dispatches session expired event
+   * @function handlePersistentAuthError
+   * @param {ApiError} error - Authentication error
+   */
   handlePersistentAuthError(error) {
     if (this.authErrorHandled) return;
 
@@ -176,16 +221,33 @@ class ApiClient {
     }, 2000);
   }
 
+  /**
+   * Generates unique key for request deduplication
+   * @function generateRequestKey
+   * @param {string} url - Request URL
+   * @param {Object} options - Request options
+   * @returns {string} Unique request key
+   */
   generateRequestKey(url, options) {
     const method = options.method || "GET";
     const body = options.body ? JSON.stringify(options.body) : "";
     return `${method}:${url}:${body}`;
   }
 
+  /**
+   * Resets retry counter
+   * @function resetRetryCount
+   */
   resetRetryCount() {
     this.retryCount = 0;
   }
 
+  /**
+   * Creates HTTP method wrapper with standardized configuration
+   * @function createHttpMethod
+   * @param {string} method - HTTP method (GET, POST, PUT, PATCH, DELETE)
+   * @returns {Function} Configured HTTP method function
+   */
   createHttpMethod(method) {
     return async (url, data = null, options = {}) => {
       const config = {

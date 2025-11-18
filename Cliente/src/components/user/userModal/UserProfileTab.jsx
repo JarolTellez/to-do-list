@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
 
+/**
+ * User profile editing tab
+ * @component UserProfileTab
+ * @description Handles user profile information updates
+ * @param {Object} props - Component properties
+ * @param {Object} props.user - Current user data
+ * @param {Function} props.onUpdateProfile - Profile update callback
+ * @param {boolean} props.loading - Loading state
+ * @returns {JSX.Element} Profile editing form
+ */
 const UserProfileTab = ({ user, onUpdateProfile, loading }) => {
   const [formData, setFormData] = useState({
     username: "",
@@ -14,6 +24,12 @@ const UserProfileTab = ({ user, onUpdateProfile, loading }) => {
     });
   }, [user]);
 
+  /**
+   * Validates form data
+   * @function validateForm
+   * @param {Object} data - Form data to validate
+   * @returns {Object} Validation errors object
+   */
   const validateForm = (data) => {
     const errors = {};
     if (!data.username?.trim())
@@ -25,6 +41,13 @@ const UserProfileTab = ({ user, onUpdateProfile, loading }) => {
     return errors;
   };
 
+  /**
+   * Handles form submission
+   * @async
+   * @function handleSubmit
+   * @param {Event} e - Form submission event
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormErrors({});

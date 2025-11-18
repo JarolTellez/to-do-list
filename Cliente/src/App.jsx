@@ -6,6 +6,12 @@ import AppRouter from "./routers/AppRouter";
 import FullScreenLoader from "./components/common/FullScreenLoader";
 import "./styles/main.css";
 
+/**
+ * Application content component that handles full-screen loading states
+ * @component AppContent
+ * @description Renders the main app content with loading state management
+ * @returns {JSX.Element} The application content with conditional loader
+ */
 function AppContent() {
   const { isFullScreenLoading } = useLoading();
 
@@ -17,6 +23,12 @@ function AppContent() {
   );
 }
 
+/**
+ * Main application component that provides global context providers
+ * @component App
+ * @description Root component that wraps the entire application with necessary context providers
+ * @returns {JSX.Element} The main application structure
+ */
 function App() {
   return (
     <LoadingProvider>

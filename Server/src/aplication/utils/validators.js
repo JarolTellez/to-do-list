@@ -1,8 +1,24 @@
+/**
+ * Generic validator for application layer data validation
+ * @class Validator
+ * @description Provides common validation methods for request data and parameters.
+ */
 class Validator {
+  /**
+   * Creates a new Validator instance
+   * @constructor
+   * @param {ErrorFactory} errorFactory - Error factory for creating validation errors
+   */
   constructor(errorFactory) {
     this.errorFactory = errorFactory;
   }
 
+  /**
+   * Validates that all required fields are present and non-empty in an object
+   * @param {Array<string>} fields - Array of field names to validate
+   * @param {Object} object - Object containing the fields to check
+   * @throws {ValidationError} When one or more required fields are missing or empty
+   */
   validateRequired(fields, object) {
     const missing = [];
     const details = {};
@@ -22,6 +38,20 @@ class Validator {
     }
   }
 
+  /**
+   * Validates text fields with comprehensive constraints
+   * @param {string} value - Text value to validate
+   * @param {string} fieldName - Name of the field for error messages
+   * @param {Object} [options={}] - Validation options
+   * @param {number} [options.minLength] - Minimum length requirement
+   * @param {number} [options.maxLength] - Maximum length requirement
+   * @param {boolean} [options.required=true] - Whether field is required
+   * @param {boolean} [options.trim=true] - Whether to trim whitespace
+   * @param {RegExp} [options.pattern] - Regex pattern for format validation
+   * @param {string} [options.patternDescription] - Description of expected pattern
+   * @returns {string} Validated and potentially trimmed text value
+   * @throws {ValidationError} When validation constraints are not met
+   */
   validateText(value, fieldName, options = {}) {
     const {
       minLength,
@@ -29,7 +59,7 @@ class Validator {
       required = true,
       trim = true,
       pattern,
-      patternDescription
+      patternDescription,
     } = options;
 
     if (required && (!value || value.toString().trim() === "")) {
@@ -48,10 +78,10 @@ class Validator {
     if (minLength !== undefined && textValue.length < minLength) {
       throw this.errorFactory.createValidationError(
         `${fieldName} debe tener al menos ${minLength} caracteres`,
-        { 
-          field: fieldName, 
+        {
+          field: fieldName,
           currentLength: textValue.length,
-          minRequired: minLength 
+          minRequired: minLength,
         }
       );
     }
@@ -59,20 +89,22 @@ class Validator {
     if (maxLength !== undefined && textValue.length > maxLength) {
       throw this.errorFactory.createValidationError(
         `${fieldName} no puede exceder ${maxLength} caracteres`,
-        { 
-          field: fieldName, 
+        {
+          field: fieldName,
           currentLength: textValue.length,
-          maxAllowed: maxLength 
+          maxAllowed: maxLength,
         }
       );
     }
 
     if (pattern && !pattern.test(textValue)) {
       throw this.errorFactory.createValidationError(
-        `${fieldName} tiene un formato inválido. ${patternDescription || "No cumple con el patrón requerido"}`,
-        { 
+        `${fieldName} tiene un formato inválido. ${
+          patternDescription || "No cumple con el patrón requerido"
+        }`,
+        {
           field: fieldName,
-          patternDescription: patternDescription 
+          patternDescription: patternDescription,
         }
       );
     }
@@ -80,6 +112,11 @@ class Validator {
     return textValue;
   }
 
+  /**
+   * Validates email format using standard email regex
+   * @param {string} email - Email address to validate
+   * @returns {boolean} True if email format is valid
+   */
   isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);

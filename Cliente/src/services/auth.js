@@ -1,7 +1,21 @@
 import { apiClient } from "./api/clients/apiClient.js";
 import { userMappers } from "../mappers/userMapper.js";
 
+/**
+ * Authentication service for handling user authentication operations
+ * @class AuthService
+ * @description Manages user login, logout, session verification, and registration
+ */
 export class AuthService {
+  /**
+   * Authenticates user with credentials
+   * @async
+   * @function login
+   * @param {string} username - User username
+   * @param {string} password - User password
+   * @returns {Promise<Object>} Authentication response with user data and tokens
+   * @throws {Error} When authentication fails
+   */
   async login(username, password) {
     try {
       const userLoginDTO = userMappers.inputToLoginDTO({
@@ -32,6 +46,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * Logs out current user session
+   * @async
+   * @function logout
+   * @returns {Promise<Object>} Logout result
+   * @throws {Error} When logout fails
+   */
   async logout() {
     try {
       const response = await apiClient.api.post("/auth/logout");
@@ -51,6 +72,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * Verifies current user session validity
+   * @async
+   * @function verifySession
+   * @returns {Promise<Object>} Session verification result
+   * @throws {Error} When session verification fails
+   */
   async verifySession() {
     try {
       const response = await apiClient.api.get("/auth/verify-session");
@@ -78,6 +106,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * Refreshes access token using refresh token
+   * @async
+   * @function refreshAccessToken
+   * @returns {Promise<Object>} Token refresh result
+   * @throws {Error} When token refresh fails
+   */
   async refreshAccessToken() {
     try {
       const response = await apiClient.api.post("/auth/refresh-access-token");
@@ -88,6 +123,14 @@ export class AuthService {
     }
   }
 
+  /**
+   * Registers new user account
+   * @async
+   * @function register
+   * @param {Object} userData - User registration data
+   * @returns {Promise<Object>} Registration result with user data
+   * @throws {Error} When registration fails
+   */
   async register(userData) {
     try {
       const registerDTO = userMappers.inputToRegisterDTO(userData);

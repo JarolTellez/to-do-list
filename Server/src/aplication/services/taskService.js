@@ -1,4 +1,28 @@
+/**
+ * Task management service for handling task operations
+ * @class TaskService
+ * @description Manages task creation, updates, retrieval, and business logic
+ */
 class TaskService {
+  /**
+   * Creates a new TaskService instance
+   * @constructor
+   * @param {Object} dependencies - Service dependencies
+   * @param {TaskDAO} dependencies.taskDAO - Task data access object
+   * @param {Object} dependencies.taskMapper - Task mapper for data transformation
+   * @param {Object} dependencies.taskTagMapper - TaskTag mapper for data transformation
+   * @param {Object} dependencies.userTagMapper - UserTag mapper for data transformation
+   * @param {TagService} dependencies.tagService - Tag service instance
+   * @param {UserService} dependencies.userService - User service instance
+   * @param {Object} dependencies.dbManager - Database manager for transactions
+   * @param {ErrorFactory} dependencies.errorFactory - Error factory instance
+   * @param {Validator} dependencies.validator - Validation utility
+   * @param {SortValidator} dependencies.sortValidator - Sort parameter validator
+   * @param {Object} dependencies.appConfig - Application configuration
+   * @param {PaginationHelper} dependencies.paginationHelper - Pagination utility
+   * @param {Object} dependencies.paginationConfig - Pagination configuration
+   * @param {ErrorMapper} dependencies.errorMapper - Error mapping utility
+   */
   constructor({
     taskDAO,
     taskMapper,
@@ -33,6 +57,12 @@ class TaskService {
     this.errorMapper = errorMapper;
   }
 
+  /**
+   * Creates a new task
+   * @param {Object} createTaskRequestDTO - Task creation data transfer object
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Created task object
+   */
   async createTask(createTaskRequestDTO, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["userId", "name"], createTaskRequestDTO);
@@ -91,6 +121,12 @@ class TaskService {
     });
   }
 
+  /**
+   * Updates existing task
+   * @param {Object} updateTaskRequestDTO - Task update data transfer object
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Updated task object
+   */
   async updateTask(updateTaskRequestDTO, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["id", "userId"], updateTaskRequestDTO);
@@ -176,6 +212,13 @@ class TaskService {
     });
   }
 
+  /**
+   * Deletes a task
+   * @param {string} taskId - Task identifier
+   * @param {string} userId - User identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Deletion result
+   */
   async deleteTask(taskId, userId, externalDbClient = null) {
     this.validator.validateRequired(["taskId", "userId"], { taskId, userId });
     return this.dbManager.withTransaction(async (dbClient) => {
@@ -212,6 +255,15 @@ class TaskService {
     }, externalDbClient);
   }
 
+  /**
+   * Marks task as completed or incomplete
+   * @param {Object} completionData - Task completion data
+   * @param {string} completionData.taskId - Task identifier
+   * @param {boolean} completionData.completed - Completion status
+   * @param {string} completionData.userId - User identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Updated task object
+   */
   async completeTask({ taskId, completed, userId }, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.withTransaction(async (dbClient) => {
@@ -250,6 +302,13 @@ class TaskService {
     });
   }
 
+  /**
+   * Retrieves task by ID and user ID
+   * @param {string} taskId - Task identifier
+   * @param {string} userId - User identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Task object
+   */
   async getTaskById(taskId, userId, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["taskId", "userId"], { taskId, userId });
@@ -274,6 +333,14 @@ class TaskService {
     });
   }
 
+  /**
+   * Retrieves tasks filtered by tags
+   * @param {string} userId - User identifier
+   * @param {Array} tagNames - Array of tag names to filter by
+   * @param {Object} [options={}] - Filtering and pagination options
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Array>} Array of filtered task objects
+   */
   async getTasksByTags(
     userId,
     tagNames,
@@ -301,6 +368,13 @@ class TaskService {
     });
   }
 
+  /**
+   * Retrieves all tasks for a user with pagination and filtering
+   * @param {string} userId - User identifier
+   * @param {Object} [options={}] - Pagination, sorting and filtering options
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Paginated list of user tasks with statistics
+   */
   async getAllTasksByUserId(userId, options = {}, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {

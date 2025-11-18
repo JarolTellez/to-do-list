@@ -7,6 +7,18 @@ import ConfirmModal from "../common/ConfirmModal";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { useTags } from "../../hooks/useTags";
 
+/**
+ * Task creation/editing modal component
+ * @component TaskModal
+ * @description Handles task creation and editing with form validation
+ * @param {Object} props - Component properties
+ * @param {Object} props.task - Task data for editing (null for creation)
+ * @param {Function} props.onClose - Modal close callback
+ * @param {Function} props.onSave - Task save callback
+ * @param {Function} props.onDelete - Task delete callback
+ * @param {boolean} props.isEditing - Whether in edit mode
+ * @returns {JSX.Element} Task modal interface
+ */
 const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
   const { showToast } = useToast();
   const { user } = useAuthContext();
@@ -72,6 +84,11 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
     setDescriptionError("");
   }, [task]);
 
+  /**
+   * Validates form data
+   * @function validateForm
+   * @returns {boolean} Whether form is valid
+   */
   const validateForm = () => {
     let isValid = true;
 
@@ -95,6 +112,11 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
     return isValid;
   };
 
+  /**
+   * Handles priority level selection
+   * @function handlePriorityChange
+   * @param {number} priorityNumber - Priority level (1-5)
+   */
   const handlePriorityChange = (priorityNumber) => {
     setFormData((prev) => ({
       ...prev,
@@ -105,6 +127,13 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
     }));
   };
 
+  /**
+   * Handles form submission
+   * @async
+   * @function handleSubmit
+   * @param {Event} e - Form submission event
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -167,6 +196,10 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
     }
   };
 
+  /**
+   * Handles task deletion with confirmation
+   * @function handleDelete
+   */
   const handleDelete = async () => {
     setConfirmModal({
       isOpen: true,
@@ -196,6 +229,10 @@ const TaskModal = ({ task, onClose, onSave, onDelete, isEditing }) => {
     });
   };
 
+  /**
+   * Clears form or deletes task based on mode
+   * @function handleClear
+   */
   const handleClear = () => {
     if (isEditing) {
       handleDelete();

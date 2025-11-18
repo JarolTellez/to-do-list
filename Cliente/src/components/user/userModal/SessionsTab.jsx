@@ -2,16 +2,25 @@ import React, { useRef } from "react";
 import { useSessions } from "../../../hooks/useSessions";
 import InfiniteScrollList from "../../common/InfiniteScrollList";
 
+/**
+ * Active sessions management tab
+ * @component SessionsTab
+ * @description Displays and manages user's active sessions
+ * @param {Object} props - Component properties
+ * @param {Function} props.onCloseAllSessions - Close all sessions callback
+ * @returns {JSX.Element} Sessions management interface
+ */
 const SessionsTab = ({ onCloseAllSessions }) => {
-  const { 
-    sessions, 
-    loading, 
-    loadingMore, 
-    hasMore, 
-    loadMoreSessions 
-  } = useSessions();
+  const { sessions, loading, loadingMore, hasMore, loadMoreSessions } =
+    useSessions();
   const scrollContainerRef = useRef(null);
 
+  /**
+   * Formats date for display
+   * @function formatDate
+   * @param {string} dateString - ISO date string
+   * @returns {string} Formatted date string
+   */
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("es-ES", {
       year: "numeric",
@@ -22,6 +31,12 @@ const SessionsTab = ({ onCloseAllSessions }) => {
     });
   };
 
+  /**
+   * Parses user agent string to readable format
+   * @function formatUserAgent
+   * @param {string} userAgent - Raw user agent string
+   * @returns {string} Formatted platform information
+   */
   const formatUserAgent = (userAgent) => {
     if (!userAgent) return "Desconocido";
 
@@ -57,6 +72,12 @@ const SessionsTab = ({ onCloseAllSessions }) => {
     return `${browser} • ${os} • ${device}`;
   };
 
+  /**
+   * Renders individual session item
+   * @function renderSessionItem
+   * @param {Object} session - Session data object
+   * @returns {JSX.Element} Rendered session item
+   */
   const renderSessionItem = (session) => (
     <div
       key={session.id}
