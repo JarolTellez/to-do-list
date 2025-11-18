@@ -11,6 +11,12 @@ import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import Principal from "../pages/tasks/Principal";
 
+/**
+ * Main application router component
+ * @component AppRouter
+ * @description Handles application routing and route protection
+ * @returns {JSX.Element} Application router
+ */
 const AppRouter = () => {
   const { user, isAuthenticated, loading, logout } = useAuthContext();
 

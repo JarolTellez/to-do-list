@@ -8,6 +8,12 @@ import { PAGINATION_CONFIG } from "../utils/constants/paginationConstants";
 
 const SESSIONS_PAGINATION = PAGINATION_CONFIG.SESSIONS;
 
+/**
+ * User sessions management hook
+ * @hook useSessions
+ * @description Manages user session data with pagination
+ * @returns {Object} Sessions state and methods
+ */
 export const useSessions = () => {
   const [state, setState] = useState({
     sessions: [],
@@ -19,6 +25,15 @@ export const useSessions = () => {
     totalSessions: 0,
   });
 
+  /**
+   * Loads user sessions with pagination
+   * @async
+   * @function loadSessions
+   * @param {number} page - Page number to load
+   * @param {number} limit - Number of items per page
+   * @param {boolean} isLoadMore - Whether loading more items
+   * @returns {Promise<void>}
+   */
   const loadSessions = useCallback(async (page, limit, isLoadMore = false) => {
     try {
       setState((prev) => ({
@@ -67,6 +82,12 @@ export const useSessions = () => {
     }
   }, []);
 
+  /**
+   * Loads more sessions for infinite scroll
+   * @async
+   * @function loadMoreSessions
+   * @returns {Promise<void>}
+   */
   const loadMoreSessions = useCallback(async () => {
     if (state.loadingMore || !state.hasMore || state.loading) {
       return;
@@ -85,6 +106,12 @@ export const useSessions = () => {
     loadSessions,
   ]);
 
+  /**
+   * Refreshes sessions data
+   * @async
+   * @function refreshSessions
+   * @returns {Promise<void>}
+   */
   const refreshSessions = useCallback(async () => {
     await loadSessions(
       SESSIONS_PAGINATION.INITIAL_PAGE,
@@ -99,6 +126,12 @@ export const useSessions = () => {
     );
   }, [loadSessions]);
 
+  /**
+   * Closes all active sessions
+   * @async
+   * @function handleCloseAllSessions
+   * @returns {Promise<void>}
+   */
   const handleCloseAllSessions = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
@@ -119,6 +152,13 @@ export const useSessions = () => {
     }
   }, [loadSessions]);
 
+  /**
+   * Closes specific session
+   * @async
+   * @function handleCloseSession
+   * @param {string} sessionId - Session ID to close
+   * @returns {Promise<void>}
+   */
   const handleCloseSession = useCallback(
     async (sessionId) => {
       const previousSessions = state.sessions;

@@ -1,4 +1,26 @@
+/**
+ * User management service for handling user operations
+ * @class UserService
+ * @description Manages user registration, updates, authentication, and profile operations
+ */
 class UserService {
+  /**
+   * Creates a new UserService instance
+   * @constructor
+   * @param {Object} dependencies - Service dependencies
+   * @param {UserDAO} dependencies.userDAO - User data access object
+   * @param {TaskDAO} dependencies.taskDAO - Task data access object
+   * @param {TagService} dependencies.tagService - Tag service instance
+   * @param {AuthService} dependencies.authService - Auth service instance
+   * @param {Object} dependencies.dbManager - Database manager for transactions
+   * @param {Object} dependencies.bcrypt - Password hashing library
+   * @param {ErrorFactory} dependencies.errorFactory - Error factory instance
+   * @param {Validator} dependencies.validator - Validation utility
+   * @param {Object} dependencies.userMapper - User mapper for data transformation
+   * @param {PaginationHelper} dependencies.paginationHelper - Pagination utility
+   * @param {ErrorMapper} dependencies.errorMapper - Error mapping utility
+   * @param {Object} dependencies.validationConfig - Validation configuration
+   */
   constructor({
     userDAO,
     taskDAO,
@@ -11,7 +33,7 @@ class UserService {
     userMapper,
     paginationHelper,
     errorMapper,
-    validationConfig
+    validationConfig,
   }) {
     this.dbManager = dbManager;
     this.userDAO = userDAO;
@@ -27,6 +49,12 @@ class UserService {
     this.validationConfig = validationConfig;
   }
 
+  /**
+   * Creates a new user
+   * @param {Object} createUserRequestDTO - User creation data transfer object
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Created user response object
+   */
   async createUser(createUserRequestDTO, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(
@@ -92,6 +120,12 @@ class UserService {
     });
   }
 
+  /**
+   * Updates existing user
+   * @param {Object} updateUserRequestDTO - User update data transfer object
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Updated user with change information
+   */
   async updateUser(updateUserRequestDTO, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["id"], updateUserRequestDTO);
@@ -111,7 +145,10 @@ class UserService {
             }
           );
         }
-           if (updateUserRequestDTO.email==existingUser.email && updateUserRequestDTO.username==existingUser.username) {
+        if (
+          updateUserRequestDTO.email == existingUser.email &&
+          updateUserRequestDTO.username == existingUser.username
+        ) {
           throw this.errorFactory.createValidationError(
             "Los datos nuevos deben ser diferentes a los actuales",
             {
@@ -198,6 +235,12 @@ class UserService {
     });
   }
 
+  /**
+   * Detects critical changes in user data that require session invalidation
+   * @param {Object} existingUser - Current user object
+   * @param {Object} updateData - New user data
+   * @returns {Object} Critical changes detection result
+   */
   detectCriticalChanges(existingUser, updateData) {
     const changes = {
       emailChanged: updateData.email && updateData.email !== existingUser.email,
@@ -212,6 +255,12 @@ class UserService {
     return changes;
   }
 
+  /**
+   * Updates user password with security validation
+   * @param {Object} updatePasswordRequestDTO - Password update data
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Password update result
+   */
   async updateUserPassword(updatePasswordRequestDTO, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(
@@ -241,14 +290,11 @@ class UserService {
           );
         }
 
-         const isSamePassword = await this.bcrypt.compare(
+        const isSamePassword = await this.bcrypt.compare(
           updatePasswordRequestDTO.newPassword,
           user.password
         );
-        console.log("NUEVA: ", isSamePassword);
-
         if (isSamePassword) {
-           console.log("entro");
           throw this.errorFactory.createValidationError(
             "La nueva contraseña debe ser diferente a la actual",
             {
@@ -293,6 +339,13 @@ class UserService {
     });
   }
 
+  /**
+   * Deletes user account
+   * @param {string} userId - User identifier to delete
+   * @param {string} requestingUserId - ID of user making the request
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Deletion result
+   */
   async deleteUser(userId, requestingUserId, externalDbClient = null) {
     this.validator.validateRequired(["userId", "requestingUserId"], {
       userId,
@@ -328,6 +381,13 @@ class UserService {
     }, externalDbClient);
   }
 
+  /**
+   * Assigns tags to user
+   * @param {string} userId - User identifier
+   * @param {Array} tagNames - Array of tag names to assign
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} User object with assigned tags
+   */
   async assignTagsToUser(userId, tagNames, externalDbClient = null) {
     this.validator.validateRequired(["userId", "tagNames"], {
       userId,
@@ -358,6 +418,13 @@ class UserService {
     }, externalDbClient);
   }
 
+  /**
+   * Removes tags from user
+   * @param {string} userId - User identifier
+   * @param {Array} tagNames - Array of tag names to remove
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<boolean>} Removal success status
+   */
   async removeTagsFromUser(userId, tagNames, externalDbClient = null) {
     this.validator.validateRequired(["userId", "tagNames"], {
       userId,
@@ -377,6 +444,12 @@ class UserService {
     }, externalDbClient);
   }
 
+  /**
+   * Validates user credentials for authentication
+   * @param {Object} loginRequestDTO - Login credentials data transfer object
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Authenticated user object
+   */
   async validateCredentials(loginRequestDTO, externalDbClient = null) {
     this.validator.validateRequired(
       ["identifier", "password"],
@@ -424,6 +497,12 @@ class UserService {
     }, externalDbClient);
   }
 
+  /**
+   * Retrieves user by email
+   * @param {string} email - User email address
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} User object
+   */
   async getByEmail(email, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {
@@ -442,6 +521,12 @@ class UserService {
     });
   }
 
+  /**
+   * Retrieves user by ID
+   * @param {string} userId - User identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} User object
+   */
   async getById(userId, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {
@@ -457,6 +542,12 @@ class UserService {
     });
   }
 
+  /**
+   * Retrieves user with associated tags
+   * @param {string} userId - User identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} User object with tags
+   */
   async getUserWithTags(userId, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["userId"], { userId });
@@ -475,6 +566,14 @@ class UserService {
       }, externalDbClient);
     });
   }
+
+  /**
+   * Checks if user has specific tags
+   * @param {string} userId - User identifier
+   * @param {Array} tagNames - Array of tag names to check
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Array>} Array of tag names that user has
+   */
   async hasTags(userId, tagNames, externalDbClient = null) {
     this.validator.validateRequired(["userId", "tagNames"], {
       userId,
@@ -495,6 +594,13 @@ class UserService {
     }, externalDbClient);
   }
 
+  /**
+   * Ensures user has specific tags, assigns them if missing
+   * @param {string} userId - User identifier
+   * @param {Array} tagIds - Array of tag identifiers
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<void>}
+   */
   async ensureUserHasTags(userId, tagIds, externalDbClient = null) {
     return this.dbManager.withTransaction(async (dbClient) => {
       if (!tagIds || tagIds.length === 0) {
@@ -532,6 +638,13 @@ class UserService {
     }, externalDbClient);
   }
 
+  /**
+   * Processes mixed tags for task assignment
+   * @param {string} userId - User identifier
+   * @param {Array} mixedTags - Array of mixed tag objects
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Array>} Array of processed tag IDs
+   */
   async processMixedTagsForTask(userId, mixedTags, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.withTransaction(async (dbClient) => {
@@ -555,6 +668,12 @@ class UserService {
     });
   }
 
+  /**
+   * Validates user existence by ID
+   * @param {string} userId - User identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} User object if exists
+   */
   async validateUserExistenceById(userId, externalDbClient = null) {
     this.validator.validateRequired(["userId"], { userId });
     return this.dbManager.forRead(async (dbClient) => {
@@ -568,6 +687,14 @@ class UserService {
       return user;
     }, externalDbClient);
   }
+
+  /**
+   * Validates that user owns all specified tags
+   * @param {string} userId - User identifier
+   * @param {Array} tagIds - Array of tag identifiers to validate
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<boolean>} True if user owns all tags
+   */
   async validateUserOwnsTags(userId, tagIds, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {

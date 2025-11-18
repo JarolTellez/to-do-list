@@ -1,6 +1,25 @@
 import React, { useRef } from 'react';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
+/**
+ * Infinite scroll list component for handling large datasets
+ * @component InfiniteScrollList
+ * @description Implements infinite scrolling with loading states and empty states
+ * @param {Object} props - Component properties
+ * @param {Array} props.items - Array of items to render
+ * @param {Function} props.renderItem - Function to render individual items
+ * @param {boolean} props.loading - Initial loading state
+ * @param {boolean} props.loadingMore - Loading more items state
+ * @param {boolean} props.hasMore - Whether more items are available
+ * @param {Function} props.onLoadMore - Callback to load more items
+ * @param {string} props.emptyMessage - Message when no items are available
+ * @param {string} props.loadingMessage - Message during initial load
+ * @param {string} props.loadingMoreMessage - Message during additional loading
+ * @param {string} props.className - Additional CSS classes
+ * @param {string} props.listClassName - CSS classes for list container
+ * @param {Object} props.scrollContainerRef - Optional scroll container reference
+ * @returns {JSX.Element} Infinite scroll list interface
+ */
 const InfiniteScrollList = ({
   items,
   renderItem,

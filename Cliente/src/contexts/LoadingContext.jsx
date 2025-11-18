@@ -10,6 +10,14 @@ export const useLoading = () => {
   return context;
 };
 
+/**
+ * Loading state management context
+ * @context LoadingProvider
+ * @description Manages global loading states for full-screen and inline loaders
+ * @param {Object} props - Component properties
+ * @param {ReactNode} props.children - Child components
+ * @returns {JSX.Element} Loading context provider
+ */
 export const LoadingProvider = ({ children }) => {
   const [fullScreenLoading, setFullScreenLoading] = useState({
     isLoading: false,
@@ -22,6 +30,12 @@ export const LoadingProvider = ({ children }) => {
     message: "",
   });
 
+  /**
+   * Starts full-screen loading with custom messages
+   * @function startFullScreenLoading
+   * @param {string} message - Primary loading message
+   * @param {string} subMessage - Secondary loading message
+   */
   const startFullScreenLoading = useCallback(
     (message = "Procesando...", subMessage = "Por favor, espera") => {
       setFullScreenLoading({
@@ -33,6 +47,10 @@ export const LoadingProvider = ({ children }) => {
     []
   );
 
+  /**
+   * Stops full-screen loading
+   * @function stopFullScreenLoading
+   */
   const stopFullScreenLoading = useCallback(() => {
     setFullScreenLoading({
       isLoading: false,
@@ -41,6 +59,11 @@ export const LoadingProvider = ({ children }) => {
     });
   }, []);
 
+  /**
+   * Starts inline loading with message
+   * @function startInlineLoading
+   * @param {string} message - Loading message
+   */
   const startInlineLoading = useCallback((message = "") => {
     setInlineLoading({
       isLoading: true,
@@ -48,6 +71,10 @@ export const LoadingProvider = ({ children }) => {
     });
   }, []);
 
+  /**
+   * Stops inline loading
+   * @function stopInlineLoading
+   */
   const stopInlineLoading = useCallback(() => {
     setInlineLoading({
       isLoading: false,

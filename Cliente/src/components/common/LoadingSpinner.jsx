@@ -2,6 +2,17 @@ import React from "react";
 import { useLoading } from "../../contexts/LoadingContext";
 import "../../styles/components/common/loadingSpinner.css";
 
+/**
+ * Reusable loading spinner component
+ * @component LoadingSpinner
+ * @description Displays loading spinner in various sizes and configurations
+ * @param {Object} props - Component properties
+ * @param {string} props.message - Loading message text
+ * @param {string} props.subMessage - Secondary message text
+ * @param {string} props.size - Spinner size (small, medium, large)
+ * @param {boolean} props.inline - Whether to display inline
+ * @returns {JSX.Element} Loading spinner component
+ */
 const LoadingSpinner = ({
   message,
   subMessage,

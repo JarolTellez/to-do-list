@@ -5,7 +5,22 @@ const {
 } = require("../config/cookiesConfig");
 
 const { clearAuthCookies } = require("../utils/cookieUtils");
+
+/**
+ * Authentication controller for handling auth-related API endpoints
+ * @class AuthController
+ * @description Handles user authentication, session management, and token operations
+ */
 class AuthController {
+  /**
+   * Creates a new AuthController instance
+   * @constructor
+   * @param {Object} dependencies - Controller dependencies
+   * @param {AuthService} dependencies.authService - Authentication service instance
+   * @param {Object} dependencies.userMapper - User mapper for data transformation
+   * @param {Object} dependencies.sessionMapper - Session mapper for data transformation
+   * @param {ErrorFactory} dependencies.errorFactory - Error factory instance
+   */
   constructor({ authService, userMapper, sessionMapper, errorFactory }) {
     this.authService = authService;
     this.userMapper = userMapper;
@@ -13,6 +28,13 @@ class AuthController {
     this.errorFactory = errorFactory;
   }
 
+  /**
+   * Handles user login authentication
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with authentication result
+   */
   async login(req, res, next) {
     try {
       const userAgent = req.headers["user-agent"];
@@ -41,6 +63,13 @@ class AuthController {
     }
   }
 
+  /**
+   * Handles user logout and session termination
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with logout result
+   */
   async logOut(req, res, next) {
     try {
       const refreshTokenExistente = req.cookies.refreshToken;
@@ -66,6 +95,13 @@ class AuthController {
     }
   }
 
+  /**
+   * Handles access token refresh
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with new access token
+   */
   async refreshAccessToken(req, res, next) {
     try {
       const { userId, sessionId } = req.user;
@@ -89,62 +125,86 @@ class AuthController {
     }
   }
 
+  /**
+   * Verifies current user session validity
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with session verification result
+   */
   async verifySession(req, res, next) {
-  try {
-    const accessToken = req.cookies.accessToken;
-    const refreshToken = req.cookies.refreshToken;
+    try {
+      const accessToken = req.cookies.accessToken;
+      const refreshToken = req.cookies.refreshToken;
 
-    if (!refreshToken) {
-      return res.status(200).json({
-        success: true,
-        message: "No hay sesión activa",
-        isAuthenticated: false,
-        data: null,
-        tokenRefreshed: false
-      });
-    }
-
-    const result = await this.authService.verifyUserSession({
-      accessToken,
-      refreshToken,
-    });
-
-    if (result.isAuthenticated) {
-      const mappedUser = this.userMapper.domainToResponse(result.user);
-      if (result.newAccessToken) {
-        res.cookie("accessToken", result.newAccessToken, ACCESS_TOKEN_OPTIONS);
+      if (!refreshToken) {
+        return res.status(200).json({
+          success: true,
+          message: "No hay sesión activa",
+          isAuthenticated: false,
+          data: null,
+          tokenRefreshed: false,
+        });
       }
 
-      return res.status(200).json({
-        success: true,
-        message: "Sesión activa",
-        isAuthenticated: true,
-        data: mappedUser,
-        tokenRefreshed: !!result.newAccessToken,
+      const result = await this.authService.verifyUserSession({
+        accessToken,
+        refreshToken,
       });
-    } else {
-      clearAuthCookies(res);
+
+      if (result.isAuthenticated) {
+        const mappedUser = this.userMapper.domainToResponse(result.user);
+        if (result.newAccessToken) {
+          res.cookie(
+            "accessToken",
+            result.newAccessToken,
+            ACCESS_TOKEN_OPTIONS
+          );
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: "Sesión activa",
+          isAuthenticated: true,
+          data: mappedUser,
+          tokenRefreshed: !!result.newAccessToken,
+        });
+      } else {
+        clearAuthCookies(res);
+        return res.status(200).json({
+          success: true,
+          message: "Sesión no válida o expirada",
+          isAuthenticated: false,
+          data: null,
+          tokenRefreshed: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error en verifySession:", error);
+      if (
+        error.code === "AUTHENTICATION_ERROR" ||
+        error.code === "SESSION_EXPIRED" ||
+        error.code === "INVALID_TOKEN"
+      ) {
+        clearAuthCookies(res);
+      }
       return res.status(200).json({
         success: true,
-        message: "Sesión no válida o expirada",
+        message: "Error verificando sesión",
         isAuthenticated: false,
         data: null,
-        tokenRefreshed: false
+        tokenRefreshed: false,
       });
     }
-  } catch (error) {
-    console.error("Error en verifySession:", error);
-    clearAuthCookies(res);
-    return res.status(200).json({
-      success: true,
-      message: "Error verificando sesión",
-      isAuthenticated: false,
-      data: null,
-      tokenRefreshed: false
-    });
   }
-}
 
+  /**
+   * Closes all active sessions for the current user
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with session closure result
+   */
   async closeAllUserSessions(req, res, next) {
     try {
       const userId = req.user.userId;
@@ -169,6 +229,13 @@ class AuthController {
     }
   }
 
+  /**
+   * Retrieves all active sessions for the current user
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with paginated session list
+   */
   async getUserActiveSessions(req, res, next) {
     try {
       const accessToken = req.cookies.accessToken;

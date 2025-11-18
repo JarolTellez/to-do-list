@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { authService } from "../services/auth";
 
+/**
+ * Authentication state management hook
+ * @hook useAuth
+ * @description Manages user authentication state, login, logout, and session verification
+ * @returns {Object} Authentication state and methods
+ */
 export const useAuth = () => {
   const [state, setState] = useState({
     user: null,
@@ -22,6 +28,12 @@ export const useAuth = () => {
     });
   }, []);
 
+  /**
+   * Verifies current user session
+   * @async
+   * @function verifySession
+   * @returns {Promise<Object>} Session verification result
+   */
   const verifySession = useCallback(async () => {
     try {
       updateState({ loading: true, error: null });
@@ -57,6 +69,14 @@ export const useAuth = () => {
     }
   }, [updateState]);
 
+  /**
+   * Handles user login
+   * @async
+   * @function login
+   * @param {string} username - User username
+   * @param {string} password - User password
+   * @returns {Promise<Object>} Login result
+   */
   const login = useCallback(
     async (username, password) => {
       try {
@@ -81,6 +101,13 @@ export const useAuth = () => {
     [updateState]
   );
 
+  /**
+   * Handles user registration
+   * @async
+   * @function register
+   * @param {Object} userData - User registration data
+   * @returns {Promise<Object>} Registration result
+   */
   const register = useCallback(
     async (userData) => {
       try {
@@ -99,6 +126,12 @@ export const useAuth = () => {
     [updateState]
   );
 
+  /**
+   * Handles user logout
+   * @async
+   * @function logout
+   * @returns {Promise<Object>} Logout result
+   */
   const logout = useCallback(async () => {
     try {
       const response = await authService.logout();

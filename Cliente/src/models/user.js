@@ -1,4 +1,23 @@
+/**
+ * User domain model
+ * @class User
+ * @description Represents an application user with profile and statistics
+ */
 export class User {
+  /**
+   * Creates a new User instance
+   * @constructor
+   * @param {string} id - User identifier
+   * @param {string} username - Username
+   * @param {string} email - Email address
+   * @param {string} rol - User role
+   * @param {string} createdAt - Creation timestamp
+   * @param {string} updatedAt - Last update timestamp
+   * @param {number} userTagsCount - Number of user tags
+   * @param {number} tasksCount - Number of tasks
+   * @param {Array} userTags - User tags array
+   * @param {Array} tasks - User tasks array
+   */
   constructor(
     id,
     username,
@@ -19,9 +38,14 @@ export class User {
     this.updatedAt = updatedAt ? new Date(updatedAt) : new Date();
     this.userTagsCount = userTagsCount;
     this.tasksCount = tasksCount;
-     this.userTags = userTags;
+    this.userTags = userTags;
     this.tasks = tasks;
   }
+  /**
+   * Validates user data
+   * @function validate
+   * @throws {Array} Array of validation errors
+   */
   validate() {
     const errors = [];
 
@@ -68,6 +92,11 @@ export class User {
     }
   }
 
+  /**
+   * Validates user data for registration
+   * @function validateForRegistration
+   * @throws {Array} Array of validation errors
+   */
   validateForRegistration() {
     const errors = [];
 
@@ -116,6 +145,11 @@ export class User {
     }
   }
 
+  /**
+   * Validates user data for update
+   * @function validateForUpdate
+   * @throws {Array} Array of validation errors
+   */
   validateForUpdate() {
     const errors = [];
 
@@ -157,18 +191,38 @@ export class User {
     }
   }
 
+  /**
+   * Gets display name for user
+   * @function getDisplayName
+   * @returns {string} Display name
+   */
   getDisplayName() {
     return this.username || this.email.split("@")[0];
   }
 
+  /**
+   * Checks if user has tags
+   * @function hasTags
+   * @returns {boolean} Whether user has tags
+   */
   hasTags() {
     return this.userTagsCount > 0 || this.userTags.length > 0;
   }
 
+  /**
+   * Checks if user has tasks
+   * @function hasTasks
+   * @returns {boolean} Whether user has tasks
+   */
   hasTasks() {
     return this.tasksCount > 0 || this.tasks.length > 0;
   }
 
+  /**
+   * Checks if user is admin
+   * @function isAdmin
+   * @returns {boolean} Whether user has admin role
+   */
   isAdmin() {
     return this.rol === "admin";
   }

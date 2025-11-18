@@ -7,6 +7,11 @@ const {
 const TaskTag = require("../entities/taskTag");
 const domainValidationConfig = require("../config/domainValidationConfig");
 
+/**
+ * Task domain entity representing user tasks with scheduling and categorization
+ * @class Task
+ * @description Manages task properties, validation, business rules, and tag associations
+ */
 class Task {
   #id;
   #name;
@@ -22,6 +27,22 @@ class Task {
   #config;
   #skipValidations;
 
+  /**
+   * Creates a new Task instance with validated properties
+   * @constructor
+   * @param {Object} taskData - Task initialization data
+   * @param {string|number} [taskData.id=null] - Unique task identifier
+   * @param {string} taskData.name - Task name/title
+   * @param {string} [taskData.description=""] - Task description
+   * @param {Date} [taskData.scheduledDate=null] - Scheduled date for task completion
+   * @param {Date} [taskData.createdAt=new Date()] - Task creation timestamp
+   * @param {Date} [taskData.updatedAt=new Date()] - Task last update timestamp
+   * @param {boolean} [taskData.isCompleted=false] - Task completion status
+   * @param {string|number} taskData.userId - User identifier who owns the task
+   * @param {number} [taskData.priority=null] - Task priority level
+   * @param {Array} [taskData.taskTags=[]] - Associated task tags collection
+   * @param {boolean} [taskData.skipValidations=false] - Skip business rule validations
+   */
   constructor({
     id = null,
     name,
@@ -73,6 +94,13 @@ class Task {
     }
   }
 
+  /**
+   * Validates task name format and length constraints
+   * @private
+   * @param {string} name - Task name to validate
+   * @returns {string} Validated task name
+   * @throws {ValidationError} When name format is invalid
+   */
   #validateName(name) {
     const validated = this.#validator.validateText(name, "name", {
       min: this.#config.NAME.MIN_LENGTH,
@@ -82,7 +110,13 @@ class Task {
     });
     return validated;
   }
-
+  /**
+   * Validates scheduled date is in the future for incomplete tasks
+   * @private
+   * @param {Date} scheduledDate - Scheduled date to validate
+   * @returns {Date|null} Validated scheduled date or null
+   * @throws {ValidationError} When date is in the past for incomplete task
+   */
   #validateScheduledDate(scheduledDate) {
     if (!scheduledDate) return null;
 
@@ -115,7 +149,13 @@ class Task {
 
     return date;
   }
-
+  /**
+   * Validates priority value is within allowed range
+   * @private
+   * @param {number} priority - Priority value to validate
+   * @returns {number|null} Validated priority or null
+   * @throws {ValidationError} When priority is outside valid range
+   */
   #validatePriority(priority) {
     if (priority === null || priority === undefined) return null;
 
@@ -154,7 +194,11 @@ class Task {
 
     return priorityNumber;
   }
-
+  /**
+   * Validates business rules for task consistency
+   * @private
+   * @throws {ValidationError} When business rules are violated
+   */
   #validateBusinessRules() {
     if (this.#skipValidations) return;
     if (
@@ -173,6 +217,13 @@ class Task {
     }
   }
 
+  /**
+   * Validates task tags collection format and limits
+   * @private
+   * @param {Array} taskTags - Task tags collection to validate
+   * @returns {Array} Validated task tags collection
+   * @throws {ValidationError} When tags exceed limits or have invalid format
+   */
   #validateTaskTags(taskTags) {
     if (!Array.isArray(taskTags)) {
       throw new InvalidFormatError("taskTags", "array", {
@@ -215,6 +266,10 @@ class Task {
     return [...taskTags];
   }
 
+  /**
+   * Marks task as completed and updates timestamp
+   * @throws {ValidationError} When task is already completed
+   */
   complete() {
     if (this.#isCompleted) {
       throw new ValidationError("La tarea ya está completada", {
@@ -227,21 +282,34 @@ class Task {
     this.#updatedAt = new Date();
   }
 
+  /**
+   * Marks task as incomplete and updates timestamp
+   */
   uncomplete() {
     this.#isCompleted = false;
     this.#updatedAt = new Date();
   }
-
+  /**
+   * Updates task priority with validation
+   * @param {number} newPriority - New priority value
+   */
   updatePriority(newPriority) {
     this.#priority = this.#validatePriority(newPriority);
     this.#updatedAt = new Date();
   }
-
+  /**
+   * Updates task name with validation
+   * @param {string} newName - New task name
+   */
   updateName(newName) {
     this.#name = this.#validateName(newName);
     this.#updatedAt = new Date();
   }
 
+  /**
+   * Updates task description with validation
+   * @param {string} newDescription - New task description
+   */
   updateDescription(newDescription) {
     this.#description = this.#validator.validateText(
       newDescription,
@@ -255,6 +323,11 @@ class Task {
     this.#updatedAt = new Date();
   }
 
+  /**
+   * Adds a TaskTag instance to the task
+   * @param {TaskTag} taskTag - TaskTag instance to add
+   * @throws {ValidationError} When tag limit exceeded or invalid type
+   */
   addTaskTag(taskTag) {
     if (!(taskTag instanceof TaskTag)) {
       throw new ValidationError(
@@ -291,7 +364,10 @@ class Task {
       this.#updatedAt = new Date();
     }
   }
-
+  /**
+   * Adds a tag to task by tag ID
+   * @param {string|number} tagId - Tag identifier to associate
+   */
   addTagById(tagId) {
     const validatedTagId = this.#validator.validateId(tagId, "Tag");
     const taskTag = TaskTag.createFromTagId({
@@ -300,6 +376,11 @@ class Task {
     });
     this.addTaskTag(taskTag);
   }
+  /**
+   * Adds multiple tags to task by their IDs
+   * @param {Array} tagIds - Array of tag identifiers
+   * @throws {ValidationError} When total tags would exceed limit
+   */
   addTagsByIds(tagIds = []) {
     if (!Array.isArray(tagIds)) {
       throw new InvalidFormatError("tagIds", "array", {
@@ -334,11 +415,19 @@ class Task {
     tagIds.forEach((tagId) => this.addTagById(tagId));
   }
 
+  /**
+   * Replaces all task tags with new collection
+   * @param {Array} newTaskTags - New task tags collection
+   */
   setTaskTags(newTaskTags) {
     this.#taskTags = this.#validateTaskTags(newTaskTags);
     this.#updatedAt = new Date();
   }
 
+  /**
+   * Removes task tag association by ID
+   * @param {string|number} taskTagId - Task tag identifier to remove
+   */
   removeTaskTag(taskTagId) {
     const validatedId = this.#validator.validateId(taskTagId, "TaskTag");
     const initialLength = this.#taskTags.length;
@@ -348,19 +437,29 @@ class Task {
       this.#updatedAt = new Date();
     }
   }
-
+  /**
+   * Checks if task has specific tag
+   * @param {string|number} tagId - Tag identifier to check
+   * @returns {boolean} True if tag is associated
+   */
   hasTag(tagId) {
     const validatedTagId = this.#validator.validateId(tagId, "Tag");
     return this.#taskTags.some((tt) => tt.tagId === validatedTagId);
   }
-
+  /**
+   * Checks if task can accept more tags
+   * @returns {boolean} True if more tags can be added
+   */
   canAddMoreTags() {
     return (
       this.#taskTags.length <
       domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK
     );
   }
-
+  /**
+   * Gets number of remaining available tag slots
+   * @returns {number} Available tag slots count
+   */
   getRemainingTagSlots() {
     return (
       domainValidationConfig.RELATIONSHIPS.TASK_TAG.MAX_TAGS_PER_TASK -
@@ -377,49 +476,116 @@ class Task {
   }
 
   //Getters
+  /**
+   * Gets task unique identifier
+   * @returns {string|number|null} Task ID
+   */
   get id() {
     return this.#id;
   }
+
+  /**
+   * Gets task name
+   * @returns {string} Task name
+   */
   get name() {
     return this.#name;
   }
+  /**
+   * Gets task description
+   * @returns {string} Task description
+   */
   get description() {
     return this.#description;
   }
+  /**
+   * Gets scheduled date
+   * @returns {Date|null} Scheduled date
+   */
   get scheduledDate() {
     return this.#scheduledDate;
   }
+  /**
+   * Gets creation timestamp
+   * @returns {Date} Creation date
+   */
   get createdAt() {
     return this.#createdAt;
   }
+
+  /**
+   * Gets last update timestamp
+   * @returns {Date} Update date
+   */
   get updatedAt() {
     return this.#updatedAt;
   }
+  /**
+   * Gets completion status
+   * @returns {boolean} True if task is completed
+   */
   get isCompleted() {
     return this.#isCompleted;
   }
+  /**
+   * Gets overdue status
+   * @returns {boolean} True if task is overdue
+   */
   get isOverdue() {
-     return this.isTaskOverdue();
+    return this.isTaskOverdue();
   }
+
+  /**
+   * Gets user identifier
+   * @returns {string|number} User ID
+   */
   get userId() {
     return this.#userId;
   }
+  /**
+   * Gets priority level
+   * @returns {number|null} Priority value
+   */
   get priority() {
     return this.#priority;
   }
+
+  /**
+   * Gets task tags collection (defensive copy)
+   * @returns {Array} Task tags
+   */
   get taskTags() {
     return [...this.#taskTags];
   }
 
+  /**
+   * Gets associated tag objects from task tags
+   * @returns {Array} Tag objects collection
+   */
+  getTags() {
+    return this.#taskTags
+      .map((taskTag) => taskTag.tag)
+      .filter((tag) => tag !== undefined);
+  }
+
+  /**
+   * Checks if task is overdue based on scheduled date
+   * @returns {boolean} True if task is overdue and incomplete
+   */
   isTaskOverdue() {
     if (!this.#scheduledDate) {
       return false;
     }
 
-    const overdue= new Date() > new Date(this.#scheduledDate) && !this.#isCompleted;
+    const overdue =
+      new Date() > new Date(this.#scheduledDate) && !this.#isCompleted;
     return overdue;
   }
 
+  /**
+   * Checks if task is scheduled for today
+   * @returns {boolean} True if scheduled for current date
+   */
   isScheduledForToday() {
     if (!this.#scheduledDate) return false;
 
@@ -429,12 +595,10 @@ class Task {
     return scheduled.toDateString() === today.toDateString();
   }
 
-  getTags() {
-    return this.#taskTags
-      .map((taskTag) => taskTag.tag)
-      .filter((tag) => tag !== undefined);
-  }
-
+  /**
+   * Converts task to plain object for serialization
+   * @returns {Object} Task data as plain object
+   */
   toJSON() {
     return {
       id: this.#id,
@@ -465,6 +629,12 @@ class Task {
     };
   }
 
+  /**
+   * Factory method to create a new task for creation scenarios
+   * @static
+   * @param {Object} taskData - Task creation data
+   * @returns {Task} New task instance with full validation
+   */
   static createNew({
     name,
     description = "",
@@ -487,6 +657,12 @@ class Task {
     });
   }
 
+  /**
+   * Factory method to create task for existing data scenarios
+   * @static
+   * @param {Object} data - Existing task data
+   * @returns {Task} Task instance with validation skipping
+   */
   static createExisting(data) {
     return new Task({
       ...data,

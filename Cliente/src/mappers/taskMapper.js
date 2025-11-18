@@ -1,11 +1,22 @@
 import { Task } from "../models/task.js";
 import { tagMappers } from "./tagMapper.js";
 
-
+/**
+ * Task data transformation utilities
+ * @namespace taskMappers
+ * @description Provides mapping functions for task data between different representations
+ */
 export const taskMappers = {
+  /**
+   * Transforms API task data to domain model
+   * @function apiToTask
+   * @param {Object} apiData - Raw API task data
+   * @returns {Task} Domain task object
+   */
   apiToTask: (apiData) => {
-    const mappedTags = (apiData.tags || apiData.taskTags|| [])
-      .map(tag => tagMappers.apiToTag(tag));
+    const mappedTags = (apiData.tags || apiData.taskTags || []).map((tag) =>
+      tagMappers.apiToTag(tag)
+    );
 
     return new Task({
       id: apiData.id,
@@ -22,6 +33,12 @@ export const taskMappers = {
     });
   },
 
+  /**
+   * Transforms task domain model to create DTO
+   * @function taskToCreateDTO
+   * @param {Task} task - Domain task object
+   * @returns {Object} Create task DTO
+   */
   taskToCreateDTO: (task) => {
     const tagDTOs = (task.tags || []).map((tag) =>
       tagMappers.tagToCreateDTO(tag)
@@ -32,12 +49,20 @@ export const taskMappers = {
       scheduledDate: task.scheduledDate,
       priority: task.priority,
       userId: task.userId,
-      tags: tagDTOs
+      tags: tagDTOs,
     };
   },
 
+  /**
+   * Transforms task domain model to update DTO
+   * @function taskToUpdateDTO
+   * @param {Task} task - Domain task object
+   * @returns {Object} Update task DTO
+   */
   taskToUpdateDTO: (task) => {
-    const tagDTOs = (task.tags || []).map(tag => tagMappers.tagToUpdateDTO(tag));
+    const tagDTOs = (task.tags || []).map((tag) =>
+      tagMappers.tagToUpdateDTO(tag)
+    );
 
     return {
       id: task.id,
@@ -50,9 +75,16 @@ export const taskMappers = {
     };
   },
 
+  /**
+   * Transforms form input data to task domain model
+   * @function inputToTask
+   * @param {Object} formData - Form input data
+   * @returns {Task} Domain task object
+   */
   inputToTask: (formData) => {
-    const mappedTags =(formData.tags || formData.taskTags || [])
-      .map(tag => tagMappers.apiToTag(tag))
+    const mappedTags = (formData.tags || formData.taskTags || []).map((tag) =>
+      tagMappers.apiToTag(tag)
+    );
 
     const procesarFecha = (fecha) => {
       if (!fecha) return null;
@@ -63,7 +95,6 @@ export const taskMappers = {
         return null;
       }
     };
-
 
     return new Task({
       id: formData.id,

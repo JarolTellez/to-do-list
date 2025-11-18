@@ -2,7 +2,26 @@ const {
   SORT_ORDER,
   TAG_SORT_FIELD,
 } = require("../../infrastructure/constants/sortConstants");
+/**
+ * Tag management service for handling tag operations
+ * @class TagService
+ * @description Manages tag creation, retrieval, and validation operations
+ */
 class TagService {
+  /**
+   * Creates a new TagService instance
+   * @constructor
+   * @param {Object} dependencies - Service dependencies
+   * @param {TagDAO} dependencies.tagDAO - Tag data access object
+   * @param {Object} dependencies.tagMapper - Tag mapper for data transformation
+   * @param {Object} dependencies.dbManager - Database manager for transactions
+   * @param {ErrorFactory} dependencies.errorFactory - Error factory instance
+   * @param {Validator} dependencies.validator - Validation utility
+   * @param {SortValidator} dependencies.sortValidator - Sort parameter validator
+   * @param {PaginationHelper} dependencies.paginationHelper - Pagination utility
+   * @param {Object} dependencies.paginationConfig - Pagination configuration
+   * @param {ErrorMapper} dependencies.errorMapper - Error mapping utility
+   */
   constructor({
     tagDAO,
     tagMapper,
@@ -24,7 +43,12 @@ class TagService {
     this.paginationConfig = paginationConfig;
     this.errorMapper = errorMapper;
   }
-
+  /**
+   * Creates a new tag
+   * @param {Object} tag - Tag domain object
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Created tag object
+   */
   async createTag(tag, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.withTransaction(async (dbClient) => {
@@ -50,6 +74,12 @@ class TagService {
     });
   }
 
+  /**
+   * Creates multiple tags in batch
+   * @param {Array} tagsDomain - Array of tag domain objects
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Array>} Array of created tag objects
+   */
   async createMultipleTags(tagsDomain, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.withTransaction(async (dbClient) => {
@@ -97,6 +127,12 @@ class TagService {
     });
   }
 
+  /**
+   * Processes mixed tags (existing and new) and returns final tag IDs
+   * @param {Array} mixedTags - Array of mixed tag objects
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Array>} Array of processed tag IDs
+   */
   async processMixedTags(mixedTags, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.withTransaction(async (dbClient) => {
@@ -114,6 +150,12 @@ class TagService {
     });
   }
 
+  /**
+   * Retrieves tags by their IDs
+   * @param {Array} tagIds - Array of tag identifiers
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Array>} Array of tag objects
+   */
   async getTagsByIds(tagIds, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {
@@ -137,6 +179,13 @@ class TagService {
     });
   }
 
+  /**
+   * Retrieves all tags for a user with pagination
+   * @param {string} userId - User identifier
+   * @param {Object} [options={}] - Pagination and sorting options
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Paginated list of user tags
+   */
   async getAllTagsByUserId(userId, options = {}, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {
@@ -187,6 +236,12 @@ class TagService {
     });
   }
 
+  /**
+   * Retrieves tag by name
+   * @param {string} name - Tag name
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Tag object
+   */
   async getTagByName(name, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["name"], { name });
@@ -209,6 +264,12 @@ class TagService {
     });
   }
 
+  /**
+   * Retrieves tag by ID
+   * @param {string} tagId - Tag identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Tag object
+   */
   async getTagById(tagId, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["tagId"], { tagId });
@@ -231,6 +292,12 @@ class TagService {
     });
   }
 
+  /**
+   * Retrieves tags by their names
+   * @param {Array} tagNames - Array of tag names
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Array>} Array of tag objects
+   */
   async getByNames(tagNames, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.forRead(async (dbClient) => {
@@ -245,6 +312,12 @@ class TagService {
     });
   }
 
+  /**
+   * Validates that all tag IDs exist in database
+   * @param {Array} tagIds - Array of tag identifiers to validate
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<boolean>} True if all tags exist
+   */
   async validateTagsExist(tagIds, externalDbClient = null) {
     return this.dbManager.forRead(async (dbClient) => {
       if (!tagIds || tagIds.length === 0) {
