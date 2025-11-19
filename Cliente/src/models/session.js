@@ -1,4 +1,24 @@
+/**
+ * Session domain model
+ * @class Session
+ * @description Represents a user session with expiration
+ */
 export class Session {
+  /**
+   * Creates a new Session instance
+   * @constructor
+   * @param {Object} params - Session parameters
+   * @param {string} params.id - Session identifier
+   * @param {string} params.userId - User identifier
+   * @param {string} params.userAgent - Client user agent string
+   * @param {string} params.ip - Client IP address
+   * @param {string} params.createdAt - Session creation timestamp
+   * @param {string} params.expiresAt - Session expiration timestamp
+   * @param {boolean} params.isActive - Whether session is active
+   * @param {boolean} params.isExpired - Whether session is expired
+   * @param {string} params.timeUntilExpiration - Time until expiration
+   * @param {boolean} params.isCurrent - Whether this is the current session
+   */
   constructor({
     id,
     userId,
@@ -9,7 +29,7 @@ export class Session {
     isActive,
     isExpired,
     timeUntilExpiration,
-    isCurrent
+    isCurrent,
   }) {
     this.id = id;
     this.userId = userId;

@@ -3,20 +3,43 @@ import { FaCalendar, FaRegTrashAlt } from "react-icons/fa";
 import { formatDateForDisplay } from "../../utils/formatDate";
 import { TASK_PRIORITIES } from "../../utils/constants/taskConstans";
 
+/**
+ * Individual task item component
+ * @component TaskItem
+ * @description Displays task information with completion toggle and actions
+ * @param {Object} props - Component properties
+ * @param {Object} props.task - Task data object
+ * @param {Function} props.onToggleComplete - Task completion toggle callback
+ * @param {Function} props.onEditTask - Task edit callback
+ * @param {Function} props.onDeleteTask - Task delete callback
+ * @returns {JSX.Element} Task item card
+ */
 const TaskItem = memo(
   ({ task, onToggleComplete, onEditTask, onDeleteTask }) => {
+    /**
+     * Handles task completion toggle
+     * @function handleToggleComplete
+     */
     const handleToggleComplete = useCallback(() => {
       if (!task.isCompleted) {
         onToggleComplete(task.id, !task.isCompleted);
       }
     }, [task.isCompleted, task.id, onToggleComplete]);
 
+    /**
+     * Handles task editing
+     * @function handleEdit
+     */
     const handleEdit = useCallback(() => {
       if (!task.isCompleted) {
         onEditTask(task);
       }
     }, [task.isCompleted, task, onEditTask]);
 
+    /**
+     * Handles task deletion
+     * @function handleDelete
+     */
     const handleDelete = useCallback(() => {
       onDeleteTask(task.id);
     }, [task.id, onDeleteTask]);
@@ -52,7 +75,7 @@ const TaskItem = memo(
           onClick={handleDelete}
           title="Eliminar tarea"
         >
-           <FaRegTrashAlt size={14} />
+          <FaRegTrashAlt size={14} />
         </button>
 
         <div
@@ -65,7 +88,9 @@ const TaskItem = memo(
 
           {task.scheduledDate && (
             <p className="task-date">
-              <span className="task-calendar"><FaCalendar className="task-calendar" /></span>
+              <span className="task-calendar">
+                <FaCalendar className="task-calendar" />
+              </span>
               {formatDateForDisplay(new Date(task.scheduledDate))}
             </p>
           )}

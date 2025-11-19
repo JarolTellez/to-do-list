@@ -4,6 +4,13 @@ import { useToast } from "../contexts/ToastContexts";
 import { PAGINATION_CONFIG } from "../utils/constants/paginationConstants";
 const TASKS_PAGINATION = PAGINATION_CONFIG.TASKS;
 
+/**
+ * Tasks management hook with CRUD operations and pagination
+ * @hook useTasks
+ * @description Comprehensive task management with statistics and infinite scroll
+ * @param {string} userId - User ID for task filtering
+ * @returns {Object} Tasks state and methods
+ */
 export const useTasks = (userId) => {
   const [state, setState] = useState({
     tasks: [],
@@ -20,6 +27,13 @@ export const useTasks = (userId) => {
 
   const { showTaskToast } = useToast();
 
+  /**
+   * Updates local statistics based on task changes
+   * @function updateStatsFromLocalChanges
+   * @param {string} action - Type of action (ADD_TASK, DELETE_TASK, etc.)
+   * @param {Object} taskData - Task data involved in action
+   * @param {Object} previousTaskState - Previous task state for updates
+   */
   const updateStatsFromLocalChanges = useCallback(
     (action, taskData, previousTaskState = null) => {
       setState((prev) => {
@@ -88,6 +102,12 @@ export const useTasks = (userId) => {
     []
   );
 
+  /**
+   * Validates statistics consistency against current tasks
+   * @function validateStatsConsistency
+   * @param {Array} tasks - Array of tasks
+   * @returns {Object} Calculated statistics
+   */
   const validateStatsConsistency = useCallback((tasks) => {
     const calculatedPending = tasks.filter((task) => !task.isCompleted).length;
     const calculatedCompleted = tasks.filter((task) => task.isCompleted).length;
@@ -102,6 +122,14 @@ export const useTasks = (userId) => {
     };
   }, []);
 
+  /**
+   * Loads tasks with pagination
+   * @async
+   * @function loadTasks
+   * @param {number} page - Page number
+   * @param {number} limit - Items per page
+   * @returns {Promise<void>}
+   */
   const loadTasks = useCallback(
     async (page, limit) => {
       if (!userId) return;
@@ -184,6 +212,13 @@ export const useTasks = (userId) => {
     }
   }, [state.loadingMore, state.hasMore, state.currentPage, loadTasks]);
 
+  /**
+   * Adds new task
+   * @async
+   * @function addTask
+   * @param {Object} taskData - Task data to create
+   * @returns {Promise<Object>} Created task
+   */
   const addTask = useCallback(
     async (taskData) => {
       const toast = showTaskToast("Agregando tarea...", "Tarea agregada");
@@ -212,6 +247,13 @@ export const useTasks = (userId) => {
     [showTaskToast, updateStatsFromLocalChanges]
   );
 
+  /**
+   * Updates existing task
+   * @async
+   * @function updateTask
+   * @param {Object} taskData - Updated task data
+   * @returns {Promise<Object>} Updated task
+   */
   const updateTask = useCallback(
     async (taskData) => {
       const toast = showTaskToast("Actualizando tarea...", "Tarea actualizada");
@@ -250,6 +292,13 @@ export const useTasks = (userId) => {
     [showTaskToast, updateStatsFromLocalChanges, state.tasks]
   );
 
+  /**
+   * Deletes task
+   * @async
+   * @function deleteTask
+   * @param {string} taskId - Task ID to delete
+   * @returns {Promise<Object>} Deletion result
+   */
   const deleteTask = useCallback(
     async (taskId) => {
       const toast = showTaskToast("Eliminando tarea...", "Tarea eliminada");
@@ -280,6 +329,14 @@ export const useTasks = (userId) => {
     [showTaskToast, updateStatsFromLocalChanges, state.tasks]
   );
 
+  /**
+   * Toggles task completion status
+   * @async
+   * @function toggleTaskCompletion
+   * @param {string} taskId - Task ID to toggle
+   * @param {boolean} isCompleted - New completion status
+   * @returns {Promise<Object>} Updated task
+   */
   const toggleTaskCompletion = useCallback(
     async (taskId, isCompleted) => {
       const action = isCompleted ? "Completando" : "Marcando como pendiente";
@@ -319,6 +376,13 @@ export const useTasks = (userId) => {
     [showTaskToast, updateStatsFromLocalChanges, state.tasks]
   );
 
+  /**
+   * Refreshes tasks data
+   * @async
+   * @function refreshTasks
+   * @param {boolean} forceSync - Whether to force sync with server
+   * @returns {Promise<Object>} Refresh result
+   */
   const refreshTasks = useCallback(
     async (forceSync = false) => {
       try {
@@ -346,6 +410,10 @@ export const useTasks = (userId) => {
     [loadTasks, state.tasks.length]
   );
 
+  /**
+   * Corrects statistics based on current tasks
+   * @function correctStatsFromCurrentTasks
+   */
   const correctStatsFromCurrentTasks = useCallback(() => {
     const correctedStats = validateStatsConsistency(state.tasks);
     setState((prev) => ({

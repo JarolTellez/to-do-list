@@ -1,7 +1,17 @@
-import { Session } from '../models/session.js';
+import { Session } from "../models/session.js";
+/**
+ * Session data transformation utilities
+ * @namespace sessionMappers
+ * @description Provides mapping functions for session data between API and domain models
+ */
 
 export const sessionMappers = {
-
+  /**
+   * Transforms API session data to domain model
+   * @function apiToSession
+   * @param {Object} apiData - Raw API session data
+   * @returns {Session} Domain session object
+   */
   apiToSession: (apiData) => {
     return new Session({
       id: apiData.id,
@@ -13,7 +23,7 @@ export const sessionMappers = {
       isActive: apiData.isActive,
       isExpired: apiData.isExpired,
       timeUntilExpiration: apiData.timeUntilExpiration,
-      isCurrent: apiData.isCurrent
+      isCurrent: apiData.isCurrent,
     });
-  }
+  },
 };

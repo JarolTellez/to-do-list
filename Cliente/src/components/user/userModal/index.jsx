@@ -12,6 +12,16 @@ import ConfirmModal from "../../common/ConfirmModal";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../../contexts/AuthContext";
 
+/**
+ * Main user settings modal component
+ * @component UserModal
+ * @description Comprehensive user settings interface with multiple tabs
+ * @param {Object} props - Component properties
+ * @param {Object} props.user - Current user data
+ * @param {Function} props.onClose - Modal close callback
+ * @param {Function} props.onLogout - Logout callback
+ * @returns {JSX.Element} User settings modal
+ */
 const UserModal = ({ user, onClose, onLogout }) => {
   const [activeTab, setActiveTab] = useState("profile");
   const [confirmModal, setConfirmModal] = useState({
@@ -38,6 +48,11 @@ const UserModal = ({ user, onClose, onLogout }) => {
   const navigate = useNavigate();
   const { logout: contextLogout } = useAuthContext();
 
+  /**
+   * Shows confirmation modal with custom configuration
+   * @function showConfirmModal
+   * @param {Object} config - Modal configuration
+   */
   const showConfirmModal = (config) => {
     setConfirmModal({
       isOpen: true,
@@ -54,6 +69,10 @@ const UserModal = ({ user, onClose, onLogout }) => {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
 
+  /**
+   * Handles user logout with confirmation
+   * @function handleLogout
+   */
   const handleLogout = () => {
     showConfirmModal({
       type: "warning",
@@ -83,6 +102,13 @@ const UserModal = ({ user, onClose, onLogout }) => {
     });
   };
 
+  /**
+   * Handles profile update with confirmation
+   * @async
+   * @function handleUpdateProfile
+   * @param {Object} profileData - Updated profile data
+   * @returns {Promise<void>}
+   */
   const handleUpdateProfile = async (profileData) => {
     showConfirmModal({
       type: "warning",
@@ -135,6 +161,13 @@ const UserModal = ({ user, onClose, onLogout }) => {
     });
   };
 
+  /**
+   * Handles password update with confirmation
+   * @async
+   * @function handleUpdatePassword
+   * @param {Object} passwordData - Password change data
+   * @returns {Promise<void>}
+   */
   const handleUpdatePassword = async (passwordData) => {
     showConfirmModal({
       type: "warning",
@@ -184,6 +217,12 @@ const UserModal = ({ user, onClose, onLogout }) => {
     });
   };
 
+  /**
+   * Handles account deletion with confirmation
+   * @async
+   * @function handleDeleteAccount
+   * @returns {Promise<void>}
+   */
   const handleDeleteAccount = async () => {
     showConfirmModal({
       type: "danger",
@@ -192,13 +231,13 @@ const UserModal = ({ user, onClose, onLogout }) => {
       details: (
         <div>
           <p className="delete-account-critical-warning">
-            ⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️
+             ESTA ACCIÓN ES IRREVERSIBLE 
           </p>
           <ul>
-            <li>🗑️ Tu cuenta y todos tus datos serán eliminados</li>
-            <li>🗑️ Todas tus tareas se perderán</li>
-            <li>🗑️ Tu historial de sesiones será borrado</li>
-            <li>🚫 Perderás el acceso permanentemente</li>
+            <li>Tu cuenta y todos tus datos serán eliminados</li>
+            <li>Todas tus tareas se perderán</li>
+            <li>Tu historial de sesiones será borrado</li>
+            <li>Perderás el acceso permanentemente</li>
           </ul>
         </div>
       ),
@@ -230,6 +269,12 @@ const UserModal = ({ user, onClose, onLogout }) => {
     });
   };
 
+  /**
+   * Handles closing all active sessions
+   * @async
+   * @function handleCloseAllSessions
+   * @returns {Promise<void>}
+   */
   const handleCloseAllSessions = async () => {
     showConfirmModal({
       type: "warning",
@@ -271,6 +316,11 @@ const UserModal = ({ user, onClose, onLogout }) => {
     });
   };
 
+  /**
+   * Renders content for active tab
+   * @function renderTabContent
+   * @returns {JSX.Element} Tab-specific content
+   */
   const renderTabContent = () => {
     const commonProps = {
       user,

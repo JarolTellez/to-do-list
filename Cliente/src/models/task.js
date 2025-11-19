@@ -1,4 +1,25 @@
+/**
+ * Task domain model
+ * @class Task
+ * @description Represents a task with scheduling, priority, and categorization
+ */
 export class Task {
+  /**
+   * Creates a new Task instance
+   * @constructor
+   * @param {Object} params - Task parameters
+   * @param {string} params.id - Task identifier
+   * @param {string} params.name - Task name
+   * @param {string} params.description - Task description
+   * @param {string} params.scheduledDate - Scheduled date and time
+   * @param {string} params.createdAt - Creation timestamp
+   * @param {string} params.updatedAt - Last update timestamp
+   * @param {boolean} params.isCompleted - Completion status
+   * @param {boolean} params.isOverdue - Overdue status
+   * @param {string} params.userId - User identifier
+   * @param {number} params.priority - Priority level (1-5)
+   * @param {Array} params.tags - Associated tags
+   */
   constructor({
     id,
     name,
@@ -25,6 +46,11 @@ export class Task {
     this.tags = tags;
   }
 
+  /**
+   * Validates task data
+   * @function validate
+   * @throws {Array} Array of validation errors
+   */
   validate() {
     const errors = [];
 
@@ -68,6 +94,11 @@ export class Task {
     }
   }
 
+  /**
+   * Gets priority name from numeric level
+   * @function getPriorityName
+   * @returns {string} Priority name
+   */
   getPriorityName() {
     const priorityNames = {
       1: "Muy Baja",
@@ -79,6 +110,11 @@ export class Task {
     return priorityNames[this.priority] || "Media";
   }
 
+  /**
+   * Validates task for creation
+   * @function validateForCreation
+   * @throws {Array} Array of validation errors
+   */
   validateForCreation() {
     if (this.id) {
       throw [
@@ -88,6 +124,11 @@ export class Task {
     this.validate();
   }
 
+  /**
+   * Validates task for update
+   * @function validateForUpdate
+   * @throws {Array} Array of validation errors
+   */
   validateForUpdate() {
     if (!this.id) {
       throw [{ field: "id", message: "El ID es obligatorio para actualizar" }];
@@ -95,6 +136,11 @@ export class Task {
     this.validate();
   }
 
+  /**
+   * Checks if task is overdue
+   * @function isOverdue
+   * @returns {boolean} Whether task is overdue
+   */
   isOverdue() {
     if (this.isCompleted || !this.scheduledDate) return false;
     return new Date() > this.scheduledDate;

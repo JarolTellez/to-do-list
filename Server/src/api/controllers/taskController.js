@@ -1,9 +1,28 @@
+/**
+ * Task management controller for handling task-related API endpoints
+ * @class TaskController
+ * @description Handles task CRUD operations and management
+ */
 class TaskController {
+  /**
+   * Creates a new TaskController instance
+   * @constructor
+   * @param {Object} dependencies - Controller dependencies
+   * @param {TaskService} dependencies.taskService - Task service instance
+   * @param {Object} dependencies.taskMapper - Task mapper for data transformation
+   */
   constructor({ taskService, taskMapper }) {
     this.taskService = taskService;
     this.taskMapper = taskMapper;
   }
 
+  /**
+   * Creates a new task for the current user
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with created task
+   */
   async createTask(req, res, next) {
     try {
       const userId = req.user.userId;
@@ -26,6 +45,13 @@ class TaskController {
     }
   }
 
+  /**
+   * Deletes a task for the current user
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with deletion result
+   */
   async deleteTask(req, res, next) {
     try {
       const userId = req.user.userId;
@@ -44,6 +70,13 @@ class TaskController {
     }
   }
 
+  /**
+   * Updates an existing task for the current user
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with updated task
+   */
   async updateTask(req, res, next) {
     try {
       const userId = req.user.userId;
@@ -66,6 +99,13 @@ class TaskController {
     }
   }
 
+  /**
+   * Marks a task as completed or incomplete
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with completion status
+   */
   async completeTask(req, res, next) {
     try {
       const userId = req.user.userId;
@@ -89,6 +129,13 @@ class TaskController {
     }
   }
 
+  /**
+   * Retrieves all tasks for the current user with filtering and pagination
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   * @returns {Promise<Object>} JSON response with paginated task list
+   */
   async getAllTasksByUserId(req, res, next) {
     try {
       const userId = req.user.userId;
@@ -123,6 +170,12 @@ class TaskController {
     }
   }
 
+  /**
+   * Maps pagination response with domain to response transformation
+   * @private
+   * @param {Object} paginationResponse - Paginated response from service
+   * @returns {Object} Mapped pagination response with transformed data
+   */
   _mapPaginationResponse(paginationResponse) {
     if (!paginationResponse || !paginationResponse.tasks) {
       return paginationResponse;

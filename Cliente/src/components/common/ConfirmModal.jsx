@@ -2,6 +2,23 @@ import React from "react";
 import { FaExclamationTriangle, FaCheck, FaInfo } from "react-icons/fa";
 import "../../styles/components/common/confirmModal.css";
 
+/**
+ * Reusable confirmation modal component
+ * @component ConfirmModal
+ * @description Displays confirmation dialogs with customizable content and actions
+ * @param {Object} props - Component properties
+ * @param {boolean} props.isOpen - Controls modal visibility
+ * @param {Function} props.onClose - Callback when modal is closed
+ * @param {Function} props.onConfirm - Callback when confirmation is accepted
+ * @param {string} props.title - Modal title text
+ * @param {string} props.message - Main message content
+ * @param {ReactNode} props.details - Additional details or components
+ * @param {string} props.confirmText - Text for confirm button
+ * @param {string} props.cancelText - Text for cancel button
+ * @param {string} props.type - Modal type (warning, danger, success, info)
+ * @param {boolean} props.loading - Loading state for buttons
+ * @returns {JSX.Element} Confirmation modal interface
+ */
 const ConfirmModal = ({
   isOpen,
   onClose,
@@ -16,6 +33,11 @@ const ConfirmModal = ({
 }) => {
   if (!isOpen) return null;
 
+  /**
+   * Gets appropriate icon based on modal type
+   * @function getIcon
+   * @returns {JSX.Element} Icon component
+   */
   const getIcon = () => {
     switch (type) {
       case "danger":
@@ -29,6 +51,11 @@ const ConfirmModal = ({
     }
   };
 
+  /**
+   * Gets CSS class for confirm button based on modal type
+   * @function getConfirmButtonClass
+   * @returns {string} CSS class name
+   */
   const getConfirmButtonClass = () => {
     switch (type) {
       case "danger":

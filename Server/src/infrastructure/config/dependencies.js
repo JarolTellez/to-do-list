@@ -171,7 +171,6 @@ const sessionMapper = new SessionMapper({
 
 const errorMapper = new ErrorMapper(errorFactory);
 
-// Bind solo los métodos que realmente usan los DAOs
 const tagMapperWithBind = {
   ...tagMapper,
   dbToDomain: tagMapper.dbToDomain.bind(tagMapper),
@@ -241,7 +240,7 @@ const sessionDAO = new SessionDAO({
 
 const jwtAuth = new JwtAuth(appConfig, errorFactory);
 
-// Servicios
+// Services
 const tagService = new TagService({
   tagDAO,
   dbManager: prismaManager,

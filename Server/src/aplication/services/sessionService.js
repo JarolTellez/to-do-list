@@ -3,7 +3,28 @@ const {
   SESSION_SORT_FIELD,
 } = require("../../infrastructure/constants/sortConstants");
 
+/**
+ * Session management service for handling user session operations
+ * @class SessionService
+ * @description Manages session lifecycle, validation, and persistence operations
+ */
 class SessionService {
+  /**
+   * Creates a new SessionService instance
+   * @constructor
+   * @param {Object} dependencies - Service dependencies
+   * @param {SessionDAO} dependencies.sessionDAO - Session data access object
+   * @param {UserService} dependencies.userService - User service instance
+   * @param {Object} dependencies.sessionMapper - Session mapper for data transformation
+   * @param {Object} dependencies.dbManager - Database manager for transactions
+   * @param {ErrorFactory} dependencies.errorFactory - Error factory instance
+   * @param {Validator} dependencies.validator - Validation utility
+   * @param {SortValidator} dependencies.sortValidator - Sort parameter validator
+   * @param {Object} dependencies.appConfig - Application configuration
+   * @param {PaginationHelper} dependencies.paginationHelper - Pagination utility
+   * @param {Object} dependencies.paginationConfig - Pagination configuration
+   * @param {ErrorMapper} dependencies.errorMapper - Error mapping utility
+   */
   constructor({
     sessionDAO,
     userService,
@@ -30,6 +51,13 @@ class SessionService {
     this.errorMapper = errorMapper;
   }
 
+  /**
+   * Validates existing session by user ID and refresh token hash
+   * @param {string} userId - User identifier
+   * @param {string} refreshTokenHash - Hashed refresh token
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object|null>} Valid session object or null if invalid
+   */
   async validateExistingSession(
     userId,
     refreshTokenHash,
@@ -60,6 +88,16 @@ class SessionService {
     });
   }
 
+  /**
+   * Creates new user session
+   * @param {Object} sessionData - Session creation data
+   * @param {string} sessionData.userId - User identifier
+   * @param {string} sessionData.refreshTokenHash - Hashed refresh token
+   * @param {string} sessionData.userAgent - Client user agent
+   * @param {string} sessionData.ip - Client IP address
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Created session object
+   */
   async createNewSession(
     { userId, refreshTokenHash, userAgent, ip },
     externalDbClient = null
@@ -99,6 +137,13 @@ class SessionService {
     });
   }
 
+  /**
+   * Validates session by user ID and refresh token hash
+   * @param {string} userId - User identifier
+   * @param {string} refreshTokenHash - Hashed refresh token
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Validated session object
+   */
   async validateSession(userId, refreshTokenHash, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["userId", "refreshTokenHash"], {
@@ -144,6 +189,13 @@ class SessionService {
     });
   }
 
+  /**
+   * Validates session by user ID and session ID
+   * @param {string} userId - User identifier
+   * @param {string} sessionId - Session identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Validated session object
+   */
   async validateSessionById(userId, sessionId, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["userId", "sessionId"], {
@@ -184,6 +236,13 @@ class SessionService {
     });
   }
 
+  /**
+   * Deactivates session by user ID and refresh token hash
+   * @param {string} userId - User identifier
+   * @param {string} refreshTokenHash - Hashed refresh token
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Deactivation result
+   */
   async deactivateSession(userId, refreshTokenHash, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["userId", "refreshTokenHash"], {
@@ -236,6 +295,12 @@ class SessionService {
     });
   }
 
+  /**
+   * Deactivates session by refresh token hash
+   * @param {string} refreshTokenHash - Hashed refresh token
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Deactivation result
+   */
   async deactivateSessionByTokenHash(
     refreshTokenHash,
     externalDbClient = null
@@ -280,6 +345,13 @@ class SessionService {
     });
   }
 
+  /**
+   * Manages user session limit by deactivating oldest sessions if needed
+   * @param {string} userId - User identifier
+   * @param {number} [maxSessions=10] - Maximum allowed active sessions
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Session management result
+   */
   async manageSessionLimit(userId, maxSessions = 10, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["userId"], { userId });
@@ -314,6 +386,12 @@ class SessionService {
     });
   }
 
+  /**
+   * Deactivates all sessions for a user
+   * @param {string} userId - User identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Bulk deactivation result
+   */
   async deactivateAllUserSessions(userId, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       return this.dbManager.withTransaction(async (dbClient) => {
@@ -329,6 +407,12 @@ class SessionService {
     });
   }
 
+  /**
+   * Retrieves session by ID
+   * @param {string} sessionId - Session identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Session object
+   */
   async getSessionById(sessionId, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["sessionId"], { sessionId });
@@ -346,6 +430,12 @@ class SessionService {
     });
   }
 
+  /**
+   * Deactivates specific session by ID
+   * @param {string} sessionId - Session identifier
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Deactivation result
+   */
   async deactivateSpecificSession(sessionId, externalDbClient = null) {
     return this.errorMapper.executeWithErrorMapping(async () => {
       this.validator.validateRequired(["sessionId"], {
@@ -371,6 +461,14 @@ class SessionService {
     });
   }
 
+  /**
+   * Retrieves all active sessions for a user with pagination
+   * @param {string} userId - User identifier
+   * @param {string} currentSessionId - Current session ID for reference
+   * @param {Object} [options={}] - Pagination and sorting options
+   * @param {Object} [externalDbClient=null] - External database client for transactions
+   * @returns {Promise<Object>} Paginated list of active sessions
+   */
   async getAllUserActiveSessions(
     userId,
     currentSessionId,

@@ -9,8 +9,25 @@ import { useFilters } from "../../hooks/useFilters";
 import { useLoading } from "../../contexts/LoadingContext";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import { APP_CONFIG } from "../../utils/constants/appConstants";
-import { FaUserCircle, FaBars, FaPlus, FaTasks, FaListAlt, FaClipboardList, FaStickyNote } from "react-icons/fa";
+import {
+  FaUserCircle,
+  FaBars,
+  FaPlus,
+  FaTasks,
+  FaListAlt,
+  FaClipboardList,
+  FaStickyNote,
+} from "react-icons/fa";
 
+/**
+ * Main application page with task management
+ * @component Principal
+ * @description Primary interface for task management with sidebar and modals
+ * @param {Object} props - Component properties
+ * @param {Object} props.user - Current user data
+ * @param {Function} props.onLogout - Logout callback function
+ * @returns {JSX.Element} Main application interface
+ */
 const Principal = ({ user, onLogout }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -103,6 +120,13 @@ const Principal = ({ user, onLogout }) => {
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
+  /**
+   * Handles task addition
+   * @async
+   * @function handleAddTask
+   * @param {Object} taskData - Task data to add
+   * @returns {Promise<void>}
+   */
   const handleAddTask = useCallback(
     async (taskData) => {
       try {
@@ -113,6 +137,13 @@ const Principal = ({ user, onLogout }) => {
     [addTask]
   );
 
+  /**
+   * Handles task editing
+   * @async
+   * @function handleEditTask
+   * @param {Object} taskData - Updated task data
+   * @returns {Promise<void>}
+   */
   const handleEditTask = useCallback(
     async (taskData) => {
       try {
@@ -124,6 +155,13 @@ const Principal = ({ user, onLogout }) => {
     [updateTask]
   );
 
+  /**
+   * Handles task deletion
+   * @async
+   * @function handleDeleteTask
+   * @param {string} taskId - Task ID to delete
+   * @returns {Promise<void>}
+   */
   const handleDeleteTask = useCallback(
     async (taskId) => {
       try {
@@ -133,6 +171,14 @@ const Principal = ({ user, onLogout }) => {
     [deleteTask]
   );
 
+  /**
+   * Handles task completion toggle
+   * @async
+   * @function handleToggleComplete
+   * @param {string} taskId - Task ID to toggle
+   * @param {boolean} isCompleted - New completion status
+   * @returns {Promise<void>}
+   */
   const handleToggleComplete = useCallback(
     async (taskId, isCompleted) => {
       try {
@@ -142,6 +188,12 @@ const Principal = ({ user, onLogout }) => {
     [toggleTaskCompletion]
   );
 
+  /**
+   * Refreshes tasks data
+   * @async
+   * @function handleRefresh
+   * @returns {Promise<void>}
+   */
   const handleRefresh = useCallback(async () => {
     try {
       await refreshTasks();
@@ -151,6 +203,10 @@ const Principal = ({ user, onLogout }) => {
     } catch (error) {}
   }, [refreshTasks, isSidebarMobileOpen]);
 
+  /**
+   * Clears all active filters
+   * @function handleClearAll
+   */
   const handleClearAll = useCallback(() => {
     clearAll();
     if (isSidebarMobileOpen) {
@@ -158,6 +214,10 @@ const Principal = ({ user, onLogout }) => {
     }
   }, [clearAll, isSidebarMobileOpen]);
 
+  /**
+   * Handles user logout with confirmation
+   * @function handleLogout
+   */
   const handleLogout = useCallback(() => {
     showConfirmModal({
       type: "warning",
@@ -193,33 +253,62 @@ const Principal = ({ user, onLogout }) => {
     stopFullScreenLoading,
   ]);
 
+  /**
+   * Opens task creation modal
+   * @function openAddModal
+   */
   const openAddModal = useCallback(() => {
     setEditingTask(null);
     setShowModal(true);
   }, []);
 
+  /**
+   * Opens task editing modal
+   * @function openEditModal
+   * @param {Object} task - Task to edit
+   */
   const openEditModal = useCallback((task) => {
     setEditingTask(task);
     setShowModal(true);
   }, []);
 
+  /**
+   * Closes task modal
+   * @function closeModal
+   */
   const closeModal = useCallback(() => {
     setShowModal(false);
     setEditingTask(null);
   }, []);
 
+  /**
+   * Opens user settings modal
+   * @function openUserModal
+   */
   const openUserModal = useCallback(() => {
     setShowUserModal(true);
   }, []);
 
+  /**
+   * Closes user settings modal
+   * @function closeUserModal
+   */
   const closeUserModal = useCallback(() => {
     setShowUserModal(false);
   }, []);
 
+  /**
+   * Toggles mobile sidebar visibility
+   * @function toggleSidebarMobile
+   */
   const toggleSidebarMobile = useCallback(() => {
     setIsSidebarMobileOpen(!isSidebarMobileOpen);
   }, [isSidebarMobileOpen]);
 
+  /**
+   * Closes mobile sidebar
+   * @function closeSidebarMobile
+   */
   const closeSidebarMobile = useCallback(() => {
     setIsSidebarMobileOpen(false);
   }, []);
@@ -284,12 +373,6 @@ const Principal = ({ user, onLogout }) => {
               <button onClick={openAddModal} className="add-task-btn">
                 <FaPlus /> Nueva Tarea
               </button>
-              <span className="task-count">
-                 <FaTasks className="task-count-icon" />
-                {totalTasks} {totalTasks === 1 ? "tarea" : "tareas"}
-                {hasActiveFilters && " (filtradas)"}
-                {tasksLoadingMore && " - Cargando..."}
-              </span>
             </div>
           </div>
 

@@ -120,6 +120,7 @@ class SessionDAO extends BaseDatabaseHandler {
           where: {
             userId: userIdNum,
             isActive: true,
+            expiresAt: { gt: new Date() },
           },
           orderBy: { createdAt: "asc" },
           select: { id: true },
@@ -168,6 +169,7 @@ class SessionDAO extends BaseDatabaseHandler {
           where: {
             userId: userIdNum,
             isActive: true,
+            expiresAt: { gt: new Date() },
           },
           data: { isActive: false },
         });
@@ -238,6 +240,7 @@ class SessionDAO extends BaseDatabaseHandler {
           where: {
             refreshTokenHash: refreshTokenHash.trim(),
             isActive: true,
+            expiresAt: { gt: new Date() },
           },
         });
 
@@ -278,11 +281,13 @@ class SessionDAO extends BaseDatabaseHandler {
       try {
         const userIdNum = this.inputValidator.validateId(userId, "user id");
 
-         const sortOptions = sortBy?{
-          orderBy:{
-            [sortBy]: sortOrder.toLowerCase()
-          }
-        }:{};
+        const sortOptions = sortBy
+          ? {
+              orderBy: {
+                [sortBy]: sortOrder.toLowerCase(),
+              },
+            }
+          : {};
         const paginationOptions = this._buildPaginationOptions(limit, offset);
 
         const sessions = await dbClient.session.findMany({
@@ -339,17 +344,20 @@ class SessionDAO extends BaseDatabaseHandler {
             "Active must be a boolean"
           );
         }
-         const sortOptions = sortBy?{
-          orderBy:{
-            [sortBy]: sortOrder.toLowerCase()
-          }
-        }:{};
+        const sortOptions = sortBy
+          ? {
+              orderBy: {
+                [sortBy]: sortOrder.toLowerCase(),
+              },
+            }
+          : {};
         const paginationOptions = this._buildPaginationOptions(limit, offset);
 
         const sessions = await dbClient.session.findMany({
           where: {
             userId: userIdNum,
             isActive: active,
+            expiresAt: { gt: new Date() },
           },
           ...sortOptions,
           ...paginationOptions,
@@ -394,6 +402,7 @@ class SessionDAO extends BaseDatabaseHandler {
           where: {
             userId: userIdNum,
             isActive: active,
+            expiresAt: { gt: new Date() },
           },
         });
 
