@@ -16,12 +16,16 @@ build/
 dist-ssr
 *.tsbuildinfo
 
+cd/
+del/
+rmdir/
+node/
+npm/
+nvm/
+
+
 .env
 .env.*
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 logs
 *.log
@@ -36,20 +40,6 @@ logs
 *.sw?
 Thumbs.db
 
-.coverage
-.coverage/
-.nyc_output
-
-.cache/
-.parcel-cache/
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-.helm
-.elasticbeanstalk/
-.terraform/
 
 package-lock.json
 */package-lock.json
